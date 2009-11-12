@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    Processing supports aliases with processing instructions of form name=value
+    and for each string value read thereafter replaces any occurrence of 
+    {{name}} with the specified value in the alias declaration.
+-->
+<?alias rest-port=81?>
+<?alias site=labs-local.lds.org?>
+
+<!-- 
+   Defines the configuration for the app wrap shim. The console-port is the
+   port on which the console will be found.
+-->
+<config console-port="{{rest-port}}">
+    <agent port="80">
+        <cookie name="lds-policy" domain=".lds.org"/>
+        <sign-in-url value="http://{{site}}/auth/ui/sign-in"/>
+
+        <!-- default sign-in page included in console -->
+        <!-- <sign-in-url value="http://{{site}}:81/admin/selectUser.jsp"/> -->
+    </agent>
+    
+    <!-- 
+        Defines the dns host and port for which traffic will be protected and
+        must match an entry in etc/hosts pointing to 127.0.0.1 and be in the
+        domain of the cookie used by the agent to identify sessions.
+    -->
+    <site host="{{site}}">
+        <!-- headers to be injected for all site related traffic -->
+        <header name="policy-service-url" value="http://{{site}}:{{rest-port}}/rest/"/>
+
+        <!-- 
+            apps "plugged-in" to site url space, the canonical context in that
+            space, how that context should be rewritten if at all, and the port
+            on which that app is running and to which the traffic will be 
+            proxied. 
+        -->
+        <app cctx="/auth" ctx="/auth" port="8411"/>
+
+        <!-- the unenforced urls for the site -->
+        <unenforced url="/auth/ui/*"/>
+    </site>
+    
+    <!-- 
+        The set of defined users, headers injected per user, and urls allowed 
+        by each userurl access permissions 
+    -->
+    <users>
+        <user name="ngia" pwd="pwda">
+            <header name="policy-birthdate" value="1960-09-25"/>
+            <header name="policy-email" value="me@someplace.com"/>
+            <header name="policy-preferred-name" value="Samson the great"/>
+            
+            <allow action="GET" url="/auth/_app/*"/>
+        </user>
+    </users>
+</config>
