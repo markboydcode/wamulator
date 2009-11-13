@@ -164,8 +164,11 @@ public class RequestHandler implements Runnable {
 					return;
 				}
 				
-				// endpoint is registered, translate request Uri
+				// endpoint is registered, translate request Uri and set cctx header
 				appReqLn = endpoint.getAppRequestUri(reqPkg);
+				reqPkg.headerBfr.append("cctx")
+					.append(": ").append(endpoint.getCanonicalContextRoot())
+					.append(CRLF);
 
 				if (! appMgr.isUnenforced(reqPkg.requestLine.getUri())) {
 					// so it requires enforcement
@@ -195,6 +198,7 @@ public class RequestHandler implements Runnable {
 			Socket server = null; // socket to remote server
 
 			try {
+				System.out.println("Proxying to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
 				server = new Socket(endpoint.getHost(), endpoint.getEndpointPort());
 // socket prox	server = new Socket("127.0.0.1", 9010);
 			}
