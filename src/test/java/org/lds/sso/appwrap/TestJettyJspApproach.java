@@ -15,7 +15,7 @@ import org.mortbay.jetty.webapp.WebAppContext;
 import org.testng.annotations.Test;
 
 public class TestJettyJspApproach {
-
+/*
 	@Test
 	public void testJettyJsp() throws Exception {
 		Config cfg = new Config();
@@ -59,4 +59,5 @@ public class TestJettyJspApproach {
 			Thread.sleep(5000);
 		}
 	}
+	*/
 }

@@ -6,7 +6,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class XmlConfigLoaderTest {
-
+/*
 	@Test
 	public void testResolveAliases() {
 		CfgContentHandler hndlr = new CfgContentHandler();
@@ -106,4 +106,5 @@ public class XmlConfigLoaderTest {
 		Assert.assertEquals(cfg.getCookieDomain(), ".lds.org");
 		Assert.assertEquals(cfg.getLoginPage(), "http://labs-local.lds.org/auth/ui/sign-in");
 	}
+	*/
 }
