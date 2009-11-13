@@ -26,9 +26,16 @@ public class LogoutHandler extends RestHandlerBase {
 	@Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException {
-		String rawT = request.getParameter("token");
-		String token = URLDecoder.decode(rawT, "utf-8");
-		cfg.getSessionManager().terminateSession(token);
-		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "session was terminated");
+		/*
+		 * Actually, to support real characteristics of opensso rest api we 
+		 * should first look for the token from the cookie and if found use
+		 * that token. If not found then fallback on the subjectid parameter.
+		 */
+		String rawT = request.getParameter("subjectid");
+		if (rawT != null && ! "".equals(rawT) ) {
+			String token = URLDecoder.decode(rawT, "utf-8");
+			cfg.getSessionManager().terminateSession(token);
+			super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "session was terminated");
+		}
 	}
 }
