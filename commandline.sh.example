@@ -1,0 +1,19 @@
+I was able to get the shim running on the command line with this call and one 
+other caveat. As part of starting up it will deploy the webapp files so that it 
+can compile jsps. It extract to .../webapp/webapp/<jsp files> where "webapp" 
+really is in there twice and then you get errors that it can't find webapp. So 
+take all contents of the latter and copy them into the top level webapp directory
+and things work.
+
+$ java -cp "./appwrap-1.0-SNAPSHOT.jar\;c:/Documents and Settings/BOYDMR/.m2/repository/org/mortbay/jetty/jetty/6.1.7/jetty-6.1.7.jar\;c:/Documents and Settings/BOYDMR/.m2/repository/org/mortbay/jetty/jetty-util/6.1.7/jetty-util-6.1.7.jar\;c:/Documents and Settings/BOYDMR/.m2/repository/log4j/log4j/1.2.12/log4j-1.2.12.jar\;c:/Documents and Settings/BOYDMR/.m2/repository/org/mortbay/jetty/servlet-api-2.5/6.1.7/servlet-api-2.5-6.1.7.jar\;c:/Documents and Settings/BOYDMR/.m2/repository/org/mortbay/jetty/jsp-2.1/6.1.7/jsp-2.1-6.1.7.jar\;c:/Documents and Settings/BOYDMR/.m2/repository/org/mortbay/jetty/jsp-api-2.1/6.1.7/jsp-api-2.1-6.1.7.jar\;c:/Documents and Settings/BOYDMR/.m2/repository/ant/ant/1.6.5/ant-1.6.5.jar\;d:/ProgramFiles/Java/jdk1.5.0_11/lib/tools.jar" org.lds.sso.appwrap.Service ../saws_login_sample.xml
+
+admin-rest port: 1776
+http proxy port: 9999
+2009-11-13 12:40:59.537::INFO:  Logging to STDERR via org.mortbay.log.StdErrLog
+2009-11-13 12:40:59.584::INFO:  jetty-6.1.7
+2009-11-13 12:40:59.787::INFO:  Extract jar:file:/D:/workspace/app-wrap-shim/target/appwrap-1.0-SNAPSHOT.jar!/webapp to C:\DOCUME~1\BOYDMR\LOCALS~1\Temp\Jetty_0_0_0_0_1776_webapp__admin__-us
+xbqe\webapp
+2009-11-13 12:40:59.177::INFO:  Started SocketConnector@0.0.0.0:1776
+Started r-proxy on port 9999
+2009-11-13 12:41:11.02:org.apache.jasper.servlet.JspServlet:WARN:  PWC6117: File "C:\Documents and Settings\BOYDMR\Local Settings\Temp\Jetty_0_0_0_0_1776_webapp__admin__-usxbqe\webapp\select
+User.jsp" not found
