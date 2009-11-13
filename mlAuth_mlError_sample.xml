@@ -42,5 +42,10 @@
             <sso-header name="policy-email" value="me@someplace.com"/>
             <sso-header name="policy-preferred-name" value="Samson the great"/>
         </user>
+        <user name="ngib" pwd="pwdb">
+            <sso-header name="policy-birthdate" value="2002-02-20"/>
+            <sso-header name="policy-email" value="me@nowhere.com"/>
+            <sso-header name="policy-preferred-name" value="howdy doody"/>
+        </user>
     </users>
 </config>
