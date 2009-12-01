@@ -30,9 +30,12 @@
             <cctx-mapping cctx="/admin*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin*"/>
             <unenforced cpath="/admin/*"/>
             <unenforced cpath="/admin/*?*"/>
-            <cctx-mapping cctx="/ui/set-*" thost="127.0.0.1" tport="{{console-port}}" tpath="/ui/set-*"/>
+            
+            <cctx-mapping cctx="/ui/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/ui/*"/>
             <unenforced cpath="/ui/set-*"/>
             <unenforced cpath="/ui/set-*?*"/>
+            <unenforced cpath="/ui/terminate-*"/>
+            <unenforced cpath="/ui/terminate-*?*"/>
         </by-site>
     </sso-traffic>
     <!-- 
