@@ -37,9 +37,11 @@
 <td valign="top">
 <div style="font-style: italic; color: green; padding: 3px 3px 3px 20px">Permitted URIs</div>
 <table>
+<%-- 
 <c:forEach items="${requestScope.currentUser.permissions}" var="perm">
 <tr><td><span style="padding: 0 5px 0 20px;">${perm.value}</span></td><td>${perm.name}</td></tr>
 </c:forEach>
+--%>
 </table>
 </td></tr></table>
 <div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Select a session to hijack and return to that user's session</div>

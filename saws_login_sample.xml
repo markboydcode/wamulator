@@ -23,13 +23,16 @@
     
     <sso-traffic>
         <by-site host="labs-local.lds.org" port="80">
-            <cctx-mapping cctx="/auth*" thost="127.0.0.1" tport="8411" tpath="/auth*"/>
+            <cctx-mapping cctx="/auth*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
             <allow action="GET,POST" cpath="/auth/_app/*"/>
+            <allow action="GET,POST" cpath="/auth/_app/*?*"/>
             
             <cctx-mapping cctx="/admin*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin*"/>
             <unenforced cpath="/admin/*"/>
+            <unenforced cpath="/admin/*?*"/>
             <cctx-mapping cctx="/ui/set-*" thost="127.0.0.1" tport="{{console-port}}" tpath="/ui/set-*"/>
             <unenforced cpath="/ui/set-*"/>
+            <unenforced cpath="/ui/set-*?*"/>
         </by-site>
     </sso-traffic>
     <!-- 

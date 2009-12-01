@@ -131,6 +131,7 @@ public class RequestHandler implements Runnable {
 				// appropriate scheme in here. hard code for now.
 				reqPkg.scheme = "http";
 			}
+			determineTrafficType(reqPkg);
 			if (reqPkg.redirectLoopDetected || responseThreasholdExceeded(reqPkg)) {
 				/*
 				 * TODO Need to add to this. If the response from a server is
@@ -147,7 +148,6 @@ public class RequestHandler implements Runnable {
 				return;
 			}
 			reqPkg.headerBfr.append(HttpPackage.SHIM_HANDLED_HDR).append(" handled").append(RequestHandler.CRLF);
-			determineTrafficType(reqPkg);
 			// for non-ignored traffic perform the enforcements and translations
 			RequestLine appReqLn = reqPkg.requestLine; // default to request
 														// line as-is

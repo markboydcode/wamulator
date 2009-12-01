@@ -20,15 +20,13 @@ import org.mortbay.jetty.handler.HandlerList;
  */
 public class ConfigInjectingHandlerList extends HandlerList {
 
-	private Config cfg = null;
-
-	public ConfigInjectingHandlerList(Config cfg) {
-		this.cfg = cfg;
+	public ConfigInjectingHandlerList() {
 	}
 
 	@Override
 	public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException, ServletException {
+		Config cfg = Config.getInstance();
 		String cookieHdr = request.getHeader("Cookie");
 		if (cookieHdr != null) {
 			String token = cfg.getTokenFromCookie(cookieHdr);

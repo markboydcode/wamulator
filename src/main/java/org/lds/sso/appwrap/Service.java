@@ -57,7 +57,7 @@ public class Service {
 		// for localhost:port/admin/index.html and whatever else is in the webapp directory
 		final URL warUrl = Service.class.getClassLoader().getResource(WEBAPPDIR);
 		final String warUrlString = warUrl.toExternalForm();
-		ConfigInjectingHandlerList cfgInjector = new ConfigInjectingHandlerList(cfg);
+		ConfigInjectingHandlerList cfgInjector = new ConfigInjectingHandlerList();
 		cfgInjector.addHandler(new WebAppContext(warUrlString, CONTEXTPATH));
 
 		HandlerCollection handlers = new HandlerCollection();
