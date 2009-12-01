@@ -1,7 +1,13 @@
 package org.lds.sso.appwrap;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.URL;
 
 import org.lds.sso.appwrap.proxy.ProxyListener;
@@ -15,63 +21,37 @@ import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
 import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
 import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
-import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.HandlerCollection;
 import org.mortbay.jetty.webapp.WebAppContext;
 
+/**
+ * The entry point for starting up the shim. Supports both application execution
+ * via a main method and programmatic execution via constructor
+ * {@link #Service(String)} and the {@link #start()} and {@link #stop()}
+ * methods.
+ * 
+ * @author Mark Boyd
+ * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
+ * 
+ */
 public class Service {
 
-	public static void main(String[] args) throws Exception {
-		if (args.length < 1) {
-			throw new IllegalStateException("An xml configuration file path must be specified when starting.");
-		}
-		File file = new File(args[0]);
-		if (! file.exists()) {
-			throw new IllegalArgumentException("File '" + args[0] + "' not found.");
-		}
-		if (file.isDirectory()) {
-			throw new IllegalArgumentException("File '" + file.getAbsolutePath() + "' is a directory.");
-		}
-		FileReader reader = new FileReader(file);
-		XmlConfigLoader2.load(reader, "from file " + file.getAbsolutePath());
+	//protected ProxyListener proxy = null;
+	protected Thread proxyRunner = null;
+	protected Server server = null;
+	
+	public Service(String cfgPath) throws Exception {
+		Reader cfgrd = getCfgReader(cfgPath);
+		XmlConfigLoader2.load(cfgrd, "from " + cfgPath);
 		
-		/*
-		cfg.setProxyPort(82);
-		cfg.setConsolePort(81);
-		cfg.setCookieName("lds-policy");
-		cfg.addGlobalHeader("policy-service-url", "http://labs-local.lds.org:81/rest/");
-		//cfg.setLoginPage("http://labs-local.lds.org:81/admin/selectUser.jsp");
-		cfg.setSignInPage("http://labs-local.lds.org:82/auth/ui/sign-in?a=b");
-		
-		UserManager mgr = cfg.getUserManager();
-		mgr.setUser("ngia", "pwda");
-		mgr.addHeaderForLastUserAdded("policy-birthdate", "1960-09-25");
-		//mgr.addPermissionForLastUserAdded("GET", "/auth/_app/debug.xqy");
-		
-		mgr.setUser("ngib", "pwdb");
-		mgr.addHeaderForLastUserAdded("policy-preferred-name", "Billy-bob");
-		mgr.addHeaderForLastUserAdded("policy-birthdate", "1980-06-18");
-
-		mgr.setUser("ngic", "pwdc");
-		
-		TrafficManager appMgr = cfg.getTrafficManager();
-		appMgr.addUnenforcedUrl("http://labs-local.lds.org:80/auth/ui/*");
-		
-		// add global permissions for auth'd users
-		appMgr.addPermittedUrl("GET", "/auth/_app/debug.xqy*");
-		
-		appMgr.setSite("labs-local.lds.org", "/auth", "/auth", 8411);
-		*/
 		Config cfg = Config.getInstance();
-		System.out.println("admin-rest port: " + cfg.getConsolePort());
-		System.out.println("http proxy port: " + cfg.getProxyPort());
 
 		// assumes that this directory contains .html and .jsp files
 		// This is just a directory within your source tree, and can be exported as part of your normal .jar
 		final String WEBAPPDIR = "webapp";
 
-		final Server server = new Server(cfg.getConsolePort());
+		server = new Server(cfg.getConsolePort());
 		final String CONTEXTPATH = "/admin";
 		
 		// for localhost:port/admin/index.html and whatever else is in the webapp directory
@@ -82,30 +62,117 @@ public class Service {
 
 		HandlerCollection handlers = new HandlerCollection();
 		handlers.addHandler(cfgInjector);
-		handlers.addHandler(new GetCookieName("/rest/identity/getCookieNameForToken", cfg));
-		handlers.addHandler(new AuthNHandler("/rest/identity/authenticate", cfg));
-		handlers.addHandler(new AuthZHandler("/rest/identity/authorize", cfg));
-		handlers.addHandler(new IsTokenValidHandler("/rest/identity/isTokenValid", cfg));
-		handlers.addHandler(new LogoutHandler("/rest/identity/logout", cfg));
-		handlers.addHandler(new SelectUserHandler("/ui/set-user", cfg));
-		handlers.addHandler(new SelectSessionHandler("/ui/set-session", cfg));
-		handlers.addHandler(new Add404UriToCfgHandler("/ui/add-uri-to-", cfg));
-		handlers.addHandler(new TerminateSessionHandler("/ui/terminate-session", cfg));
-		handlers.addHandler(new TrafficRecordingHandler("/ui/traffic/recording/", cfg));
+		handlers.addHandler(new GetCookieName("/rest/identity/getCookieNameForToken"));
+		handlers.addHandler(new AuthNHandler("/rest/identity/authenticate"));
+		handlers.addHandler(new AuthZHandler("/rest/identity/authorize"));
+		handlers.addHandler(new IsTokenValidHandler("/rest/identity/isTokenValid"));
+		handlers.addHandler(new LogoutHandler("/rest/identity/logout"));
+		handlers.addHandler(new SelectUserHandler("/ui/set-user"));
+		handlers.addHandler(new SelectSessionHandler("/ui/set-session"));
+		handlers.addHandler(new Add404UriToCfgHandler("/ui/add-uri-to-"));
+		handlers.addHandler(new TerminateSessionHandler("/ui/terminate-session"));
+		handlers.addHandler(new TrafficRecordingHandler("/ui/traffic/recording/"));
 		server.setHandler(handlers);
+	}
 
-		// for localhost:port/servlets/cust, etc.
-		//final Context context = new Context(server, "/servlets", Context.SESSIONS);
-		//context.addServlet(new ServletHolder(new CustomerServlet(whatever)), "/cust");
-		//context.addServlet(new ServletHolder(new UserServlet(whatever)), "/user");
+	/**
+	 * Converts a string path to the configuration file to a Reader with support
+	 * for file, classpath, and String based resources. To indicate a classpath
+	 * based resource prefix the path with "classpath:". To indicate a String
+	 * based resource prefix the xml configuration String with "string:".
+	 * 
+	 * Examples:
+	 * 
+	 * "/some/current/directory/relative/path.txt"
+	 * "classpath:/file/relative/to/classpath.txt"
+	 * "string:<config console-port='88' proxy-port='45'>..."
+	 * 
+	 * @param path
+	 * @return
+	 */
+	protected Reader getCfgReader(String path) {
+    	Reader reader = null;
+    	
+    	if (path.toLowerCase().startsWith("string:")) {
+    		path = path.substring("string:".length());
+    		reader = new StringReader(path);
+    	}    	
+    	else if (path.toLowerCase().startsWith("classpath:")) {
+    		path = path.substring("classpath:".length());
+    		ClassLoader cldr = this.getClass().getClassLoader();
+    		InputStream source = cldr.getResourceAsStream(path);
+    		
+    		if (source == null) {
+        		throw new IllegalArgumentException("Unable to find resource '"
+        			+ path + "' on classpath.");
+    		}
+    		reader = new InputStreamReader(source);
+    	}
+    	else {
+    		// assume file path 
+    		File file = new File(path);
+    		if (! file.exists()) {
+        		throw new IllegalArgumentException("Unable to find file '"
+            			+ file.getAbsolutePath() + "'.");
+    		}
+    		if (file.isDirectory()) {
+    			throw new IllegalArgumentException("File '" + file.getAbsolutePath() + "' is a directory.");
+    		}
+    		try {
+				reader = new FileReader(file);
+			}
+			catch (FileNotFoundException e) { // should never happen
+        		throw new IllegalArgumentException("Unable to load file '"
+            			+ file.getAbsolutePath() + "'.");
+			}
+    	}
+    	return reader;
+	}
+	
+	/**
+	 * Starts the embedded jetty server and http proxy.
+	 * 
+	 * @throws Exception
+	 */
+	public void start() throws Exception {
+		Config cfg = Config.getInstance();
+		System.out.println("admin-rest port: " + cfg.getConsolePort());
+		System.out.println("http proxy port: " + cfg.getProxyPort());
 
 		server.start();	
 		
 		ProxyListener proxy = new ProxyListener(cfg);
-		Thread proxyRunner = new Thread(proxy);
+		proxyRunner = new Thread(proxy);
 		proxyRunner.setDaemon(true);
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
+	}
+	
+	/**
+	 * Stops the embedded jetty web server and http proxy.
+	 * 
+	 * @throws Exception
+	 */
+	public void stop() throws Exception {
+		if (server.isStarted()) {
+			server.stop();
+		}
+		proxyRunner.interrupt();
+	}
+
+	/**
+	 * Java application entry point.
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception {
+		if (args.length < 1) {
+			throw new IllegalStateException("An xml configuration file path must be specified when starting.");
+		}
+		
+		Service svc = new Service(args[0]);
+		svc.start();
 		
 		while (true) {
 			Thread.sleep(10000);

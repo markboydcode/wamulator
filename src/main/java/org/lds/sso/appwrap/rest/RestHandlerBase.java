@@ -25,14 +25,12 @@ import org.omg.CORBA.portable.ResponseHandler;
 public abstract class RestHandlerBase extends AbstractHandler {
 
 	protected String pathPrefix = null;
-	protected Config cfg = null;
 	
-	public RestHandlerBase(String pathPrefix, Config cfg) {
+	public RestHandlerBase(String pathPrefix) {
         if (pathPrefix == null || pathPrefix.equals("") || !pathPrefix.startsWith("/")) {
             throw new IllegalArgumentException("The path prefix can not be null or an empty string and must start with '/'.");
         }
 		this.pathPrefix = pathPrefix.toLowerCase();
-		this.cfg = cfg;
 	}
 	
 	/**

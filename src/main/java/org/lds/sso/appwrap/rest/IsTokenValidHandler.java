@@ -20,13 +20,19 @@ import org.lds.sso.appwrap.Config;
 public class IsTokenValidHandler extends RestHandlerBase {
 	private static final Logger cLog = Logger.getLogger(IsTokenValidHandler.class);
 
-	public IsTokenValidHandler(String pathPrefix, Config cfg) {
-		super(pathPrefix, cfg);
+	public IsTokenValidHandler(String pathPrefix) {
+		super(pathPrefix);
 	}
 
 	@Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException {
+		/**
+		 * Get the current config instance each time which allows for reconfig
+		 * of config object without restarting the service.
+		 */
+		Config cfg = Config.getInstance();
+
 		String rawT = request.getParameter("token");
 		String token = URLDecoder.decode(rawT, "utf-8");
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=" + cfg.getSessionManager().isValidToken(token));

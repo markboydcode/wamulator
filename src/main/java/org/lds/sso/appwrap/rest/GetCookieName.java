@@ -18,13 +18,19 @@ import org.lds.sso.appwrap.Config;
 public class GetCookieName extends RestHandlerBase {
 	private static final Logger cLog = Logger.getLogger(GetCookieName.class);
 
-	public GetCookieName(String pathPrefix, Config cfg) {
-		super(pathPrefix, cfg);
+	public GetCookieName(String pathPrefix) {
+		super(pathPrefix);
 	}
 
 	@Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException {
+		/**
+		 * Get the current config instance each time which allows for reconfig
+		 * of config object without restarting the service.
+		 */
+		Config cfg = Config.getInstance();
+
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "string=" + cfg.getCookieName());
 	}
 }

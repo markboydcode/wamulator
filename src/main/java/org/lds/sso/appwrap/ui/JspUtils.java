@@ -9,6 +9,8 @@ import java.util.Set;
 
 import org.lds.sso.appwrap.Config;
 
+import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
+
 /**
  * Object used in jsp:usebean for stuff that I can't do directly in the jsp.
  * Specify application scope since methods are thread safe and a single 
@@ -84,7 +86,12 @@ public class JspUtils {
 			isUnenforced = new BaseMapImpl<Boolean>() {
 				@Override
 				public Boolean get(Object key) {
-					return Boolean.valueOf(Config.getInstance().getTrafficManager().isUnenforced((String) key));
+					try {
+						return Boolean.valueOf(Config.getInstance().getTrafficManager().isUnenforced((String) key));
+					}
+					catch (MalformedURIException e) {
+						throw new RuntimeException("problem converting " + key + " to URI instance.", e);
+					}
 				}
 			};
 		}

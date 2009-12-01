@@ -21,13 +21,19 @@ import org.mortbay.jetty.Request;
  */
 public class SelectUserHandler extends RestHandlerBase {
 
-	public SelectUserHandler(String pathPrefix, Config cfg) {
-		super(pathPrefix, cfg);
+	public SelectUserHandler(String pathPrefix) {
+		super(pathPrefix);
 	}
 
 	@Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException {
+		/**
+		 * Get the current config instance each time which allows for reconfig
+		 * of config object without restarting the service.
+		 */
+		Config cfg = Config.getInstance();
+
 		String uri = request.getRequestURI();
 		String usr = uri.substring(uri.lastIndexOf('/')+1);
 		String token = cfg.getSessionManager().generateSessionToken(usr);

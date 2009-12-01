@@ -1,9 +1,12 @@
 package org.lds.sso.appwrap;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,16 +14,17 @@ import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
-import org.xml.sax.Attributes;
-
 public class XmlConfigLoader2 {
 
+	public static final String MACRO_PREFIX = "{{";
+	public static final String MACRO_SUFFIX = "}}";
 	
 	public static void load(String xml) throws Exception {
 		load(new StringReader(xml), "from String '" + xml + "'");
@@ -122,20 +126,74 @@ public class XmlConfigLoader2 {
 	public static class CfgContentHandler implements ContentHandler {
 		
 		Map<String,String> aliases = new HashMap<String,String>();
-		Config cfg = new Config();
+		Map<String,String> conditions = new HashMap<String,String>();
+		String currentConditionId = null; 
+		StringBuffer characters = null;
+		Config cfg = null;
 		String site = null;
 		protected Path path = new Path();
 
 		public CfgContentHandler() {
-			
+			cfg = Config.getInstance();
 		}
 		
+		/**
+		 * Enables processing instructions in the XML having the following two
+		 * forms. The value of the alias can be used in any attribute value by
+		 * including the macro "{{name}}" within the attribute's string of 
+		 * characters or within the value portion of any later occurring alias 
+		 * declarations.
+		 * 
+		 * <pre>
+		 * [1] &lt;?alias name=value?&gt;
+		 * [2] &lt;?alias name=classpath:resource-file-path?&gt;
+		 * </pre>
+		 * 
+		 * The first simply adds a named value pair to the map of alias. The 
+		 * second form adds a named value to the map of alias where the value is
+		 * the character content of the referenced resource. Making such file
+		 * based content available is not accomplished by conceptually embedding
+		 * such content within the XML declaring the alias and hence won't effect
+		 * the xml processing. This allows for alias values to contain XML 
+		 * sensitive characters and hence XML constructs. Such character content
+		 * can also include macro references for earlier defined alias and will 
+		 * be resolved upon loading.
+		 */
 		public void processingInstruction(String target, String data) throws SAXException {
 			if (target.equals("alias")) {
 				int eqIdx = data.indexOf('=');
 				if (eqIdx >= 0) {
 					String name = data.substring(0, eqIdx);
 					String val = data.substring(eqIdx+1);
+					if (val.toLowerCase().startsWith("classpath:")) {
+						String resrc = val.substring("classpath:".length());
+						ClassLoader cldr = this.getClass().getClassLoader();
+						InputStream src = cldr.getResourceAsStream(resrc);
+						
+						if (src == null) {
+							throw new IllegalArgumentException("Classpath alias resource '"
+									+ resrc + "' not found.");
+						}
+						else {
+							ByteArrayOutputStream bfr = new ByteArrayOutputStream();
+							byte[] bytes = new byte[1024];
+							
+							
+							int read;
+							try {
+								while ((read = src.read(bytes)) != -1) {
+									bfr.write(bytes, 0, read);
+								}
+								bfr.flush();
+							}
+							catch (IOException e) {
+								throw new SAXException("Unable to load content for alias '"
+										+ name + "' from classpath resource '" 
+										+ resrc + "'.", e);
+							}
+							val = bfr.toString().trim();
+						}
+					}
 					val = resolveAliases(val);
 					aliases.put(name, val);
 				}
@@ -143,6 +201,8 @@ public class XmlConfigLoader2 {
 		}
 
 		public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
+			characters = new StringBuffer();
+			
 			path.add(name);
 			if (path.matches("/config")) {
 				cfg.setConsolePort(getIntegerAtt("console-port", path, atts));
@@ -161,10 +221,14 @@ public class XmlConfigLoader2 {
 				cfg.addGlobalHeader(hdrNm, hdrVl);
 			}
 			else if (path.matches("/config/sso-traffic/by-site")) {
+				String scheme = atts.getValue("scheme");
+				if (scheme == null || scheme.equals("")) {
+					scheme = "http";
+				}
 				String host = getStringAtt("host", path, atts);
 				int port = getIntegerAtt("port", path, atts);
 				TrafficManager trafficMgr = cfg.getTrafficManager();
-				SiteMatcher m = new SiteMatcher(host, port);
+				SiteMatcher m = new SiteMatcher(scheme, host, port);
 				trafficMgr.addMatcher(m);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
@@ -185,12 +249,10 @@ public class XmlConfigLoader2 {
 				sm.addMapping(cctx, thost, tport, tpath);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/unenforced")) {
-				String cpath = getStringAtt("cpath", path, atts);
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-				sm.getHost();
-				sm.getPort();
-				UnenforcedUri uu = new UnenforcedUri(sm.getHost(), sm.getPort(), cpath);
+				String[] ur = getRelUriAtt("cpath", path, atts);
+				UnenforcedUri uu = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), ur[0], ur[1]);
 				sm.addUnenforcedUri(uu);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/allow")) {
@@ -198,20 +260,22 @@ public class XmlConfigLoader2 {
 				String actionAtt = getStringAtt("action", path, atts);
 				actionAtt = actionAtt.replace(" ", "");
 				String[] actions = actionAtt.split(",");
+				String cond = getCondition(path, atts);
+
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-				AllowedUri au = new AllowedUri(sm.getHost(), sm.getPort(), cpath, actions);
+				// TODO inject condition name into TrafficManager,
+				// TODO have TM parse condition using syntax engine,
+				// TODO inject condition name into AllowedUri 
+				// TODO have AllowedUri get compiled condition in isPermitted
+				// call if condition name is found within it and evaluate 
+				// condition for user.
+				String[] ru = getRelUriAtt("cpath", path, atts);
+				AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm.getPort(), ru[0], ru[1], actions);
 				sm.addAllowedUri(au);
 			}
 			else if (path.matches("/config/sso-traffic/by-resource")) {
-				String url = getStringAtt("url", path, atts);
-				URL u;
-				try {
-					u = new URL(url);
-				}
-				catch (MalformedURLException e) {
-					throw new IllegalArgumentException("MalFormed URL '" + url + "' in " + path);
-				}
+				URI u=getUriAtt("uri", path, atts);
 				String host = u.getHost();
 				int port = u.getPort();
 				if (port == -1) { 
@@ -221,24 +285,19 @@ public class XmlConfigLoader2 {
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				String unenforcedAtt = atts.getValue("unenforced");
 
-				/*
-				 * Needs work. Do we need site matchers that lock to only one
-				 * url versus others that allow all traffic and how does that 
-				 * affect the clarity of the config file syntax?
-				 */
 				if (unenforcedAtt != null) {
-					UnenforcedUri uu = new UnenforcedUri(host, port, u.getPath());
-					sm = new SiteMatcher(host, port, uu);
+					UnenforcedUri uu = new UnenforcedUri(u.getScheme(), host, port, u.getPath(), u.getQuery());
+					sm = new SiteMatcher(u.getScheme(), host, port, uu);
 				}
 				else {
-					String actionAtt = atts.getValue("allowed");
+					String actionAtt = atts.getValue("allow");
 					if (actionAtt == null) {
-						sm = new SiteMatcher(host, port);
+						sm = new SiteMatcher(u.getScheme(), host, port);
 					}
 					else {
 						actionAtt = actionAtt.replace(" ", "");
 						String[] actions = actionAtt.split(",");
-						AllowedUri au = new AllowedUri(host, port, u.getPath(), actions);
+						AllowedUri au = new AllowedUri(u.getScheme(), host, port, u.getPath(), u.getQuery(), actions);
 						sm = new SiteMatcher(host, port, au);
 					}
 				}
@@ -255,36 +314,90 @@ public class XmlConfigLoader2 {
 				String hdrVl = getStringAtt("value", path, atts);
 				cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
 			}
-			else if (path.matches("/config/users/user/allow")) {
-				String actionAtt = getStringAtt("action", path, atts);
-				actionAtt = actionAtt.replace(" ", "");
-				String[] actions = actionAtt.split(",");
-				String url = getStringAtt("url", path, atts);
-				URL u;
-				try {
-					u = new URL(url);
-				}
-				catch (MalformedURLException e) {
-					throw new IllegalArgumentException("MalFormed URL '" + url + "' in " + path);
-				}
-				String host = u.getHost();
-				int port = u.getPort();
-				if (port == -1) { 
-					port = 80; // will have to change to support 443 if ever
-				}
-				AllowedUri au = new AllowedUri(host, port, u.getPath(), actions);
-				UserManager mgr = cfg.getUserManager();
-				mgr.addPermissionForLastUserAdded(au);
-			}
 		}
 
-		private String getStringAtt(String attName, Path pathToElement, Attributes atts) {
-			String val = atts.getValue(attName);
-			if ("".equals(val)) {
-				throw new IllegalArgumentException("Attribute '" + attName + "' must be specified for " + pathToElement);
-			}
-			return resolveAliases(val);
+		/**
+		 * Validates condition attributes are a single macro for a defined 
+		 * alias and returns the alias name.
+		 *  
+		 * @param pathToElement
+		 * @param atts
+		 * @return
+		 */
+	private String getCondition(Path pathToElement, Attributes atts) {
+		String con = atts.getValue("condition");
+		if (con == null || "".equals(con)) {
+			return null;
 		}
+		if (! con.startsWith(MACRO_PREFIX) || ! con.endsWith(MACRO_SUFFIX)) {
+			throw new IllegalArgumentException("Attribute 'condition' for "
+					+ pathToElement 
+					+ " must be a single macro for a defined alias. ex: '{{alias-name}}'.") ;
+		}
+		con = con.substring(MACRO_PREFIX.length(), con.length()-MACRO_SUFFIX.length());
+		if (con.contains(MACRO_PREFIX) || 
+				con.contains(MACRO_SUFFIX) ||
+				this.aliases.get(con) == null) {
+			throw new IllegalArgumentException("Attribute 'condition' for "
+					+ pathToElement 
+					+ " must be a single macro for a defined alias. ex: '{{alias-name}}'.") ;
+		}
+		return con;
+	}
+
+	private URI getUriAtt(String attName, Path pathToElement, Attributes atts) {
+		String val = getStringAtt(attName,pathToElement,atts);
+		val = resolveAliases(val);
+		URI u = null;
+		try {
+			u = new URI(val);
+		}
+		catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Unable to parse '" + attName 
+					+ "' in " + path, e);
+		}
+		return u;
+	}
+
+	/**
+	 * Gets an attribute purported to be a relative path url with optional
+	 * query string parameter and returns a two element array with the path in
+	 * index 0 and query in index 1. Path may be an empty string for a url of
+	 * "?some/path" and query may be a null value for a url of "/some/path?"
+	 * or "/some/path".
+	 *  
+	 * @param attName
+	 * @param pathToElement
+	 * @param atts
+	 * @return
+	 */
+	private String[] getRelUriAtt(String attName, Path pathToElement, Attributes atts) {
+		String val = getStringAtt(attName,pathToElement,atts);
+		val = resolveAliases(val);
+		String[] ur = new String[2];
+		// ur[0] will hold path portion or null if not found
+		// ur[1] will hold query portion or null if not found
+		String[] vals = val.split("\\?");
+		/* split returns the following:
+		 * 1 "hello?there"  --> [hello, there]  path=hello, query=there
+		 * 2 "hello-there"  --> [hello-there]   path=hello-there, query=null
+		 * 3 "?hello-there" --> [, hello-there] path="", query=hello-there
+		 * 4 "hello-there?" --> [hello-there]   path=hello-there, query=null
+		 */
+		ur[0] = vals[0];
+		if (vals.length != 1) { // is 1 and 3, null otherwise
+			ur[1]=vals[1];
+		}
+		return ur;
+	}
+
+	private String getStringAtt(String attName, Path pathToElement, Attributes atts) {
+		String val = atts.getValue(attName);
+		if ("".equals(val)) {
+			throw new IllegalArgumentException("Attribute '" + attName + "' must be specified for " + pathToElement);
+		}
+		return resolveAliases(val);
+	}
 
 		public void endElement(String uri, String localName, String name) throws SAXException {
 			path.remove(name);
@@ -355,6 +468,7 @@ public class XmlConfigLoader2 {
 		}
 
 		public void characters(char[] ch, int start, int length) throws SAXException {
+			characters.append(ch, start, length);
 		}
 
 		public void endDocument() throws SAXException {

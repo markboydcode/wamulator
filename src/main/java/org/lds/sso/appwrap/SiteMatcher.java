@@ -3,7 +3,7 @@ package org.lds.sso.appwrap;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class SiteMatcher implements UrlResourceMatcher {
+public class SiteMatcher {
 
 	private String host;
 	private int port;
@@ -12,6 +12,7 @@ public class SiteMatcher implements UrlResourceMatcher {
 	private Set<AppEndPoint> mappedEndPoints = new TreeSet<AppEndPoint>();
 
 	protected Type type = Type.SITE;
+	private String scheme;
 
 	public enum Type {
 		SITE, SINGLE_UNENFORCED, SINGLE_RESTRICTED;
@@ -23,7 +24,8 @@ public class SiteMatcher implements UrlResourceMatcher {
 	 * @param host
 	 * @param port
 	 */
-	public SiteMatcher(String host, int port) {
+	public SiteMatcher(String scheme, String host, int port) {
+		this.scheme = scheme;
 		this.host = host;
 		this.port = port;
 		this.type = Type.SITE;
@@ -36,7 +38,7 @@ public class SiteMatcher implements UrlResourceMatcher {
 	 * @param port
 	 * @param uu
 	 */
-	public SiteMatcher(String host, int port, UnenforcedUri uu) {
+	public SiteMatcher(String scheme, String host, int port, UnenforcedUri uu) {
 		this.host = host;
 		this.port = port;
 		if (uu instanceof AllowedUri) {
@@ -64,10 +66,12 @@ public class SiteMatcher implements UrlResourceMatcher {
 		this.type = Type.SINGLE_RESTRICTED;
 	}
 
-	public boolean isAllowed(String action, String relUrl) {
-		for(AllowedUri au : allowedUrls) {
-			if (au.matches(host, port, relUrl) && au.allowed(action)) {
-				return true;
+	public boolean isAllowed(String scheme, String host, int port, String action, String path, String query) {
+		if (this.port == port && this.host.equals(host)) {
+			for(AllowedUri au : allowedUrls) {
+				if (au.matches(scheme, host, port, path, query) && au.allowed(action)) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -91,15 +95,15 @@ public class SiteMatcher implements UrlResourceMatcher {
 	/**
 	 * Returns true if this site matches on the host, port, and uri.
 	 */
-	public boolean matches(String host, int port, String relUrl) {
+	public boolean matches(String scheme, String host, int port, String path, String query) {
 		switch(type) {
 		case SINGLE_RESTRICTED:
-			if (allowedUrls.iterator().next().matches(host, port, relUrl)) {
+			if (allowedUrls.iterator().next().matches(scheme, host, port, path, query)) {
 				return true;
 			}
 			return false;
 		case SINGLE_UNENFORCED:
-			if (unenforcedUrls.iterator().next().matches(host, port, relUrl)) {
+			if (unenforcedUrls.iterator().next().matches(scheme, host, port, path, query)) {
 				return true;
 			}
 			return false;
@@ -141,13 +145,14 @@ public class SiteMatcher implements UrlResourceMatcher {
 	 * Determines if the passed-in url is an unenforeceUrl either starting with
 	 * a configured url ending in an asterisk minus the asterisk or matching
 	 * exactly a configured url not ending with an asterisk.
+	 * @param query 
 	 * 
 	 * @param uri
 	 * @return
 	 */
-	public boolean isUnenforced(String uri) {
+	public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
 		for (UnenforcedUri uu : unenforcedUrls) {
-			if (uu.matches(host, port, uri)) {
+			if (uu.matches(scheme, host, port, path, query)) {
 				return true;
 			}
 		}
@@ -179,5 +184,9 @@ public class SiteMatcher implements UrlResourceMatcher {
 
 	public int getPort() {
 		return port;
+	}
+
+	public String getScheme() {
+		return scheme;
 	}
 }

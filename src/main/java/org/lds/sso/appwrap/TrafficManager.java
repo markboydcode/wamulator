@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.sun.org.apache.xerces.internal.util.URI;
+import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
+
 /**
  * Manages in-memory registered ties between the canonical URL space and the
  * application URL space for applications running on a port on the local host
@@ -24,8 +27,8 @@ import java.util.TreeSet;
  *
  */
 public class TrafficManager {
-	private List<UrlResourceMatcher> matchers = new ArrayList<UrlResourceMatcher>();
-	private UrlResourceMatcher lastMatcherAdded = null;
+	private List<SiteMatcher> matchers = new ArrayList<SiteMatcher>();
+	private SiteMatcher lastMatcherAdded = null;
 	
 	/**
 	 * Determines if the passed-in url is an unenforeceUrl either starting with
@@ -33,11 +36,13 @@ public class TrafficManager {
 	 * exactly a configured url not ending with an asterisk.
 	 * 
 	 * @param uri
+	 * @param string 
+	 * @param i 
 	 * @return
 	 */
-	public boolean isUnenforced(String uri) {
-		for(UrlResourceMatcher m : matchers) {
-			if (m.isUnenforced(uri)) {
+	public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
+		for(SiteMatcher m : matchers) {
+			if (m.isUnenforced(scheme, host, port, path, query)) {
 				return true;
 			}
 		}
@@ -52,9 +57,9 @@ public class TrafficManager {
 	 * @param uri
 	 * @return
 	 */
-	public boolean isPermittedForAuthdUsers(String action, String uri) {
-		for(UrlResourceMatcher m : matchers) {
-			if (m.isAllowed(action, uri)) {
+	public boolean isPermitted(String scheme, String host, int port, String action, String path, String query) {
+		for(SiteMatcher m : matchers) {
+			if (m.isAllowed(scheme, host, port, action, path, query)) {
 				return true;
 			}
 		}
@@ -66,16 +71,36 @@ public class TrafficManager {
 		this.lastMatcherAdded  = m;
 	}
 	
-	public UrlResourceMatcher getLastMatcherAdded() {
+	public SiteMatcher getLastMatcherAdded() {
 		return lastMatcherAdded;
 	}
 
-	public SiteMatcher getSite(String host, int port, String uri) {
-		for(UrlResourceMatcher rm : matchers) {
-			if (rm.matches(host, port, uri)) {
+	public SiteMatcher getSite(String scheme, String host, int port, String path, String query) {
+		for(SiteMatcher rm : matchers) {
+			if (rm.matches(scheme, host, port, path, query)) {
 				return (SiteMatcher) rm; // need to fix this hardcoded cast
 			}
 		}
 		return null;
+	}
+
+	public boolean isUnenforced(String fullUri) throws MalformedURIException {
+		URI u = new URI(fullUri);
+		int port = u.getPort() == -1 ? 80 : u.getPort();
+		String query = u.getQueryString();
+		if ("".equals(query)) {
+			query = null;
+		}
+		return this.isUnenforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
+	}
+
+	public boolean isPermitted(String action, String fullUri) throws MalformedURIException {
+		URI u = new URI(fullUri);
+		int port = u.getPort() == -1 ? 80 : u.getPort();
+		String query = u.getQueryString();
+		if ("".equals(query)) {
+			query = null;
+		}
+		return this.isPermitted(u.getScheme(), u.getHost(), port, action, u.getPath(), query);
 	}
 }

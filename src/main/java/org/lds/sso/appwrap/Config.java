@@ -68,19 +68,36 @@ public class Config {
 
 	private long minReqOccRepeatMillis = 200;
 
+	private int maxRepeatReqCount = 4;
+
+	protected Thread sweeper;
+
+	private long repeatRecordSleepPeriod = 30000;
+	
+	private static final Map<AllowedUri, RepeatRecord> requestOccurrence = new HashMap<AllowedUri, RepeatRecord>();
+
+
 	public static final String SERVER_NAME = "App Wrap Reverse Proxy";
 
 	public static final String CANONICAL_CTX_QPARAM_NAME = "cctx";
 
 	/**
-	 * Discards existing Config instance and creates a new one to be accessible
-	 * from {@link Config#instance}.
+	 * DISCARDS existing Config instance available from  {@link Config#instance}
+	 * and creates a new clean unititialized one.
 	 */
 	public Config() {
 		loadSessionManager();
+		startRepeatRequestRecordSweeper();
 		instance = this;
 	}
-
+	/**
+	 * Returns the current instance of {@link Config} creating a new one if one
+	 * has not yet been instantiated. Each time the {@link Config}'s constructor
+	 * is called that new instance will be the one returned from this method and
+	 * the old one is discarded.
+	 * 
+	 * @return
+	 */
 	public static Config getInstance() {
 		if (instance == null) {
 			new Config();
@@ -260,13 +277,115 @@ public class Config {
 	}
 
 	/**
-	 * Set the minimum milliseconds that must elapse before an idnentical request
-	 * will be allowed through the proxy to help identify and stop infinite 
-	 * redirect loops.
+	 * Set the minimum milliseconds that must elapse before a request with an
+	 * identical path can be received without percieving the two requests as 
+	 * being part of an infinite repeat loop.
 	 * 
 	 * @param millis
 	 */
 	public void setMinReqOccRepeatMillis(long millis) {
 		minReqOccRepeatMillis = millis;
+	}
+
+	/**
+	 * Sets the maximum number of requests having the same path with each being
+	 * received within {@ling #minReqOccRepeatMillis} of the last before it is
+	 * deemed an infinite request loop and and error message page is served.
+	 * 
+	 * @return
+	 */
+	public void setMaxRepeatCount(int max) {
+		maxRepeatReqCount = max;
+	}
+
+	public int getMaxRepeatCount() {
+		return maxRepeatReqCount;
+	}
+	
+	
+
+	/**
+	 * Sweeper for removing repeat requests from the request occurrence cache.
+	 * 
+	 * @author Mark Boyd
+	 * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
+	 *
+	 */
+	public class RepeatRecordsSweeper implements Runnable {
+
+		public void run() {
+			boolean interrupted = false;
+			while (! interrupted) {
+				Map<RepeatRecord, AllowedUri> records = new HashMap<RepeatRecord, AllowedUri>(requestOccurrence.size());
+				for( Map.Entry<AllowedUri, RepeatRecord> ent : requestOccurrence.entrySet() ) {
+					records.put(ent.getValue(), ent.getKey());
+				}
+				for( Map.Entry<RepeatRecord, AllowedUri> ent : records.entrySet() ) {
+					RepeatRecord record = ent.getKey();
+					long elapsedSinceLast = System.currentTimeMillis() - record.millisOfLastCall;
+					
+					if (elapsedSinceLast > minReqOccRepeatMillis) {
+						requestOccurrence.remove(ent.getValue());
+					}
+				}
+				try {
+					Thread.sleep(repeatRecordSleepPeriod);
+				}
+				catch (InterruptedException e) {
+					interrupted = true;
+				}
+			}
+			sweeper = null;
+		}
+	}
+
+	/**
+	 * Object for keeping track of how many repeats of a specific url have been 
+	 * seen in rapid repeat to detect infinite redirect loops.
+	 * 
+	 * @author Mark Boyd
+	 * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
+	 *
+	 */
+	public static class RepeatRecord {
+		public Long millisOfLastCall = -1L;
+		public int repeatCount = 0;
+	}
+
+	public Object getRequestOccurrenceCache() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public RepeatRecord getRepeatRequestRecord(AllowedUri uri) {
+		return requestOccurrence.get(uri);
+	}
+
+	public void addRepeatRequestRecord(AllowedUri uri, RepeatRecord record) {
+		requestOccurrence.put(uri, record);
+	}
+
+	/**
+	 * Starts the repeat request record sweeper allowing overriding if needed.
+	 */
+	protected void startRepeatRequestRecordSweeper() {
+		sweeper = new Thread(new RepeatRecordsSweeper());
+		sweeper.setDaemon(true);
+		sweeper.setName("RepeatRequestSweeper");
+		sweeper.start();
+	}
+	
+	public void stopRepeatRequestRecordSweeper() {
+		if (sweeper != null) {
+			sweeper.interrupt();
+		}
+	}
+
+	public long getRepeatRecordSleepPeriod() {
+		return repeatRecordSleepPeriod;
+	}
+
+	public void setRepeatRecordSleepPeriod(long repeatRecordSleepPeriod) {
+		this.repeatRecordSleepPeriod = repeatRecordSleepPeriod;
 	}
 }

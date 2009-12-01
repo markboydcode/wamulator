@@ -17,13 +17,19 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  */
 public class TrafficRecordingHandler extends RestHandlerBase {
 
-	public TrafficRecordingHandler(String pathPrefix, Config cfg) {
-		super(pathPrefix, cfg);
+	public TrafficRecordingHandler(String pathPrefix) {
+		super(pathPrefix);
 	}
 
 	@Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException {
+		/**
+		 * Get the current config instance each time which allows for reconfig
+		 * of config object without restarting the service.
+		 */
+		Config cfg = Config.getInstance();
+
 		// see if recording change is requested
 		String cmd = target.substring(target.lastIndexOf('/')+1);
 

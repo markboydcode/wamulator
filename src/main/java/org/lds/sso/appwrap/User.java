@@ -13,7 +13,6 @@ import org.lds.sso.appwrap.proxy.RequestHandler;
 
 public class User {
 
-	protected Set<AllowedUri> allowedUrls = new TreeSet<AllowedUri>();
 	protected String password = null;
 	protected String username = null;
 	private Map<String, String> headers = new TreeMap<String, String>();
@@ -29,32 +28,6 @@ public class User {
 	
 	public void setPassword(String password) {
 		this.password = password;
-	}
-	public void addAllowedUri(AllowedUri uri) {
-		this.allowedUrls.add(uri);
-	}
-	
-	public void removePermissions() {
-		allowedUrls.clear();
-	}
-
-	/**
-	 * Determines if a user is allowed the action on the resource indicated by
-	 * host, port, and path.
-	 * 
-	 * @param host
-	 * @param port
-	 * @param action
-	 * @param uri
-	 * @return
-	 */
-	public boolean isPermitted(String host, int port, String action, String uri) {
-		for(AllowedUri au : allowedUrls) {
-			if (au.matches(host, port, uri) && au.allowed(action)) {
-				return true;
-			}
-		}
-		return false;
 	}
 	public String getUsername() {
 		return username;
@@ -86,19 +59,5 @@ public class User {
 			
 		}
 		return hdr;
-	}
-	
-	public Set<NvPair> getPermissions() {
-		Set<NvPair> prms = null;
-		
-		if (allowedUrls.size() > 0) {
-			prms = new TreeSet<NvPair>();
-			for(AllowedUri au : allowedUrls) {
-				for (String action : au.actions) {
-					prms.add(new NvPair(au.uriMatch, action));
-				}
-			}
-		}
-		return prms;
 	}
 }

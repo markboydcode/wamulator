@@ -33,11 +33,13 @@
 </td>
 <td valign="top">
 <div style="font-style: italic; color: green; padding: 3px 3px 3px 20px">Headers Injected</div>
+<!-- change to dynamically inject here via json ajax with jquery -->
 <table>
 <c:forEach items="${requestScope.currentUser.headers}" var="hdr">
 <tr><td><span style="padding: 0 5px 0 20px;">${hdr.name}:</span></td><td>${hdr.value}</td></tr>
 </c:forEach>
 </table>
+<!-- end of proposed change to dynamically inject here via json ajax -->
 </td>
 <td valign="top">
 <div style="font-style: italic; color: green; padding: 3px 3px 3px 20px">Permitted URIs</div>

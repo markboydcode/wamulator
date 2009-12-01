@@ -76,56 +76,6 @@ public class UserManager {
 	public int getNumberOfUsers() {
 		return users.size();
 	}
-	/**
-	 * Adds an allowed action on a uri for a user. These determine the results
-	 * of calling isPermitted with the same user, action, and uri. Wildcards
-	 * are not supported at present. The uri must be an exact match including
-	 * case.
-	 * 
-	 * @param user
-	 * @param action
-	 * @param uri
-	 */
-	public void addPermission(String username, AllowedUri au) {
-		User usr = users.get(username);
-		
-		if (usr != null) {
-			usr.addAllowedUri(au);
-		}
-	}
-	
-	/**
-	 * Removes the configured permissions for a user.
-	 * 
-	 * @param user
-	 */
-	public void removePermissions(String username) {
-		User usr = users.get(username);
-		if (usr != null) {
-			usr.removePermissions();
-		}
-	}
-	
-	/**
-	 * Removes all permissions for all users.
-	 */
-	public void removeAllPermissions() {
-		for(User usr : users.values()) {
-			usr.removePermissions();
-		}
-	}
-
-	public boolean isPermitted(String username, String action, String host, int port, String uri) {
-		if (username == null) {
-			return false;
-		}
-		User usr = users.get(username);
-		
-		if (usr == null) {
-			return false;
-		}
-		return usr.isPermitted(host, port, action, uri);
-	}
 
 	/**
 	 * Gets the User object for the given username or null if not found.
@@ -162,11 +112,4 @@ public class UserManager {
 			lastUserAdded.addHeader(header, value);
 		}
 	}
-
-	public void addPermissionForLastUserAdded(AllowedUri au) {
-		if (lastUserAdded != null) {
-			lastUserAdded.addAllowedUri(au);
-		}
-	}
-	
 }

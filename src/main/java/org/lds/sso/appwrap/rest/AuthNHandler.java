@@ -23,12 +23,18 @@ import org.lds.sso.appwrap.Config;
 public class AuthNHandler extends RestHandlerBase {
 	private static final Logger cLog = Logger.getLogger(AuthNHandler.class);
 
-	public AuthNHandler(String pathPrefix, Config cfg) {
-		super(pathPrefix, cfg);
+	public AuthNHandler(String pathPrefix) {
+		super(pathPrefix);
 	}
 
 	@Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException {
+		/**
+		 * Get the current config instance each time which allows for reconfig
+		 * of config object without restarting the service.
+		 */
+		Config cfg = Config.getInstance();
+
 		String usr = request.getParameter("username");
 		String pwd = request.getParameter("password");
 		boolean isValidUser = cfg.getUserManager().isValidPassword(usr, pwd);

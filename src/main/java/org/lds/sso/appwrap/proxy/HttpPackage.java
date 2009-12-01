@@ -29,4 +29,7 @@ public class HttpPackage {
 	public boolean redirectLoopDetected = false;
 	public boolean rapidRepeatRequestDetected = false;
 	public String repeatRequestErrMsg = null;
+	public String path = null;
+	public String query = null;
+	public String scheme = null;
 }

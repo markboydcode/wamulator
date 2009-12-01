@@ -8,16 +8,16 @@ public class AllowedUri extends UnenforcedUri {
 
 	protected String[] actions = null;
 	
-	public AllowedUri(String host, int port, String path) {
-		super(host, port, path);
-		throw new UnsupportedOperationException("Use four parameter constructor.");
+	public AllowedUri(String scheme, String host, int port, String path, String query) {
+		super(scheme, host, port, path, query);
+		throw new UnsupportedOperationException("Use other constructor.");
 	}
 	
-	public AllowedUri(String host, int port, String path, String[] actions) {
-		super(host, port, path);
+	public AllowedUri(String scheme, String host, int port, String path, String query, String[] actions) {
+		super(scheme, host, port, path, query);
 		this.actions = actions;
 		Set<String> sorted = new TreeSet<String>(Arrays.asList(actions));
-		this.id = host + ":" + port + path + sorted.toString();
+		this.id = this.id + sorted.toString();
 	}
 	
 	public boolean allowed(String action) {
