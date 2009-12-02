@@ -4,6 +4,8 @@
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
 /saws_login_sample.xml -text svneol=unset#text/plain
+/sim.bat -text
+/sim.sh -text
 src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/AppEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Config.java -text svneol=unset#text/plain
