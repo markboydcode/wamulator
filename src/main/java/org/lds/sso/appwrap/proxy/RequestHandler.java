@@ -304,9 +304,10 @@ public class RequestHandler implements Runnable {
 
 	/**
 	 * Watches to see if a replica of a previous request has occurred within too
-	 * short a period and if so is interpreted as an infinite redirect loop and
-	 * terminated. Replicas are identified by a uri with any query string
-	 * stripped off if present.
+	 * short a period and increments the number of times halting those seen more
+	 * than the allowed amount in the allowed period of time since they most
+	 * likely represent an infinite redirect loop. Replicas are identified by a 
+	 * uri with any query string stripped off if present.
 	 * 
 	 * @param reqPkg
 	 * @return
@@ -324,10 +325,10 @@ public class RequestHandler implements Runnable {
 			cfg.addRepeatRequestRecord(uri, record);
 		}
 		else {
+			record.repeatCount++;
 			long elapsedSinceLastSeen = System.currentTimeMillis() - record.millisOfLastCall;
-			if (elapsedSinceLastSeen < cfg.getMinimumRepeatMillis()) {
-				record.repeatCount++;
 
+			if (elapsedSinceLastSeen < cfg.getMinimumRepeatMillis()) {
 				if (record.repeatCount > cfg.getMaxRepeatCount()) {
 					String msg = "Inifinite Redirect detected. Request '" + uri + "' seen " + elapsedSinceLastSeen
 							+ " milliseconds since last occurrence.";
@@ -336,8 +337,11 @@ public class RequestHandler implements Runnable {
 					reqPkg.repeatRequestErrMsg = msg;
 					return true;
 				}
-				record.millisOfLastCall = System.currentTimeMillis();
 			}
+			else { // window exceeded so reset count
+				record.repeatCount = 1;
+			}
+			record.millisOfLastCall = System.currentTimeMillis();
 		}
 		return false;
 	}

@@ -74,7 +74,7 @@ public class Config {
 
 	private long repeatRecordSleepPeriod = 30000;
 	
-	private static final Map<AllowedUri, RepeatRecord> requestOccurrence = new HashMap<AllowedUri, RepeatRecord>();
+	protected final Map<AllowedUri, RepeatRecord> requestOccurrence = new HashMap<AllowedUri, RepeatRecord>();
 
 
 	public static final String SERVER_NAME = "App Wrap Reverse Proxy";
@@ -88,8 +88,13 @@ public class Config {
 	public Config() {
 		loadSessionManager();
 		startRepeatRequestRecordSweeper();
+
+		if (instance != null) {
+			instance.stopRepeatRequestRecordSweeper();
+		}
 		instance = this;
 	}
+	
 	/**
 	 * Returns the current instance of {@link Config} creating a new one if one
 	 * has not yet been instantiated. Each time the {@link Config}'s constructor
@@ -385,7 +390,7 @@ public class Config {
 		return repeatRecordSleepPeriod;
 	}
 
-	public void setRepeatRecordSleepPeriod(long repeatRecordSleepPeriod) {
+	public void setRepeatRecordSweeperSleepPeriod(long repeatRecordSleepPeriod) {
 		this.repeatRecordSleepPeriod = repeatRecordSleepPeriod;
 	}
 }
