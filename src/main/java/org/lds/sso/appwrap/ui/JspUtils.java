@@ -1,15 +1,11 @@
 package org.lds.sso.appwrap.ui;
 
+import org.lds.sso.appwrap.Config;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
-import org.lds.sso.appwrap.Config;
-
-import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
+import java.net.URISyntaxException;
 
 /**
  * Object used in jsp:usebean for stuff that I can't do directly in the jsp.
@@ -89,7 +85,7 @@ public class JspUtils {
 					try {
 						return Boolean.valueOf(Config.getInstance().getTrafficManager().isUnenforced((String) key));
 					}
-					catch (MalformedURIException e) {
+					catch (URISyntaxException e) {
 						throw new RuntimeException("problem converting " + key + " to URI instance.", e);
 					}
 				}

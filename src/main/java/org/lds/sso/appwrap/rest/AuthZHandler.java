@@ -1,17 +1,13 @@
 package org.lds.sso.appwrap.rest;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLDecoder;
+import org.apache.log4j.Logger;
+import org.lds.sso.appwrap.Config;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.AllowedUri;
-import org.lds.sso.appwrap.Config;
-
-import com.sun.org.apache.xerces.internal.util.URI;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URISyntaxException;
 
 /**
  * Handler that can answer if a user is granted a specific action on a specific
@@ -42,10 +38,15 @@ public class AuthZHandler extends RestHandlerBase {
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Missing required uri parameter");
 			return;
 		}
-		
-		boolean isUnenforced = cfg.getTrafficManager().isUnenforced(uri);
-		
-		if (isUnenforced) {
+
+        boolean isUnenforced = false;
+        try {
+            isUnenforced = cfg.getTrafficManager().isUnenforced(uri);
+        } catch (URISyntaxException e) {
+            throw new IOException("Unable to parse URI "+ uri, e);
+        }
+
+        if (isUnenforced) {
 			super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=true");
 			return;
 		}
@@ -80,7 +81,13 @@ public class AuthZHandler extends RestHandlerBase {
 		
 		String action = request.getParameter("action") == null ? "GET" : request.getParameter("action");
 
-		boolean allowed = cfg.getTrafficManager().isPermitted(action, uri); 
+        boolean allowed;
+        try {
+            allowed = cfg.getTrafficManager().isPermitted(action, uri);
+        } catch (URISyntaxException e) {
+            throw new IOException("Unable to parse URI "+ uri, e);
+        }
+        
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=" 
 				+ allowed);
 	}

@@ -1,22 +1,12 @@
 package org.lds.sso.appwrap.ui.rest;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLDecoder;
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.rest.RestHandlerBase;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.lds.sso.appwrap.AllowedUri;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.User;
-import org.lds.sso.appwrap.rest.RestHandlerBase;
-import org.mortbay.jetty.Request;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-import com.sun.org.apache.xml.internal.utils.UnImplNode;
+import java.io.IOException;
+import java.net.URLDecoder;
 
 /**
  * Handles request to add uris that incurred 404 by the proxy due to missing
@@ -46,7 +36,7 @@ public class Add404UriToCfgHandler extends RestHandlerBase {
 			
 			if (problemUri != null) {
 				String decoded = URLDecoder.decode(problemUri, "utf-8");
-				throw new NotImplementedException();
+				throw new RuntimeException("FIX- This method not implemented");
 				//cfg.getTrafficManager().addUnenforcedUrl(decoded); must go to site not traffic man
 			}
 		}

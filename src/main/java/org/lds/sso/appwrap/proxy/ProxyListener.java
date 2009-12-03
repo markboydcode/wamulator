@@ -52,20 +52,14 @@ package org.lds.sso.appwrap.proxy;
 	 *
 	 * Julian Robichaux -- http://www.nsftools.com
 	 */
-	import java.io.*;
-	import java.net.*;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.lang.reflect.Array;
 
-import org.apache.commons.logging.Log;
 import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.User;
+
+import java.io.File;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.text.DecimalFormat;
 
 	public class ProxyListener implements Runnable
 	{

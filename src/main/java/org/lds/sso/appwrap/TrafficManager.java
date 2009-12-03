@@ -2,6 +2,8 @@ package org.lds.sso.appwrap;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,8 +13,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import com.sun.org.apache.xerces.internal.util.URI;
-import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
 
 /**
  * Manages in-memory registered ties between the canonical URL space and the
@@ -84,20 +84,20 @@ public class TrafficManager {
 		return null;
 	}
 
-	public boolean isUnenforced(String fullUri) throws MalformedURIException {
+	public boolean isUnenforced(String fullUri) throws URISyntaxException {
 		URI u = new URI(fullUri);
 		int port = u.getPort() == -1 ? 80 : u.getPort();
-		String query = u.getQueryString();
+		String query = u.getQuery();
 		if ("".equals(query)) {
 			query = null;
 		}
 		return this.isUnenforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
 	}
 
-	public boolean isPermitted(String action, String fullUri) throws MalformedURIException {
+	public boolean isPermitted(String action, String fullUri) throws URISyntaxException {
 		URI u = new URI(fullUri);
 		int port = u.getPort() == -1 ? 80 : u.getPort();
-		String query = u.getQueryString();
+		String query = u.getQuery();
 		if ("".equals(query)) {
 			query = null;
 		}
