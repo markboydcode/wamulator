@@ -1,0 +1,12 @@
+<html xmlns='http://www.w3.org/1999/xhtml'>
+ <head><title>501 Not Implemented - Forward Proxying</title></head>
+ <body style='background-color: #EEF; margin: 0px; padding: 0px;'>
+  <div style='padding: 0 10 10 10px;'>
+   <h3>501 Not Implemented - Forward Proxying</h3>
+   <div style='font-weight: bold; font-style: italic; color: green; padding: 12px 3px 3px 3px'>
+    Forward Proxying for {{action}} on {{uri}} is not allowed. 
+    Should this URI be mapped into the allowed traffic of the site?
+   </div>
+  </div>
+ </body>
+</html> 

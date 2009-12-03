@@ -67,6 +67,11 @@ public class RequestHandler implements Runnable {
 	private boolean logClosed = false;
 
 	/**
+	 * Cache of html template pages loaded from files for some responses.
+	 */
+	private Map<String, String> templates = new HashMap<String, String>();
+
+	/**
 	 * Constructs a new thread for reading incoming request, sending it on to
 	 * the target server, reading the response, returning it to the client, and
 	 * closing the connection to enforce a single request/response cycle is
@@ -213,6 +218,11 @@ public class RequestHandler implements Runnable {
 					user.injectUserHeaders(reqPkg.headerBfr);
 					cfg.getSessionManager().markSessionAsActive(token);
 				}
+			}
+			else if (! cfg.getAllowForwardProxying()){
+				sendProxyResponse(501, get501NoProxyingResponse(reqPkg.requestLine), reqPkg, clientIn, clientOut, user,
+						startTime, log);
+				return;
 			}
 			// now build complete request to pass on to application
 			request = generateRequestBytes(appReqLn, reqPkg);
@@ -432,39 +442,54 @@ public class RequestHandler implements Runnable {
 	}
 
 	private byte[] get403Response(User user, RequestLine origReqLn) throws IOException {
-		InputStream is = this.getClass().getClassLoader().getResourceAsStream(
-				"org/lds/sso/appwrap/proxy/embedded403Resp.txt");
-		DataInputStream dis = new DataInputStream(is);
-		byte[] fbytes = new byte[dis.available()];
-		dis.readFully(fbytes);
-		String html = new String(fbytes);
-		html = html.replace("{{username}}", user.getUsername());
-		html = html.replace("{{action}}", origReqLn.getMethod());
-		html = html.replace("{{uri}}", origReqLn.getUri());
-		/*
-		 * String html = new StringBuffer()
-		 * .append("<html xmlns='http://www.w3.org/1999/xhtml'>").append(CRLF)
-		 * .append(" <head><title>403 Forbidden</title></head>").append(CRLF)
-		 * .append
-		 * (" <body style='background-color: #EEF; margin: 0px; padding: 0px;'>"
-		 * ).append(CRLF)
-		 * .append("  <div style='padding: 0 10 10 10px;'>").append(CRLF)
-		 * .append("  <h3>403 Forbidden</h3>").append(CRLF).append(
-		 * "  <div style='font-weight: bold; font-style: italic; color: green; padding: 12px 3px 3px 3px'>"
-		 * ).append("User '").append(user.getUsername()).append(
-		 * "' is not allowed to access ")
-		 * .append(origReqLn.getUri()).append("</div></div></body></html>"
-		 * ).append(CRLF).toString();
-		 */
+		String html = loadTemplateFile("org/lds/sso/appwrap/proxy/embedded403Resp.txt", user, origReqLn);
 		byte[] bytes = new StringBuffer().append("HTTP/1.1 403 Forbidden").append(CRLF).append(
 				"Content-Type: text/html; charset=utf-8").append(CRLF).append("Server: ").append(Config.SERVER_NAME)
-				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) // empty
-																											// line
-																											// terminating
-																											// headers
+				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) 
 				.append(html).append(CRLF) // empty line terminating body
 				.toString().getBytes();
 		return bytes;
+	}
+
+	private byte[] get501NoProxyingResponse(RequestLine origReqLn) throws IOException {
+		String html = loadTemplateFile("org/lds/sso/appwrap/proxy/embedded501ProxyingNotAllowedResp.txt", null, origReqLn);
+		byte[] bytes = new StringBuffer().append("HTTP/1.1 501 Not Allowed - Forward Proxying").append(CRLF).append(
+				"Content-Type: text/html; charset=utf-8").append(CRLF).append("Server: ").append(Config.SERVER_NAME)
+				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) 
+				.append(html).append(CRLF) // empty line terminating body
+				.toString().getBytes();
+		return bytes;
+	}
+
+	/**
+	 * Loads template response files or pull from cache and resolves some macros.
+	 * 
+	 * @param filename
+	 * @param user
+	 * @param origReqLn
+	 * @return
+	 * @throws IOException
+	 */
+	private String loadTemplateFile(String filename, User user, RequestLine origReqLn)
+	 throws IOException {
+		String html = templates.get(filename);
+		
+		if (html == null) {
+			InputStream is = this.getClass().getClassLoader().getResourceAsStream(filename);
+			DataInputStream dis = new DataInputStream(is);
+			byte[] fbytes = new byte[dis.available()];
+			dis.readFully(fbytes);
+			html = new String(fbytes);
+			templates.put(filename, html);
+		}
+		if (user != null) {
+			html = html.replace("{{username}}", user.getUsername());
+		}
+		if (origReqLn != null) {
+			html = html.replace("{{action}}", origReqLn.getMethod());
+			html = html.replace("{{uri}}", origReqLn.getUri());
+		}
+		return  html;
 	}
 
 	/**

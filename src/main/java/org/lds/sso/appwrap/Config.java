@@ -76,6 +76,11 @@ public class Config {
 	
 	protected final Map<AllowedUri, RepeatRecord> requestOccurrence = new HashMap<AllowedUri, RepeatRecord>();
 
+	/**
+	 * Determines if forward proxying of non-sso traffic is allowed. Defaults to false.
+	 */
+	private boolean allow_forward_proxying = false;
+
 
 	public static final String SERVER_NAME = "App Wrap Reverse Proxy";
 
@@ -392,5 +397,19 @@ public class Config {
 
 	public void setRepeatRecordSweeperSleepPeriod(long repeatRecordSleepPeriod) {
 		this.repeatRecordSleepPeriod = repeatRecordSleepPeriod;
+	}
+
+	/**
+	 * Determines if we allow requests not mapped to sso traffic to pass on to
+	 * their targeted url.
+	 * 
+	 * @param parseBoolean
+	 */
+	public void setAllowForwardProxying(boolean bool) {
+		this.allow_forward_proxying = bool;	
+	}
+	
+	public boolean getAllowForwardProxying() {
+		return this.allow_forward_proxying;	
 	}
 }

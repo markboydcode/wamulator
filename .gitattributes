@@ -32,6 +32,7 @@ src/main/java/org/lds/sso/appwrap/proxy/ResponseLine.java -text svneol=unset#tex
 src/main/java/org/lds/sso/appwrap/proxy/StartLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/TrafficType.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/embedded403Resp.txt -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/embedded501ProxyingNotAllowedResp.txt -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/AuthNHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/AuthZHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/GetCookieName.java -text svneol=unset#text/plain

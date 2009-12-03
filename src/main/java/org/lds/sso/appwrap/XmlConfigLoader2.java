@@ -207,6 +207,8 @@ public class XmlConfigLoader2 {
 			if (path.matches("/config")) {
 				cfg.setConsolePort(getIntegerAtt("console-port", path, atts));
 				cfg.setProxyPort(getIntegerAtt("proxy-port", path, atts));
+				String allow_proxying = atts.getValue("allow-non-sso-traffic");
+				cfg.setAllowForwardProxying(Boolean.parseBoolean(allow_proxying));
 			}
 			else if (path.matches("/config/sso-cookie")) {
 				cfg.setCookieName(getStringAtt("name", path, atts));
@@ -219,7 +221,7 @@ public class XmlConfigLoader2 {
 				String hdrNm = getStringAtt("name", path, atts);
 				String hdrVl = getStringAtt("value", path, atts);
 				cfg.addGlobalHeader(hdrNm, hdrVl);
-			}
+			} //allow-non-sso-traffic
 			else if (path.matches("/config/sso-traffic/by-site")) {
 				String scheme = atts.getValue("scheme");
 				if (scheme == null || scheme.equals("")) {

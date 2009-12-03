@@ -16,7 +16,7 @@
     port on which the console will be found and the rest api resides. The proxy
     port is the port that should be set as the browser's http proxy.
 -->
-<config proxy-port="9999" console-port="{{console-port}}">
+<config proxy-port="9999" console-port="{{console-port}}" allow-non-sso-traffic="true">
     <sso-cookie name="lds-policy" domain=".lds.org"/>
     <sso-sign-in-url value="http://labs-local.lds.org/admin/selectUser.jsp"/>
     <sso-header name="policy-service-url" value="http://labs-local.lds.org:{{rest-port}}/rest/"/>
