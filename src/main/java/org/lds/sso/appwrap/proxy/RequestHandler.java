@@ -40,6 +40,8 @@ public class RequestHandler implements Runnable {
 
 	public static final String SP = " ";
 
+	private static final String[] excludeHeaders = new String[] { "connection" };
+
 	// public static final String REQUEST_LINE = "request-line";
 	// public static final String RESPONSE_LINE = "response-line";
 	public static final String HOST = "host";
@@ -131,7 +133,7 @@ public class RequestHandler implements Runnable {
 			BufferedInputStream clientIn = new BufferedInputStream(pSocket.getInputStream());
 			BufferedOutputStream clientOut = new BufferedOutputStream(pSocket.getOutputStream());
 
-			reqPkg = getHttpPackage(clientIn, null, false, log);
+			reqPkg = getHttpPackage(clientIn, excludeHeaders, false, log);
 			if (((StartLine) reqPkg.requestLine).isProxied) {
 				reqPkg.scheme = ((StartLine) reqPkg.requestLine).proxy_scheme;
 			}
@@ -156,7 +158,15 @@ public class RequestHandler implements Runnable {
 						log);
 				return;
 			}
+			// ensure that server will close connection after completion of 
+			// sending content so that servers that don't include a content-length
+			// header don't cause the proxy to await the tcp-timeout expiration
+			// before sending the received content back to the client.
+			reqPkg.headerBfr.append("Connection: close").append(CRLF);
+			
+			// add header for prevention of infinite loops directly back to the proxy
 			reqPkg.headerBfr.append(HttpPackage.SHIM_HANDLED_HDR).append(" handled").append(RequestHandler.CRLF);
+			
 			// for non-ignored traffic perform the enforcements and translations
 			RequestLine appReqLn = reqPkg.requestLine; // default to request
 														// line as-is
@@ -273,7 +283,6 @@ public class RequestHandler implements Runnable {
 			if (cLog.isDebugEnabled()) {
 				cLog.debug("Awaiting data from: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
 			}
-			String[] excludeHeaders = new String[] { "connection" };
 			HttpPackage resPkg = getHttpPackage(serverIn, excludeHeaders, true, log);
 			if (cLog.isDebugEnabled()) {
 				cLog.debug("Processing data from: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
@@ -773,6 +782,19 @@ public class RequestHandler implements Runnable {
 	 * Reads the input stream until it sees the empty line separating headers
 	 * from the body of the http package and captures values of headers of
 	 * interest placing them in the passed-in package object.
+	 * 
+	 * TODO: At some point we should change this to not capture headers by writting
+	 * them to a string buffer but capture them in a map with keys equal to the 
+	 * lower case version of the header name and the value being the value minus
+	 * any line termination. And order of insertion would have to be preserved in
+	 * some fashion so that the headers block can be recreated as it appeared.
+	 * 
+	 * This would allow us to implement the proper handling of the "connection"
+	 * header as specified in section 14.10 of rfc2616 whereby we parse the 
+	 * values of the connection header splitting the values into connection-tokens
+	 * which then represent header names which headers should be removed from 
+	 * the packet by a proxy and the proxy should include its own versions if 
+	 * needed to handle the connection to the targeted server.
 	 * 
 	 * @param pkg
 	 * @param in

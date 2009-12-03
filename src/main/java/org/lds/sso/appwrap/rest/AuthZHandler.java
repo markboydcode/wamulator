@@ -43,7 +43,9 @@ public class AuthZHandler extends RestHandlerBase {
         try {
             isUnenforced = cfg.getTrafficManager().isUnenforced(uri);
         } catch (URISyntaxException e) {
-            throw new IOException("Unable to parse URI "+ uri, e);
+        	cLog.error("Unable to parse uri " + uri 
+        		+ " to determine if it is in the unenforced list." 
+        		+ " Treating as an enforced URI.", e);
         }
 
         if (isUnenforced) {
@@ -81,11 +83,13 @@ public class AuthZHandler extends RestHandlerBase {
 		
 		String action = request.getParameter("action") == null ? "GET" : request.getParameter("action");
 
-        boolean allowed;
+        boolean allowed = false;
         try {
             allowed = cfg.getTrafficManager().isPermitted(action, uri);
         } catch (URISyntaxException e) {
-            throw new IOException("Unable to parse URI "+ uri, e);
+        	cLog.error("Unable to parse uri " + uri 
+            		+ " to determine if access is allowed." 
+            		+ " Denying access.", e);
         }
         
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=" 

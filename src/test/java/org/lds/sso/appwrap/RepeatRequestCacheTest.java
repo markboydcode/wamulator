@@ -51,7 +51,7 @@ public class RepeatRequestCacheTest {
 			@Override
 			protected void startRepeatRequestRecordSweeper() {
 				setMaxRepeatCount(3);
-				setMinReqOccRepeatMillis(500);
+				setMinReqOccRepeatMillis(300);
 				super.startRepeatRequestRecordSweeper();
 			}
 		};
