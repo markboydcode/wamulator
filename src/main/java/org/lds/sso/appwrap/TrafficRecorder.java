@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.log4j.Logger;
+
 /**
  * Keeps track of url hits and outcomes.
  * 
@@ -16,20 +18,20 @@ import java.util.TreeSet;
  *
  */
 public class TrafficRecorder {
-
+	private static final Logger cLog = Logger.getLogger(TrafficRecorder.class);
 	private SortedSet<Hit> hits = new TreeSet<Hit>();
 	private boolean recordTraffic = false;
-	private PrintWriter consoleLog;
 	
 	public synchronized void recordHit(long time, String connId, String username, int respCode, boolean isProxyRes, String method, String uri) {
-		consoleLog.println(
-				connId 
-				+ " " + username 
-				+ " " + (isProxyRes ? 'P' : '-') 
-				+ " " + respCode 
-				+ " " + method
-				+ " " + uri);
-		consoleLog.flush();
+		if (cLog.isInfoEnabled()) {
+			cLog.info(
+					connId 
+					+ " " + username 
+					+ " " + (isProxyRes ? 'P' : '-') 
+					+ " " + respCode 
+					+ " " + method
+					+ " " + uri);
+		}
 		if (recordTraffic) {
 			Hit hit = new Hit(time, connId, username, respCode, method, uri, isProxyRes);
 			/*
@@ -114,9 +116,5 @@ public class TrafficRecorder {
 
 	public void setRecording(boolean recordTraffic) {
 		this.recordTraffic = recordTraffic;
-	}
-
-	public void setConsoleLog(PrintWriter consoleLog) {
-		this.consoleLog = consoleLog;
 	}
 }

@@ -61,19 +61,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.lang.reflect.Array;
 
+import org.apache.commons.logging.Log;
+import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.User;
 
 	public class ProxyListener implements Runnable
 	{
-
+		private static final Logger cLog = Logger.getLogger(ProxyListener.class);
+		
 		private ServerSocket server = null;
-		//private int thisPort = DEFAULT_PORT;
-		//private String fwdServer = "";
-		//private int fwdPort = 0;
 		private int ptTimeout = RequestHandler.DEFAULT_TIMEOUT;
-		private PrintStream debugOut = System.out;
 		private volatile int count = 0;
 		private Config cfg = null;
 		
@@ -85,15 +84,6 @@ import org.lds.sso.appwrap.User;
 		{
 			this.cfg  = cfg;
 		}
-		
-		
-		/* get the port that we're supposed to be listening on
-		 *
-		public int getPort ()
-		{
-			return thisPort;
-		}
-		 */
 		
 		/* return whether or not the socket is currently open
 		 */
@@ -122,7 +112,7 @@ import org.lds.sso.appwrap.User;
 				os.close();
 				s.close();*/
 			}  catch(Exception e)  { 
-					debugOut.println(e);
+					cLog.error("Error occurred closing listener socket.", e);
 			}
 			
 			server = null;
@@ -135,7 +125,9 @@ import org.lds.sso.appwrap.User;
 				// create a server socket, and loop forever listening for
 				// client connections
 				server = new ServerSocket(cfg.getProxyPort());
-					debugOut.println("Started r-proxy on port " + cfg.getProxyPort());
+				String msg = "Started r-proxy on port " + cfg.getProxyPort();
+				System.out.println(msg);
+				cLog.info(msg);
 				
 				for (File f : new File(".").listFiles()) {
 					String nm = f.getName();
@@ -145,9 +137,6 @@ import org.lds.sso.appwrap.User;
 						f.delete();
 					}
 				}
-				FileWriter fw = new FileWriter("Requests.log");
-				PrintWriter pw = new PrintWriter(fw);
-				cfg.getTrafficRecorder().setConsoleLog(pw);
 				DecimalFormat fmt = new DecimalFormat("0000");
 				
 				while (true)
@@ -165,8 +154,10 @@ import org.lds.sso.appwrap.User;
 					t.start();
 				}
 			}  catch (Exception e)  {
-					debugOut.println("Proxy Listener error: " + e);
-					e.printStackTrace();
+				String msg = "Proxy Listener error: " + e;
+				e.printStackTrace();
+				System.out.println(msg);
+				cLog.error("Proxy Listener error: ", e);
 			}
 			
 			closeSocket();

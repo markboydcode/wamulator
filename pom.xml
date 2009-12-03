@@ -11,7 +11,7 @@
   <groupId>org.lds.sso</groupId>
   <artifactId>appwrap</artifactId>
   <packaging>jar</packaging>
-  <version>1.3</version>
+  <version>1.4</version>
   
   <name>SSO Application Wrapper Environment</name>
   

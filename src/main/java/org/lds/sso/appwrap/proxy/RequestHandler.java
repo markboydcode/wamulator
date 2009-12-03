@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.AllowedUri;
 import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
@@ -29,6 +30,7 @@ import org.lds.sso.appwrap.User;
 import org.mortbay.log.Log;
 
 public class RequestHandler implements Runnable {
+	private static final Logger cLog = Logger.getLogger(RequestHandler.class);
 	/**
 	 * Formatter for creating a Date headers conformant to rfc2616.
 	 */
@@ -118,8 +120,10 @@ public class RequestHandler implements Runnable {
 		HttpPackage reqPkg = null;
 		long startTime = System.currentTimeMillis();
 		try {
-			fos = new FileOutputStream(connId + ".log");
-			log = new PrintStream(fos);
+			if (cLog.isDebugEnabled()) {
+				fos = new FileOutputStream(connId + ".log");
+				log = new PrintStream(fos);
+			}
 
 			// client streams (make sure you're using streams that use
 			// byte arrays, so things like GIF and JPEG files and file
@@ -230,9 +234,10 @@ public class RequestHandler implements Runnable {
 			Socket server = null; // socket to remote server
 
 			try {
-				System.out.println("Proxying to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
+				if (cLog.isDebugEnabled()) {
+					cLog.debug("Connecting to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
+				}
 				server = new Socket(endpoint.getHost(), endpoint.getEndpointPort());
-				// socket prox server = new Socket("127.0.0.1", 9010);
 			}
 			catch (Exception e) {
 				// tell the client there was an error
@@ -242,13 +247,20 @@ public class RequestHandler implements Runnable {
 				return;
 			}
 
-			// if (server != null)
-			// {
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Opening I/O to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
+			}
 			server.setSoTimeout(socketTimeout);
 			BufferedInputStream serverIn = new BufferedInputStream(server.getInputStream());
 			BufferedOutputStream serverOut = new BufferedOutputStream(server.getOutputStream());
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("getting server input/output streams...");
+			}
 
 			// send the request out
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Transmitting to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort() + " " + appReqLn);
+			}
 			serverOut.write(request, 0, request.length);
 			serverOut.flush();
 
@@ -258,8 +270,14 @@ public class RequestHandler implements Runnable {
 			// because some servers (like Google) don't always set the
 			// Content-Length header field, so we have to listen until
 			// they decide to disconnect (or the connection times out).
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Awaiting data from: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
+			}
 			String[] excludeHeaders = new String[] { "connection" };
 			HttpPackage resPkg = getHttpPackage(serverIn, excludeHeaders, true, log);
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Processing data from: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
+			}
 
 			if (resPkg.type == HttpPackageType.EMPTY_RESPONSE) {
 				sendProxyResponse(500, getNoContentFromServer(reqPkg), reqPkg, clientIn, clientOut, user, startTime,
@@ -284,10 +302,16 @@ public class RequestHandler implements Runnable {
 			response = appRespBfr.toByteArray();
 			int responseLength = Array.getLength(response);
 
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Closing I/O to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
+			}
 			serverIn.close();
 			serverOut.close();
 
 			// send the response back to the client
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Returning response for: "  + appReqLn);
+			}
 			clientOut.write(response, 0, response.length);
 			clientOut.flush();
 
@@ -296,6 +320,9 @@ public class RequestHandler implements Runnable {
 						resPkg.responseCode, false, reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri());
 			}
 			logTraffic(log, reqPkg.requestLine, request, response, startTime);
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Closing I/O to client");
+			}
 			shutdown(clientIn, clientOut, log, fos);
 		}
 		catch (Exception e) {
@@ -402,16 +429,18 @@ public class RequestHandler implements Runnable {
 	 * @param startTime
 	 */
 	private void logTraffic(PrintStream log, RequestLine requestLine, byte[] request, byte[] response, long startTime) {
-		long endTime = System.currentTimeMillis();
-		log.println("Elapsed Time: " + Long.toString(endTime - startTime));
-		log.println();
-		log.println("REQUEST bytes sent: " + request.length);
-		log.println("Canonical Req. Line: " + requestLine.toString());
-		log.println("Rewritten Req. Line: " + (new String(request)));
-		log.println();
-		log.println("RESPONSE bytes returned: " + response.length);
-		log.println(new String(response));
-		log.flush();
+		if (log != null) {
+			long endTime = System.currentTimeMillis();
+			log.println("Elapsed Time: " + Long.toString(endTime - startTime));
+			log.println();
+			log.println("REQUEST bytes sent: " + request.length);
+			log.println("Canonical Req. Line: " + requestLine.toString());
+			log.println("Rewritten Req. Line: " + (new String(request)));
+			log.println();
+			log.println("RESPONSE bytes returned: " + response.length);
+			log.println(new String(response));
+			log.flush();
+		}
 	}
 
 	private class ReqInfo {
@@ -707,9 +736,17 @@ public class RequestHandler implements Runnable {
 		// determine how much data we're supposed to be getting, because
 		// sometimes the client/server won't disconnect after sending us
 		// information...
-		if (pkg.contentLength > 0)
+		if (pkg.contentLength > 0) {
 			waitForDisconnect = false;
-
+		}
+		else {
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("content length = 0 for '" 
+						+ (pkg.requestLine != null ? pkg.requestLine :
+							(pkg.responseLine != null ? pkg.responseLine :
+								"???")) + "', will wait for disconnect or tcp timeout to terminate body content.");
+			}
+		}
 		int byteCount = 0;
 
 		if ((pkg.contentLength > 0) || (waitForDisconnect)) {
@@ -726,6 +763,9 @@ public class RequestHandler implements Runnable {
 					log.println("\nError getting HTTP body: " + e);
 				}
 			}
+		}
+		if (cLog.isDebugEnabled()) {
+			cLog.debug("done with body content.");
 		}
 	}
 

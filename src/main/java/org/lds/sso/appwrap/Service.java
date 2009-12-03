@@ -10,6 +10,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 
+import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.proxy.ProxyListener;
 import org.lds.sso.appwrap.rest.AuthNHandler;
 import org.lds.sso.appwrap.rest.AuthZHandler;
@@ -36,7 +37,7 @@ import org.mortbay.jetty.webapp.WebAppContext;
  * 
  */
 public class Service {
-
+	private static final Logger cLog = Logger.getLogger(Service.class);
 	//protected ProxyListener proxy = null;
 	protected Thread proxyRunner = null;
 	protected Server server = null;
@@ -138,6 +139,8 @@ public class Service {
 		Config cfg = Config.getInstance();
 		System.out.println("admin-rest port: " + cfg.getConsolePort());
 		System.out.println("http proxy port: " + cfg.getProxyPort());
+		cLog.info("admin-rest port: " + cfg.getConsolePort());
+		cLog.info("http proxy port: " + cfg.getProxyPort());
 
 		server.start();	
 		
