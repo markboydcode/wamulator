@@ -1,9 +1,11 @@
 * text=auto !eol
+/YouthAppProxy.xml -text svneol=unset#text/plain
 /commandline.sh.example -text
 /mlAuth_mlError_sample.xml -text svneol=unset#text/plain
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
 /saws_login_sample.xml -text svneol=unset#text/plain
+/saws_login_sample_condition_test.xml -text svneol=unset#text/plain
 /sim.bat -text
 /sim.sh -text
 src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
@@ -23,6 +25,12 @@ src/main/java/org/lds/sso/appwrap/User.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/UserManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/VirtualSite.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/XmlConfigLoader2.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/opensso/AssignmentsChainInjector.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/opensso/HeadersToSSOTokenInjector.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/opensso/LegacyPropsInjectorDefs.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/opensso/MyDebug.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/opensso/MyProvider.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/opensso/UnitsChainInjector.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackage.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackageType.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/ProxyListener.java -text svneol=unset#text/plain
@@ -66,6 +74,16 @@ src/test/java/org/lds/sso/appwrap/TestEnc.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestJettyJspApproach.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/opensso/AssignmentsChainInjectorTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/opensso/UnitsChainTranslatorTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/TestAuthZHandler.java -text svneol=unset#text/plain
 src/test/resources/XmlConfigLoaderTest.txt -text svneol=unset#text/plain
+src/test/resources/has-lds-account-1234-test.xml -text svneol=unset#text/plain
+src/test/resources/is-bishop-test.xml -text svneol=unset#text/plain
+src/test/resources/is-corr-mod.xml -text svneol=unset#text/plain
+src/test/resources/is-field-mod.xml -text svneol=unset#text/plain
+src/test/resources/is-hq-mod.xml -text svneol=unset#text/plain
+src/test/resources/is-ip-mod.xml -text svneol=unset#text/plain
+src/test/resources/is-photo-ed.xml -text svneol=unset#text/plain
+/temp-testng-customsuite.xml -text svneol=unset#text/plain

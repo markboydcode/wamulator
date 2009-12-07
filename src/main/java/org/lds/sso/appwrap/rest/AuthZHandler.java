@@ -2,6 +2,7 @@ package org.lds.sso.appwrap.rest;
 
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,7 +41,7 @@ public class AuthZHandler extends RestHandlerBase {
 		}
 
         boolean isUnenforced = false;
-        try {
+        try { 
             isUnenforced = cfg.getTrafficManager().isUnenforced(uri);
         } catch (URISyntaxException e) {
         	cLog.error("Unable to parse uri " + uri 
@@ -62,8 +63,10 @@ public class AuthZHandler extends RestHandlerBase {
 			return;
 		}
 		String sessionToken = cfg.getTokenFromCookie(cookieHdr);
+		String username = cfg.getUsernameFromToken(sessionToken);
+		User user = cfg.getUserManager().getUser(username);
 		
-		if (sessionToken == null || ! cfg.getSessionManager().isValidToken(sessionToken)) {
+		if (user == null || sessionToken == null || ! cfg.getSessionManager().isValidToken(sessionToken)) {
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Token Expired, Invalid Session");
 			return;
 		}
@@ -85,7 +88,7 @@ public class AuthZHandler extends RestHandlerBase {
 
         boolean allowed = false;
         try {
-            allowed = cfg.getTrafficManager().isPermitted(action, uri);
+            allowed = cfg.getTrafficManager().isPermitted(action, uri, user);
         } catch (URISyntaxException e) {
         	cLog.error("Unable to parse uri " + uri 
             		+ " to determine if access is allowed." 

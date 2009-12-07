@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- 
-    Requires ml-auth mark logic application for providing the sign-in
-    page mapped into the sso traffic space for the shim.
+    Leverages sso app wrap shim (SAWS) provided login page.
     
     Processing supports aliases with processing instructions of form name=value
     and for each string value read thereafter replaces any occurrence of 
@@ -11,36 +10,36 @@
 
 <?alias rest-port=1776?>
 <?alias console-port={{rest-port}}?>
+<?alias http-port=80?>
 
 <!-- 
     Defines the configuration for the app wrap shim. The console-port is the
     port on which the console will be found and the rest api resides. The proxy
     port is the port that should be set as the browser's http proxy.
 -->
-<config proxy-port="80" console-port="{{console-port}}">
+<config proxy-port="{{http-port}}" console-port="{{console-port}}" allow-non-sso-traffic="true">
     <sso-cookie name="lds-policy" domain=".lds.org"/>
-<!-- <sso-sign-in-url value="http://labs-local.lds.org/auth/ui/sign-in"/> -->
-    <sso-sign-in-url value="http://labs-local.lds.org/auth/ui/sign-in"/>
+    <sso-sign-in-url value="http://labs-local.lds.org/admin/selectUser.jsp"/>
     <sso-header name="policy-service-url" value="http://labs-local.lds.org:{{rest-port}}/rest/"/>
-    
+    <sso-header name="connection" value="close"/>
+
     <sso-traffic>
-        <by-site scheme='http' host="labs-local.lds.org" port="80">
+        <by-site host="labs-local.lds.org" port="{{http-port}}">
             <cctx-mapping cctx="/auth*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
-            <unenforced cpath="/auth/ui/*"/>
-            <unenforced cpath="/auth/ui/*?*"/>
             <allow action="GET,POST" cpath="/auth/_app/*"/>
             <allow action="GET,POST" cpath="/auth/_app/*?*"/>
             
-            <cctx-mapping cctx="/error/*" thost="127.0.0.1" tport="8520" tpath="/error/*"/>
-            <unenforced cpath="/error/*"/>
-            <unenforced cpath="/error/*?*"/>
+            <cctx-mapping cctx="/admin*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin*"/>
+            <unenforced cpath="/admin/*"/>
+            <unenforced cpath="/admin/*?*"/>
+            
+            <cctx-mapping cctx="/ui/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/ui/*"/>
+            <unenforced cpath="/ui/set-*"/>
+            <unenforced cpath="/ui/set-*?*"/>
+            <unenforced cpath="/ui/terminate-*"/>
+            <unenforced cpath="/ui/terminate-*?*"/>
         </by-site>
-        <by-resource uri="http://other.lds.org/some/path/resource.html" unenforced="true"/>
-        <by-resource uri="http://cdol.lds.org/cdol/secure/login.html" allow="GET,POST"/>
-        <by-resource uri="app://different.lds.org/some/path/resource.html" unenforced="true"/>
-        <by-resource uri="app://different.lds.org/cdol/secure/login.html" allow="GET,DELETE"/>
     </sso-traffic>
-    
     <!-- 
         The set of defined users, headers injected per user, and urls allowed 
         by each user url access permissions 
@@ -52,9 +51,9 @@
             <sso-header name="policy-preferred-name" value="Samson the great"/>
         </user>
         <user name="ngib" pwd="pwdb">
-            <sso-header name="policy-birthdate" value="2002-02-20"/>
-            <sso-header name="policy-email" value="me@nowhere.com"/>
-            <sso-header name="policy-preferred-name" value="howdy doody"/>
+            <sso-header name="policy-birthdate" value="1980-02-27"/>
+            <sso-header name="policy-email" value="pwdb@another.com"/>
+            <sso-header name="policy-preferred-name" value="The pwdb user"/>
         </user>
     </users>
 </config>

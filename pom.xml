@@ -50,6 +50,39 @@
       <scope>provided</scope>
     </dependency>
 
+<!-- Dependencies for support of custom syntax evaluation -->
+      <dependency>
+          <groupId>org.lds.sso</groupId>
+          <artifactId>plugins</artifactId>
+          <version>1.0.1</version>
+          <type>jar</type>
+          <scope>compile</scope>
+          
+          <exclusions>
+              <exclusion>
+                  <groupId>org.lds.platform</groupId>
+                  <artifactId>CMIS-Services-client</artifactId>
+              </exclusion>
+          </exclusions>
+      </dependency>
+
+      <dependency>
+          <groupId>org.lds.opensso</groupId>
+          <artifactId>sharedlib</artifactId>
+          <version>8.0</version>
+          <type>jar</type>
+          <scope>compile</scope>
+      </dependency>
+      
+      <dependency>
+          <groupId>org.lds.opensso</groupId>
+          <artifactId>amserver</artifactId>
+          <version>8.0</version>
+          <type>jar</type>
+          <scope>compile</scope>
+      </dependency>
+<!-- End Dependencies for support of custom syntax evaluation -->
+      
       <dependency> <!-- used in unit tests to validate proper rest api authz -->
           <groupId>org.lds.sso</groupId>
           <artifactId>clientlib</artifactId>

@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.iplanet.sso.SSOException;
+
 public class UserManager {
 	protected Map<String, User> users = new TreeMap<String,User>();
 	private User lastUserAdded;
@@ -90,7 +92,7 @@ public class UserManager {
 		return users.get(username);
 	}
 
-	public void addHeader(String username, String name, String value) {
+	public void addHeader(String username, String name, String value) throws SSOException {
 		User usr = users.get(username);
 		
 		if (usr != null) {
@@ -104,8 +106,9 @@ public class UserManager {
 	 * 
 	 * @param header
 	 * @param value
+	 * @throws SSOException 
 	 */
-	public void addHeaderForLastUserAdded(String header, String value) {
+	public void addHeaderForLastUserAdded(String header, String value) throws SSOException {
 		if (lastUserAdded != null && header != null && value != null
 				&& ! "".equals(header) && ! "".equals(value)) {
 			header = header.trim();

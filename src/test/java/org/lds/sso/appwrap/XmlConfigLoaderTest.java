@@ -5,6 +5,7 @@ import java.util.Collections;
 
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
+import org.lds.sso.appwrap.opensso.LegacyPropsInjectorDefs;
 import org.lds.sso.clientlib.PDPAccessor;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -187,30 +188,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 	}
 
 	@Test
@@ -225,30 +227,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 	}
 
 	@Test
@@ -265,30 +268,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 	}
 
 	@Test
@@ -303,30 +307,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
 	}
 
 	@Test
@@ -343,30 +348,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query should NOT be allowed " + url);
 	}
 
 	@Test
@@ -381,30 +387,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query should NOT be allowed " + url);
 	}
 
 	@Test
@@ -421,30 +428,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query portion should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query portion should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query portion should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query portion should NOT be allowed " + url);
 	}
 
 	@Test
@@ -459,30 +467,31 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 		
 		String url = "app://labs-local.lds.org/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url), "should be allowed " + url);
+		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
 
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query portion should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query portion should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query portion should NOT be allowed " + url);
 		
 		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url), "due to missing query portion should NOT be allowed " + url);
+		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query portion should NOT be allowed " + url);
 	}
 
 	@Test
@@ -564,6 +573,7 @@ public class XmlConfigLoaderTest {
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
+		User u = new User("", ""); // no conditions are specified so any user object can be used.
 
 		String uri = "http://labs-local.lds.org/auth/ui/sign-in";
 		Assert.assertFalse(tman.isUnenforced(uri), "due to wrong scheme should NOT be unenforced " + uri);
@@ -572,9 +582,54 @@ public class XmlConfigLoaderTest {
 		Assert.assertTrue(tman.isUnenforced(uri), "should be unenforced " + uri);
 
 		uri = "http://labs-local.lds.org/auth/_app/debug";
-		Assert.assertFalse(tman.isPermitted("POST", uri), "due to wrong scheme should NOT be allowed " + uri);
+		Assert.assertFalse(tman.isPermitted("POST", uri, u), "due to wrong scheme should NOT be allowed " + uri);
 
 		uri = "app://labs-local.lds.org/auth/_app/debug";
-		Assert.assertTrue(tman.isPermitted("POST", uri), "should be allowed " + uri);
+		Assert.assertTrue(tman.isPermitted("POST", uri, u), "should be allowed " + uri);
+	}
+
+	@Test
+	public void testConditionIsBishopAllowed() throws Exception {
+		String xml = 
+			"<?xml version='1.0' encoding='UTF-8'?>"
+			+ "<?alias is-bishop=classpath:is-bishop-test.xml?>"
+			+ "<config console-port='88' proxy-port='45'>"
+			+ " <sso-traffic>"
+			+ "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{is-bishop}}'/>"
+			+ " </sso-traffic>"
+		    + "</config>";
+		Config cfg = new Config();
+		XmlConfigLoader2.load(xml);
+		TrafficManager tman = cfg.getTrafficManager();
+		User bish = new User("bish", "bish"); 
+		bish.addHeader(LegacyPropsInjectorDefs.CP_POSITIONS_SESSION_PROPERTY, "P4:W100S200A300"); // 4 is a bishop
+		User user = new User("user", "user"); 
+
+		String uri = "app://labs-local.lds.org/auth/_app/debug";
+		Assert.assertTrue(tman.isPermitted("POST", uri, bish), "should be allowed " + uri);
+		Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
+	}
+
+	@Test
+	public void testConditionHasSpecificLdsAccountIdAllowed() throws Exception {
+		String xml = 
+			"<?xml version='1.0' encoding='UTF-8'?>"
+			+ "<?alias has-lds-account-1234=classpath:has-lds-account-1234-test.xml?>"
+			+ "<config console-port='88' proxy-port='45'>"
+			+ " <sso-traffic>"
+			+ "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{has-lds-account-1234}}'/>"
+			+ " </sso-traffic>"
+		    + "</config>";
+		Config cfg = new Config();
+		XmlConfigLoader2.load(xml);
+		TrafficManager tman = cfg.getTrafficManager();
+		User u1234 = new User("bish", "bish"); 
+		u1234.addHeader(LegacyPropsInjectorDefs.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+		User user = new User("user", "user"); 
+		user.addHeader(LegacyPropsInjectorDefs.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+
+		String uri = "app://labs-local.lds.org/auth/_app/debug";
+		Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
+		Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
 	}
 }

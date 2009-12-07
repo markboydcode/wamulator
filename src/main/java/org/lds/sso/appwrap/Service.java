@@ -178,7 +178,12 @@ public class Service {
 		svc.start();
 		
 		while (true) {
-			Thread.sleep(10000);
+			try {
+				Thread.sleep(10000);
+			}
+			catch(Exception e) {
+				throw new RuntimeException("Service incurred exception. Exiting.", e);
+			}
 		}
 	}
 }

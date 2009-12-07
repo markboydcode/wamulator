@@ -4,6 +4,13 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * Adds semantics of actions on the URI for restricting access. 
+ * 
+ * @author Mark Boyd
+ * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
+ *
+ */
 public class AllowedUri extends UnenforcedUri {
 
 	protected String[] actions = null;

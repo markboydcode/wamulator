@@ -21,10 +21,15 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
+import com.iplanet.sso.SSOException;
+
 public class XmlConfigLoader2 {
 
 	public static final String MACRO_PREFIX = "{{";
 	public static final String MACRO_SUFFIX = "}}";
+	
+	public static final String SRC_CLASSPATH = "classpath:";
+	public static final String SRC_STRING = "string:";
 	
 	public static void load(String xml) throws Exception {
 		load(new StringReader(xml), "from String '" + xml + "'");
@@ -126,6 +131,7 @@ public class XmlConfigLoader2 {
 	public static class CfgContentHandler implements ContentHandler {
 		
 		Map<String,String> aliases = new HashMap<String,String>();
+		Map<String,String> aliasSrc = new HashMap<String,String>();
 		Map<String,String> conditions = new HashMap<String,String>();
 		String currentConditionId = null; 
 		StringBuffer characters = null;
@@ -165,7 +171,11 @@ public class XmlConfigLoader2 {
 				if (eqIdx >= 0) {
 					String name = data.substring(0, eqIdx);
 					String val = data.substring(eqIdx+1);
+					String rawVal = val;
+					String srcPrefix = SRC_STRING;
+					
 					if (val.toLowerCase().startsWith("classpath:")) {
+						srcPrefix = SRC_CLASSPATH;
 						String resrc = val.substring("classpath:".length());
 						ClassLoader cldr = this.getClass().getClassLoader();
 						InputStream src = cldr.getResourceAsStream(resrc);
@@ -196,6 +206,7 @@ public class XmlConfigLoader2 {
 					}
 					val = resolveAliases(val);
 					aliases.put(name, val);
+					aliasSrc.put(name, srcPrefix + rawVal);
 				}
 			}
 		}
@@ -230,7 +241,7 @@ public class XmlConfigLoader2 {
 				String host = getStringAtt("host", path, atts);
 				int port = getIntegerAtt("port", path, atts);
 				TrafficManager trafficMgr = cfg.getTrafficManager();
-				SiteMatcher m = new SiteMatcher(scheme, host, port);
+				SiteMatcher m = new SiteMatcher(scheme, host, port, trafficMgr);
 				trafficMgr.addMatcher(m);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
@@ -263,18 +274,13 @@ public class XmlConfigLoader2 {
 				actionAtt = actionAtt.replace(" ", "");
 				String[] actions = actionAtt.split(",");
 				String cond = getCondition(path, atts);
+				String syntax = aliases.get(cond);
 
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-				// TODO inject condition name into TrafficManager,
-				// TODO have TM parse condition using syntax engine,
-				// TODO inject condition name into AllowedUri 
-				// TODO have AllowedUri get compiled condition in isPermitted
-				// call if condition name is found within it and evaluate 
-				// condition for user.
 				String[] ru = getRelUriAtt("cpath", path, atts);
 				AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm.getPort(), ru[0], ru[1], actions);
-				sm.addAllowedUri(au);
+				sm.addAllowedUri(au, cond, syntax);
 			}
 			else if (path.matches("/config/sso-traffic/by-resource")) {
 				URI u=getUriAtt("uri", path, atts);
@@ -289,18 +295,20 @@ public class XmlConfigLoader2 {
 
 				if (unenforcedAtt != null) {
 					UnenforcedUri uu = new UnenforcedUri(u.getScheme(), host, port, u.getPath(), u.getQuery());
-					sm = new SiteMatcher(u.getScheme(), host, port, uu);
+					sm = new SiteMatcher(u.getScheme(), host, port, uu, null, null, trafficMgr);
 				}
 				else {
 					String actionAtt = atts.getValue("allow");
 					if (actionAtt == null) {
-						sm = new SiteMatcher(u.getScheme(), host, port);
+						sm = new SiteMatcher(u.getScheme(), host, port, trafficMgr);
 					}
 					else {
 						actionAtt = actionAtt.replace(" ", "");
 						String[] actions = actionAtt.split(",");
 						AllowedUri au = new AllowedUri(u.getScheme(), host, port, u.getPath(), u.getQuery(), actions);
-						sm = new SiteMatcher(host, port, au);
+						String cond = getCondition(path, atts);
+						String syntax = aliases.get(cond);
+						sm = new SiteMatcher(host, port, au, cond, syntax, trafficMgr);
 					}
 				}
 				trafficMgr.addMatcher(sm);
@@ -314,7 +322,13 @@ public class XmlConfigLoader2 {
 			else if (path.matches("/config/users/user/sso-header")) {
 				String hdrNm = getStringAtt("name", path, atts);
 				String hdrVl = getStringAtt("value", path, atts);
-				cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
+				try {
+					cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
+				}
+				catch (SSOException e) {
+					throw new SAXException("Problem adding header " + hdrNm 
+							+ " for path", e);
+				}
 			}
 		}
 
@@ -344,6 +358,14 @@ public class XmlConfigLoader2 {
 					+ pathToElement 
 					+ " must be a single macro for a defined alias. ex: '{{alias-name}}'.") ;
 		}
+		String condSrc = aliasSrc.get(con);
+		if (con.startsWith(SRC_STRING)) {
+			throw new IllegalArgumentException("Attribute 'condition' for "
+					+ pathToElement 
+					+ " must be custom condition syntax loaded from file. " 
+					+ "ex: <?alias is-bishop=classpath:bishop-only-syntax.xml?>...<allow condition='{{is-bishop}}'...") ;
+		}
+
 		return con;
 	}
 

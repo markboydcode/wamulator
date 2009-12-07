@@ -1,47 +1,64 @@
 package org.lds.sso.appwrap;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.Properties;
 
+import org.lds.sso.plugins.policy.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.opensso.MyProvider;
+
+import com.sun.identity.shared.configuration.SystemPropertiesManager;
 
 /**
  * Manages in-memory registered ties between the canonical URL space and the
  * application URL space for applications running on a port on the local host
  * allowing the reverse proxy to rewrite the request URI line accordingly and
  * proxy the request to the application port. Also keeps track of unenforced
- * URLs and URLs permitted for authenticated users both of which only reside in 
+ * URLs and URLs permitted for authenticated users both of which only reside in
  * the canonical space. See TrafficType for definition.
  * 
  * @author Mark Boyd
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
- *
+ * 
  */
 public class TrafficManager {
-	private List<SiteMatcher> matchers = new ArrayList<SiteMatcher>();
-	private SiteMatcher lastMatcherAdded = null;
+	protected static final LogicalSyntaxEvaluationEngine cEngine;
 	
+	protected static final Map<String, String> cSyntaxMap = new HashMap<String, String>();  
+
+	private List<SiteMatcher> matchers = new ArrayList<SiteMatcher>();
+
+	private SiteMatcher lastMatcherAdded = null;
+
+	/**
+	 * Set up opensso's debug infrastructure to use custom implementation that
+	 * wraps Log4j. Log4j logger created is
+	 * org.lds.sso.plugins.policy.conditions
+	 * .evaluator.LogicalSyntaxEvaluationEngine
+	 */
+	static {
+		Properties p = new Properties();
+		p.put("com.sun.identity.util.debug.provider", MyProvider.class.getName());
+		SystemPropertiesManager.initializeProperties(p);
+		cEngine = new LogicalSyntaxEvaluationEngine();
+	}
+
 	/**
 	 * Determines if the passed-in url is an unenforeceUrl either starting with
 	 * a configured url ending in an asterisk minus the asterisk or matching
 	 * exactly a configured url not ending with an asterisk.
 	 * 
 	 * @param uri
-	 * @param string 
-	 * @param i 
+	 * @param string
+	 * @param i
 	 * @return
 	 */
 	public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
-		for(SiteMatcher m : matchers) {
+		for (SiteMatcher m : matchers) {
 			if (m.isUnenforced(scheme, host, port, path, query)) {
 				return true;
 			}
@@ -57,9 +74,9 @@ public class TrafficManager {
 	 * @param uri
 	 * @return
 	 */
-	public boolean isPermitted(String scheme, String host, int port, String action, String path, String query) {
-		for(SiteMatcher m : matchers) {
-			if (m.isAllowed(scheme, host, port, action, path, query)) {
+	public boolean isPermitted(String scheme, String host, int port, String action, String path, String query, User user) {
+		for (SiteMatcher m : matchers) {
+			if (m.isAllowed(scheme, host, port, action, path, query, user)) {
 				return true;
 			}
 		}
@@ -68,17 +85,17 @@ public class TrafficManager {
 
 	public void addMatcher(SiteMatcher m) {
 		this.matchers.add(m);
-		this.lastMatcherAdded  = m;
+		this.lastMatcherAdded = m;
 	}
-	
+
 	public SiteMatcher getLastMatcherAdded() {
 		return lastMatcherAdded;
 	}
 
 	public SiteMatcher getSite(String scheme, String host, int port, String path, String query) {
-		for(SiteMatcher rm : matchers) {
+		for (SiteMatcher rm : matchers) {
 			if (rm.matches(scheme, host, port, path, query)) {
-				return (SiteMatcher) rm; // need to fix this hardcoded cast
+				return rm;
 			}
 		}
 		return null;
@@ -94,13 +111,13 @@ public class TrafficManager {
 		return this.isUnenforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
 	}
 
-	public boolean isPermitted(String action, String fullUri) throws URISyntaxException {
+	public boolean isPermitted(String action, String fullUri, User user) throws URISyntaxException {
 		URI u = new URI(fullUri);
 		int port = u.getPort() == -1 ? 80 : u.getPort();
 		String query = u.getQuery();
 		if ("".equals(query)) {
 			query = null;
 		}
-		return this.isPermitted(u.getScheme(), u.getHost(), port, action, u.getPath(), query);
+		return this.isPermitted(u.getScheme(), u.getHost(), port, action, u.getPath(), query, user);
 	}
 }

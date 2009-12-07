@@ -223,7 +223,7 @@ public class RequestHandler implements Runnable {
 					String query = null;
 
 					if (!appMgr.isPermitted(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
-							reqPkg.path, reqPkg.query)) {
+							reqPkg.path, reqPkg.query, user)) {
 						sendProxyResponse(403, get403Response(user, reqPkg.requestLine), reqPkg, clientIn, clientOut,
 								user, startTime, log);
 						return;
