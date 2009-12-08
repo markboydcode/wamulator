@@ -41,14 +41,7 @@
 </table>
 <!-- end of proposed change to dynamically inject here via json ajax -->
 </td>
-<td valign="top">
-<div style="font-style: italic; color: green; padding: 3px 3px 3px 20px">Permitted URIs</div>
-<table>
-<c:forEach items="${requestScope.currentUser.permissions}" var="perm">
-<tr><td><span style="padding: 0 5px 0 20px;">${perm.value}</span></td><td>${perm.name}</td></tr>
-</c:forEach>
-</table>
-</td></tr></table>
+</tr></table>
 <div style="font-size: medium; font-weight: bold; padding: 6 3 3 3px">Active Sessions:</div><table>
 <c:forEach items="${requestScope.config.sessionManager.sessions}" var="session">
 <tr><td>${session.token}</td>

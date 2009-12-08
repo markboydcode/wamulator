@@ -52,7 +52,7 @@
         The set of defined users, headers injected per user, and urls allowed 
         by each user url access permissions 
     -->
-    <users>
+    <users session-timeout-seconds='500'>
         <user name="photo-editor" pwd="pwda">
             <sso-header name="policy-lds-account-id" value="1000"/>
             <sso-header name="policy-birthdate" value="1960-09-25"/>

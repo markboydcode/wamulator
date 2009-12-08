@@ -313,6 +313,11 @@ public class XmlConfigLoader2 {
 				}
 				trafficMgr.addMatcher(sm);
 			}
+			else if (path.matches("/config/users")) {
+				int timeout = getIntegerAtt("session-timeout-seconds", path, atts);
+				SessionManager sman = cfg.getSessionManager();
+				sman.setSessionInactivityTimeoutSeconds(timeout);
+			}
 			else if (path.matches("/config/users/user")) {
 				String usrNm = getStringAtt("name", path, atts);
 				String usrPwd = getStringAtt("pwd", path, atts);

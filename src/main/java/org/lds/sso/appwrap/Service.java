@@ -58,8 +58,10 @@ public class Service {
 		// for localhost:port/admin/index.html and whatever else is in the webapp directory
 		final URL warUrl = Service.class.getClassLoader().getResource(WEBAPPDIR);
 		final String warUrlString = warUrl.toExternalForm();
+		WebAppContext wac = new WebAppContext(warUrlString, CONTEXTPATH);
+		JettyWebappUrlAdjustingHandler adj = new JettyWebappUrlAdjustingHandler(CONTEXTPATH, WEBAPPDIR, wac);
 		ConfigInjectingHandlerList cfgInjector = new ConfigInjectingHandlerList();
-		cfgInjector.addHandler(new WebAppContext(warUrlString, CONTEXTPATH));
+		cfgInjector.addHandler(adj);
 
 		HandlerCollection handlers = new HandlerCollection();
 		handlers.addHandler(cfgInjector);
