@@ -314,9 +314,11 @@ public class XmlConfigLoader2 {
 				trafficMgr.addMatcher(sm);
 			}
 			else if (path.matches("/config/users")) {
-				int timeout = getIntegerAtt("session-timeout-seconds", path, atts);
-				SessionManager sman = cfg.getSessionManager();
-				sman.setSessionInactivityTimeoutSeconds(timeout);
+				int timeout = getIntegerAtt("session-timeout-seconds", path, atts, false);
+				if (timeout != -1) {
+					SessionManager sman = cfg.getSessionManager();
+					sman.setSessionInactivityTimeoutSeconds(timeout);
+				}
 			}
 			else if (path.matches("/config/users/user")) {
 				String usrNm = getStringAtt("name", path, atts);
@@ -435,13 +437,39 @@ public class XmlConfigLoader2 {
 			}
 		}
 
+		/**
+		 * Delegates to {@link #getIntegerAtt(String, Path, Attributes, boolean)}
+		 * with required set to true requiring the existence of the attribute
+		 * or an exception is thrown.
+		 * 
+		 * @param name
+		 * @param pathToElement
+		 * @param atts
+		 * @return
+		 */
 		private int getIntegerAtt(String name, Path pathToElement, Attributes atts) {
+			return getIntegerAtt(name, pathToElement, atts, true);
+		}
+
+		/**
+		 * Returns 
+		 * @param name
+		 * @param pathToElement
+		 * @param atts
+		 * @param required
+		 * @return
+		 */
+		private int getIntegerAtt(String name, Path pathToElement, Attributes atts, boolean required) {
 			String val = atts.getValue(name);
 			if (val == null) {
-				throw new IllegalArgumentException("Attribute '" + name 
-						+ "' must be specified for element " + pathToElement 
-						+ ".");
-
+				if (required) {
+					throw new IllegalArgumentException("Attribute '" + name 
+							+ "' must be specified for element " + pathToElement 
+							+ ".");
+				}
+				else {
+					return -1;
+				}
 			}
 			val = resolveAliases(val);
 			try {
