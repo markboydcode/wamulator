@@ -112,9 +112,9 @@ public class User implements SSOToken {
 			// custom syntax uses headers as is so inject into both the headers
 			// buffer (for injecting into requests) and the tokenProps buffer
 			// (for condition syntax evaluation).
-			this.headers.put(name, value);
 			this.tokenProps.put(name, value);
 		}
+		this.headers.put(name, value);
 	}
 
 	public void injectUserHeaders(StringBuffer headersBfr) {

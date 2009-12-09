@@ -50,6 +50,8 @@
             <sso-header name="policy-birthdate" value="1960-09-25"/>
             <sso-header name="policy-email" value="me@someplace.com"/>
             <sso-header name="policy-preferred-name" value="Samson the great"/>
+            <sso-header name="policy-units" value="W100:S200:A300"/>
+            <sso-header name="policy-positions" value="P4:W100:S200:A300|P1:S200:A300"/>
         </user>
         <user name="ngib" pwd="pwdb">
             <sso-header name="policy-birthdate" value="2002-02-20"/>
