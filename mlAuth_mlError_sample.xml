@@ -31,6 +31,12 @@
             <allow action="GET,POST" cpath="/auth/_app/*"/>
             <allow action="GET,POST" cpath="/auth/_app/*?*"/>
             
+            <cctx-mapping cctx="/access*" thost="127.0.0.1" tport="8510" tpath="/access*"/>
+            <unenforced cpath="/access/ui/*"/>
+            <unenforced cpath="/access/ui/*?*"/>
+            <allow action="GET,POST" cpath="/access/_app/*"/>
+            <allow action="GET,POST" cpath="/access/_app/*?*"/>
+            
             <cctx-mapping cctx="/error/*" thost="127.0.0.1" tport="8520" tpath="/error/*"/>
             <unenforced cpath="/error/*"/>
             <unenforced cpath="/error/*?*"/>

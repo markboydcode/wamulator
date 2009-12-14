@@ -40,6 +40,9 @@ public class AuthZHandler extends RestHandlerBase {
 			return;
 		}
 
+		if (cLog.isDebugEnabled()) {
+			cLog.debug(pathPrefix + " requested for " + uri);
+		}
         boolean isUnenforced = false;
         try { 
             isUnenforced = cfg.getTrafficManager().isUnenforced(uri);

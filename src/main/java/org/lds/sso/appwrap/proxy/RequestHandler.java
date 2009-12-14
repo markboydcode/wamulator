@@ -154,7 +154,7 @@ public class RequestHandler implements Runnable {
 				 * scenarios would require placing such a check at the end of
 				 * this method.
 				 */
-				sendProxyResponse(500, getRedirectLoopDetected(reqPkg), reqPkg, clientIn, clientOut, user, startTime,
+				sendProxyResponse(500, get500RedirectLoopDetected(reqPkg), reqPkg, clientIn, clientOut, user, startTime,
 						log);
 				return;
 			}
@@ -213,7 +213,7 @@ public class RequestHandler implements Runnable {
 					// missing session cookie or invalid session? redirect to
 					// login
 					if (user == null || !cfg.getSessionManager().isValidToken(token)) {
-						sendProxyResponse(302, getRedirectToLoginPage(reqPkg), reqPkg, clientIn, clientOut, user,
+						sendProxyResponse(302, get302RedirectToLoginPage(reqPkg), reqPkg, clientIn, clientOut, user,
 								startTime, log);
 						return;
 					}
@@ -224,7 +224,7 @@ public class RequestHandler implements Runnable {
 
 					if (!appMgr.isPermitted(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
 							reqPkg.path, reqPkg.query, user)) {
-						sendProxyResponse(403, get403Response(user, reqPkg.requestLine), reqPkg, clientIn, clientOut,
+						sendProxyResponse(403, get403Response(user, reqPkg), reqPkg, clientIn, clientOut,
 								user, startTime, log);
 						return;
 					}
@@ -234,7 +234,7 @@ public class RequestHandler implements Runnable {
 				}
 			}
 			else if (! cfg.getAllowForwardProxying()){
-				sendProxyResponse(501, get501NoProxyingResponse(reqPkg.requestLine), reqPkg, clientIn, clientOut, user,
+				sendProxyResponse(501, get501NoProxyingResponse(reqPkg), reqPkg, clientIn, clientOut, user,
 						startTime, log);
 				return;
 			}
@@ -289,7 +289,7 @@ public class RequestHandler implements Runnable {
 			}
 
 			if (resPkg.type == HttpPackageType.EMPTY_RESPONSE) {
-				sendProxyResponse(500, getNoContentFromServer(reqPkg), reqPkg, clientIn, clientOut, user, startTime,
+				sendProxyResponse(500, get500NoContentFromServer(reqPkg), reqPkg, clientIn, clientOut, user, startTime,
 						log);
 				return;
 			}
@@ -479,57 +479,74 @@ public class RequestHandler implements Runnable {
 		}
 	}
 
-	private byte[] get403Response(User user, RequestLine origReqLn) throws IOException {
-		String html = loadTemplateFile("org/lds/sso/appwrap/proxy/embedded403Resp.txt", user, origReqLn);
-		byte[] bytes = new StringBuffer().append("HTTP/1.1 403 Forbidden").append(CRLF).append(
-				"Content-Type: text/html; charset=utf-8").append(CRLF).append("Server: ").append(Config.SERVER_NAME)
-				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) 
-				.append(html).append(CRLF) // empty line terminating body
-				.toString().getBytes();
-		return bytes;
+	private byte[] get403Response(User user, HttpPackage pkg) throws IOException {
+		return getResponse("403", "Forbidden", 
+				"403 Forbidden",
+			    "The specified action on the URI is not allowed by this user.",
+			    user, pkg);
 	}
 
-	private byte[] get501NoProxyingResponse(RequestLine origReqLn) throws IOException {
-		String html = loadTemplateFile("org/lds/sso/appwrap/proxy/embedded501ProxyingNotAllowedResp.txt", null, origReqLn);
-		byte[] bytes = new StringBuffer().append("HTTP/1.1 501 Not Allowed - Forward Proxying").append(CRLF).append(
-				"Content-Type: text/html; charset=utf-8").append(CRLF).append("Server: ").append(Config.SERVER_NAME)
-				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) 
-				.append(html).append(CRLF) // empty line terminating body
-				.toString().getBytes();
-		return bytes;
+	private byte[] get501NoProxyingResponse( HttpPackage pkg) throws IOException {
+		return getResponse("501", "Not Allowed - Forward Proxying", 
+				"501 Not Implemented - Forward Proxying",
+			    "Forward Proxying is not allowed. Should this URI be mapped into the &lt;sso-traffic&gt; of the site?",
+			    null, pkg);
 	}
+
+	private static final String HEADER_TEMPLATE = 
+		"HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
+		+ "Content-Type: text/html; charset=utf-8" + CRLF
+		+ "Server: " + Config.SERVER_NAME + CRLF
+		+ "Content-Length: {{content-length}}" + CRLF
+		+ CRLF // empty line terminating headers
+		+ "{{body}}" 
+		+ CRLF; // empty line terminating body
+	
+	private static final String BODY_TEMPLATE = 
+		"<html xmlns='http://www.w3.org/1999/xhtml'>" + CRLF
+		+ "<head><title>{{title}}</title></head>" + CRLF
+		+ "<body style='background-color: #EEF; margin: 0px; padding: 0px;'>" + CRLF
+		+ "<div style='padding: 0 10 10 10px;'>" + CRLF
+		+ "<h3>{{title}}</h3>" + CRLF
+		+ "<div style='font-weight: bold; font-style: italic; color: green; padding: 12px 3px 3px 3px'>" + CRLF
+		+ "{{message}}"
+		+ "</div>" + CRLF
+		+ "<table border='0'><tr><td>Username:</td><td>{{username}}</td></tr><tr><td>Action:</td><td>{{action}}</td></tr><tr><td>URI:</td><td>{{uri}}</td></tr></table>" + CRLF
+		+ "</div>" + CRLF
+		+ "</body>" + CRLF
+		+ "</html>"; 
 
 	/**
-	 * Loads template response files or pull from cache and resolves some macros.
+	 * Builds a dynamic response from canned templates for first the html page
+	 * body and then for the http response including http response headers. 
 	 * 
-	 * @param filename
-	 * @param user
-	 * @param origReqLn
+	 * @param httpRespCode the non-null value of the http response code.
+	 * @param httpRespMsg the non-null short message of the http response line
+	 * @param htmlTitle the non-null title of the html page in the browser
+	 * @param htmlMsg the non-null message embedded in the html page in the browser
+	 * @param user the user object if applicable; if null the "n/a" is used
+	 * @param origReqLn contains the http method and http URL if applicable or uses "n/a" for both if this object is null
 	 * @return
-	 * @throws IOException
 	 */
-	private String loadTemplateFile(String filename, User user, RequestLine origReqLn)
-	 throws IOException {
-		String html = templates.get(filename);
+	private byte[] getResponse(String httpRespCode, String httpRespMsg, 
+			String htmlTitle, String htmlMsg, User user, HttpPackage pkg) {
+		String body = BODY_TEMPLATE;
+		body = body.replace("{{title}}", htmlTitle);
+		body = body.replace("{{message}}", htmlMsg);
+		body = body.replace("{{username}}", (user == null ? "n/a" : user.getUsername()));
+		body = body.replace("{{action}}", (pkg == null || pkg.requestLine == null ? "n/a" : pkg.requestLine.getMethod()));
+		body = body.replace("{{uri}}", (pkg == null  || pkg.requestLine == null ? "n/a" 
+				: pkg.scheme + "://" + pkg.hostHdr + pkg.requestLine.getUri()));
 		
-		if (html == null) {
-			InputStream is = this.getClass().getClassLoader().getResourceAsStream(filename);
-			DataInputStream dis = new DataInputStream(is);
-			byte[] fbytes = new byte[dis.available()];
-			dis.readFully(fbytes);
-			html = new String(fbytes);
-			templates.put(filename, html);
-		}
-		if (user != null) {
-			html = html.replace("{{username}}", user.getUsername());
-		}
-		if (origReqLn != null) {
-			html = html.replace("{{action}}", origReqLn.getMethod());
-			html = html.replace("{{uri}}", origReqLn.getUri());
-		}
-		return  html;
+		String resp = HEADER_TEMPLATE;
+		resp = resp.replace("{{http-resp-code}}", httpRespCode);
+		resp = resp.replace("{{http-resp-msg}}", httpRespMsg);
+		resp = resp.replace("{{content-length}}", "" + body.length());
+		resp = resp.replace("{{body}}", body);
+		
+		return resp.getBytes();
 	}
-
+	
 	/**
 	 * Crafts the 404 response for when no registered application's canonical
 	 * context matches an in-coming URL.
@@ -539,23 +556,10 @@ public class RequestHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private byte[] get404NoMappingResponse(HttpPackage reqPkg) throws IOException {
-		String html = new StringBuffer().append("<html xmlns='http://www.w3.org/1999/xhtml'>").append(CRLF).append(
-				"  <head>").append(CRLF).append("    <title>404 Not Found</title>").append(CRLF).append("  </head>")
-				.append(CRLF).append("  <body>").append(CRLF).append(
-						"    <h1>No registered application has a canonical context that matches URL '").append(
-						reqPkg.requestLine.getUri()).append("'.</h1>").append(CRLF).append("  </body>").append(CRLF)
-				.append("</html>").toString();
-		byte[] bytes = new StringBuffer().append("HTTP/1.1 404 Not Found").append(CRLF).append(
-				"Content-Type: text/html; charset=utf-8").append(CRLF).append("Server: ").append(Config.SERVER_NAME)
-				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) // empty
-																											// line
-																											// terminating
-																											// headers
-				.append(html).append(CRLF) // empty line terminating body
-				.toString().getBytes();
-		return bytes;
-		// clientOut.write(bytes, 0, bytes.length);
-		// clientOut.flush();
+		return getResponse("404", "Not Found", 
+				"404 Not Found",
+			    "No registered application in a &lt;by-site&gt; declaration has a canonical context that matches the URL.",
+			    null, reqPkg);
 	}
 
 	/**
@@ -566,22 +570,11 @@ public class RequestHandler implements Runnable {
 	 * @return
 	 * @throws IOException
 	 */
-	private byte[] getNoContentFromServer(HttpPackage reqPkg) throws IOException {
-		String html = new StringBuffer().append("<html xmlns='http://www.w3.org/1999/xhtml'>").append(CRLF).append(
-				"  <head>").append(CRLF).append("    <title>500 No response received from server</title>").append(CRLF)
-				.append("  </head>").append(CRLF).append("  <body>").append(CRLF).append(
-						"    <h1>No bytes were found in the stream from the server for '").append(
-						reqPkg.requestLine.getUri()).append("'.</h1>").append(CRLF).append("  </body>").append(CRLF)
-				.append("</html>").toString();
-		byte[] bytes = new StringBuffer().append("HTTP/1.1 500 No Response from Server").append(CRLF).append(
-				"Content-Type: text/html; charset=utf-8").append(CRLF).append("Server: ").append(Config.SERVER_NAME)
-				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) // empty
-																											// line
-																											// terminating
-																											// headers
-				.append(html).append(CRLF) // empty line terminating body
-				.toString().getBytes();
-		return bytes;
+	private byte[] get500NoContentFromServer(HttpPackage reqPkg) throws IOException {
+		return getResponse("500", "No Response from Server", 
+				"500 No response received from server",
+				"No bytes were found in the stream from the server.",
+			    null, reqPkg);
 	}
 
 	/**
@@ -593,45 +586,23 @@ public class RequestHandler implements Runnable {
 	 * @return
 	 * @throws IOException
 	 */
-	private byte[] getRedirectLoopDetected(HttpPackage reqPkg) throws IOException {
-		StringBuffer htmlBfr = new StringBuffer().append("<html xmlns='http://www.w3.org/1999/xhtml'>").append(CRLF)
-				.append("  <head>").append(CRLF);
-		if (reqPkg.rapidRepeatRequestDetected) {
-			htmlBfr.append("    <title>500 ").append(reqPkg.repeatRequestErrMsg).append("</title>").append(CRLF);
-		}
-		else {
-			htmlBfr.append("    <title>500 Infinite Redirect Detected</title>").append(CRLF);
-		}
-		htmlBfr.append("    <title>500 Infinite Redirect Detected</title>").append(CRLF).append("  </head>").append(
-				CRLF).append("  <body>").append(CRLF);
-		if (reqPkg.rapidRepeatRequestDetected) {
-			htmlBfr.append("    <h1>500 ").append(reqPkg.repeatRequestErrMsg).append("</h1>").append(CRLF);
-		}
-		else {
-			htmlBfr.append("    <h1>500 Infinite Redirect Detected</h1>").append(CRLF);
-		}
-		htmlBfr.append("<div>The proxy received a request from itself. This can happen:</div> ").append(
-				"<ul><li>when a request doesn't match the configured site(s) ").append(
-				"and is handled as an outbound proxy but the targeted ").append(
-				"host and port resolves back to this proxy.</li>").append(
-				"<li>when the configured sign-in page is not made an unenforced ").append(
-				"url and hence each subsequent request is redirected to the ").append(
-				"sign-in page with a ever increasing goto query parameter.<.li>").append("</ul><br/>Ensure ").append(
-				"that the site(s) is(are) configured correctly.").append(CRLF).append("</body>").append(CRLF).append(
-				"</html>").toString();
-		String html = htmlBfr.toString();
-		byte[] bytes = new StringBuffer().append("HTTP/1.1 500 Infinite Redirect Detected").append(CRLF).append(
-				"Content-Type: text/html; charset=utf-8").append(CRLF).append("Server: ").append(Config.SERVER_NAME)
-				.append(CRLF).append("Content-Length: ").append(html.length()).append(CRLF).append(CRLF) // empty
-																											// line
-																											// terminating
-																											// headers
-				.append(html).append(CRLF) // empty line terminating body
-				.toString().getBytes();
-		return bytes;
+	private byte[] get500RedirectLoopDetected(HttpPackage reqPkg) throws IOException {
+		String title = (reqPkg.rapidRepeatRequestDetected ? "500 " + reqPkg.repeatRequestErrMsg : "Infinite Redirect Detected"); 
+		return getResponse("500", "Infinite Redirect Detected", 
+				title,
+				"The proxy received a request from itself. This can happen:</br> " + CRLF
+				+ "<ul><li>when a request doesn't match the configured site(s) " + CRLF
+				+ "and is handled as an outbound proxy but the targeted " + CRLF
+				+ "host and port resolves back to this proxy.</li>" + CRLF
+				+ "<li>when the configured sign-in page is not made an unenforced " + CRLF
+				+ "url and hence each subsequent request is redirected to the " + CRLF
+				+ "sign-in page with an ever increasing goto query parameter.</li>" + CRLF
+				+ "</ul><br/>" + CRLF
+				+ "Ensure that the site(s) is(are) configured correctly.",
+			    null, reqPkg);
 	}
 
-	private byte[] getRedirectToLoginPage(HttpPackage pkg) throws IOException {
+	private byte[] get302RedirectToLoginPage(HttpPackage pkg) throws IOException {
 		String origReq = "http://" + pkg.hostHdr + pkg.requestLine.getUri();
 		String origEncReq = URLEncoder.encode(origReq, "utf-8");
 
