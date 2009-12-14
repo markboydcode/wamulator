@@ -337,6 +337,12 @@ public class XmlConfigLoader2 {
 							+ " for path", e);
 				}
 			}
+			else if (path.matches("/config/sso-traffic/rewrite-redirect")) {
+				String from = getStringAtt("from", path, atts);
+				String to = getStringAtt("to", path, atts);
+				TrafficManager mgr = cfg.getTrafficManager();
+				mgr.addRedirectRewrite(from, to);
+			}
 		}
 
 		/**

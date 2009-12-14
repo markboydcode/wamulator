@@ -34,6 +34,8 @@ public class TrafficManager {
 
 	private SiteMatcher lastMatcherAdded = null;
 
+	private Map<String,String> redirectRewrites = new HashMap<String,String>();
+
 	/**
 	 * Set up opensso's debug infrastructure to use custom implementation that
 	 * wraps Log4j. Log4j logger created is
@@ -119,5 +121,27 @@ public class TrafficManager {
 			query = null;
 		}
 		return this.isPermitted(u.getScheme(), u.getHost(), port, action, u.getPath(), query, user);
+	}
+
+	public void addRedirectRewrite(String from, String to) {
+		this.redirectRewrites.put(from, to);
+	}
+
+	/**
+	 * Takes the passed in absolute URL gleaned from a Location header to see
+	 * if it matches any configured rewrite directives. Returns null if it does
+	 * not match any directive and hence need not be rewritten. Returns the 
+	 * a rewritten absolute URL if a match is found.
+	 * 
+	 * @param redirect
+	 * @return
+	 */
+	public String rewriteRedirect(String redirect) {
+		for (Map.Entry<String, String> ent : redirectRewrites.entrySet() ) {
+			if (redirect.startsWith(ent.getKey())) {
+				return ent.getValue() + redirect.substring(ent.getKey().length());
+			}
+		}
+		return null; // match not found, don't rewrite
 	}
 }

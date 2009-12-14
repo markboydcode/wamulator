@@ -143,7 +143,7 @@ import java.text.DecimalFormat;
 					Socket client = server.accept();
 					RequestHandler h = new RequestHandler(client, cfg, connId);
 					h.setTimeoutSeconds(ptTimeout);
-					Thread t = new Thread(h, "Request Handler " + connId);
+					Thread t = new Thread(h, "RequestHandler " + connId);
 					t.setDaemon(true);
 					t.start();
 				}

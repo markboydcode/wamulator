@@ -75,6 +75,7 @@ src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/pla
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/opensso/AssignmentsChainInjectorTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/opensso/UnitsChainTranslatorTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/RedirectRewriteTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/TestAuthZHandler.java -text svneol=unset#text/plain
 src/test/resources/XmlConfigLoaderTest.txt -text svneol=unset#text/plain

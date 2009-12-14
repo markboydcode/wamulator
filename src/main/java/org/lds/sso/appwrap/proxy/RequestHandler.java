@@ -805,8 +805,6 @@ public class RequestHandler implements Runnable {
 				}
 			}
 
-			// write the header to the buffer
-			pkg.headerBfr.append(data + CRLF);
 			dataLC = data.toLowerCase();
 
 			if (pkg.type == HttpPackageType.REQUEST) {
@@ -841,11 +839,27 @@ public class RequestHandler implements Runnable {
 				}
 			}
 
-			// check for the Content-Length header
+			// check for response header special handling
 			pos = dataLC.indexOf(HttpPackage.CONTENT_LNG);
 			if (pos >= 0) {
 				pkg.contentLength = Integer.parseInt(data.substring(pos + HttpPackage.CONTENT_LNG.length()).trim());
 			}
+			pos = dataLC.indexOf(HttpPackage.LOCATION_HDR);
+			if (pos >= 0) {
+				String redirect = data.substring(pos + HttpPackage.LOCATION_HDR.length()).trim();
+				TrafficManager mgr = cfg.getTrafficManager();
+				String rewrite = mgr.rewriteRedirect(redirect); 
+				if (rewrite != null) {
+					// rewrite matched, replace
+					if (cLog.isDebugEnabled()) {
+						cLog.debug("rewriting redirect from: " + redirect + " to: "
+								+ rewrite);
+					}
+					data = HttpPackage.LOCATION_HDR + " " + rewrite;
+				}
+			}
+			// write the header to the buffer
+			pkg.headerBfr.append(data + CRLF);
 		}
 	}
 
