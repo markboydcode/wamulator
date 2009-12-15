@@ -326,7 +326,14 @@ public class Config {
 		public void run() {
 			boolean interrupted = false;
 			while (! interrupted) {
-				Map<RepeatRecord, AllowedUri> records = new HashMap<RepeatRecord, AllowedUri>(requestOccurrence.size());
+				int initialSize = requestOccurrence.size();
+				if (initialSize < 0) {
+					initialSize = 5;
+					if (cLog.isDebugEnabled()) {
+						cLog.debug("RequestOccurrences size was -1 which shouldn't be possible from map.size(). Setting to 5.");
+					}
+				}
+				Map<RepeatRecord, AllowedUri> records = new HashMap<RepeatRecord, AllowedUri>(initialSize);
 				for( Map.Entry<AllowedUri, RepeatRecord> ent : requestOccurrence.entrySet() ) {
 					records.put(ent.getValue(), ent.getKey());
 				}

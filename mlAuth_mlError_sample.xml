@@ -41,6 +41,7 @@
             <unenforced cpath="/error/*"/>
             <unenforced cpath="/error/*?*"/>
         </by-site>
+        <rewrite-redirect from='http://labs-local.lds.org/nextgen-bishop' to='http://labs-local.lds.org/bishop'/>
         <by-resource uri="http://other.lds.org/some/path/resource.html" unenforced="true"/>
         <by-resource uri="http://cdol.lds.org/cdol/secure/login.html" allow="GET,POST"/>
         <by-resource uri="app://different.lds.org/some/path/resource.html" unenforced="true"/>

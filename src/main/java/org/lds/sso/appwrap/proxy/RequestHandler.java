@@ -154,7 +154,20 @@ public class RequestHandler implements Runnable {
 				 * scenarios would require placing such a check at the end of
 				 * this method.
 				 */
-				sendProxyResponse(500, get500RedirectLoopDetected(reqPkg), reqPkg, clientIn, clientOut, user, startTime,
+				String title = (reqPkg.rapidRepeatRequestDetected ? "500 " + reqPkg.repeatRequestErrMsg : "Infinite Redirect Detected"); 
+				byte[] bytes = getResponse("500", "Infinite Redirect Detected", 
+						title,
+						"The proxy received a request from itself. This can happen:</br> " + CRLF
+						+ "<ul><li>when a request doesn't match the configured site(s) " + CRLF
+						+ "and is handled as an outbound proxy but the targeted " + CRLF
+						+ "host and port resolves back to this proxy.</li>" + CRLF
+						+ "<li>when the configured sign-in page is not made an unenforced " + CRLF
+						+ "url and hence each subsequent request is redirected to the " + CRLF
+						+ "sign-in page with an ever increasing goto query parameter.</li>" + CRLF
+						+ "</ul><br/>" + CRLF
+						+ "Ensure that the site(s) is(are) configured correctly.",
+					    null, reqPkg);
+				sendProxyResponse(500, bytes, reqPkg, clientIn, clientOut, user, startTime,
 						log);
 				return;
 			}
@@ -197,7 +210,11 @@ public class RequestHandler implements Runnable {
 				endpoint = reqPkg.site.getAppEndpointForCanonicalUrl(reqPkg.requestLine.getUri());
 
 				if (endpoint == null) {
-					sendProxyResponse(404, get404NoMappingResponse(reqPkg), reqPkg, clientIn, clientOut, user,
+					byte[] bytes = getResponse("404", "Not Found", 
+							"404 Not Found",
+						    "No registered application in a &lt;by-site&gt; declaration has a canonical context that matches the URL.",
+						    null, reqPkg);
+					sendProxyResponse(404, bytes, reqPkg, clientIn, clientOut, user,
 							startTime, log);
 					return;
 				}
@@ -224,7 +241,11 @@ public class RequestHandler implements Runnable {
 
 					if (!appMgr.isPermitted(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
 							reqPkg.path, reqPkg.query, user)) {
-						sendProxyResponse(403, get403Response(user, reqPkg), reqPkg, clientIn, clientOut,
+						byte[] bytes = getResponse("403", "Forbidden", 
+								"403 Forbidden",
+							    "The specified action on the URI is not allowed by this user.",
+							    user, reqPkg);
+						sendProxyResponse(403, bytes, reqPkg, clientIn, clientOut,
 								user, startTime, log);
 						return;
 					}
@@ -234,12 +255,16 @@ public class RequestHandler implements Runnable {
 				}
 			}
 			else if (! cfg.getAllowForwardProxying()){
-				sendProxyResponse(501, get501NoProxyingResponse(reqPkg), reqPkg, clientIn, clientOut, user,
+				byte[] bytes = getResponse("501", "Not Allowed - Forward Proxying", 
+						"501 Not Implemented - Forward Proxying",
+					    "Forward Proxying is not allowed. Should this URI be mapped into the &lt;sso-traffic&gt; of the site?",
+					    null, reqPkg);
+				sendProxyResponse(501, bytes, reqPkg, clientIn, clientOut, user,
 						startTime, log);
 				return;
 			}
 			// now build complete request to pass on to application
-			request = generateRequestBytes(appReqLn, reqPkg);
+			request = serializePackage((StartLine) appReqLn, reqPkg);
 
 			Socket server = null; // socket to remote server
 
@@ -289,7 +314,25 @@ public class RequestHandler implements Runnable {
 			}
 
 			if (resPkg.type == HttpPackageType.EMPTY_RESPONSE) {
-				sendProxyResponse(500, get500NoContentFromServer(reqPkg), reqPkg, clientIn, clientOut, user, startTime,
+				byte[] bytes = getResponse("500", "No Response from Server", 
+						"500 No response received from server",
+						"No bytes were found in the stream from the server.",
+					    null, reqPkg);
+				sendProxyResponse(500, bytes, reqPkg, clientIn, clientOut, user, startTime,
+						log);
+				return;
+			}
+
+			if (resPkg.type == HttpPackageType.REQUEST) {
+				byte[] bytes = getResponse("502", "Bad Gateway", 
+						"502 Bad Gateway",
+						"An invalid response was received from the server.",
+					    null, reqPkg);
+				log.println("---- Bad Response from server ---");
+				log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
+				log.println("---- End Bad Response from server ---");
+				log.println();
+				sendProxyResponse(502, bytes, reqPkg, clientIn, clientOut, user, startTime,
 						log);
 				return;
 			}
@@ -301,14 +344,7 @@ public class RequestHandler implements Runnable {
 			// with proxy logs if needed when troubleshooting app issues
 			resPkg.headerBfr.append("X-connId: ").append(this.connId).append(CRLF);
 
-			ByteArrayOutputStream appRespBfr = new ByteArrayOutputStream();
-			appRespBfr.write(resPkg.responseLine.toString().getBytes());
-			appRespBfr.write(CRLF.getBytes());
-			appRespBfr.write(resPkg.headerBfr.toString().getBytes());
-			appRespBfr.write(CRLF.getBytes());
-			appRespBfr.write(resPkg.bodyStream.toByteArray());
-
-			response = appRespBfr.toByteArray();
+			response = serializePackage((StartLine) resPkg.responseLine, resPkg);
 			int responseLength = Array.getLength(response);
 
 			if (cLog.isDebugEnabled()) {
@@ -398,33 +434,31 @@ public class RequestHandler implements Runnable {
 				true, reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri());
 		out.write(response, 0, response.length);
 		out.flush();
-		byte[] request = generateRequestBytes(reqPkg.requestLine, reqPkg);
+		byte[] request = serializePackage((StartLine) reqPkg.requestLine, reqPkg);
 		logTraffic(log, reqPkg.requestLine, request, response, startTime);
 		shutdown(in, out, log, fos);
 	}
 
 	/**
-	 * Packages up the set of bytes representing the headers and body ready for
-	 * sending across the wire.
+	 * Serializes an HttpPackage instance for sending across the socket.
 	 * 
-	 * @param appReqLn
-	 * @param reqPkg
+	 * @param pkg
 	 * @return
 	 * @throws IOException
 	 */
-	private byte[] generateRequestBytes(RequestLine appReqLn, HttpPackage reqPkg) throws IOException {
-		ByteArrayOutputStream appReqBfr = new ByteArrayOutputStream();
-		appReqBfr.write(appReqLn.toString().getBytes());
-		appReqBfr.write(CRLF.getBytes());
+	private byte[] serializePackage(StartLine httpStartLine, HttpPackage pkg) throws IOException {
+		ByteArrayOutputStream appRespBfr = new ByteArrayOutputStream();
+		String startLineContent = "null";
+		if (httpStartLine != null) {
+			startLineContent = httpStartLine.toString();
+		}
+		appRespBfr.write(startLineContent.getBytes());
+		appRespBfr.write(CRLF.getBytes());
+		appRespBfr.write(pkg.headerBfr.toString().getBytes());
+		appRespBfr.write(CRLF.getBytes());
+		appRespBfr.write(pkg.bodyStream.toByteArray());
 
-		appReqBfr.write(reqPkg.headerBfr.toString().getBytes());
-		appReqBfr.write(CRLF.getBytes());
-
-		appReqBfr.write(reqPkg.bodyStream.toByteArray());
-		appReqBfr.write(CRLF.getBytes());
-
-		byte[] request = appReqBfr.toByteArray();
-		return request;
+		return appRespBfr.toByteArray();
 	}
 
 	/**
@@ -442,11 +476,11 @@ public class RequestHandler implements Runnable {
 			long endTime = System.currentTimeMillis();
 			log.println("Elapsed Time: " + Long.toString(endTime - startTime));
 			log.println();
-			log.println("REQUEST bytes sent: " + request.length);
+			log.println("REQUEST bytes sent to server: " + request.length);
 			log.println("Canonical Req. Line: " + requestLine.toString());
 			log.println("Rewritten Req. Line: " + (new String(request)));
 			log.println();
-			log.println("RESPONSE bytes returned: " + response.length);
+			log.println("RESPONSE bytes returned to client: " + response.length);
 			log.println(new String(response));
 			log.flush();
 		}
@@ -477,20 +511,6 @@ public class RequestHandler implements Runnable {
 			pkg.site = site;
 			pkg.trafficType = TrafficType.SITE;
 		}
-	}
-
-	private byte[] get403Response(User user, HttpPackage pkg) throws IOException {
-		return getResponse("403", "Forbidden", 
-				"403 Forbidden",
-			    "The specified action on the URI is not allowed by this user.",
-			    user, pkg);
-	}
-
-	private byte[] get501NoProxyingResponse( HttpPackage pkg) throws IOException {
-		return getResponse("501", "Not Allowed - Forward Proxying", 
-				"501 Not Implemented - Forward Proxying",
-			    "Forward Proxying is not allowed. Should this URI be mapped into the &lt;sso-traffic&gt; of the site?",
-			    null, pkg);
 	}
 
 	private static final String HEADER_TEMPLATE = 
@@ -546,78 +566,27 @@ public class RequestHandler implements Runnable {
 		
 		return resp.getBytes();
 	}
+
+	private static final String REDIRECT_TEMPLATE = 
+		"HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
+		+ "Content-Type: text/html; charset=utf-8" + CRLF
+		+ "Server: " + Config.SERVER_NAME + CRLF
+		+ "Location: {{location}}" + CRLF
+		+ CRLF // empty line terminating headers
+		+ CRLF; // empty line terminating body
 	
-	/**
-	 * Crafts the 404 response for when no registered application's canonical
-	 * context matches an in-coming URL.
-	 * 
-	 * @param requestUri
-	 * @return
-	 * @throws IOException
-	 */
-	private byte[] get404NoMappingResponse(HttpPackage reqPkg) throws IOException {
-		return getResponse("404", "Not Found", 
-				"404 Not Found",
-			    "No registered application in a &lt;by-site&gt; declaration has a canonical context that matches the URL.",
-			    null, reqPkg);
-	}
-
-	/**
-	 * Crafts the 500 response for when no bytes were received from the called
-	 * server.
-	 * 
-	 * @param requestUri
-	 * @return
-	 * @throws IOException
-	 */
-	private byte[] get500NoContentFromServer(HttpPackage reqPkg) throws IOException {
-		return getResponse("500", "No Response from Server", 
-				"500 No response received from server",
-				"No bytes were found in the stream from the server.",
-			    null, reqPkg);
-	}
-
-	/**
-	 * Crafts the 500 response for when an infinite redirect loop back to this
-	 * proxy is discovered via seeing the {@link HttpPackage#SHIM_HANDLED_HDR}
-	 * in an incoming request.
-	 * 
-	 * @param requestUri
-	 * @return
-	 * @throws IOException
-	 */
-	private byte[] get500RedirectLoopDetected(HttpPackage reqPkg) throws IOException {
-		String title = (reqPkg.rapidRepeatRequestDetected ? "500 " + reqPkg.repeatRequestErrMsg : "Infinite Redirect Detected"); 
-		return getResponse("500", "Infinite Redirect Detected", 
-				title,
-				"The proxy received a request from itself. This can happen:</br> " + CRLF
-				+ "<ul><li>when a request doesn't match the configured site(s) " + CRLF
-				+ "and is handled as an outbound proxy but the targeted " + CRLF
-				+ "host and port resolves back to this proxy.</li>" + CRLF
-				+ "<li>when the configured sign-in page is not made an unenforced " + CRLF
-				+ "url and hence each subsequent request is redirected to the " + CRLF
-				+ "sign-in page with an ever increasing goto query parameter.</li>" + CRLF
-				+ "</ul><br/>" + CRLF
-				+ "Ensure that the site(s) is(are) configured correctly.",
-			    null, reqPkg);
-	}
 
 	private byte[] get302RedirectToLoginPage(HttpPackage pkg) throws IOException {
 		String origReq = "http://" + pkg.hostHdr + pkg.requestLine.getUri();
 		String origEncReq = URLEncoder.encode(origReq, "utf-8");
+		String location = getLoginPageWithGotoUrl(origEncReq);
 
-		String response = new StringBuffer().append("HTTP/1.1 302 Found").append(CRLF).append("Server: ").append(
-				cfg.SERVER_NAME).append(CRLF).append("Location: ").append(getLoginPageWithGotoUrl(origEncReq)).append(
-				CRLF).append("Date: ").append(getCurrentDateHeader()).append(CRLF).append(CRLF) // empty
-																								// line
-																								// terminating
-																								// headers
-				.append(CRLF) // empty line terminating empty body (safari
-								// crokes without)
-				.toString();
-
-		byte[] respBytes = response.getBytes();
-		return respBytes;
+		String resp = REDIRECT_TEMPLATE;
+		resp = resp.replace("{{http-resp-code}}", "302");
+		resp = resp.replace("{{http-resp-msg}}", "Found");
+		resp = resp.replace("{{location}}", location);
+		
+		return resp.getBytes();
 	}
 
 	/**
@@ -628,7 +597,7 @@ public class RequestHandler implements Runnable {
 	 * @param origEncReq
 	 * @return
 	 */
-	private Object getLoginPageWithGotoUrl(String origEncReq) {
+	private String getLoginPageWithGotoUrl(String origEncReq) {
 		String cfgdLogin = cfg.getLoginPage();
 		int qryIdx = cfgdLogin.indexOf("?");
 		String loginUrl = null;

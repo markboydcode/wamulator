@@ -1,5 +1,7 @@
 /.classpath
 /.project
 /.settings
+/C-*.log
 /target
+/temp-testng-customsuite.xml
 /test-output
