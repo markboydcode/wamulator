@@ -1,4 +1,5 @@
 * text=auto !eol
+/Configuring[!!-~]the[!!-~]SSO[!!-~]Environment[!!-~]Simulator.docx -text
 /YouthAppProxy.xml -text svneol=unset#text/plain
 /commandline.sh.example -text
 /mlAuth_mlError_sample.xml -text svneol=unset#text/plain
