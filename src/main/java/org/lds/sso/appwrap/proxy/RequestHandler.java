@@ -40,6 +40,8 @@ public class RequestHandler implements Runnable {
 
 	public static final String SP = " ";
 
+	public static final String EMPTY_START_LINE = "empty-start-line";
+	
 	private static final String[] excludeHeaders = new String[] { "connection" };
 
 	// public static final String REQUEST_LINE = "request-line";
@@ -134,6 +136,15 @@ public class RequestHandler implements Runnable {
 			BufferedOutputStream clientOut = new BufferedOutputStream(pSocket.getOutputStream());
 
 			reqPkg = getHttpPackage(clientIn, excludeHeaders, false, log);
+			if (reqPkg.type == HttpPackageType.EMPTY_RESPONSE) {
+				byte[] bytes = getResponse("400", "Bad Request", 
+						"400 Bad Request",
+						"The request sent by the client was empty." + CRLF
+						+ "Ensure that the site(s) is(are) configured correctly.",
+					    null, reqPkg);
+				sendProxyResponse(400, bytes, reqPkg, clientIn, clientOut, user, startTime,	log);
+				return;
+			}
 			if (((StartLine) reqPkg.requestLine).isProxied) {
 				reqPkg.scheme = ((StartLine) reqPkg.requestLine).proxy_scheme;
 			}
@@ -430,8 +441,15 @@ public class RequestHandler implements Runnable {
 
 	private void sendProxyResponse(int respCode, byte[] response, HttpPackage reqPkg, InputStream in, OutputStream out,
 			User user, long startTime, PrintStream log) throws IOException {
+		String method = EMPTY_START_LINE;
+		String uri = EMPTY_START_LINE;
+		
+		if (reqPkg.requestLine != null) {
+			method = reqPkg.requestLine.getMethod();
+			uri =  reqPkg.requestLine.getUri();
+		}
 		cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()), respCode,
-				true, reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri());
+				true, method, uri);
 		out.write(response, 0, response.length);
 		out.flush();
 		byte[] request = serializePackage((StartLine) reqPkg.requestLine, reqPkg);
@@ -448,7 +466,7 @@ public class RequestHandler implements Runnable {
 	 */
 	private byte[] serializePackage(StartLine httpStartLine, HttpPackage pkg) throws IOException {
 		ByteArrayOutputStream appRespBfr = new ByteArrayOutputStream();
-		String startLineContent = "null";
+		String startLineContent = EMPTY_START_LINE;
 		if (httpStartLine != null) {
 			startLineContent = httpStartLine.toString();
 		}
@@ -473,11 +491,15 @@ public class RequestHandler implements Runnable {
 	 */
 	private void logTraffic(PrintStream log, RequestLine requestLine, byte[] request, byte[] response, long startTime) {
 		if (log != null) {
+			String startLn = EMPTY_START_LINE;
+			if (requestLine != null) {
+				startLn = requestLine.toString();
+			}
 			long endTime = System.currentTimeMillis();
 			log.println("Elapsed Time: " + Long.toString(endTime - startTime));
 			log.println();
 			log.println("REQUEST bytes sent to server: " + request.length);
-			log.println("Canonical Req. Line: " + requestLine.toString());
+			log.println("Canonical Req. Line: " + startLn);
 			log.println("Rewritten Req. Line: " + (new String(request)));
 			log.println();
 			log.println("RESPONSE bytes returned to client: " + response.length);
@@ -836,7 +858,7 @@ public class RequestHandler implements Runnable {
 		// get the first line of the message, get the response code if a
 		// response.
 		String line = readLine(in, log);
-		if (line == null) {
+		if (line == null || line.equals("")) {
 			pkg.type = HttpPackageType.EMPTY_RESPONSE;
 			return;
 		}

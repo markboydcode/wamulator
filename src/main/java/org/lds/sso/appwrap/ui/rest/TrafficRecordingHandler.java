@@ -35,13 +35,30 @@ public class TrafficRecordingHandler extends RestHandlerBase {
 
 		if ("start".equals(cmd)) {
 			cfg.getTrafficRecorder().setRecording(true);
+			response.sendRedirect("/admin/traffic.jsp");
 		}
 		else if ("stop".equals(cmd)) {
 			cfg.getTrafficRecorder().setRecording(false);
+			response.sendRedirect("/admin/traffic.jsp");
 		}
 		else if ("clear".equals(cmd)) {
 			cfg.getTrafficRecorder().getHits().clear();
+			response.sendRedirect("/admin/traffic.jsp");
 		}
-		response.sendRedirect("/admin/traffic.jsp");
+		else if ("start-rest".equals(cmd)) {
+			cfg.getTrafficRecorder().setRecordingRest(true);
+			response.sendRedirect("/admin/rest-traffic.jsp");
+		}
+		else if ("stop-rest".equals(cmd)) {
+			cfg.getTrafficRecorder().setRecordingRest(false);
+			response.sendRedirect("/admin/rest-traffic.jsp");
+		}
+		else if ("clear-rest".equals(cmd)) {
+			cfg.getTrafficRecorder().getRestHits().clear();
+			response.sendRedirect("/admin/rest-traffic.jsp");
+		}
+		else {
+			response.sendRedirect("/admin/traffic.jsp");
+		}
 	}
 }

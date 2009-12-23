@@ -5,8 +5,10 @@
 /mlAuth_mlError_sample.xml -text svneol=unset#text/plain
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
+/saw.dtd -text svneol=unset#text/plain
 /saws_login_sample.xml -text svneol=unset#text/plain
 /saws_login_sample_condition_test.xml -text svneol=unset#text/plain
+/saws_login_sample_non_site.xml -text svneol=unset#text/plain
 /sim.bat -text
 /sim.sh -text
 src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
@@ -19,6 +21,7 @@ src/main/java/org/lds/sso/appwrap/PermittedUri.java -text svneol=unset#text/plai
 src/main/java/org/lds/sso/appwrap/Service.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Session.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/SessionManager.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ShimStateCookieUtils.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/SiteMatcher.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/TrafficManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/TrafficRecorder.java -text svneol=unset#text/plain
@@ -63,6 +66,7 @@ src/main/resources/webapp/cancel.gif -text
 src/main/resources/webapp/delete.gif -text
 src/main/resources/webapp/listUsers.jsp -text
 src/main/resources/webapp/pointer.png -text
+src/main/resources/webapp/rest-traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/selectUser.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/unlock.gif -text

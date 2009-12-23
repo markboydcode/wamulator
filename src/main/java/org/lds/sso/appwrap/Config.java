@@ -81,6 +81,8 @@ public class Config {
 	 */
 	private boolean allow_forward_proxying = false;
 
+	private String stateCookieName;
+
 
 	public static final String SERVER_NAME = "App Wrap Reverse Proxy";
 
@@ -418,5 +420,25 @@ public class Config {
 	
 	public boolean getAllowForwardProxying() {
 		return this.allow_forward_proxying;	
+	}
+
+	/**
+	 * Sets the source identifying portion of the shim's state cookie name.
+	 * @param id
+	 */
+	public void setShimStateCookieId(String id) {
+		this.stateCookieName = "saw" + id;
+	}
+	
+	/**
+	 * Returns the name of the cookie used for persisting current configuration
+	 * of the shim. The name incorporates the source of configuration so that
+	 * different running instances of the shim can behave differently so long 
+	 * as they were started with different configuration sources. This isn't 
+	 * perfect but should solve most issues.
+	 * @return
+	 */
+	public Object getShimStateCookieName() {
+		return this.stateCookieName;
 	}
 }

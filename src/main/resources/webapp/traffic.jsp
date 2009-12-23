@@ -8,7 +8,9 @@
  <span style="padding-right: 10px"> </span>
  <span style="color: black; background-color: #DDF; padding: 3 8 5 8px;"><a href="/admin/listUsers.jsp">Users &amp; Sessions</a></span>
  <span style="padding-right: 10px"> </span>
- <span style="color: black; background-color: #EEF; padding: 3 8 5 8px;"><a href="/admin/traffic.jsp">Traffic</a></span>
+ <span style="color: black; background-color: #EEF; padding: 3 8 5 8px;"><a href="/admin/traffic.jsp">SSO Traffic</a></span>
+ <span style="padding-right: 10px"> </span>
+ <span style="color: black; background-color: #DDF; padding: 3 8 5 8px;"><a href="/admin/rest-traffic.jsp">Rest Traffic</a></span>
  <!-- 
  take out apps tab until we fix to render site matchers and nested app-end-points accordingly 
  <span style="padding-right: 10px"> </span>
@@ -17,10 +19,10 @@
 </div>
 <!-- TABS END -->
 <div style="padding: 0 10 10 10px;">
-<div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Watch URL traffic. Refresh the browser to view captured traffic.</div>
+<div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Watch SSO traffic. Refresh the browser to view captured traffic.</div>
 
 <div style="font-size: medium; padding: 3px">
-<span style="font-weight: bold;">Traffic:</span>
+<span style="font-weight: bold;">SSO Traffic:</span>
 <span style="padding: 0 5 0 10px;">
 <c:choose>
  <c:when test="${requestScope.config.trafficRecorder.recording}">

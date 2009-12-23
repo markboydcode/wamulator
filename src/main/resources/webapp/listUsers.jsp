@@ -14,7 +14,9 @@
  <span style="padding-right: 10px"> </span>
  <span style="color: black; background-color: #EEF; padding: 3 8 5 8px;"><a href="listUsers.jsp">Users &amp; Sessions</a></span>
  <span style="padding-right: 10px"> </span>
- <span style="color: black; background-color: #DDF; padding: 3 8 5 8px;"><a href="traffic.jsp">Traffic</a></span>
+ <span style="color: black; background-color: #DDF; padding: 3 8 5 8px;"><a href="traffic.jsp">SSO Traffic</a></span>
+ <span style="padding-right: 10px"> </span>
+ <span style="color: black; background-color: #DDF; padding: 3 8 5 8px;"><a href="/admin/rest-traffic.jsp">Rest Traffic</a></span>
  <!-- 
  take out apps tab until we fix to render site matchers and nested app-end-points accordingly 
  <span style="padding-right: 10px"> </span>

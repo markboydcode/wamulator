@@ -58,9 +58,6 @@ public abstract class RestHandlerBase extends AbstractHandler {
 	 * @throws IOException
 	 */
 	protected void sendResponse(Logger logger, HttpServletResponse response, int code, String resp) throws IOException {
-		if (logger.isDebugEnabled()) {
-			logger.debug(pathPrefix + " returning " + code + " '" + resp + "'");
-		}
 		response.setContentType("text/plain");
 		response.setContentLength(resp.length());
 		response.setHeader("Content-Language", "en-US");

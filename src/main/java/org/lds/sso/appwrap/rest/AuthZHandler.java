@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Handler that can answer if a user is granted a specific action on a specific
@@ -36,13 +38,16 @@ public class AuthZHandler extends RestHandlerBase {
 
 		String uri = request.getParameter("uri");
 		if (uri == null || uri.equals("")) {
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String, String> props = new HashMap<String, String>();
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_UNAUTHORIZED, "Missing required uri parameter",
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Missing required uri parameter");
 			return;
 		}
 
-		if (cLog.isDebugEnabled()) {
-			cLog.debug(pathPrefix + " requested for " + uri);
-		}
         boolean isUnenforced = false;
         try { 
             isUnenforced = cfg.getTrafficManager().isUnenforced(uri);
@@ -53,6 +58,13 @@ public class AuthZHandler extends RestHandlerBase {
         }
 
         if (isUnenforced) {
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String, String> props = new HashMap<String, String>();
+				props.put("uri", uri);
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_OK, "bolean=true",
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=true");
 			return;
 		}
@@ -62,6 +74,14 @@ public class AuthZHandler extends RestHandlerBase {
 		String cookieHdr = request.getHeader("Cookie");
 		
 		if (cookieHdr == null) {
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String, String> props = new HashMap<String, String>();
+				props.put("uri", uri);
+				props.put("cookie", "missing");
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_UNAUTHORIZED, "Token Expired, Invalid Session",
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Token Expired, Invalid Session");
 			return;
 		}
@@ -70,12 +90,29 @@ public class AuthZHandler extends RestHandlerBase {
 		User user = cfg.getUserManager().getUser(username);
 		
 		if (user == null || sessionToken == null || ! cfg.getSessionManager().isValidToken(sessionToken)) {
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String, String> props = new HashMap<String, String>();
+				props.put("uri", uri);
+				props.put("cookie", sessionToken);
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_UNAUTHORIZED, "Token Expired, Invalid Session",
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Token Expired, Invalid Session");
 			return;
 		}
 		String rawSubTk = request.getParameter("subjectid");
 		
 		if (rawSubTk == null) {
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String, String> props = new HashMap<String, String>();
+				props.put("uri", uri);
+				props.put("cookie", sessionToken);
+				props.put("subjectid", "missing");
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_OK, "boolean=false",
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=false");
 			return;
 		}
@@ -83,6 +120,15 @@ public class AuthZHandler extends RestHandlerBase {
 		boolean isValid = cfg.getSessionManager().isValidToken(subTk);
 		
 		if (! isValid) {
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String, String> props = new HashMap<String, String>();
+				props.put("uri", uri);
+				props.put("cookie", sessionToken);
+				props.put("subjectid", subTk);
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_UNAUTHORIZED, "Subject Token Expired, Invalid Session",
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Subject Token Expired, Invalid Session");
 			return;
 		}
@@ -98,6 +144,16 @@ public class AuthZHandler extends RestHandlerBase {
             		+ " Denying access.", e);
         }
         
+		if (cfg.getTrafficRecorder().isRecordingRest()) {
+			Map<String, String> props = new HashMap<String, String>();
+			props.put("uri", uri);
+			props.put("action", action);
+			props.put("cookie", sessionToken);
+			props.put("subjectid", subTk);
+			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+					HttpServletResponse.SC_OK, "boolean=" + allowed,
+					props);
+		}
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=" 
 				+ allowed);
 	}

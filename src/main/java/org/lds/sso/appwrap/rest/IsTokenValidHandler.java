@@ -2,6 +2,8 @@ package org.lds.sso.appwrap.rest;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -35,6 +37,16 @@ public class IsTokenValidHandler extends RestHandlerBase {
 
 		String rawT = request.getParameter("token");
 		String token = URLDecoder.decode(rawT, "utf-8");
-		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=" + cfg.getSessionManager().isValidToken(token));
+		boolean is = cfg.getSessionManager().isValidToken(token);
+
+		if (cfg.getTrafficRecorder().isRecordingRest()) {
+			Map<String, String> props = new HashMap<String, String>();
+			props.put("token", token);
+			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+					HttpServletResponse.SC_OK, "boolean=" + is,
+					props);
+		}
+
+		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=" + is);
 	}
 }

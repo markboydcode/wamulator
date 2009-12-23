@@ -1,6 +1,8 @@
 package org.lds.sso.appwrap.rest;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +33,12 @@ public class GetCookieName extends RestHandlerBase {
 		 */
 		Config cfg = Config.getInstance();
 
+		if (cfg.getTrafficRecorder().isRecordingRest()) {
+			Map<String,String> props = new HashMap<String,String>();
+			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+					HttpServletResponse.SC_OK, "string=" + cfg.getCookieName(), 
+					props);
+		}
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "string=" + cfg.getCookieName());
 	}
 }

@@ -1,6 +1,8 @@
 package org.lds.sso.appwrap.rest;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,9 +43,26 @@ public class AuthNHandler extends RestHandlerBase {
 		
 		if (isValidUser) {
 			String token = cfg.getSessionManager().generateSessionToken(usr);
+
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String,String> props = new HashMap<String,String>();
+				props.put("username", usr);
+				props.put("password", pwd);
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_OK, " token.id=" + token, 
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "token.id=" + token);
 		}
 		else {
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String,String> props = new HashMap<String,String>();
+				props.put("username", usr);
+				props.put("password", pwd);
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_UNAUTHORIZED, "Invalid username or password.", 
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid username or password.");
 		}
 	}

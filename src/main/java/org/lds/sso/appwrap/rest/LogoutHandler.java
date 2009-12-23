@@ -2,6 +2,8 @@ package org.lds.sso.appwrap.rest;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,6 +43,14 @@ public class LogoutHandler extends RestHandlerBase {
 		if (rawT != null && ! "".equals(rawT) ) {
 			String token = URLDecoder.decode(rawT, "utf-8");
 			cfg.getSessionManager().terminateSession(token);
+
+			if (cfg.getTrafficRecorder().isRecordingRest()) {
+				Map<String, String> props = new HashMap<String, String>();
+				props.put("subjectid", token);
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+						HttpServletResponse.SC_OK, "session was terminated",
+						props);
+			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "session was terminated");
 		}
 	}

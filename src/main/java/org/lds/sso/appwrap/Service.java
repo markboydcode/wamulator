@@ -41,6 +41,7 @@ public class Service {
 	//protected ProxyListener proxy = null;
 	protected Thread proxyRunner = null;
 	protected Server server = null;
+	private String cfgSource;
 	
 	public Service(String cfgPath) throws Exception {
 		Reader cfgrd = getCfgReader(cfgPath);
@@ -99,6 +100,7 @@ public class Service {
     	if (path.toLowerCase().startsWith("string:")) {
     		path = path.substring("string:".length());
     		reader = new StringReader(path);
+    		this.cfgSource = "Str" + path.hashCode();
     	}    	
     	else if (path.toLowerCase().startsWith("classpath:")) {
     		path = path.substring("classpath:".length());
@@ -110,6 +112,7 @@ public class Service {
         			+ path + "' on classpath.");
     		}
     		reader = new InputStreamReader(source);
+    		this.cfgSource = "Cp" + path.hashCode();
     	}
     	else {
     		// assume file path 
@@ -123,6 +126,7 @@ public class Service {
     		}
     		try {
 				reader = new FileReader(file);
+	    		this.cfgSource = "File" + path.hashCode();
 			}
 			catch (FileNotFoundException e) { // should never happen
         		throw new IllegalArgumentException("Unable to load file '"
@@ -139,6 +143,7 @@ public class Service {
 	 */
 	public void start() throws Exception {
 		Config cfg = Config.getInstance();
+		cfg.setShimStateCookieId(cfgSource);
 		System.out.println("admin-rest port: " + cfg.getConsolePort());
 		System.out.println("http proxy port: " + cfg.getProxyPort());
 		cLog.info("admin-rest port: " + cfg.getConsolePort());

@@ -1,0 +1,61 @@
+<!-- 
+Document type definition for the SSO environment simulator's configuration file.
+-->
+
+<!ELEMENT config ( sso-cookie, sso-sign-in-url, sso-header*, sso-traffic, users ) >
+<!ATTLIST config allow-non-sso-traffic CDATA #IMPLIED >
+<!ATTLIST config console-port CDATA #REQUIRED >
+<!ATTLIST config proxy-port CDATA #REQUIRED >
+
+<!ELEMENT sso-cookie EMPTY >
+<!ATTLIST sso-cookie domain CDATA #REQUIRED >
+<!ATTLIST sso-cookie name CDATA #REQUIRED >
+
+<!ELEMENT sso-sign-in-url EMPTY >
+<!ATTLIST sso-sign-in-url value CDATA #REQUIRED >
+
+<!ELEMENT sso-header EMPTY >
+<!ATTLIST sso-header name CDATA #REQUIRED >
+<!ATTLIST sso-header value CDATA #REQUIRED >
+
+<!ELEMENT sso-traffic (( by-site|by-resource)*) >
+
+<!ELEMENT by-site ( allow | cctx-mapping | unenforced )* >
+<!ATTLIST by-site host CDATA #REQUIRED >
+<!ATTLIST by-site port CDATA #REQUIRED >
+<!ATTLIST by-site scheme CDATA #IMPLIED >
+
+<!ELEMENT by-resource EMPTY >
+<!-- one of allow or unenforced is required. it is an error to exclude both. -->
+<!ATTLIST by-resource allow CDATA #IMPLIED >
+<!-- conditions are optional. If not specified then the only requirement for
+accessing the cpath is that the user be signed-in -->
+<!ATTLIST by-resource condition CDATA #IMPLIED >
+<!ATTLIST by-resource unenforced CDATA #IMPLIED >
+<!ATTLIST by-resource uri CDATA #REQUIRED >
+
+<!ELEMENT allow EMPTY >
+<!ATTLIST allow action CDATA #REQUIRED >
+<!-- conditions are optional. If not specified then the only requirement for
+accessing the cpath is that the user be signed-in -->
+<!ATTLIST allow condition CDATA #IMPLIED >
+<!ATTLIST allow cpath CDATA #REQUIRED >
+
+<!ELEMENT cctx-mapping EMPTY >
+<!ATTLIST cctx-mapping cctx CDATA #REQUIRED >
+<!ATTLIST cctx-mapping thost CDATA #REQUIRED >
+<!ATTLIST cctx-mapping tpath CDATA #REQUIRED >
+<!ATTLIST cctx-mapping tport CDATA #REQUIRED >
+
+<!ELEMENT unenforced EMPTY >
+<!ATTLIST unenforced cpath CDATA #REQUIRED >
+
+<!ELEMENT users ( user+ ) >
+<!-- session-timeout-seconds defaults to 300 seconds (five minutes) -->
+<!ATTLIST users session-timeout-seconds CDATA #IMPLIED >
+
+<!ELEMENT user ( sso-header+ ) >
+<!ATTLIST user name CDATA #REQUIRED >
+<!ATTLIST user pwd CDATA #REQUIRED >
+
+
