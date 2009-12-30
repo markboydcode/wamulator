@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.ui.rest;
 
 import java.io.IOException;
 
@@ -68,7 +68,7 @@ public class JettyWebappUrlAdjustingHandler extends HandlerWrapper {
 	public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException, ServletException {
 		
-		// see if this is a URL header for our admin webapp
+		// see if this is a URL headed for our admin webapp
 		if (target.startsWith(ctxPath)) {
 			// see if we have already determined if adjustment is needed
 			if (! initialized) {

@@ -28,20 +28,19 @@
             <cctx-mapping cctx="/auth*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
             <unenforced cpath="/auth/ui/*"/>
             <unenforced cpath="/auth/ui/*?*"/>
-            <allow action="GET,POST" cpath="/auth/_app/*"/>
-            <allow action="GET,POST" cpath="/auth/_app/*?*"/>
+            <allow action="GET,POST" cpath="/auth/_app/debug"/>
+            <allow action="GET,POST" cpath="/auth/_app/debug?*"/>
             
             <cctx-mapping cctx="/access*" thost="127.0.0.1" tport="8510" tpath="/access*"/>
             <unenforced cpath="/access/ui/*"/>
             <unenforced cpath="/access/ui/*?*"/>
-            <allow action="GET,POST" cpath="/access/_app/*"/>
-            <allow action="GET,POST" cpath="/access/_app/*?*"/>
+            <allow action="GET,POST" cpath="/access/_app/debug"/>
+            <allow action="GET,POST" cpath="/access/_app/debug?*"/>
             
             <cctx-mapping cctx="/error/*" thost="127.0.0.1" tport="8520" tpath="/error/*"/>
             <unenforced cpath="/error/*"/>
             <unenforced cpath="/error/*?*"/>
         </by-site>
-        <rewrite-redirect from='http://labs-local.lds.org/nextgen-bishop' to='http://labs-local.lds.org/bishop'/>
         <by-resource uri="http://other.lds.org/some/path/resource.html" unenforced="true"/>
         <by-resource uri="http://cdol.lds.org/cdol/secure/login.html" allow="GET,POST"/>
         <by-resource uri="app://different.lds.org/some/path/resource.html" unenforced="true"/>

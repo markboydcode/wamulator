@@ -18,6 +18,7 @@
     port is the port that should be set as the browser's http proxy.
 -->
 <config proxy-port="{{http-port}}" console-port="{{console-port}}" allow-non-sso-traffic="true">
+    <console-recording sso="true" rest="true"/>
     <sso-cookie name="lds-policy" domain=".lds.org"/>
     <sso-sign-in-url value="http://labs-local.lds.org/admin/selectUser.jsp"/>
     <sso-header name="policy-service-url" value="http://labs-local.lds.org:{{rest-port}}/rest/"/>
@@ -25,19 +26,17 @@
 
     <sso-traffic>
         <by-site host="labs-local.lds.org" port="{{http-port}}">
-            <cctx-mapping cctx="/auth*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
-            <allow action="GET,POST" cpath="/auth/_app/*"/>
-            <allow action="GET,POST" cpath="/auth/_app/*?*"/>
+            <cctx-mapping cctx="/public/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/*"/>
+            <unenforced cpath="/public/debug.jsp"/>
+            <unenforced cpath="/public/debug.jsp?*"/>
+            
+            <cctx-mapping cctx="/secure/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/*"/>
+            <allow action="GET,POST" cpath="/secure/debug.jsp"/>
+            <allow action="GET,POST" cpath="/secure/debug.jsp?*"/>
             
             <cctx-mapping cctx="/admin*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin*"/>
             <unenforced cpath="/admin/*"/>
             <unenforced cpath="/admin/*?*"/>
-            
-            <cctx-mapping cctx="/ui/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/ui/*"/>
-            <unenforced cpath="/ui/set-*"/>
-            <unenforced cpath="/ui/set-*?*"/>
-            <unenforced cpath="/ui/terminate-*"/>
-            <unenforced cpath="/ui/terminate-*?*"/>
         </by-site>
     </sso-traffic>
     <!-- 

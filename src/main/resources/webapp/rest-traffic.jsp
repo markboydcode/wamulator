@@ -9,7 +9,7 @@ tr.odd {background: #DDF;}
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- TABS -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">
- <span style="color: black; font-weight: bolder; font-size: large;">SSO App Wrap Shim</span>
+ <span style="color: black; font-weight: bolder; font-size: large;">${requestScope.config.serverName}</span>
  <span style="padding-right: 10px"> </span>
  <span style="color: black; background-color: #DDF; padding: 3 8 5 8px;"><a href="/admin/listUsers.jsp">Users &amp; Sessions</a></span>
  <span style="padding-right: 10px"> </span>
@@ -31,12 +31,12 @@ tr.odd {background: #DDF;}
 <span style="padding: 0 5 0 10px;">
 <c:choose>
  <c:when test="${requestScope.config.trafficRecorder.recordingRest}">
-  <a href="/ui/traffic/recording/stop-rest">Stop Recording</a>
+  <a href="/admin/action/recording/stop-rest">Stop Recording</a>
  </c:when>
- <c:otherwise><a href="/ui/traffic/recording/start-rest">Start Recording</a></c:otherwise>
+ <c:otherwise><a href="/admin/action/recording/start-rest">Start Recording</a></c:otherwise>
 </c:choose>
 </span>
-<span style="padding: 0 5 0 5px;"><a href="/ui/traffic/recording/clear-rest">Clear</a></span>
+<span style="padding: 0 5 0 5px;"><a href="/admin/action/recording/clear-rest">Clear</a></span>
 </div>
 
 <table>

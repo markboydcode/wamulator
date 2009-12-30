@@ -80,7 +80,7 @@ public class Config {
 	private String stateCookieName;
 
 
-	public static final String SERVER_NAME = determineCurrentVersion();
+	private static final String SERVER_NAME = determineCurrentVersion();
 
 	public static final String CANONICAL_CTX_QPARAM_NAME = "cctx";
 
@@ -109,10 +109,14 @@ public class Config {
 		if (pkg != null && pkg.getImplementationTitle() != null) {
 			version = pkg.getImplementationTitle() + " "
 			+ pkg.getImplementationVersion(); 
-			System.out.println("returning package value: " + version);
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Server Name set to: " + version);
+			}
 		}
 		else {
-			System.out.println("returning default value: " + version);
+			if (cLog.isDebugEnabled()) {
+				cLog.debug("Server Name set to default value: " + version);
+			}
 		}
 		/* when running in an IDE the version number is less important. we 
 		 * could require inclusion of the project's root directory and pull it
@@ -121,6 +125,23 @@ public class Config {
 		return version;
 	}
 
+	/**
+	 * Returns the server name which includes the version.
+	 * 
+	 * @return
+	 */
+	public static String serverName() {
+		return Config.SERVER_NAME;
+	}
+	
+	/**
+	 * Expose server name via instance method so accessible to JSP pages.
+	 * 
+	 * @return
+	 */
+	public String getServerName() {
+		return Config.serverName();
+	}
 	/**
 	 * Returns the current instance of {@link Config} creating a new one if one
 	 * has not yet been instantiated. Each time the {@link Config}'s constructor
@@ -454,7 +475,8 @@ public class Config {
 	 * of the shim. The name incorporates the source of configuration so that
 	 * different running instances of the shim can behave differently so long 
 	 * as they were started with different configuration sources. This isn't 
-	 * perfect but should solve most issues.
+	 * perfect but should solve most issues when/if we decide to add support for
+	 * such a cookie.
 	 * @return
 	 */
 	public Object getShimStateCookieName() {

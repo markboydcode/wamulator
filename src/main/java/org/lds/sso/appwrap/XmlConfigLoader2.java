@@ -225,6 +225,12 @@ public class XmlConfigLoader2 {
 				cfg.setCookieName(getStringAtt("name", path, atts));
 				cfg.setCookieDomain(getStringAtt("domain", path, atts));
 			}
+			else if (path.matches("/config/console-recording")) {
+				boolean sso = Boolean.parseBoolean(getStringAtt("sso", path, atts));
+				cfg.getTrafficRecorder().setRecording(sso);
+				boolean rest = Boolean.parseBoolean(getStringAtt("rest", path, atts));
+				cfg.getTrafficRecorder().setRecordingRest(rest);
+			}
 			else if (path.matches("/config/sso-sign-in-url")) {
 				cfg.setSignInPage(getStringAtt("value", path, atts));
 			}

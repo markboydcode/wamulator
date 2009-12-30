@@ -538,7 +538,7 @@ public class RequestHandler implements Runnable {
 	private static final String HEADER_TEMPLATE = 
 		"HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
 		+ "Content-Type: text/html; charset=utf-8" + CRLF
-		+ "Server: " + Config.SERVER_NAME + CRLF
+		+ "Server: " + Config.serverName() + CRLF
 		+ "Content-Length: {{content-length}}" + CRLF
 		+ CRLF // empty line terminating headers
 		+ "{{body}}" 
@@ -592,7 +592,7 @@ public class RequestHandler implements Runnable {
 	private static final String REDIRECT_TEMPLATE = 
 		"HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
 		+ "Content-Type: text/html; charset=utf-8" + CRLF
-		+ "Server: " + Config.SERVER_NAME + CRLF
+		+ "Server: " + Config.serverName() + CRLF
 		+ "Location: {{location}}" + CRLF
 		+ CRLF // empty line terminating headers
 		+ CRLF; // empty line terminating body

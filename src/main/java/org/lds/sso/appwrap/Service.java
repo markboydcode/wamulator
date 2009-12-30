@@ -18,6 +18,8 @@ import org.lds.sso.appwrap.rest.GetCookieName;
 import org.lds.sso.appwrap.rest.IsTokenValidHandler;
 import org.lds.sso.appwrap.rest.LogoutHandler;
 import org.lds.sso.appwrap.ui.rest.Add404UriToCfgHandler;
+import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
+import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
 import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
 import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
@@ -65,17 +67,20 @@ public class Service {
 		cfgInjector.addHandler(adj);
 
 		HandlerCollection handlers = new HandlerCollection();
-		handlers.addHandler(cfgInjector);
 		handlers.addHandler(new GetCookieName("/rest/identity/getCookieNameForToken"));
 		handlers.addHandler(new AuthNHandler("/rest/identity/authenticate"));
 		handlers.addHandler(new AuthZHandler("/rest/identity/authorize"));
 		handlers.addHandler(new IsTokenValidHandler("/rest/identity/isTokenValid"));
 		handlers.addHandler(new LogoutHandler("/rest/identity/logout"));
-		handlers.addHandler(new SelectUserHandler("/ui/set-user"));
-		handlers.addHandler(new SelectSessionHandler("/ui/set-session"));
-		handlers.addHandler(new Add404UriToCfgHandler("/ui/add-uri-to-"));
-		handlers.addHandler(new TerminateSessionHandler("/ui/terminate-session"));
-		handlers.addHandler(new TrafficRecordingHandler("/ui/traffic/recording/"));
+		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));
+		handlers.addHandler(new SelectSessionHandler("/admin/action/set-session"));
+		handlers.addHandler(new Add404UriToCfgHandler("/admin/action/add-uri-to-"));
+		handlers.addHandler(new TerminateSessionHandler("/admin/action/terminate-session"));
+		handlers.addHandler(new TrafficRecordingHandler("/admin/action/recording/"));
+		
+		// placing webapp handler after other handlers allows for actions to be placed 
+		// under same root context '/admin'.
+		handlers.addHandler(cfgInjector);
 		server.setHandler(handlers);
 	}
 
