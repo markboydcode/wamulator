@@ -1,11 +1,7 @@
 package org.lds.sso.appwrap;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
@@ -84,7 +80,7 @@ public class Config {
 	private String stateCookieName;
 
 
-	public static final String SERVER_NAME = "App Wrap Reverse Proxy";
+	public static final String SERVER_NAME = determineCurrentVersion();
 
 	public static final String CANONICAL_CTX_QPARAM_NAME = "cctx";
 
@@ -102,6 +98,29 @@ public class Config {
 		instance = this;
 	}
 	
+	private static String determineCurrentVersion() {
+		String version = "current SSO Simulator in IDE";
+		/* first see if we can get it from the package structure. The maven 
+		 * build process automatically creates a suitable manifest file the 
+		 * exposes these values. But if run in and IDE the manifest file isn't
+		 * available and the implementation values will be null.
+		 */
+		Package pkg = Config.class.getPackage();
+		if (pkg != null && pkg.getImplementationTitle() != null) {
+			version = pkg.getImplementationTitle() + " "
+			+ pkg.getImplementationVersion(); 
+			System.out.println("returning package value: " + version);
+		}
+		else {
+			System.out.println("returning default value: " + version);
+		}
+		/* when running in an IDE the version number is less important. we 
+		 * could require inclusion of the project's root directory and pull it
+		 * from the pom.xml file but I'll just put in a dummy version for now.
+		 */
+		return version;
+	}
+
 	/**
 	 * Returns the current instance of {@link Config} creating a new one if one
 	 * has not yet been instantiated. Each time the {@link Config}'s constructor

@@ -11,9 +11,9 @@
   <groupId>org.lds.sso</groupId>
   <artifactId>appwrap</artifactId>
   <packaging>jar</packaging>
-  <version>2.6</version>
+  <version>2.7</version>
   
-  <name>SSO Application Wrapper Environment</name>
+  <name>SSO Environment Simulator</name>
   
   <description>
     This is a project that simulates a runtime webapp sso environment and 
@@ -21,7 +21,7 @@
     allowing apps to be routed to, urls enforced, client lib calls to the policy
     server to think it is really talking to a policy server, headers to be 
     injected by the "agent" embedded in the proxy, and users be defined with 
-    different header injection values to simulate the real populous that will 
+    different header injection values to simulate the real populace that will 
     eventually hit the application when deployed into the real sso environment.
   </description>
   

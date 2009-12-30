@@ -68,6 +68,7 @@ src/main/resources/webapp/listUsers.jsp -text
 src/main/resources/webapp/pointer.png -text
 src/main/resources/webapp/rest-traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/selectUser.jsp -text svneol=unset#text/plain
+src/main/resources/webapp/simpleSelectUser.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/unlock.gif -text
 src/test/java/org/lds/sso/appwrap/AppEndPointTest.java -text svneol=unset#text/plain

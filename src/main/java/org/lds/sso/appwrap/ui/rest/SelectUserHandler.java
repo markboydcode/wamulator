@@ -43,8 +43,14 @@ public class SelectUserHandler extends RestHandlerBase {
 		c.setMaxAge(-1);
 		c.setVersion(1);
 		response.addCookie(c);
-		String referer = request.getHeader("referer");
-		response.sendRedirect(referer);
+		
+		String redirectTarget = request.getHeader("referer");
+		String gotoUri = request.getParameter("goto");
+		
+		if (gotoUri != null && ! gotoUri.equals("")) {
+			 redirectTarget = gotoUri;
+		}
+		response.sendRedirect(redirectTarget);
 	}
 
 }
