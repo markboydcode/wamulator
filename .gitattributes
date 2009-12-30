@@ -5,10 +5,10 @@
 /mlAuth_mlError_sample.xml -text svneol=unset#text/plain
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
-/saw.dtd -text svneol=unset#text/plain
-/saws_login_sample.xml -text svneol=unset#text/plain
-/saws_login_sample_condition_test.xml -text svneol=unset#text/plain
-/saws_login_sample_non_site.xml -text svneol=unset#text/plain
+/ses.dtd -text svneol=unset#text/plain
+/ses_login_sample.xml -text svneol=unset#text/plain
+/ses_login_sample_condition_test.xml -text svneol=unset#text/plain
+/ses_login_sample_non_site.xml -text svneol=unset#text/plain
 /sim.bat -text
 /sim.sh -text
 src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
