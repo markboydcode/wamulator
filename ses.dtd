@@ -2,23 +2,65 @@
 Document type definition for the SSO environment simulator's configuration file.
 -->
 
-<!ELEMENT config ( sso-cookie, sso-sign-in-url, sso-header*, sso-traffic, users ) >
+<!-- 
+Required element to indicate what ports the proxy and console should be located.
+An option attribute allow-non-sso-traffic indicates whether the proxy port should
+support forward proxying of any URLs that do not match any of the configured
+sso-traffic values. This attribute defaults to false meaning that forward 
+proxying is not supported.
+-->
+<!ELEMENT config ( console-recording?, sso-cookie, sso-sign-in-url, sso-header*, sso-traffic, users ) >
 <!ATTLIST config allow-non-sso-traffic CDATA #IMPLIED >
 <!ATTLIST config console-port CDATA #REQUIRED >
 <!ATTLIST config proxy-port CDATA #REQUIRED >
 
+<!-- 
+console-recording element is used to turn on/off recording of sso and rest api
+traffic that shows in the the SSO Traffic tab and Rest Traffic tabs respectively
+in the simulator's console. Should be 'true' or 'false'. If not included then
+the default is false for both values.
+-->
+<!ELEMENT console-recording EMPTY >
+<!ATTLIST console-recording sso CDATA #REQUIRED > 
+<!ATTLIST console-recording rest CDATA #REQUIRED >
+
+<!-- 
+sso-cookie element is required and indicates the namd and domain of the cookie 
+that will be set by the simulator's sign-in pages if used and will be looked for
+by its agent when enforcing access to URLs.
+-->
 <!ELEMENT sso-cookie EMPTY >
 <!ATTLIST sso-cookie domain CDATA #REQUIRED >
 <!ATTLIST sso-cookie name CDATA #REQUIRED >
 
+<!--
+The sso-sign-in-url is required and its value attribute must be the full URL to 
+a sign-in page that will allow a user of the simulator to sign in and have a 
+proper cookie set that will be honored by the simulator's agent implementation 
+when enforcing access to URLs. Two pages are available from the simulator:
+http://<host>:<console-port>/admin/selectUser.jsp
+http://<host>:<console-port>/admin/simpleSelectUser.jsp
+-->
 <!ELEMENT sso-sign-in-url EMPTY >
 <!ATTLIST sso-sign-in-url value CDATA #REQUIRED >
 
+<!-- 
+Options elements used to inject custom headers for all SSO traffic. One such 
+typical value is 'policy-service-url' which tells the SSO client library and
+other applications where the policy server's REST api resides. The simulator
+implements that api at:
+http://<host>:<console-port>/rest/
+-->
 <!ELEMENT sso-header EMPTY >
 <!ATTLIST sso-header name CDATA #REQUIRED >
 <!ATTLIST sso-header value CDATA #REQUIRED >
 
-<!ELEMENT sso-traffic (( by-site|by-resource)*) >
+<!-- 
+Required element whose nested elements define what traffic hitting the proxy-port
+should be considered SSO traffic and subject to header injection and URL 
+enforcement. Supports non http URLs used for fine grained permissions.
+-->
+<!ELEMENT sso-traffic (( by-site|by-resource|rewrite-redirect)*) >
 
 <!ELEMENT by-site ( allow | cctx-mapping | unenforced )* >
 <!ATTLIST by-site host CDATA #REQUIRED >
@@ -50,10 +92,29 @@ accessing the cpath is that the user be signed-in -->
 <!ELEMENT unenforced EMPTY >
 <!ATTLIST unenforced cpath CDATA #REQUIRED >
 
+<!-- 
+Directive that tells the simulator to rewrite the location header on any response
+where the location header's value starts with the value of the from attribute and
+that prefix will be replaced by the value of the to attribute. 
+
+WARNING: ensure that your application will have a similar functionality in its
+ultimate deployment environment. For example, java applications are fronted with
+IHS a variant of apache web server and hence can mimic this with proxyPassReverse.
+Mark Logic apps have no such reverse proxy fronting them. Alternatively, if 
+designed correctly applications should be congnizant of the canonical context at
+which they are deployed by virtue of the cctx header and redirect appropriately.
+-->
+<!ELEMENT rewrite-redirect EMPTY >
+<!ATTLIST rewrite-redirect from CDATA #REQUIRED >
+<!ATTLIST rewrite-redirect to CDATA #REQUIRED >
+
 <!ELEMENT users ( user+ ) >
 <!-- session-timeout-seconds defaults to 300 seconds (five minutes) -->
 <!ATTLIST users session-timeout-seconds CDATA #IMPLIED >
 
+<!-- 
+Defines a user for use in applications running behind the simulator.
+-->
 <!ELEMENT user ( sso-header+ ) >
 <!ATTLIST user name CDATA #REQUIRED >
 <!ATTLIST user pwd CDATA #REQUIRED >
