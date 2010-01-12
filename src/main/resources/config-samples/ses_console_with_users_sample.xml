@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    Example showing the simplest configuration file that can be used.
+
+    The console-port is the
+    port on which the console will be found and the rest api resides. The proxy
+    port is the port that represents the unified site or can be used as the
+    browser's http proxy if desired for particular test scenarios.
+-->
+<config proxy-port="80" console-port="1776" allow-non-sso-traffic="false">
+    <console-recording sso="true" rest="true"/>
+    <!-- 
+        The set of defined users and headers injected for each user. 
+    -->
+    <users>
+        <user name="ngia" pwd="pwda">
+            <sso-header name="policy-birthdate" value="1960-09-25"/>
+            <sso-header name="policy-email" value="ngia@someplace.com"/>
+            <sso-header name="policy-preferred-name" value="NGIA the great"/>
+        </user>
+        <user name="ngib" pwd="pwdb">
+            <sso-header name="policy-birthdate" value="1980-02-27"/>
+            <sso-header name="policy-email" value="ngib@another-place.com"/>
+            <sso-header name="policy-preferred-name" value="NGIB is me"/>
+        </user>
+    </users>
+</config>

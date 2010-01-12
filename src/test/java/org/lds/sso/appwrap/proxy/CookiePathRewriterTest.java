@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -16,10 +18,56 @@ import org.lds.sso.appwrap.Service;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class RedirectRewriteTest {
+public class CookiePathRewriterTest {
 	
 	@Test
-	public void testDoesRewrite() throws Exception {
+	public void parseSimple() {
+		String cookieHdr = "c=one; path=/leader-form; domain=.lds.org";
+		
+		Map<String,String> prw = new HashMap<String,String>();
+		prw.put("/leader-form", "/mls/cr");
+		prw.put("/mls-membership", "/mls/mbr");
+		
+		CookiePathRewriter cpr = new CookiePathRewriter(cookieHdr, prw);
+		
+		String newHdr = cpr.getHeader();
+		Assert.assertEquals(newHdr, "c=one; path=/mls/cr; domain=.lds.org");
+	}
+
+	@Test
+	public void parseQuotedString() {
+		String cookieHdr = "c=\"path=/leader-form\"; path=/leader-form; domain=.lds.org";
+		
+		Map<String,String> prw = new HashMap<String,String>();
+		prw.put("/leader-form", "/mls/cr");
+		prw.put("/mls-membership", "/mls/mbr");
+		
+		CookiePathRewriter cpr = new CookiePathRewriter(cookieHdr, prw);
+		
+		String newHdr = cpr.getHeader();
+		// should be no change
+		Assert.assertEquals(newHdr, "c=\"path=/leader-form\"; path=/mls/cr; domain=.lds.org");
+	}
+	
+
+	@Test
+	public void parseWithMultipleComplexCookiesQuotedString() {
+		String cookieHdr = "c=\"path=/leader-form\"; path=/leader-form; domain=.lds.org";
+		
+		Map<String,String> prw = new HashMap<String,String>();
+		prw.put("/leader-form", "/mls/cr");
+		prw.put("/mls-membership", "/mls/mbr");
+		
+		CookiePathRewriter cpr = new CookiePathRewriter(cookieHdr, prw);
+		
+		String newHdr = cpr.getHeader();
+		// should be no change
+		Assert.assertEquals(newHdr, "c=\"path=/leader-form\"; path=/mls/cr; domain=.lds.org");
+	}
+	
+	@Test
+	public void testViaIntegration() throws Exception {
+		// find some free socket ports
 		ServerSocket css = new ServerSocket();
 		css.setReuseAddress(true);
 		css.bind(null);
@@ -39,6 +87,7 @@ public class RedirectRewriteTest {
 		pss.close();
 		sss.close();
 		
+		// now set up the shim
 		Service service = new Service("string:"
 			+ "<?xml version='1.0' encoding='UTF-8'?>"
 			+ "<config console-port='" + console + "' proxy-port='" + proxy + "'>"
@@ -47,14 +96,12 @@ public class RedirectRewriteTest {
             + "   <cctx-mapping cctx='/test/*' thost='127.0.0.1' tport='" + server + "' tpath='/test/*'/>"
             + "   <unenforced cpath='/test/*'/>"
             + "  </by-site>"
-            + "  <rewrite-redirect " 
-            + "    from='http://labs-local.lds.org/test-of-redirect' "
-            + "    to='http://labs-local.lds.org/test' />"
+            + "  <rewrite-cookie from-path='/leader-forms' to-path='/mls/cr' />"
 			+ " </sso-traffic>"
 		    + "</config>");
 		service.start();
 		
-		// now start listener to spool back redirect
+		// now start server to spool back a redirect
 		Thread serverT = new Thread() {
 			@Override
 			public void run() {
@@ -65,13 +112,14 @@ public class RedirectRewriteTest {
 					sss.bind(new InetSocketAddress("127.0.0.1", server));
 					Socket sock = sss.accept();
 					OutputStream out = sock.getOutputStream();
-					out.write(("HTTP/1.1 302 Found" + RequestHandler.CRLF
-							+ "Location: http://labs-local.lds.org/test-of-redirect/some/resource.html" + RequestHandler.CRLF
+					out.write(("HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
+							+ "Set-Cookie: lds-policy=ngia-27;Domain=.lds.org;Path=/leader-forms/dir" + RequestHandler.CRLF
 							+ RequestHandler.CRLF // end of headers
 							+ RequestHandler.CRLF // end of body
 							).getBytes());
+					out.flush();
 				}
-				catch (IOException e) {
+				catch (Exception e) {
 					e.printStackTrace();
 				}
 				if (sss != null && sss.isBound()) {
@@ -86,7 +134,7 @@ public class RedirectRewriteTest {
 		};
 		serverT.start();
 		
-		// now lets connect and verify we get redirected correctly
+		// now connect and verify we get redirected correctly
         String uri = "http://labs-local.lds.org:" + proxy + "/test/a/path";
         HttpClient client = new HttpClient();
         HostConfiguration cfg = new HostConfiguration();
@@ -95,15 +143,17 @@ public class RedirectRewriteTest {
         HttpMethod method = new GetMethod(uri);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        System.out.println(method.getResponseBodyAsString());
-        Assert.assertEquals(status, 302, "should have returned http 302 for redirect");
-        Header loc = method.getResponseHeader("Location");
-        Assert.assertEquals(loc.getValue(), "http://labs-local.lds.org/test/some/resource.html", "should have been rewritten from '.../test-of-redirect...' to '.../test...' ");
+        // sanity check that we got there
+        Assert.assertEquals(status, 304, "should have returned http 304 not modified");
+        Header cookie = method.getResponseHeader("set-cookie");
+        
+        Assert.assertEquals(cookie.getValue(),"lds-policy=ngia-27;Domain=.lds.org;Path=/mls/cr/dir");
         service.stop();
 	}
 	
 	@Test
-	public void testDoesNotRewrite() throws Exception {
+	public void testViaIntegrationWQuotedString() throws Exception {
+		// find some free socket ports
 		ServerSocket css = new ServerSocket();
 		css.setReuseAddress(true);
 		css.bind(null);
@@ -123,6 +173,7 @@ public class RedirectRewriteTest {
 		pss.close();
 		sss.close();
 		
+		// now set up the shim
 		Service service = new Service("string:"
 			+ "<?xml version='1.0' encoding='UTF-8'?>"
 			+ "<config console-port='" + console + "' proxy-port='" + proxy + "'>"
@@ -131,14 +182,12 @@ public class RedirectRewriteTest {
             + "   <cctx-mapping cctx='/test/*' thost='127.0.0.1' tport='" + server + "' tpath='/test/*'/>"
             + "   <unenforced cpath='/test/*'/>"
             + "  </by-site>"
-            + "  <rewrite-redirect " 
-            + "    from='http://labs-local.lds.org/test-of-redirect' "
-            + "    to='http://labs-local.lds.org/test' />"
+            + "  <rewrite-cookie from-path='/leader-forms' to-path='/mls/cr' />"
 			+ " </sso-traffic>"
 		    + "</config>");
 		service.start();
 		
-		// now start listener to spool back redirect
+		// now start server to spool back a redirect
 		Thread serverT = new Thread() {
 			@Override
 			public void run() {
@@ -149,13 +198,14 @@ public class RedirectRewriteTest {
 					sss.bind(new InetSocketAddress("127.0.0.1", server));
 					Socket sock = sss.accept();
 					OutputStream out = sock.getOutputStream();
-					out.write(("HTTP/1.1 302 Found" + RequestHandler.CRLF
-							+ "Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html" + RequestHandler.CRLF
+					out.write(("HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
+							+ "Set-Cookie: lds-policy=\"ngia path=/leader-forms/dir\";Domain=.lds.org;Path=/leader-forms/dir" + RequestHandler.CRLF
 							+ RequestHandler.CRLF // end of headers
 							+ RequestHandler.CRLF // end of body
 							).getBytes());
+					out.flush();
 				}
-				catch (IOException e) {
+				catch (Exception e) {
 					e.printStackTrace();
 				}
 				if (sss != null && sss.isBound()) {
@@ -170,7 +220,7 @@ public class RedirectRewriteTest {
 		};
 		serverT.start();
 		
-		// now lets connect and verify we get redirected correctly
+		// now connect and verify we get redirected correctly
         String uri = "http://labs-local.lds.org:" + proxy + "/test/a/path";
         HttpClient client = new HttpClient();
         HostConfiguration cfg = new HostConfiguration();
@@ -180,9 +230,14 @@ public class RedirectRewriteTest {
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
         System.out.println(method.getResponseBodyAsString());
-        Assert.assertEquals(status, 302, "should have returned http 302 for redirect");
-        Header loc = method.getResponseHeader("Location");
-        Assert.assertEquals(loc.getValue(), "http://labs-local.lds.org/not-rewritten-path/some/resource.html", "should NOT have been rewritten from '.../not-rewritten-path...'");
+        // sanity check that we got there
+        Assert.assertEquals(status, 304, "should have returned http 304 not modified");
+        Header cookie = method.getResponseHeader("set-cookie");
+        
+        Assert.assertTrue(cookie.getValue().contains("Path=/mls/cr/dir"), 
+		"should have been rewritten from '/leader-forms/dir' to '/mls/cr/dir' ");
+        Assert.assertTrue(cookie.getValue().contains("ngia path=/leader-forms/dir"), 
+		"should NOT have rewritten quote string portion");
         service.stop();
 	}
 }

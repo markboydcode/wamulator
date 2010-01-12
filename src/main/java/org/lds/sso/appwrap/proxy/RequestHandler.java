@@ -38,7 +38,9 @@ public class RequestHandler implements Runnable {
 
 	public static final String CRLF = "" + ((char) 13) + ((char) 10); // "\r\n";
 
-	public static final String SP = " ";
+	public static final char SP = ' ';
+	
+	public static final char HT = ((char)((int)9));
 
 	public static final String EMPTY_START_LINE = "empty-start-line";
 	
@@ -771,10 +773,10 @@ public class RequestHandler implements Runnable {
 		String dataLC = "";
 		int pos = -1;
 
-		// get the rest of the header info
+		// get header info
 		while ((data = readLine(in, log)) != null) {
 			if (data.length() == 0) {
-				// the header ends at the first blank line
+				// the headers ends at the first blank line
 				break;
 			}
 
@@ -849,6 +851,21 @@ public class RequestHandler implements Runnable {
 					data = HttpPackage.LOCATION_HDR + " " + rewrite;
 				}
 			}
+			pos = dataLC.indexOf(HttpPackage.SET_COOKIE_HDR);
+			if (pos >= 0) {
+				String rawCookie = data.substring(pos + HttpPackage.SET_COOKIE_HDR.length()).trim();
+				TrafficManager mgr = cfg.getTrafficManager();
+				String rewrite = mgr.rewriteCookiePath(rawCookie); 
+
+				if (!rewrite.equals(rawCookie)) {
+					// rewrite matched, replace
+					if (cLog.isDebugEnabled()) {
+						cLog.debug("rewriting cookie from: " + rawCookie + " to: "
+								+ rewrite);
+					}
+					data = HttpPackage.SET_COOKIE_HDR + " " + rewrite;
+				}
+			}
 			// write the header to the buffer
 			pkg.headerBfr.append(data + CRLF);
 		}
@@ -891,6 +908,56 @@ public class RequestHandler implements Runnable {
 		}
 	}
 
+	/**
+	 * Handles merging of folded header lines into a single header line. See
+	 * rfc2616, section 2.2's definition of LWS and the paragraph immediately
+	 * preceding the rule's definition.
+	 * 
+	 * @param in
+	 * @param log
+	 * @return
+	 */
+	private String readHeader(InputStream in, PrintStream log) {
+		String currentLine = null;
+		
+		if (nextLineIsCached) {
+			currentLine = cachedNextLine;
+			cachedNextLine = null;
+			nextLineIsCached = false;
+		}
+		else {
+			currentLine = readLine(in, log);
+		}
+		
+		if (currentLine == null || "".equals(currentLine)) {
+			return currentLine;
+		}
+		
+		String nextLine = readLine(in, log);
+		
+		if (nextLine == null || "".equals(nextLine)) {
+			return currentLine;
+		}
+
+		// see if header line was folded and unfold
+		char first = nextLine.charAt(0);
+		if (first == SP || first == HT) {
+			currentLine += SP + nextLine.trim();
+		}
+		else {
+			cachedNextLine = nextLine;
+			nextLineIsCached = true;
+		}
+		return currentLine;
+	}
+	
+	/**
+	 * Used to cache the next line to be read from an input stream as received
+	 * from calling readLine. This is used in unfolding "folded" headers.
+	 */
+	private boolean nextLineIsCached = false;
+	private String cachedNextLine = null;
+
 	private String readLine(InputStream in, PrintStream log) {
 		// reads a line of text from an InputStream
 		StringBuffer data = new StringBuffer("");
@@ -921,7 +988,7 @@ public class RequestHandler implements Runnable {
 		}
 		catch (Exception e) {
 			if (log != null) {
-				log.println("\nError getting header: " + e);
+				log.println("\nError reading line: " + e);
 			}
 		}
 

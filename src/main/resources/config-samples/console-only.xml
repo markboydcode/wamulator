@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    Example showing the simplest configuration file that can be used.
+
+    The console-port is the
+    port on which the console will be found and the rest api resides. The proxy
+    port is the port that represents the unified site or can be used as the
+    browser's http proxy if desired for particular test scenarios.
+-->
+<config proxy-port="80" console-port="1776" allow-non-sso-traffic="false">
+    <console-recording sso="true" rest="true"/>
+</config>

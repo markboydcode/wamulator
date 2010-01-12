@@ -1,6 +1,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <html>
+<head><title>${requestScope.config.serverName}</title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- TABS -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">

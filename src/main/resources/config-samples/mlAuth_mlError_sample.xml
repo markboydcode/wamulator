@@ -21,7 +21,7 @@
     <sso-cookie name="lds-policy" domain=".lds.org"/>
 <!-- <sso-sign-in-url value="http://labs-local.lds.org/auth/ui/sign-in"/> -->
     <sso-sign-in-url value="http://labs-local.lds.org/secure/access/ui/sign-in"/> <!-- show with ?locale=eng -->
-    <sso-header name="policy-service-url" value="http://labs-local.lds.org:{{rest-port}}/rest/"/>
+    <sso-header name="policy-service-url" value="http://labs-local.lds.org:8888/rest/"/>
     
     <sso-traffic>
         <by-site scheme='http' host="labs-local.lds.org" port="80">

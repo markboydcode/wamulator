@@ -2,6 +2,7 @@
 <jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <html>
 <head>
+<title>${requestScope.config.serverName}</title>
 <style type="text/css" media="screen"><!--
 tr.odd {background: #DDF;}
 --></style>

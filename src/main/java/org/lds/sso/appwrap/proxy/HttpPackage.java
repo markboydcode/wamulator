@@ -11,6 +11,7 @@ public class HttpPackage {
 	public static final String CONN_ID_HDR = "x-connId: ";
 	public static final String SHIM_HANDLED_HDR = "x-shim:";
 	public static final String LOCATION_HDR = "location:";
+	public static final String SET_COOKIE_HDR = "set-cookie:"; // need set-cookie2?
 	
 	public StringBuffer headerBfr = new StringBuffer("");
 	public ByteArrayOutputStream bodyStream = new ByteArrayOutputStream();

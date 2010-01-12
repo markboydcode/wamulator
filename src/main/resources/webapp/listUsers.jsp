@@ -1,5 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <html>
+<head><title>${requestScope.config.serverName}</title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- TABS -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">

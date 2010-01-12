@@ -10,6 +10,7 @@ import java.util.Properties;
 
 import org.lds.sso.plugins.policy.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.opensso.MyProvider;
+import org.lds.sso.appwrap.proxy.CookiePathRewriter;
 
 import com.sun.identity.shared.configuration.SystemPropertiesManager;
 
@@ -35,6 +36,8 @@ public class TrafficManager {
 	private SiteMatcher lastMatcherAdded = null;
 
 	private Map<String,String> redirectRewrites = new HashMap<String,String>();
+
+	private Map<String,String> cookieRewrites = new HashMap<String,String>();
 
 	/**
 	 * Set up opensso's debug infrastructure to use custom implementation that
@@ -123,8 +126,12 @@ public class TrafficManager {
 		return this.isPermitted(u.getScheme(), u.getHost(), port, action, u.getPath(), query, user);
 	}
 
-	public void addRedirectRewrite(String from, String to) {
+	public void addRewriteForRedirect(String from, String to) {
 		this.redirectRewrites.put(from, to);
+	}
+
+	public void addRewriteForCookie(String fromPath, String toPath) {
+		this.cookieRewrites.put(fromPath, toPath);
 	}
 
 	/**
@@ -143,5 +150,19 @@ public class TrafficManager {
 			}
 		}
 		return null; // match not found, don't rewrite
+	}
+
+	/**
+	 * Takes the passed in absolute URL gleaned from a Location header to see
+	 * if it matches any configured rewrite directives. Returns null if it does
+	 * not match any directive and hence need not be rewritten. Returns the 
+	 * a rewritten absolute URL if a match is found.
+	 * 
+	 * @param redirect
+	 * @return
+	 */
+	public String rewriteCookiePath(String cookie) {
+		CookiePathRewriter cpr = new CookiePathRewriter(cookie, this.cookieRewrites);
+		return cpr.getHeader();
 	}
 }

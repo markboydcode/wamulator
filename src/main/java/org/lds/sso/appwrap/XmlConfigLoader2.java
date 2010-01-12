@@ -347,7 +347,13 @@ public class XmlConfigLoader2 {
 				String from = getStringAtt("from", path, atts);
 				String to = getStringAtt("to", path, atts);
 				TrafficManager mgr = cfg.getTrafficManager();
-				mgr.addRedirectRewrite(from, to);
+				mgr.addRewriteForRedirect(from, to);
+			}
+			else if (path.matches("/config/sso-traffic/rewrite-cookie")) {
+				String from = getStringAtt("from-path", path, atts);
+				String to = getStringAtt("to-path", path, atts);
+				TrafficManager mgr = cfg.getTrafficManager();
+				mgr.addRewriteForCookie(from, to);
 			}
 		}
 
