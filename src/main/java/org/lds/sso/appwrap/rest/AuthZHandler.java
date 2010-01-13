@@ -62,7 +62,7 @@ public class AuthZHandler extends RestHandlerBase {
 				Map<String, String> props = new HashMap<String, String>();
 				props.put("uri", uri);
 				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
-						HttpServletResponse.SC_OK, "bolean=true",
+						HttpServletResponse.SC_OK, "boolean=true",
 						props);
 			}
 			super.sendResponse(cLog, response, HttpServletResponse.SC_OK, "boolean=true");

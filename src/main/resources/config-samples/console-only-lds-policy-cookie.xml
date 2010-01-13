@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    Adds to the simplest config by setting the name of the SSO cooki.
+-->
+<config proxy-port="80" console-port="1776" allow-non-sso-traffic="false">
+    <console-recording sso="true" rest="true"/>
+    <sso-cookie name="lds-policy" domain=".lds.org"/>
+</config>

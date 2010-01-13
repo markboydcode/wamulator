@@ -270,7 +270,9 @@ public class RequestHandler implements Runnable {
 			else if (! cfg.getAllowForwardProxying()){
 				byte[] bytes = getResponse("501", "Not Allowed - Forward Proxying", 
 						"501 Not Implemented - Forward Proxying",
-					    "Forward Proxying is not allowed. Should this URI be mapped into the &lt;sso-traffic&gt; of the site?",
+					    "Forward Proxying is not allowed. Either this URI is not " +
+					    "mapped into the &lt;sso-traffic&gt; of the site or it is " +
+					    "being accessed with a method not allowed for this URI?",
 					    null, reqPkg);
 				sendProxyResponse(501, bytes, reqPkg, clientIn, clientOut, user,
 						startTime, log);

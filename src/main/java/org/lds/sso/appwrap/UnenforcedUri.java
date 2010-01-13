@@ -49,7 +49,9 @@ public class UnenforcedUri implements Comparable<UnenforcedUri>{
 	}
 	
 	public boolean matches(String scheme, String host, int port, String path, String query) {
-		if (! this.scheme.equals(scheme) || ! this.host.equals(host) || this.port != port) {
+		if ((this.scheme != null && ! this.scheme.equals(scheme)) || 
+				(this.host != null && ! this.host.equals(host)) || 
+				this.port != port) {
 			return false;
 		}
 		
