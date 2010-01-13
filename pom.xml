@@ -11,7 +11,7 @@
   <groupId>org.lds.sso</groupId>
   <artifactId>appwrap</artifactId>
   <packaging>jar</packaging>
-  <version>4.0</version>
+  <version>4.1</version>
   
   <name>SSO Environment Simulator</name>
   
@@ -54,7 +54,7 @@
       <dependency>
           <groupId>org.lds.sso</groupId>
           <artifactId>plugins</artifactId>
-          <version>1.0.1</version>
+          <version>1.1.0</version>
           <type>jar</type>
           <scope>compile</scope>
           
