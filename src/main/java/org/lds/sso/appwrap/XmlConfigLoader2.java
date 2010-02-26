@@ -320,6 +320,9 @@ public class XmlConfigLoader2 {
 				trafficMgr.addMatcher(sm);
 			}
 			else if (path.matches("/config/users")) {
+				String source = getStringAtt("source", path, atts, false);
+				cfg.setExternalUserSource(source);
+
 				int timeout = getIntegerAtt("session-timeout-seconds", path, atts, false);
 				if (timeout != -1) {
 					SessionManager sman = cfg.getSessionManager();
@@ -349,8 +352,7 @@ public class XmlConfigLoader2 {
 				TrafficManager mgr = cfg.getTrafficManager();
 				mgr.addRewriteForRedirect(from, to);
 			}
-			else if (path.matches("/config/sso-traffic/rewrite-cookie")) {
-				String from = getStringAtt("from-path", path, atts);
+			else if (path.matches("/config/sso-traffic/rewrite-cookie")) {				String from = getStringAtt("from-path", path, atts);
 				String to = getStringAtt("to-path", path, atts);
 				TrafficManager mgr = cfg.getTrafficManager();
 				mgr.addRewriteForCookie(from, to);
@@ -440,10 +442,36 @@ public class XmlConfigLoader2 {
 		return ur;
 	}
 
+	/**
+	 * Get required String attribute tossing exception if not found.
+	 * 
+	 * @param attName
+	 * @param pathToElement
+	 * @param atts
+	 * @return
+	 */
 	private String getStringAtt(String attName, Path pathToElement, Attributes atts) {
+		return getStringAtt(attName, pathToElement, atts, true);
+	}
+
+	/**
+	 * Get options string attribute returning null if not found.
+	 * 
+	 * @param attName
+	 * @param pathToElement
+	 * @param atts
+	 * @param required
+	 * @return
+	 */
+	private String getStringAtt(String attName, Path pathToElement, Attributes atts, boolean required) {
 		String val = atts.getValue(attName);
-		if ("".equals(val)) {
-			throw new IllegalArgumentException("Attribute '" + attName + "' must be specified for " + pathToElement);
+		if (val == null || "".equals(val)) {
+			if (required) {
+				throw new IllegalArgumentException("Attribute '" + attName + "' must be specified for " + pathToElement);
+			}
+			else {
+				return null;
+			}
 		}
 		return resolveAliases(val);
 	}

@@ -61,12 +61,14 @@ src/main/resources/config-samples/ses_console_with_users_sample.xml -text
 src/main/resources/config-samples/ses_login_sample.xml -text
 src/main/resources/config-samples/ses_login_sample_condition_test.xml -text
 src/main/resources/config-samples/ses_login_sample_non_site.xml -text
+src/main/resources/config-samples/ses_login_sample_non_site_coda.xml -text svneol=unset#text/plain
 src/main/resources/local-config.xml -text svneol=unset#text/plain
 src/main/resources/local-config2.xml -text svneol=unset#text/plain
 src/main/resources/log4j.properties -text svneol=unset#text/plain
 src/main/resources/webapp/add.gif -text
 src/main/resources/webapp/apps.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/cancel.gif -text
+src/main/resources/webapp/codaUserSelect.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/debug.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/delete.gif -text
 src/main/resources/webapp/listUsers.jsp -text

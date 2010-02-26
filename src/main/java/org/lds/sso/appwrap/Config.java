@@ -79,6 +79,8 @@ public class Config {
 
 	private String stateCookieName;
 
+	private String externalUserSource = null;
+
 
 	private static final String SERVER_NAME = determineCurrentVersion();
 
@@ -481,5 +483,20 @@ public class Config {
 	 */
 	public Object getShimStateCookieName() {
 		return this.stateCookieName;
+	}
+
+	/**
+	 * Sets the external site from whence user information can be loaded for 
+	 * injection in headers. Can include a macro of "{username}" which will be
+	 * replaced with the value entered in the codaUserSelect.jsp page. 
+	 * 
+	 * @param source
+	 */
+	public void setExternalUserSource(String source) {
+		this.externalUserSource = source;
+	}
+	
+	public String getExternalUserSource() {
+		return this.externalUserSource;
 	}
 }
