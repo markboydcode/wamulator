@@ -11,7 +11,7 @@
   <groupId>org.lds.sso</groupId>
   <artifactId>appwrap</artifactId>
   <packaging>jar</packaging>
-  <version>4.2</version>
+  <version>4.3</version>
   
   <name>SSO Environment Simulator</name>
   
@@ -50,6 +50,12 @@
       <scope>provided</scope>
     </dependency>
 
+      <dependency>
+          <groupId>commons-httpclient</groupId>
+          <artifactId>commons-httpclient</artifactId>
+          <version>3.1</version>
+      </dependency>
+      
 <!-- Dependencies for support of custom syntax evaluation -->
       <dependency>
           <groupId>org.lds.sso</groupId>

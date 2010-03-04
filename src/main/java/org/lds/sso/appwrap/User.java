@@ -103,17 +103,21 @@ public class User implements SSOToken {
 
 	public void addHeader(String name, String value) throws SSOException {
 		if (LegacyPropsInjectorDefs.CP_POSITIONS_SESSION_PROPERTY.equals(name)) {
+			assignmentsInjector.clearOld(name, tokenProps);
 			assignmentsInjector.inject(name, value, this);
 		}
 		else if (LegacyPropsInjectorDefs.CP_UNITS_SESSION_PROPERTY.equals(name)) {
+			unitsChainInjector.clearOld(name, tokenProps);
 			unitsChainInjector.inject(name, value, this);
 		}
 		else {
 			// custom syntax uses headers as is so inject into both the headers
 			// buffer (for injecting into requests) and the tokenProps buffer
 			// (for condition syntax evaluation).
+			this.tokenProps.remove(name);
 			this.tokenProps.put(name, value);
 		}
+		this.headers.remove(name);
 		this.headers.put(name, value);
 	}
 

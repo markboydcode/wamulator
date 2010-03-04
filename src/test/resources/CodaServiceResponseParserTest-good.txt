@@ -1,0 +1,15 @@
+<org.lds.community.data.ws.dto.OssoMemberDto>
+    <birthdate>1980-03-31</birthdate>
+    <cn>pholder</cn>
+    <gender>M</gender>
+    <givenName>Perry</givenName>
+    <individualId>0083419004078</individualId>
+    <ldsAccountId>1</ldsAccountId>
+    <ldsMrn>0083419004078</ldsMrn>
+    <positions>P57:W555005:S555001:A555000</positions>
+    <preferredLanguage>en</preferredLanguage>
+    <preferredName>Perry Holder</preferredName>
+    <sn>Holder</sn>
+    <status>200</status>
+    <units>W555005:S555001:A555000</units>
+</org.lds.community.data.ws.dto.OssoMemberDto>

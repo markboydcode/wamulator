@@ -1,5 +1,7 @@
 package org.lds.sso.appwrap.opensso;
 
+import java.util.Map;
+
 import org.lds.sso.plugins.authz.LegacyPropsInjector;
 
 import com.iplanet.sso.SSOException;
@@ -51,5 +53,10 @@ public class UnitsChainInjector implements HeadersToSSOTokenInjector {
 			ret.append(tok.substring(1));
 		}
 		return ret.toString().substring(1);
+	}
+
+	public void clearOld(String headerName, Map<String, String> tokenValues) {
+		tokenValues.remove(LegacyPropsInjector.CP_UNITS_SESSION_PROPERTY);
+		tokenValues.remove(LegacyPropsInjector.CP_UNITS_SESSION_PROPERTY_FOR_POLICY_EVAL);
 	}
 }

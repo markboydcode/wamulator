@@ -1,0 +1,4 @@
+<org.lds.community.data.ws.dto.ResponseStatus>
+  <good>false</good>
+  <message>pholderhjkjk</message>
+</org.lds.community.data.ws.dto.ResponseStatus>

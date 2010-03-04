@@ -1,6 +1,11 @@
 package org.lds.sso.appwrap.opensso;
 
 
+import java.util.Iterator;
+import java.util.Map;
+
+import org.lds.sso.appwrap.User;
+
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 
@@ -32,6 +37,7 @@ import com.iplanet.sso.SSOToken;
  *
  */
 public class AssignmentsChainInjector implements HeadersToSSOTokenInjector {
+	
 
 	public void inject(String headerName, String value, SSOToken token) throws SSOException {
 		token.setProperty(headerName, value);
@@ -59,4 +65,15 @@ public class AssignmentsChainInjector implements HeadersToSSOTokenInjector {
 		}
 	}
 
+	public void clearOld(String headerName, Map<String, String> tokenValues) {
+		tokenValues.remove(headerName);
+		tokenValues.remove(LegacyPropsInjectorDefs.CACHE_TYPE);
+		for (Iterator<Map.Entry<String, String>> i = tokenValues.entrySet().iterator(); i.hasNext();) {
+			Map.Entry<String, String> ent = i.next();
+			String name = ent.getKey();
+			if (name.startsWith(LegacyPropsInjectorDefs.CACHED_VALUE)) {
+				i.remove();
+			}
+		}
+	}
 }
