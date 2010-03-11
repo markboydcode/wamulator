@@ -47,7 +47,7 @@ padding:15px 20px; text-align:left;">Unable to access user source. See log for d
 
         <p>
             <label for="username">Coda Username</label>
-            <input type="text" name="codaUser" id="username" tabindex="1" autocomplete="on"/>
+            <input type="text" name="username" id="username" tabindex="1" autocomplete="on"/>
         </p>
         <p>
             <input type="submit" name="submitBtn" id="submitBtn" value="Sign In" tabindex="2"/>
