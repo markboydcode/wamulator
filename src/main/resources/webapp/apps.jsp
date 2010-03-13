@@ -23,7 +23,7 @@
 </tr>
 <c:forEach items="${requestScope.config.trafficManager.applications}" var="app">
 <tr>
-<td><span style="padding: 0 0 0 3px;">${app.canonicalContextRoot}</span</td>
+<td><span style="padding: 0 0 0 3px;">${app.canonicalContextRoot}</span></td>
 <td><span style="padding: 0 0 0 10px;">${app.applicationContextRoot}</span></td>
 <td><span style="padding: 0 0 0 10px;">${app.endpointPort}</span></td>
 </tr>
@@ -34,7 +34,7 @@
 <table cellspacing="0" cellpadding="0" style="padding: 8px 0 0 0">
 <c:forEach items="${requestScope.config.appManager.unenforcedUrls}" var="url">
 <tr>
-<td><span style="padding: 0 0 0 3px;">${url}</span</td>
+<td><span style="padding: 0 0 0 3px;">${url}</span></td>
 </tr>
 </c:forEach>
 </table>
