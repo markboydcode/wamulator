@@ -59,9 +59,9 @@ src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneo
 src/main/resources/config-samples/console-only.xml -text
 src/main/resources/config-samples/mlAuth_mlError_sample.xml -text
 src/main/resources/config-samples/ses_console_with_users_sample.xml -text
+src/main/resources/config-samples/ses_dual_debug_site_sample.xml -text
 src/main/resources/config-samples/ses_login_sample.xml -text
 src/main/resources/config-samples/ses_login_sample_condition_test.xml -text
-src/main/resources/config-samples/ses_login_sample_non_site.xml -text
 src/main/resources/config-samples/ses_login_sample_non_site_coda.xml -text svneol=unset#text/plain
 src/main/resources/local-config.xml -text svneol=unset#text/plain
 src/main/resources/local-config2.xml -text svneol=unset#text/plain

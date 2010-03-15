@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+ Sample config mapping simulator debug.jsp page at secure and non-secure locations:
+ 
+ http://local.lds.org/public/debug.jsp
+ http://local.lds.org/secure/debug.jsp
+ 
+ -->
+ 
+<?alias rest-port=1776?>
+<?alias console-port={{rest-port}}?>
+<?alias http-port=80?>
+
+<config proxy-port="{{http-port}}" console-port="{{console-port}}">
+    <console-recording sso="true" rest="true"/>
+    <sso-cookie name="lds-policy" domain=".lds.org"/>
+    <sso-sign-in-url value="http://local.lds.org:{{console-port}}/admin/selectUser.jsp"/>
+    <sso-header name="policy-service-url" value="http://labs-local.lds.org:{{rest-port}}/rest/"/>
+
+    <sso-traffic>
+        <by-site host="local.lds.org" port="80">
+            <cctx-mapping cctx="/public/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/*"/>
+            <unenforced cpath="/public/debug.jsp"/>
+            
+            <cctx-mapping cctx="/secure/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/*"/>
+            <allow action="GET,POST" cpath="/secure/debug*"/>
+            <allow action="GET,POST" cpath="/secure/debug*?*"/>
+        </by-site>
+    </sso-traffic>
+
+    <users>
+        <user name="ngia" pwd="pwda"/>
+        <user name="ngib" pwd="pwdb"/>
+    </users>
+</config>
