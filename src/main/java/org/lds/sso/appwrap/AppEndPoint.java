@@ -72,7 +72,7 @@ public class AppEndPoint implements Comparable<AppEndPoint>{
 	 * If canonical space rewriting is disabled then the value returned is the
 	 * same as the one passed in, otherwise this method scans registered 
 	 * rewrites to see if this URL starts with any of their canonical prefixes
-	 * and if so replaces the mathing canonical portion with the app space
+	 * and if so replaces the matching canonical portion with the app space
 	 * replacement and appends a query string of cctx with the value of the 
 	 * replaced portion. 
 	 * 
@@ -87,7 +87,7 @@ public class AppEndPoint implements Comparable<AppEndPoint>{
 	 * 
 	 * would be transformed into the application space URL of:
 	 * 
-	 * /mls-membership/some/page/jsf?a=1&b=2&cctx=/mls/mbr
+	 * /mls-membership/some/page.jsf?a=1&b=2&cctx=/mls/mbr
 	 * 
 	 * And the canonical URL of:
 	 * 
@@ -95,7 +95,7 @@ public class AppEndPoint implements Comparable<AppEndPoint>{
 	 * 
 	 * would be transformed into the application space URL of:
 	 * 
-	 * /mls-membership/some/page/jsf?cctx=/mls/mbr
+	 * /mls-membership/some/page.jsf?cctx=/mls/mbr
 	 * 
 	 * @param reqPkg
 	 * @return
