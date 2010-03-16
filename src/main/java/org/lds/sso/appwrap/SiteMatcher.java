@@ -18,7 +18,7 @@ public class SiteMatcher {
 	private int port;
 	private Set<UnenforcedUri> unenforcedUrls = new TreeSet<UnenforcedUri>();
 	private Set<AllowedUri> allowedUrls = new TreeSet<AllowedUri>();
-	private Set<AppEndPoint> mappedEndPoints = new TreeSet<AppEndPoint>();
+	private Set<EndPoint> mappedEndPoints = new TreeSet<EndPoint>();
 
 	protected Type type = Type.SITE;
 	private String scheme;
@@ -123,13 +123,15 @@ public class SiteMatcher {
 	}
 
 	/**
-	 * Finds a registered mapping to an application endpoint or null if none is
+	 * Finds a registered mapping to an endpoint or null if none is
 	 * found matching the passed in canonical url.
 	 * @param canUrl
 	 * @return
 	 */
-	public AppEndPoint getAppEndpointForCanonicalUrl(String canUrl) {
-		for(AppEndPoint ep : mappedEndPoints) {
+	public EndPoint getEndpointForCanonicalUrl(String canUrl) {
+		for(EndPoint ep : mappedEndPoints) {
+			// TODO: will have to delegate into endpoint to evaluate when we
+			// add support for backward references and env macros for fileendpoints.
 			if (canUrl.startsWith(ep.getCanonicalContextRoot())) {
 				return ep;
 			}
@@ -242,5 +244,10 @@ public class SiteMatcher {
 	public void setConditionEnv(LogicalSyntaxEvaluationEngine engine, Map<String,String>syntaxMap) {
 		cEngine = engine;
 		cSynMap = syntaxMap;
+	}
+
+	public void addFileMapping(String cctx, String file, String type) {
+		EndPoint ep = new LocalFileEndPoint(cctx, file, type);
+		mappedEndPoints.add(ep);
 	}
 }

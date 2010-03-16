@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +26,9 @@ import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.AllowedUri;
 import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.EndPoint;
+import org.lds.sso.appwrap.LocalFileEndPoint;
+import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.User;
@@ -196,7 +201,7 @@ public class RequestHandler implements Runnable {
 			// for non-ignored traffic perform the enforcements and translations
 			RequestLine appReqLn = reqPkg.requestLine; // default to request
 														// line as-is
-			AppEndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port); // default
+			EndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port); // default
 																							// to
 																							// no
 																							// translation
@@ -220,7 +225,7 @@ public class RequestHandler implements Runnable {
 
 				// do we have targeted site canonical context mapped to an
 				// endpoint?
-				endpoint = reqPkg.site.getAppEndpointForCanonicalUrl(reqPkg.requestLine.getUri());
+				endpoint = reqPkg.site.getEndpointForCanonicalUrl(reqPkg.requestLine.getUri());
 
 				if (endpoint == null) {
 					byte[] bytes = getResponse("404", "Not Found", 
@@ -234,7 +239,6 @@ public class RequestHandler implements Runnable {
 
 				// endpoint is registered, translate request Uri and set cctx
 				// header
-				appReqLn = endpoint.getAppRequestUri(reqPkg);
 				reqPkg.headerBfr.append("cctx").append(": ").append(endpoint.getCanonicalContextRoot()).append(CRLF);
 
 				if (!appMgr.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
@@ -278,80 +282,100 @@ public class RequestHandler implements Runnable {
 						startTime, log);
 				return;
 			}
-			// now build complete request to pass on to application
-			request = serializePackage((StartLine) appReqLn, reqPkg);
+			
+			/////////// handle via appropriate endpoint AppEndPoint or LocalFileEndPoint
+			
+			HttpPackage resPkg = null;
+			
+			if  (endpoint instanceof AppEndPoint) {
+				AppEndPoint appEndpoint = (AppEndPoint) endpoint;
+				// now build complete request to pass on to application
+				appReqLn = appEndpoint.getAppRequestUri(reqPkg);
+				request = serializePackage((StartLine) appReqLn, reqPkg);
 
-			Socket server = null; // socket to remote server
+				Socket server = null; // socket to remote server
 
-			try {
-				if (cLog.isDebugEnabled()) {
-					cLog.debug("Connecting to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
+				try {
+					if (cLog.isDebugEnabled()) {
+						cLog.debug("Connecting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
+					}
+					server = new Socket(appEndpoint.getHost(), appEndpoint.getEndpointPort());
 				}
-				server = new Socket(endpoint.getHost(), endpoint.getEndpointPort());
-			}
-			catch (Exception e) {
-				// tell the client there was an error
-				String errMsg = "HTTP/1.0 500" + CRLF + "Content Type: text/plain" + CRLF + HttpPackage.CONN_ID_HDR
-						+ connId + CRLF + CRLF + "Error connecting to the server:" + CRLF + e + CRLF;
-				sendProxyResponse(500, errMsg.getBytes(), reqPkg, clientIn, clientOut, user, startTime, log);
-				return;
-			}
+				catch (Exception e) {
+					// tell the client there was an error
+					String errMsg = "HTTP/1.0 500" + CRLF + "Content Type: text/plain" + CRLF + HttpPackage.CONN_ID_HDR
+							+ connId + CRLF + CRLF + "Error connecting to the server:" + CRLF + e + CRLF;
+					sendProxyResponse(500, errMsg.getBytes(), reqPkg, clientIn, clientOut, user, startTime, log);
+					return;
+				}
 
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("Opening I/O to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
-			}
-			server.setSoTimeout(socketTimeout);
-			BufferedInputStream serverIn = new BufferedInputStream(server.getInputStream());
-			BufferedOutputStream serverOut = new BufferedOutputStream(server.getOutputStream());
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("getting server input/output streams...");
-			}
+				if (cLog.isDebugEnabled()) {
+					cLog.debug("Opening I/O to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
+				}
+				server.setSoTimeout(socketTimeout);
+				BufferedInputStream serverIn = new BufferedInputStream(server.getInputStream());
+				BufferedOutputStream serverOut = new BufferedOutputStream(server.getOutputStream());
+				if (cLog.isDebugEnabled()) {
+					cLog.debug("getting server input/output streams...");
+				}
 
-			// send the request out
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("Transmitting to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort() + " " + appReqLn);
-			}
-			serverOut.write(request, 0, request.length);
-			serverOut.flush();
+				// send the request out
+				if (cLog.isDebugEnabled()) {
+					cLog.debug("Transmitting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort() + " " + appReqLn);
+				}
+				serverOut.write(request, 0, request.length);
+				serverOut.flush();
 
-			// now get the response.
+				// now get the response.
 
-			// set the waitForDisconnect parameter to 'true',
-			// because some servers (like Google) don't always set the
-			// Content-Length header field, so we have to listen until
-			// they decide to disconnect (or the connection times out).
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("Awaiting data from: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
-			}
-			HttpPackage resPkg = getHttpPackage(serverIn, excludeHeaders, true, log);
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("Processing data from: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
-			}
+				// set the waitForDisconnect parameter to 'true',
+				// because some servers (like Google) don't always set the
+				// Content-Length header field, so we have to listen until
+				// they decide to disconnect (or the connection times out).
+				if (cLog.isDebugEnabled()) {
+					cLog.debug("Awaiting data from: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
+				}
+				
+				resPkg = getHttpPackage(serverIn, excludeHeaders, true, log);
+				if (cLog.isDebugEnabled()) {
+					cLog.debug("Processing data from: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
+				}
 
-			if (resPkg.type == HttpPackageType.EMPTY_RESPONSE) {
-				byte[] bytes = getResponse("500", "No Response from Server", 
-						"500 No response received from server",
-						"No bytes were found in the stream from the server.",
-					    null, reqPkg);
-				sendProxyResponse(500, bytes, reqPkg, clientIn, clientOut, user, startTime,
-						log);
-				return;
-			}
+				if (resPkg.type == HttpPackageType.EMPTY_RESPONSE) {
+					byte[] bytes = getResponse("500", "No Response from Server", 
+							"500 No response received from server",
+							"No bytes were found in the stream from the server.",
+						    null, reqPkg);
+					sendProxyResponse(500, bytes, reqPkg, clientIn, clientOut, user, startTime,
+							log);
+					return;
+				}
 
-			if (resPkg.type == HttpPackageType.REQUEST) {
-				byte[] bytes = getResponse("502", "Bad Gateway", 
-						"502 Bad Gateway",
-						"An invalid response was received from the server.",
-					    null, reqPkg);
-				log.println("---- Bad Response from server ---");
-				log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
-				log.println("---- End Bad Response from server ---");
-				log.println();
-				sendProxyResponse(502, bytes, reqPkg, clientIn, clientOut, user, startTime,
-						log);
-				return;
-			}
+				if (resPkg.type == HttpPackageType.REQUEST) {
+					byte[] bytes = getResponse("502", "Bad Gateway", 
+							"502 Bad Gateway",
+							"An invalid response was received from the server.",
+						    null, reqPkg);
+					log.println("---- Bad Response from server ---");
+					log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
+					log.println("---- End Bad Response from server ---");
+					log.println();
+					sendProxyResponse(502, bytes, reqPkg, clientIn, clientOut, user, startTime,
+							log);
+					return;
+				}
 
+				if (cLog.isDebugEnabled()) {
+					cLog.debug("Closing I/O to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
+				}
+				serverIn.close();
+				serverOut.close();
+			}
+			else { // file endpoint
+				LocalFileEndPoint fileEp = (LocalFileEndPoint) endpoint;
+				resPkg = getFileHttpPackage(fileEp, log);
+			}
+			
 			// ensure that client will not attempt another request
 			resPkg.headerBfr.append("Connection: close").append(CRLF);
 
@@ -361,12 +385,6 @@ public class RequestHandler implements Runnable {
 
 			response = serializePackage((StartLine) resPkg.responseLine, resPkg);
 			int responseLength = Array.getLength(response);
-
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("Closing I/O to: " + endpoint.getHost() + ":" + endpoint.getEndpointPort());
-			}
-			serverIn.close();
-			serverOut.close();
 
 			// send the response back to the client
 			if (cLog.isDebugEnabled()) {
@@ -665,7 +683,7 @@ public class RequestHandler implements Runnable {
 	}
 
 	/**
-	 * Creates an HttpPackage object filled with the date representing the
+	 * Creates an HttpPackage object filled with the data representing the
 	 * stream of characters and bytes for the http request of response.
 	 */
 	private HttpPackage getHttpPackage(InputStream in, String[] excludeHeaders, boolean waitForDisconnect,
@@ -693,6 +711,58 @@ public class RequestHandler implements Runnable {
 			pkg.bodyStream.flush();
 		}
 		catch (Exception e) {
+		}
+		return pkg;
+	}
+
+	/**
+	 * Creates an HttpPackage object filled with the data representing the
+	 * stream of bytes for the file requested.
+	 */
+	private HttpPackage getFileHttpPackage(LocalFileEndPoint endpoint, PrintStream log) {
+		HttpPackage pkg = new HttpPackage();
+		pkg.type = HttpPackageType.RESPONSE;
+
+		String path = endpoint.getFilepath();
+		InputStream is = null;
+		
+		try {
+			if (path.startsWith(Service.CLASSPATH_PREFIX)) {
+				String cpath = path.substring(Service.CLASSPATH_PREFIX.length());
+				is = this.getClass().getClassLoader().getResourceAsStream(cpath);
+			}
+			else {
+				File file = new File(path);
+				if (file.exists() && file.isFile()) {
+					is = new FileInputStream(file);
+				}
+			}
+			if (is != null) {
+				DataInputStream dis = new DataInputStream(is);
+				int size = dis.available();
+				byte[] bytes = new byte[size];
+				dis.read(bytes);
+				pkg.bodyStream.write(bytes);
+				dis.close();
+				pkg.responseLine = new StartLine("HTTP/1.1", "200", "OK");
+				pkg.responseCode = 200;
+				pkg.headerBfr.append(HttpPackage.CONTENT_LNG + SP + size + CRLF);
+				pkg.headerBfr.append(HttpPackage.CONTENT_TYPE + SP + endpoint.getContentType() + CRLF);
+				pkg.bodyStream.flush();
+			}
+			else {
+				pkg.responseLine = new StartLine("HTTP/1.1", "404", "Not Found");
+				pkg.responseCode = 404;
+			}
+		}
+		catch (IOException e) {
+			if (log != null) {
+				log.println("\nError serving up file: " + path + e);
+			}
+			pkg = new HttpPackage();
+			pkg.type = HttpPackageType.RESPONSE;
+			pkg.responseLine = new StartLine("HTTP/1.1", "500", "Internal Server Error");
+			pkg.responseCode = 500;
 		}
 		return pkg;
 	}

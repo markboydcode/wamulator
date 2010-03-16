@@ -250,6 +250,21 @@ public class XmlConfigLoader2 {
 				SiteMatcher m = new SiteMatcher(scheme, host, port, trafficMgr);
 				trafficMgr.addMatcher(m);
 			}
+			else if (path.matches("/config/sso-traffic/by-site/cctx-file")) {
+				String cctx = getStringAtt("cctx", path, atts); 
+				String file = getStringAtt("file", path, atts);
+				// for now require * termination to convey only prefix matching is currently
+				// supported. remove this once backwards references and env macros are
+				// added.
+				if (! cctx.endsWith("*")) {
+					throw new IllegalArgumentException("cctx must end with '*' in " + path);
+				}
+				cctx = cctx.substring(0, cctx.length()-1);
+				String type = getStringAtt("content-type", path, atts);
+				TrafficManager trafficMgr = cfg.getTrafficManager();
+				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
+				sm.addFileMapping(cctx, file, type);
+			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
 				String cctx = getStringAtt("cctx", path, atts); 
 				String thost = getStringAtt("thost", path, atts);

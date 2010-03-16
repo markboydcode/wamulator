@@ -8,6 +8,7 @@ public class HttpPackage {
 	public static final String COOKIE_HDR = "cookie:";
 	public static final String HOST_HDR = "host:";
 	public static final String CONTENT_LNG = "content-length:";
+	public static final String CONTENT_TYPE = "Content-Type:";
 	public static final String CONN_ID_HDR = "x-connId: ";
 	public static final String SHIM_HANDLED_HDR = "x-shim:";
 	public static final String LOCATION_HDR = "location:";

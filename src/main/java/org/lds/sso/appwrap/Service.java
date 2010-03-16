@@ -40,6 +40,10 @@ import org.mortbay.jetty.webapp.WebAppContext;
  */
 public class Service {
 	private static final Logger cLog = Logger.getLogger(Service.class);
+	
+	public static final String CLASSPATH_PREFIX = "classpath:";
+	private static final String STRING_PREFIX = "string:";
+	
 	//protected ProxyListener proxy = null;
 	protected Thread proxyRunner = null;
 	protected Server server = null;
@@ -102,13 +106,13 @@ public class Service {
 	protected Reader getCfgReader(String path) {
     	Reader reader = null;
     	
-    	if (path.toLowerCase().startsWith("string:")) {
-    		path = path.substring("string:".length());
+    	if (path.toLowerCase().startsWith(STRING_PREFIX)) {
+    		path = path.substring(STRING_PREFIX.length());
     		reader = new StringReader(path);
     		this.cfgSource = "Str" + path.hashCode();
     	}    	
-    	else if (path.toLowerCase().startsWith("classpath:")) {
-    		path = path.substring("classpath:".length());
+    	else if (path.toLowerCase().startsWith(CLASSPATH_PREFIX)) {
+    		path = path.substring(CLASSPATH_PREFIX.length());
     		ClassLoader cldr = this.getClass().getClassLoader();
     		InputStream source = cldr.getResourceAsStream(path);
     		

@@ -9,6 +9,8 @@
 src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/AppEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Config.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/EndPoint.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/LocalFileEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/NvPair.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/PermittedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Service.java -text svneol=unset#text/plain
@@ -58,8 +60,10 @@ src/main/resources/config-samples/YouthAppProxy.xml -text
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
 src/main/resources/config-samples/mlAuth_mlError_sample.xml -text
+src/main/resources/config-samples/ngiwb1-cal-data.json -text
 src/main/resources/config-samples/ses_console_with_users_sample.xml -text
 src/main/resources/config-samples/ses_dual_debug_site_sample.xml -text
+src/main/resources/config-samples/ses_file_serving_sample.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/ses_login_sample.xml -text
 src/main/resources/config-samples/ses_login_sample_condition_test.xml -text
 src/main/resources/config-samples/ses_login_sample_non_site_coda.xml -text svneol=unset#text/plain
