@@ -290,7 +290,6 @@ public class XmlConfigLoader2 {
 				sm.addUnenforcedUri(uu);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/allow")) {
-				String cpath = getStringAtt("cpath", path, atts);
 				String actionAtt = getStringAtt("action", path, atts);
 				actionAtt = actionAtt.replace(" ", "");
 				String[] actions = actionAtt.split(",");

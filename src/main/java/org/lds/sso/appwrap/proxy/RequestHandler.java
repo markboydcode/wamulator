@@ -374,6 +374,7 @@ public class RequestHandler implements Runnable {
 			else { // file endpoint
 				LocalFileEndPoint fileEp = (LocalFileEndPoint) endpoint;
 				resPkg = getFileHttpPackage(fileEp, log);
+				request = serializePackage((StartLine) appReqLn, reqPkg);
 			}
 			
 			// ensure that client will not attempt another request
