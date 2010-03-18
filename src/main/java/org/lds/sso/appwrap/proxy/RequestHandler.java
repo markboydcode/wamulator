@@ -373,8 +373,8 @@ public class RequestHandler implements Runnable {
 			}
 			else { // file endpoint
 				LocalFileEndPoint fileEp = (LocalFileEndPoint) endpoint;
-				resPkg = getFileHttpPackage(fileEp, log);
-				request = serializePackage((StartLine) appReqLn, reqPkg);
+				resPkg = getFileHttpPackage(reqPkg, fileEp, log);
+				request = serializePackage((StartLine) resPkg.responseLine, reqPkg);
 			}
 			
 			// ensure that client will not attempt another request
@@ -720,11 +720,11 @@ public class RequestHandler implements Runnable {
 	 * Creates an HttpPackage object filled with the data representing the
 	 * stream of bytes for the file requested.
 	 */
-	private HttpPackage getFileHttpPackage(LocalFileEndPoint endpoint, PrintStream log) {
+	private HttpPackage getFileHttpPackage(HttpPackage reqPkg, LocalFileEndPoint endpoint, PrintStream log) {
 		HttpPackage pkg = new HttpPackage();
 		pkg.type = HttpPackageType.RESPONSE;
 
-		String path = endpoint.getFilepath();
+		String path = endpoint.getFilepathTranslated(reqPkg);
 		InputStream is = null;
 		
 		try {

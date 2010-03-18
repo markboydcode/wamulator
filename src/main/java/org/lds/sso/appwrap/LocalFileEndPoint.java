@@ -32,9 +32,26 @@ public class LocalFileEndPoint implements EndPoint {
 
 	private String contentType = null;
 
+	private boolean isRelative = false;
+
 	public LocalFileEndPoint(String canonicalCtx, String filepath, String contentType) {
 		this.canonicalContextRoot = canonicalCtx;
 		this.filepath = filepath;
+		if (filepath.endsWith("*")) {
+			isRelative = true;
+		}
+		/*
+		 * This handles the case of file
+		 * <cctx-file cctx="/logs/*" 
+         *      file="*" <<<< note only one char 
+         *      content-type="text/plain"/>
+		 */
+		if (filepath.length() <= 2) {
+			this.filepath = "";
+		}
+		else {
+			filepath = filepath.substring(0, filepath.length() - 2);
+		}
 		this.contentType = contentType;
 		this.id = canonicalCtx + "->FILE=" + filepath;
 	}
@@ -94,6 +111,13 @@ public class LocalFileEndPoint implements EndPoint {
 	 * @return
 	 */
 	public String getFilepathTranslated(HttpPackage reqPkg) {
-		return filepath;
+		if (isRelative){
+			String uri = reqPkg.requestLine.getUri();
+			String relFilePath = uri.substring(canonicalContextRoot.length());
+			return filepath + relFilePath;
+		}
+		else {
+			return filepath;
+		}
 	}
 }
