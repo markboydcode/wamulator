@@ -230,6 +230,15 @@ public class XmlConfigLoader2 {
 				cfg.getTrafficRecorder().setRecording(sso);
 				boolean rest = Boolean.parseBoolean(getStringAtt("rest", path, atts));
 				cfg.getTrafficRecorder().setRecordingRest(rest);
+                                Integer maxEntries = Config.MAX_TRAFFIC_ENTRIES;
+                                try {
+                                    maxEntries = Integer.parseInt(getStringAtt("max-entries", path, atts));
+                                } catch (NumberFormatException e) {
+                                    //Just let the default be set
+                                }
+                                cfg.setMaxEntries(maxEntries);
+                                boolean debugLoggingEnabled = Boolean.parseBoolean(getStringAtt("enable-debug-logging", path, atts));
+                                cfg.setDebugLoggingEnabled(debugLoggingEnabled);
 			}
 			else if (path.matches("/config/sso-sign-in-url")) {
 				cfg.setSignInPage(getStringAtt("value", path, atts));

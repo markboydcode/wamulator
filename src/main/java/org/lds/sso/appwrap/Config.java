@@ -23,6 +23,14 @@ public class Config {
 	 */
 	public static final int DEFAULT_ADMIN_PORT = 8081;
 
+        /**
+         * The default number of traffic recording entries that will be kept in memory.
+         * This default can be overriden in the configuration file by setting the
+         * max-entries attribute of the console-recording element as follows:
+         * <code><console-recording sso="true" rest="true" max-entries="1000"/></code>
+         */
+        public static final int MAX_TRAFFIC_ENTRIES = 10000;
+
 	/**
 	 * Allows some classes to get at the config instance without any means of
 	 * passing the instance in.
@@ -81,6 +89,9 @@ public class Config {
 
 	private String externalUserSource = null;
 
+        private int maxEntries = MAX_TRAFFIC_ENTRIES;
+
+        private boolean debugLoggingEnabled = false;
 
 	private static final String SERVER_NAME = determineCurrentVersion();
 
@@ -355,6 +366,34 @@ public class Config {
 	public int getMaxRepeatCount() {
 		return maxRepeatReqCount;
 	}
+
+    /**
+     * @return the getMaxEntries
+     */
+    public int getMaxEntries() {
+        return maxEntries;
+    }
+
+    /**
+     * @param getMaxEntries the getMaxEntries to set
+     */
+    public void setMaxEntries(int maxEntries) {
+        this.maxEntries = maxEntries;
+    }
+
+    /**
+     * @return the debugLoggingEnabled
+     */
+    public boolean isDebugLoggingEnabled() {
+        return debugLoggingEnabled;
+    }
+
+    /**
+     * @param debugLoggingEnabled the debugLoggingEnabled to set
+     */
+    public void setDebugLoggingEnabled(boolean debugLoggingEnabled) {
+        this.debugLoggingEnabled = debugLoggingEnabled;
+    }
 	
 	
 

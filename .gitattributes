@@ -52,6 +52,7 @@ src/main/java/org/lds/sso/appwrap/ui/rest/Add404UriToCfgHandler.java -text svneo
 src/main/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParser.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/ConfigInjectingHandlerList.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/JettyWebappUrlAdjustingHandler.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ui/rest/LogFileHandler.java -text
 src/main/java/org/lds/sso/appwrap/ui/rest/SelectSessionHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/SelectUserHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSessionHandler.java -text svneol=unset#text/plain

@@ -21,9 +21,9 @@ import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.UserManager;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 import org.lds.sso.plugins.authz.LegacyPropsInjector;
-import org.mortbay.jetty.Request;
 
 import com.iplanet.sso.SSOException;
+import org.lds.sso.appwrap.User;
 
 /**
  * Handles request to start a session for a user by setting a suitable
@@ -34,6 +34,7 @@ import com.iplanet.sso.SSOException;
  *
  */
 public class SelectUserHandler extends RestHandlerBase {
+
     private static final Logger cLog = Logger.getLogger(SelectUserHandler.class);
 
     public SelectUserHandler(String pathPrefix) {
@@ -153,7 +154,6 @@ public class SelectUserHandler extends RestHandlerBase {
 
 
      */
-
     @Override
     protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
             throws IOException {
@@ -181,44 +181,52 @@ public class SelectUserHandler extends RestHandlerBase {
         if (name != null && !"".equals(name)) {
             // coda user service being accessed for attributes
             String ext = cfg.getExternalUserSource();
-
+            Map<String, String> userAtts;
+            String uri = null;
+            String content;
             if (ext == null || "".equals(ext)) {
                 returnWithError("no-user-source-specified", minusQp, parms, response);
                 return;
-            }
-            HttpClient client = new HttpClient();
-            String uri = ext.replaceAll("\\{username\\}", name);
-            HttpMethod method = new GetMethod(uri);
-            method.setFollowRedirects(false);
-            method.setRequestHeader("Accept", "application/xml");
-            int status = client.executeMethod(method);
-            String content = method.getResponseBodyAsString();
+            } else {
+                HttpClient client = new HttpClient();
+                uri = ext.replaceAll("\\{username\\}", name);
+                HttpMethod method = new GetMethod(uri);
+                method.setFollowRedirects(false);
+                method.setRequestHeader("Accept", "application/xml");
+                int status = client.executeMethod(method);
+                content = method.getResponseBodyAsString();
 
-            if (status != 200) {
-                cLog.error("Non 200 response code recieved from " + uri
-                        + ", content returned: " + content);
-                returnWithError("error-accessing-ext-source", minusQp, parms, response);
-                return;
+                if (status != 200) {
+                    cLog.error("Non 200 response code recieved from " + uri
+                            + ", content returned: " + content);
+                    returnWithError("error-accessing-ext-source", minusQp, parms, response);
+                    return;
+                }
+                CodaServiceResponseParser parser = new CodaServiceResponseParser(content);
+                userAtts = parser.getValues();
             }
-            CodaServiceResponseParser parser = new CodaServiceResponseParser(content);
-            Map<String, String> userAtts = parser.getValues();
-            if (userAtts.get("good") != null) { // couldn't find user
-                returnWithError("user-not-found", minusQp, parms, response);
-                return;
-            }
-            // add user if found in cmis, or redirect back to sign-in if failed
-            // ie: redirectTarget = referer plus error message via query param
             UserManager uman = cfg.getUserManager();
-            uman.setUser(name, "n/a");
-            userAtts.put(LegacyPropsInjector.CP_STATUS_PROPERTY, "200-coda user atts retrieved");
-            for (Iterator<Map.Entry<String, String>> itr = userAtts.entrySet().iterator(); itr.hasNext();) {
-                Map.Entry<String, String> ent = itr.next();
-                try {
-                    uman.addHeaderForLastUserAdded(ent.getKey(), ent.getValue());
-                } catch (SSOException e) {
-                    throw new RuntimeException("Unable to add from service " + uri + " header '" + name + "' from response '" + content + "'", e);
+            if (userAtts.get("good") == null) { // couldn't find user in coda
+                User user = uman.getUser(name);
+                if(user == null) { //couldn't find user in config either
+                    returnWithError("user-not-found", minusQp, parms, response);
+                    return;
+                }
+            } else {
+                // add user if found in cmis, or redirect back to sign-in if failed
+                // ie: redirectTarget = referer plus error message via query param
+                uman.setUser(name, "n/a");
+                userAtts.put(LegacyPropsInjector.CP_STATUS_PROPERTY, "200-coda user atts retrieved");
+                for (Iterator<Map.Entry<String, String>> itr = userAtts.entrySet().iterator(); itr.hasNext();) {
+                    Map.Entry<String, String> ent = itr.next();
+                    try {
+                        uman.addHeaderForLastUserAdded(ent.getKey(), ent.getValue());
+                    } catch (SSOException e) {
+                        throw new RuntimeException("Unable to add from service " + uri + " header '" + name + "' from response '" + content + "'", e);
+                    }
                 }
             }
+
             usr = name;
             authenticated = true;
         } else {
@@ -309,6 +317,7 @@ public class SelectUserHandler extends RestHandlerBase {
      *
      */
     private static class Pair {
+
         String key = null;
         String value = null;
 
@@ -333,5 +342,4 @@ public class SelectUserHandler extends RestHandlerBase {
             return referer += "?err=" + errCode;
         }
     }
-
 }

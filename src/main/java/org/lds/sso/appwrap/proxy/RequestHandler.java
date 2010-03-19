@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.log4j.Level;
 
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.AllowedUri;
@@ -96,6 +97,10 @@ public class RequestHandler implements Runnable {
 		pSocket = s;
 		this.cfg = cfg;
 		this.connId = connId;
+
+                if(cfg.isDebugLoggingEnabled()) {
+                    cLog.setLevel(Level.DEBUG);
+                }
 	}
 
 	public void setTimeoutSeconds(int timeout) {
@@ -130,6 +135,7 @@ public class RequestHandler implements Runnable {
 		User user = null;
 		HttpPackage reqPkg = null;
 		long startTime = System.currentTimeMillis();
+                
 		try {
 			if (cLog.isDebugEnabled()) {
 				fos = new FileOutputStream(connId + ".log");

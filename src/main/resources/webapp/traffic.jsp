@@ -20,7 +20,7 @@
 </div>
 <!-- TABS END -->
 <div style="padding: 0 10 10 10px;">
-<div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Watch SSO traffic. Refresh the browser to view captured traffic.</div>
+<div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Watch SSO traffic. Refresh the browser to view the last ${requestScope.config.maxEntries} requests captured.</div>
 
 <div style="font-size: medium; padding: 3px">
 <span style="font-weight: bold;">SSO Traffic:</span>
@@ -38,6 +38,7 @@
 <table>
 <c:forEach items="${requestScope.config.trafficRecorder.hits}" var="hit">
 <tr>
+<td>${hit.longTimestamp}</td>
 <td>${hit.connId}</td>
 <td>${hit.username}</td>
 <td><c:choose><c:when test="${hit.isProxyCode}"><span title="Response code made by proxy" style="color: blue; cursor: default;">P</span></c:when><c:otherwise>-</c:otherwise></c:choose></td>
@@ -49,7 +50,7 @@
 <c:when test="${hit.code >= 500 || hit.code == 404}"><span style="color: red;">${hit.code}</span></c:when>
 </c:choose></span></td>
 <td>${hit.method}</td>
-<td><span style="color: blue">${hit.uri}</span></td>
+<td><span style="color: blue"><a href="logs/${hit.connId}.log" target=?newtab?>${hit.uri}</a></span></td>
 <td><c:if test="${hit.isProxyCode && hit.code == 401 && not(jsputils.isUnenforced[hit.uri])}"><span style="padding: 0 0 0 5px"><a href="/admin/action/add-uri-to-user/${hit.username}?uri=${jsputils.encode[hit.uri]}&method=${hit.method}"><img style="border: none;" src="add.gif" title="Allow for ${hit.username}"/></a></span></c:if></td>
 <td><c:if test="${hit.isProxyCode && hit.code == 401 && not(jsputils.isUnenforced[hit.uri])}"><span style="padding: 0 0 0 0"><a href="/admin/action/add-uri-to-unenforced?uri=${jsputils.encode[hit.uri]}"><img style="border: none;" src="unlock.gif" title="Unenforce for all users" /></a></span></c:if></td>
 <td><c:if test="${hit.isProxyCode && hit.code == 401}"><span style="padding: 0 0 0 0"><a href="/admin/action/add-uri-to-ignored?uri=${jsputils.encode[hit.uri]}"><img style="border: none;" src="cancel.gif" title="Ingore ${hit.uri}" /></a></span></c:if></td>

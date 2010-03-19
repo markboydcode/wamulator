@@ -135,8 +135,9 @@ import java.text.DecimalFormat;
 				
 				while (true)
 				{
+                                        
 					count++;
-					if (count >= 10000) {	
+					if (count > Config.getInstance().getMaxEntries()) {
 						count = 1;
 					}
 					String connId = "C-" + fmt.format(count); 

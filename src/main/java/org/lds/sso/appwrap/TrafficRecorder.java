@@ -1,9 +1,7 @@
 package org.lds.sso.appwrap;
 
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -78,6 +76,9 @@ public class TrafficRecorder {
 			rhits.remove(rhit);
 			rhits.add(rhit);
 		}
+                if(rHitCount >= Config.getInstance().getMaxEntries()) {
+                    rHitCount = 0; //Reset the count
+                }
 	}
 	
 	public Set<Hit> getHits() {
@@ -97,8 +98,10 @@ public class TrafficRecorder {
 		private String connId;
 		private int conn = -1;
 		private long time;
+                private String fileName;
 		
 		private static final SimpleDateFormat fmtr = new SimpleDateFormat("HH:mm:ss.SSS");
+                private static final SimpleDateFormat longfmtr = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
 		public Hit(long time, String connId, String username, int code, String method, String uri, boolean proxyResponse) {
 			this.username = username;
@@ -139,6 +142,15 @@ public class TrafficRecorder {
 		public String getTimestamp() {
 			return fmtr.format(time);
 		}
+                public String getLongTimestamp() {
+                    return longfmtr.format(time);
+                }
+                public String getFilename() {
+                    if(fileName == null) {
+                        fileName = uri.substring(uri.lastIndexOf("/"));
+                    }
+                    return fileName;
+                }
 	}
 
 	public static class RestHit implements Comparable<RestHit>{

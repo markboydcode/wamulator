@@ -10,8 +10,9 @@
 <head>
 <title>${requestScope.config.serverName}</title>
 <script type="text/javascript">
+
   window.signin = function(username) {
-	  document.signinForm.codaUser.value = username;
+	  document.signinForm.username.value = username;
 	  document.signinForm.submit();
   };
 </script>
@@ -24,7 +25,7 @@
 </div>
 <!-- masthead END -->
 <div style="padding: 0 10 10 10px;  text-align:left;">
-<form name="signinForm" action="action/set-user" method="post">
+<form name="signinForm" action="/auth/ui/authenticate" method="post">
     <input type="hidden" name="goto" value="${gotoQueryParm}"/>
 <c:if test="${param['page-error'] == 'user-not-found'}">
 <span style="padding; background:#EFDFDF none repeat scroll 0 0; border:1px solid #E0ACA6; 
@@ -59,7 +60,7 @@ padding:15px 20px; text-align:left;">Unable to access user source. See log for d
 <table>
 <c:forEach items="${requestScope.config.userManager.users}" var="user">
 <tr><td><c:if test="${user.username == requestScope.currentUserName}"><IMG src="pointer.png"/></c:if></td>
-<td><a onclick="signin('${user.username}'); return false;" href="signin(${user.username})">${user.username}</a></td></tr>
+<td><a onclick="signin('${user.username}'); return false;" href="#">${user.username}</a></td></tr>
 </c:forEach>
 </table>
 </td>
