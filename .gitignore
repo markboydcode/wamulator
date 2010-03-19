@@ -2,6 +2,8 @@
 /.project
 /.settings
 /C-*.log
+/nbactions.xml
+/ses.log
 /target
 /temp-testng-customsuite.xml
 /test-output

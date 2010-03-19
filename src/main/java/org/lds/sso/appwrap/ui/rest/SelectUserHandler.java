@@ -206,7 +206,7 @@ public class SelectUserHandler extends RestHandlerBase {
                 userAtts = parser.getValues();
             }
             UserManager uman = cfg.getUserManager();
-            if (userAtts.get("good") == null) { // couldn't find user in coda
+            if (userAtts.get("good") != null) { // couldn't find user in coda
                 User user = uman.getUser(name);
                 if(user == null) { //couldn't find user in config either
                     returnWithError("user-not-found", minusQp, parms, response);
