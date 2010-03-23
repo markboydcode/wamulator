@@ -28,16 +28,17 @@ public class LocalFileEndPoint implements EndPoint {
 
 	private String id = null;
 
-	private String filepath = null;
+	private String filePath = null;
 
 	private String contentType = null;
 
 	private boolean isRelative = false;
 
-	public LocalFileEndPoint(String canonicalCtx, String filepath, String contentType) {
+	public LocalFileEndPoint(String canonicalCtx, String filePathParam, String contentType) {
 		this.canonicalContextRoot = canonicalCtx;
-		this.filepath = filepath;
-		if (filepath.endsWith("*")) {
+		this.filePath = filePathParam;
+                
+		if (this.filePath.endsWith("*")) {
 			isRelative = true;
 		}
 		/*
@@ -46,14 +47,14 @@ public class LocalFileEndPoint implements EndPoint {
          *      file="*" <<<< note only one char 
          *      content-type="text/plain"/>
 		 */
-		if (filepath.length() <= 2) {
-			this.filepath = "";
+		if (this.filePath.length() <= 2) {
+			this.filePath = "";
 		}
 		else {
-			filepath = filepath.substring(0, filepath.length() - 2);
+			this.filePath = this.filePath.substring(0, this.filePath.length() - 1);
 		}
 		this.contentType = contentType;
-		this.id = canonicalCtx + "->FILE=" + filepath;
+		this.id = canonicalCtx + "->FILE=" + this.filePath;
 	}
 
 	public String getId() {
@@ -86,12 +87,12 @@ public class LocalFileEndPoint implements EndPoint {
 		this.canonicalContextRoot = canonicalContextRoot;
 	}
 
-	public String getFilepath() {
-		return filepath;
+	public String getFilePath() {
+		return filePath;
 	}
 
-	public void setFilepath(String filepath) {
-		this.filepath = filepath;
+	public void setFilepath(String filePath) {
+		this.filePath = filePath;
 	}
 
 	public String getContentType() {
@@ -113,11 +114,12 @@ public class LocalFileEndPoint implements EndPoint {
 	public String getFilepathTranslated(HttpPackage reqPkg) {
 		if (isRelative){
 			String uri = reqPkg.requestLine.getUri();
-			String relFilePath = uri.substring(canonicalContextRoot.length());
-			return filepath + relFilePath;
+                        uri = uri.replace("../", ""); //Remove security problem with being able to go up directory hirarchies
+			String relFilePath = uri.substring(canonicalContextRoot.length() );
+			return filePath + relFilePath;
 		}
 		else {
-			return filepath;
+			return filePath;
 		}
 	}
 }

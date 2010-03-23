@@ -137,10 +137,7 @@ public class RequestHandler implements Runnable {
 		long startTime = System.currentTimeMillis();
                 
 		try {
-			if (cLog.isDebugEnabled()) {
-				fos = new FileOutputStream(connId + ".log");
-				log = new PrintStream(fos);
-			}
+			
 
 			// client streams (make sure you're using streams that use
 			// byte arrays, so things like GIF and JPEG files and file
@@ -149,15 +146,32 @@ public class RequestHandler implements Runnable {
 			BufferedOutputStream clientOut = new BufferedOutputStream(pSocket.getOutputStream());
 
 			reqPkg = getHttpPackage(clientIn, excludeHeaders, false, log);
+
+                        if(reqPkg == null || reqPkg.requestLine == null) {
+                            byte[] bytes = getResponse("404", "Bad Request",
+						"404 Bad Request",
+						"The request sent by the client was empty." + CRLF
+						+ "Ensure that the site(s) is(are) configured correctly.",
+					    null, reqPkg);
+				sendProxyResponse(404, bytes, reqPkg, clientIn, clientOut, user, startTime, log, false); //don't log these
+				return;
+                        }
+
+                        if (cLog.isDebugEnabled()) {
+				fos = new FileOutputStream(connId + ".log");
+				log = new PrintStream(fos);
+			}
+
 			if (reqPkg.type == HttpPackageType.EMPTY_RESPONSE) {
 				byte[] bytes = getResponse("400", "Bad Request", 
 						"400 Bad Request",
 						"The request sent by the client was empty." + CRLF
 						+ "Ensure that the site(s) is(are) configured correctly.",
 					    null, reqPkg);
-				sendProxyResponse(400, bytes, reqPkg, clientIn, clientOut, user, startTime,	log);
+				sendProxyResponse(400, bytes, reqPkg, clientIn, clientOut, user, startTime, log, true);
 				return;
 			}
+
 			if (((StartLine) reqPkg.requestLine).isProxied) {
 				reqPkg.scheme = ((StartLine) reqPkg.requestLine).proxy_scheme;
 			}
@@ -192,7 +206,7 @@ public class RequestHandler implements Runnable {
 						+ "Ensure that the site(s) is(are) configured correctly.",
 					    null, reqPkg);
 				sendProxyResponse(500, bytes, reqPkg, clientIn, clientOut, user, startTime,
-						log);
+						log, true);
 				return;
 			}
 			// ensure that server will close connection after completion of 
@@ -239,7 +253,7 @@ public class RequestHandler implements Runnable {
 						    "No registered application in a &lt;by-site&gt; declaration has a canonical context that matches the URL.",
 						    null, reqPkg);
 					sendProxyResponse(404, bytes, reqPkg, clientIn, clientOut, user,
-							startTime, log);
+							startTime, log, true);
 					return;
 				}
 
@@ -254,7 +268,7 @@ public class RequestHandler implements Runnable {
 					// login
 					if (user == null || !cfg.getSessionManager().isValidToken(token)) {
 						sendProxyResponse(302, get302RedirectToLoginPage(reqPkg), reqPkg, clientIn, clientOut, user,
-								startTime, log);
+								startTime, log, true);
 						return;
 					}
 
@@ -269,7 +283,7 @@ public class RequestHandler implements Runnable {
 							    "The specified action on the URI is not allowed by this user.",
 							    user, reqPkg);
 						sendProxyResponse(403, bytes, reqPkg, clientIn, clientOut,
-								user, startTime, log);
+								user, startTime, log, true);
 						return;
 					}
 					// so it is permitted for the user, inject user headers
@@ -285,7 +299,7 @@ public class RequestHandler implements Runnable {
 					    "being accessed with a method not allowed for this URI?",
 					    null, reqPkg);
 				sendProxyResponse(501, bytes, reqPkg, clientIn, clientOut, user,
-						startTime, log);
+						startTime, log, true);
 				return;
 			}
 			
@@ -311,7 +325,7 @@ public class RequestHandler implements Runnable {
 					// tell the client there was an error
 					String errMsg = "HTTP/1.0 500" + CRLF + "Content Type: text/plain" + CRLF + HttpPackage.CONN_ID_HDR
 							+ connId + CRLF + CRLF + "Error connecting to the server:" + CRLF + e + CRLF;
-					sendProxyResponse(500, errMsg.getBytes(), reqPkg, clientIn, clientOut, user, startTime, log);
+					sendProxyResponse(500, errMsg.getBytes(), reqPkg, clientIn, clientOut, user, startTime, log, true);
 					return;
 				}
 
@@ -353,7 +367,7 @@ public class RequestHandler implements Runnable {
 							"No bytes were found in the stream from the server.",
 						    null, reqPkg);
 					sendProxyResponse(500, bytes, reqPkg, clientIn, clientOut, user, startTime,
-							log);
+							log, true);
 					return;
 				}
 
@@ -367,7 +381,7 @@ public class RequestHandler implements Runnable {
 					log.println("---- End Bad Response from server ---");
 					log.println();
 					sendProxyResponse(502, bytes, reqPkg, clientIn, clientOut, user, startTime,
-							log);
+							log, true);
 					return;
 				}
 
@@ -469,7 +483,7 @@ public class RequestHandler implements Runnable {
 	}
 
 	private void sendProxyResponse(int respCode, byte[] response, HttpPackage reqPkg, InputStream in, OutputStream out,
-			User user, long startTime, PrintStream log) throws IOException {
+			User user, long startTime, PrintStream log, boolean recordTraffic) throws IOException {
 		String method = EMPTY_START_LINE;
 		String uri = EMPTY_START_LINE;
 		
@@ -477,13 +491,17 @@ public class RequestHandler implements Runnable {
 			method = reqPkg.requestLine.getMethod();
 			uri =  reqPkg.requestLine.getUri();
 		}
-		cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()), respCode,
+                if(recordTraffic) {
+                    cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()), respCode,
 				true, method, uri);
+                }
 		out.write(response, 0, response.length);
 		out.flush();
 		byte[] request = serializePackage((StartLine) reqPkg.requestLine, reqPkg);
-		logTraffic(log, reqPkg.requestLine, request, response, startTime);
-		shutdown(in, out, log, fos);
+                if(log != null) {
+                    logTraffic(log, reqPkg.requestLine, request, response, startTime);
+                }
+                shutdown(in, out, log, fos);
 	}
 
 	/**
