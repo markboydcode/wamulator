@@ -36,7 +36,7 @@
 </div>
 
 <table>
-<c:forEach items="${requestScope.config.trafficRecorder.hits}" var="hit">
+<c:forEach items="${requestScope.config.trafficRecorder.timestampSortedHits}" var="hit">
 <tr>
 <td>${hit.longTimestamp}</td>
 <td>${hit.connId}</td>
