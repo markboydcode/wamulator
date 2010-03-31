@@ -1,9 +1,7 @@
 package org.lds.sso.appwrap;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -21,22 +19,28 @@ public class UserManager {
 	 * @param user
 	 * @param password
 	 */
-	public void setUser(String username, String password) {
-		User usr = users.get(username);
+	public synchronized void setUser(String username, String password) {
+		// first clone the map so we don't get concurrent mod exception
+		Map<String, User> copy = new TreeMap<String,User>();
+		copy.putAll(users);
+			
+		User usr = copy.get(username);
 		
 		if (usr == null) {
 			usr = new User(username, password);
-			users.put(username, usr);
+			copy.put(username, usr);
 		}
 		else {
 			if (!usr.getUsername().equals(username) ) {
-				users.remove(usr.getUsername());
-				users.put(username, usr);
+				copy.remove(usr.getUsername());
+				copy.put(username, usr);
 			}
 			usr.setUsername(username);
 			usr.setPassword(password);
 		}
 		lastUserAdded = usr;
+		// now replace old map 
+		users = copy;
 	}
 	
 	/**
@@ -45,8 +49,12 @@ public class UserManager {
 	 * 
 	 * @param user
 	 */
-	public void removeUser(String username) {
-		users.remove(username);
+	public synchronized void removeUser(String username) {
+		// first clone the map so we don't get concurrent mod exception
+		Map<String, User> copy = new TreeMap<String,User>();
+		copy.putAll(users);
+		copy.remove(username);
+		users = copy;
 	}
 
 	/**
@@ -68,11 +76,11 @@ public class UserManager {
 	 * @return
 	 */
 	public Set<String> getUsernames() {
-		return users.keySet();
+		return Collections.unmodifiableSet(users.keySet());
 	}
 	
 	public Collection<User> getUsers() {
-		return users.values();
+		return Collections.unmodifiableCollection(users.values());
 	}
 
 	public int getNumberOfUsers() {
