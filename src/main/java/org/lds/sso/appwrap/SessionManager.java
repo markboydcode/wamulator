@@ -1,6 +1,7 @@
 package org.lds.sso.appwrap;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -36,16 +37,19 @@ public class SessionManager {
 			public void run() {
 				while (true) {
 					try {
-						Map<String, Session> copy = new HashMap<String, Session>(sessions);
-						for (Iterator<Entry<String, Session>> itr = copy.entrySet().iterator(); itr.hasNext();) {
-							Entry<String, Session> ent = itr.next();
-							Session s = ent.getValue();
-							if (!s.testIsActive()) {
-								sessions.remove(ent.getKey());
-								if (cLog.isInfoEnabled()) {
-									cLog.info("Session " + s.token + " expired.");
+						synchronized(this) {
+							Map<String, Session> copy = copySessionContainer();
+							for (Iterator<Entry<String, Session>> itr = copy.entrySet().iterator(); itr.hasNext();) {
+								Entry<String, Session> ent = itr.next();
+								Session s = ent.getValue();
+								if (!s.testIsActive()) {
+									itr.remove();
+									if (cLog.isInfoEnabled()) {
+										cLog.info("Session " + s.token + " expired.");
+									}
 								}
 							}
+							sessions = copy;
 						}
 						Thread.sleep(10000);
 					}
@@ -93,9 +97,11 @@ public class SessionManager {
 	 * @param usr
 	 * @return
 	 */
-	public String generateSessionToken(String usr) {
+	public synchronized String generateSessionToken(String usr) {
+		Map<String, Session> copy = copySessionContainer();
 		Session s = new Session(this, usr);
-		this.sessions.put(s.token, s);
+		copy.put(s.token, s);
+		sessions = copy;
 		return s.token;
 	}
 
@@ -126,25 +132,34 @@ public class SessionManager {
 			s.markAsActive();
 		}
 	}
+	
+	Map<String, Session> copySessionContainer() {
+		Map<String, Session> copy = new TreeMap<String,Session>();
+		copy.putAll(sessions);
+		return copy;
+	}
 
 	/**
 	 * Terminates the session associated with the indicated token.
 	 * 
 	 * @param token
 	 */
-	public void terminateSession(String token) {
-		sessions.remove(token);
+	public synchronized void terminateSession(String token) {
+		Map<String, Session> copy = copySessionContainer();
+		copy.remove(token);
+		sessions = copy;
 	}
 
 	/**
-	 * Terminates all current sessions.
+	 * Terminates all current sessions by replacing the session container to 
+	 * avoid concurrent modification exceptions.
 	 */
 	public void terminateAllSessions() {
-		sessions.clear();
+		sessions = new TreeMap<String, Session>();
 	}
 
 	public Collection<Session> getSessions() {
-		return sessions.values();
+		return Collections.unmodifiableCollection(sessions.values());
 	}
 
 }

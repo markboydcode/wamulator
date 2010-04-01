@@ -89,6 +89,7 @@ src/test/java/org/lds/sso/appwrap/AppEndPointTest.java -text svneol=unset#text/p
 src/test/java/org/lds/sso/appwrap/AppManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/IntegrationTests.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestEnc.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestJettyJspApproach.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/plain
