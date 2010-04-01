@@ -91,6 +91,7 @@ public class TrafficRecorder {
         List sortedHits = new ArrayList<Hit>();
         sortedHits.addAll(hits);
         Collections.sort(sortedHits, new HitTimestampComparator());
+        Collections.reverse(sortedHits);
         return sortedHits;
     }
 

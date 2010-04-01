@@ -23,6 +23,10 @@ the default is false for both values.
 <!ELEMENT console-recording EMPTY >
 <!ATTLIST console-recording sso CDATA #REQUIRED > 
 <!ATTLIST console-recording rest CDATA #REQUIRED >
+<!-- max-entries default 1000 -->
+<!ATTLIST console-recording max-entries CDATA #IMPLIED >
+<!-- enable-debug-logging defaults to false -->
+<!ATTLIST console-recording enable-debug-logging CDATA #IMPLIED >
 
 <!-- 
 sso-cookie element is required and indicates the namd and domain of the cookie 

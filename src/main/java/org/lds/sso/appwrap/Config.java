@@ -29,7 +29,7 @@ public class Config {
          * max-entries attribute of the console-recording element as follows:
          * <code><console-recording sso="true" rest="true" max-entries="1000"/></code>
          */
-        public static final int MAX_TRAFFIC_ENTRIES = 10000;
+        public static final int MAX_TRAFFIC_ENTRIES = 1000;
 
 	/**
 	 * Allows some classes to get at the config instance without any means of
