@@ -10,8 +10,6 @@ import org.lds.sso.clientlib.PDPAccessor;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.sun.org.apache.xerces.internal.util.URI;
-
 public class XmlConfigLoaderTest {
 	@Test
 	public void testResolveAliases() {
