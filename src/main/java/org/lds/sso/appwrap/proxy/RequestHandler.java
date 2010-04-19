@@ -619,13 +619,7 @@ public class RequestHandler implements Runnable {
 	 */
 	private byte[] getResponse(String httpRespCode, String httpRespMsg, 
 			String htmlTitle, String htmlMsg, User user, HttpPackage pkg) {
-		String body = BODY_TEMPLATE;
-		body = body.replace("{{title}}", htmlTitle);
-		body = body.replace("{{message}}", htmlMsg);
-		body = body.replace("{{username}}", (user == null ? "n/a" : user.getUsername()));
-		body = body.replace("{{action}}", (pkg == null || pkg.requestLine == null ? "n/a" : pkg.requestLine.getMethod()));
-		body = body.replace("{{uri}}", (pkg == null  || pkg.requestLine == null ? "n/a" 
-				: pkg.scheme + "://" + pkg.hostHdr + pkg.requestLine.getUri()));
+		String body = getResponseBody(htmlTitle, htmlMsg, user, pkg);
 		
 		String resp = HEADER_TEMPLATE;
 		resp = resp.replace("{{http-resp-code}}", httpRespCode);
@@ -634,6 +628,30 @@ public class RequestHandler implements Runnable {
 		resp = resp.replace("{{body}}", body);
 		
 		return resp.getBytes();
+	}
+
+	/**
+	 * Builds a dynamic response body from a canned template. 
+	 * 
+	 * @param httpRespCode the non-null value of the http response code.
+	 * @param httpRespMsg the non-null short message of the http response line
+	 * @param htmlTitle the non-null title of the html page in the browser
+	 * @param htmlMsg the non-null message embedded in the html page in the browser
+	 * @param user the user object if applicable; if null the "n/a" is used
+	 * @param origReqLn contains the http method and http URL if applicable or uses "n/a" for both if this object is null
+	 * @return
+	 */
+	public static String getResponseBody(String htmlTitle, String htmlMsg, 
+			User user, HttpPackage pkg) {
+		String body = BODY_TEMPLATE;
+		body = body.replace("{{title}}", htmlTitle);
+		body = body.replace("{{message}}", htmlMsg);
+		body = body.replace("{{username}}", (user == null ? "n/a" : user.getUsername()));
+		body = body.replace("{{action}}", (pkg == null || pkg.requestLine == null ? "n/a" : pkg.requestLine.getMethod()));
+		body = body.replace("{{uri}}", (pkg == null  || pkg.requestLine == null ? "n/a" 
+				: pkg.scheme + "://" + pkg.hostHdr + pkg.requestLine.getUri()));
+		
+		return body;
 	}
 
 	private static final String REDIRECT_TEMPLATE = 

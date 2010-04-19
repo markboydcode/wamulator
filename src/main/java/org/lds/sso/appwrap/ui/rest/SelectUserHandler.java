@@ -2,9 +2,11 @@ package org.lds.sso.appwrap.ui.rest;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.UserManager;
+import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 import org.lds.sso.plugins.authz.LegacyPropsInjector;
 
@@ -163,11 +166,18 @@ public class SelectUserHandler extends RestHandlerBase {
 
         Config cfg = Config.getInstance();
         boolean authenticated = false;
+        String redirectTarget = null;
+        String minusQp = redirectTarget;
+        List<Pair> parms = getParms(redirectTarget, -1);
+
+        // keep in mind for automated sign-in we may not have goto or referer.        
         String referer = request.getHeader("referer");
-        int qmIdx = referer.indexOf("?");
-        String minusQp = (qmIdx != -1 ? referer.substring(0, qmIdx) : referer);
-        List<Pair> parms = getParms(referer, qmIdx);
-        String redirectTarget = referer;
+        if (referer != null) {
+        	int qmIdx = referer.indexOf("?");
+        	minusQp = (qmIdx != -1 ? referer.substring(0, qmIdx) : referer);
+        	parms = getParms(referer, qmIdx);
+        	redirectTarget = referer;
+        }
         String gotoUri = request.getParameter("goto");
 
         if (gotoUri != null && !gotoUri.equals("")) {
@@ -181,12 +191,15 @@ public class SelectUserHandler extends RestHandlerBase {
         if (name != null && !"".equals(name)) {
             // coda user service being accessed for attributes
             String ext = cfg.getExternalUserSource();
-            Map<String, String> userAtts;
+            Map<String, String> userAtts = null;
             String uri = null;
-            String content;
+            String content = null;
             if (ext == null || "".equals(ext)) {
-                returnWithError("no-user-source-specified", minusQp, parms, response);
-                return;
+            	// drop down into regular user manager search.
+            	// TODO ask Scott why we require coda config. This breaks
+            	// anyone running without coda
+                // returnWithError("no-user-source-specified", minusQp, parms, response);
+                // return;
             } else {
                 HttpClient client = new HttpClient();
                 uri = ext.replaceAll("\\{username\\}", name);
@@ -206,7 +219,8 @@ public class SelectUserHandler extends RestHandlerBase {
                 userAtts = parser.getValues();
             }
             UserManager uman = cfg.getUserManager();
-            if (userAtts.get("good") != null) { // couldn't find user in coda
+            if (userAtts == null // coda not used 
+             || userAtts.get("good") != null) { // coda couldn't find user
                 User user = uman.getUser(name);
                 if(user == null) { //couldn't find user in config either
                     returnWithError("user-not-found", minusQp, parms, response);
@@ -245,7 +259,20 @@ public class SelectUserHandler extends RestHandlerBase {
             response.addCookie(c);
         }
 
-        response.sendRedirect(redirectTarget);
+        // handle case without referer and without goto by sending page w/cookie
+        if (redirectTarget == null) {
+            String content = RequestHandler.getResponseBody(
+					"Authenticated Successfully",
+					"User Authenticated Successfully but no referer header nor " +
+					"a goto query parameter were specified and no login page " +
+					"is configured. Hence this page is returned.", null, null);
+            Writer out = response.getWriter();
+            out.write(content);
+            out.flush();
+        }
+        else {
+            response.sendRedirect(redirectTarget);
+        }
     }
 
     /**

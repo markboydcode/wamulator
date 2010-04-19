@@ -14,6 +14,7 @@ import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
+import org.lds.sso.appwrap.rest.RestVersion;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -220,6 +221,15 @@ public class XmlConfigLoader2 {
 				cfg.setProxyPort(getIntegerAtt("proxy-port", path, atts));
 				String allow_proxying = atts.getValue("allow-non-sso-traffic");
 				cfg.setAllowForwardProxying(Boolean.parseBoolean(allow_proxying));
+				String restVersion = atts.getValue("rest-version");
+				if (restVersion != null) {
+					RestVersion ver = RestVersion.findRestVersionById(restVersion);
+					if (ver == null) {
+						throw new IllegalArgumentException("rest-version must be one of "
+								+ RestVersion.getValidIdentifiers() + " in " + path);
+					}
+					cfg.setRestVersion(ver);
+				}
 			}
 			else if (path.matches("/config/sso-cookie")) {
 				cfg.setCookieName(getStringAtt("name", path, atts));

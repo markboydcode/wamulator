@@ -122,6 +122,10 @@ import java.text.DecimalFormat;
 				String msg = "Started r-proxy on port " + cfg.getProxyPort();
 				System.out.println(msg);
 				cLog.info(msg);
+				msg = "Rest Interface " + cfg.getRestVersion().getVersionId()
+					+ " in use.";
+				System.out.println(msg);
+				cLog.info(msg);
 				
 				for (File f : new File(".").listFiles()) {
 					String nm = f.getName();

@@ -17,6 +17,7 @@ import org.lds.sso.appwrap.rest.AuthZHandler;
 import org.lds.sso.appwrap.rest.GetCookieName;
 import org.lds.sso.appwrap.rest.IsTokenValidHandler;
 import org.lds.sso.appwrap.rest.LogoutHandler;
+import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.ui.rest.Add404UriToCfgHandler;
 import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
 import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
@@ -72,11 +73,19 @@ public class Service {
 		cfgInjector.addHandler(adj);
 
 		HandlerCollection handlers = new HandlerCollection();
-		handlers.addHandler(new GetCookieName("/rest/identity/getCookieNameForToken"));
-		handlers.addHandler(new AuthNHandler("/rest/identity/authenticate"));
-		handlers.addHandler(new AuthZHandler("/rest/identity/authorize"));
-		handlers.addHandler(new IsTokenValidHandler("/rest/identity/isTokenValid"));
-		handlers.addHandler(new LogoutHandler("/rest/identity/logout"));
+		switch(cfg.getRestVersion()) {
+		case OPENSSO :
+			handlers.addHandler(new GetCookieName("/rest/identity/getCookieNameForToken"));
+			handlers.addHandler(new AuthNHandler("/rest/identity/authenticate"));
+			handlers.addHandler(new AuthZHandler("/rest/identity/authorize"));
+			handlers.addHandler(new IsTokenValidHandler("/rest/identity/isTokenValid"));
+			handlers.addHandler(new LogoutHandler("/rest/identity/logout"));
+			break;
+			
+		case CD_OESv1 :
+			handlers.addHandler(new GetOesV1CookieName("/rest/oes/1/getCookieName"));
+		}
+		
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));
                 handlers.addHandler(new SelectUserHandler("/auth/ui/authenticate"));
 		handlers.addHandler(new SelectSessionHandler("/admin/action/set-session"));

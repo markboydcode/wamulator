@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.proxy.RequestHandler;
+import org.lds.sso.appwrap.rest.RestVersion;
 
 public class Config {
 	private static final Logger cLog = Logger.getLogger(Config.class);
@@ -92,6 +93,8 @@ public class Config {
         private int maxEntries = MAX_TRAFFIC_ENTRIES;
 
         private boolean debugLoggingEnabled = false;
+
+		private RestVersion restVersion;
 
 	private static final String SERVER_NAME = determineCurrentVersion();
 
@@ -537,5 +540,23 @@ public class Config {
 	
 	public String getExternalUserSource() {
 		return this.externalUserSource;
+	}
+
+	/**
+	 * Sets the version of the rest interface that should be exposed in the 
+	 * console for applications to resolve authorization questions.
+	 * 
+	 * @param restVersion
+	 */
+	public void setRestVersion(RestVersion version) {
+		this.restVersion = version;
+	}
+	
+	/**
+	 * Returns the rest version exposed for applications.
+	 * @return
+	 */
+	public RestVersion getRestVersion() {
+		return this.restVersion;
 	}
 }
