@@ -20,7 +20,6 @@ import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.iplanet.sso.SSOTokenID;
 import com.iplanet.sso.SSOTokenListener;
-import com.sun.org.apache.xml.internal.utils.UnImplNode;
 
 public class User implements SSOToken {
 
