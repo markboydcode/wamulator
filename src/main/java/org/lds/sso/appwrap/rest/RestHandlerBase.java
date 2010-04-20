@@ -1,6 +1,8 @@
 package org.lds.sso.appwrap.rest;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -62,9 +64,10 @@ public abstract class RestHandlerBase extends AbstractHandler {
 		response.setContentLength(resp.length());
 		response.setHeader("Content-Language", "en-US");
 		response.setHeader("Date", RequestHandler.getCurrentDateHeader());
-		response.getWriter().println(resp);
-		response.setStatus(code);
-
+        response.setStatus(code);
+		PrintWriter out = response.getWriter();
+		out.println(resp);
+		out.flush();
 	}
 
 	/**
