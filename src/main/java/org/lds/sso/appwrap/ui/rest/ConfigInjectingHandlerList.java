@@ -31,6 +31,10 @@ public class ConfigInjectingHandlerList extends HandlerList {
 	@Override
 	public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException, ServletException {
+        if (((Request) request).isHandled()) {
+            return;
+        }
+
 		if (target.equals("/")) {
 			response.sendRedirect("/admin/listUsers.jsp");
             ((Request) request).setHandled(true);
