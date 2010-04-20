@@ -17,6 +17,7 @@ import org.lds.sso.appwrap.rest.AuthZHandler;
 import org.lds.sso.appwrap.rest.GetCookieName;
 import org.lds.sso.appwrap.rest.IsTokenValidHandler;
 import org.lds.sso.appwrap.rest.LogoutHandler;
+import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.ui.rest.Add404UriToCfgHandler;
 import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
@@ -83,7 +84,8 @@ public class Service {
 			break;
 			
 		case CD_OESv1 :
-			handlers.addHandler(new GetOesV1CookieName("/rest/oes/1/getCookieName"));
+            handlers.addHandler(new GetOesV1CookieName("/rest/oes/1/getCookieName"));
+            handlers.addHandler(new AreTokensValid("/rest/oes/1/areTokensValid"));
 		}
 		
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));

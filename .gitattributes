@@ -48,6 +48,7 @@ src/main/java/org/lds/sso/appwrap/rest/IsTokenValidHandler.java -text svneol=uns
 src/main/java/org/lds/sso/appwrap/rest/LogoutHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/RestHandlerBase.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/RestVersion.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/rest/oes/v1/AreTokensValid.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/GetOesV1CookieName.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/BaseMapImpl.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/JspUtils.java -text svneol=unset#text/plain
