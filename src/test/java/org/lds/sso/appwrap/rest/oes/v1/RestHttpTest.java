@@ -512,27 +512,27 @@ public class RestHttpTest {
         boolean res_2 = false;
         boolean res_3 = false;
         
-            boolean done = false;
-            while(!done) {
-                String line = br.readLine();
+        boolean done = false;
+        while(!done) {
+            String line = br.readLine();
                 
-                if (line == null) {
-                    done = true;
-                    break;
+            if (line == null) {
+                done = true;
+                break;
+            }
+            else {
+                tokens = line.split("=");
+                if (tokens[0].equals("res.1")) {
+                    res_1 = Boolean.parseBoolean(tokens[1]);
                 }
-                else {
-                    tokens = line.split("=");
-                    if (tokens[0].equals("res.1")) {
-                        res_1 = Boolean.parseBoolean(tokens[1]);
-                    }
-                    if (tokens[0].equals("res.2")) {
-                        res_2 = Boolean.parseBoolean(tokens[1]);
-                    }
-                    if (tokens[0].equals("res.3")) {
-                        res_3 = Boolean.parseBoolean(tokens[1]);
-                    }
+                if (tokens[0].equals("res.2")) {
+                    res_2 = Boolean.parseBoolean(tokens[1]);
+                }
+                if (tokens[0].equals("res.3")) {
+                    res_3 = Boolean.parseBoolean(tokens[1]);
                 }
             }
+        }
         Assert.assertEquals(res_1, true, "res.1 should be permitted for GET");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for POST");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted since not defined");
