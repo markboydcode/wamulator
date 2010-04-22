@@ -65,51 +65,43 @@ public class AreTokensValid extends RestHandlerBase {
 			super.sendResponse(cLog, response, HttpServletResponse.SC_BAD_REQUEST, "token.cnt value '" + tokenCnt + "' is not an integer");
 			return;
 		}
-		StringWriter bufr = new StringWriter();
-		PrintWriter out = new PrintWriter(bufr);
-        StringWriter logBfr = null;
-        PrintWriter log = null;
         String logReq = null;
 
 		if (cfg.getTrafficRecorder().isRecordingRest()) {
 		    // build request log chunk
-            logBfr = new StringWriter();
-            log = new PrintWriter(logBfr);
-            log.print(" for request:\r\ntoken.cnt=" + tokenCnt + "\r\n");
+	        StringWriter log = null;
+	        PrintWriter logOut = null;
+            log = new StringWriter();
+            logOut = new PrintWriter(log);
+            logOut.print(" for request:\r\ntoken.cnt=" + tokenCnt + "\r\n");
             for (int t = 1; t<=tokens; t++) {
                 String parm = "token." + t;
                 String token = request.getParameter(parm);
-                log.print(parm + "=" + token + "\r\n");
+                logOut.print(parm + "=" + token + "\r\n");
             }
-            log.flush();
-            logReq = logBfr.toString();
-            // now provide response logger
-            logBfr = new StringWriter();
-            log = new PrintWriter(logBfr);
+            logOut.flush();
+            logReq = log.toString();
         }
-		
-		for (int t = 1; t<=tokens; t++) {
+        StringWriter clientResp = new StringWriter();
+        PrintWriter clientOut = new PrintWriter(clientResp);
+
+        for (int t = 1; t<=tokens; t++) {
 			String token = request.getParameter("token." + t);
 			if (token != null && ! token.equals("")) {
 			    String resp = token + "=" + cfg.getSessionManager().isValidToken(token); 
-				out.println(resp);
-				if (log != null) {
-				    log.print(resp + "\r\n");
-				}
+				clientOut.println(resp);
 			}
 		}
-		out.flush();
-		String expandedMsg = null;
+		clientOut.flush();
+		String clientResponse = clientResp.toString();
 		
 		if (cfg.getTrafficRecorder().isRecordingRest()) {
 			Map<String,String> props = new HashMap<String,String>();
-			log.flush();
-			expandedMsg = "response:\r\n" + logBfr.toString() + "\r\n" + logReq; 
+			String expandedMsg = "response:\r\n" + clientResponse + "\r\n" + logReq; 
 			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
 					HttpServletResponse.SC_OK, expandedMsg, 
 					props);
 		}
-		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, 
-		        (expandedMsg != null ? expandedMsg : bufr.toString()));
+		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, clientResponse);
 	}
 }

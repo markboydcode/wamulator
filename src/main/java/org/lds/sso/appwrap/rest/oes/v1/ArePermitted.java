@@ -81,9 +81,19 @@ public class ArePermitted extends RestHandlerBase {
 			super.sendResponse(cLog, response, HttpServletResponse.SC_BAD_REQUEST, "res.cnt value '" + resCnt + "' is not an integer");
 			return;
 		}
-		
-		StringWriter bufr = new StringWriter();
-		PrintWriter out = new PrintWriter(bufr);
+        StringWriter logReq = null;
+        PrintWriter logReqWrt = null;
+        
+        if (cfg.getTrafficRecorder().isRecordingRest()) {
+            // build request log chunk
+            logReq = new StringWriter();
+            logReqWrt = new PrintWriter(logReq);
+            logReqWrt.print(" for request:\r\ntoken=" + token + "\r\n");
+            logReqWrt.print("res.cnt=" + resCount + "\r\n");
+        }
+        
+		StringWriter clientRes = new StringWriter();
+		PrintWriter clientOut = new PrintWriter(clientRes);
         boolean isValid = cfg.getSessionManager().isValidToken(token);
         String username = cfg.getUsernameFromToken(token);
         User user = cfg.getUserManager().getUser(username);
@@ -92,9 +102,13 @@ public class ArePermitted extends RestHandlerBase {
 		    String parm = "res." + t;
             String res = request.getParameter(parm);
             String act = request.getParameter("act." + t);
+            if (logReqWrt != null) {
+                logReqWrt.println(parm + "=" + res);
+                logReqWrt.println("act." + t + "=" + act);
+            }
             // only process if we have both a resource and its action
 			if (res != null && ! res.equals("") && act != null && ! act.equals("")) {
-			    Map<String, String> ctx = getContextParams(cfg, request, t);
+			    Map<String, String> ctx = getContextParams(cfg, request, t, logReqWrt);
 			    boolean allowed = false;
 			    if (isValid) { // only evaluate if token is still valid
 	                try {
@@ -107,18 +121,20 @@ public class ArePermitted extends RestHandlerBase {
 	                            + " Denying access.", e);
 	                }
 			    }
-			    out.println(parm + "=" + allowed);
+			    clientOut.println(parm + "=" + allowed);
 			}
 		}
-		out.flush();
+		clientOut.flush();
 		
 		if (cfg.getTrafficRecorder().isRecordingRest()) {
+		    logReqWrt.flush();
+		    String logMsg = clientRes.toString() + "\r\n" + logReq.toString(); 
 			Map<String,String> props = new HashMap<String,String>();
 			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
-					HttpServletResponse.SC_OK, bufr.toString(), 
+					HttpServletResponse.SC_OK, logMsg, 
 					props);
 		}
-		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, bufr.toString());
+		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, clientRes.toString());
 	}
 
 	
@@ -134,10 +150,11 @@ public class ArePermitted extends RestHandlerBase {
 	 * @param cfg
 	 * @param request
 	 * @param t
+	 * @param logReqWrt 
 	 * @return
 	 */
     private Map<String, String> getContextParams(Config cfg, HttpServletRequest request,
-            int t) {
+            int t, PrintWriter logReqWrt) {
         String ctxCnt = request.getParameter("ctx." + t + ".cnt");
         
         if (ctxCnt == null || ctxCnt.equals("")) {
@@ -150,9 +167,15 @@ public class ArePermitted extends RestHandlerBase {
             ctxCount = Integer.parseInt(ctxCnt);
         }
         catch(NumberFormatException nfe) {
+            if (logReqWrt != null) {
+                logReqWrt.println("ctx." + t + ".cnt=" + ctxCnt);
+            }
             return null; // ignore context parms if not an integer
         }
         if (ctxCount <= 0) {
+            if (logReqWrt != null) {
+                logReqWrt.println("ctx." + t + ".cnt=" + ctxCnt);
+            }
             return null; 
         }
         Map<String,String> map = new HashMap<String,String>();
@@ -160,6 +183,10 @@ public class ArePermitted extends RestHandlerBase {
         for (int idx = 1; idx<=ctxCount; idx++) {
             String key = request.getParameter("ctx." + t + "." + idx + ".key");
             String val = request.getParameter("ctx." + t + "." + idx + ".val");
+            if (logReqWrt != null) {
+                logReqWrt.println("ctx." + t + "." + idx + ".key=" + key);
+                logReqWrt.println("ctx." + t + "." + idx + ".val=" + val);
+            }
             // only process if we have both a resource and its action
             if (key != null && ! key.equals("") && val != null && ! val.equals("")) {
                 map.put(key, val);

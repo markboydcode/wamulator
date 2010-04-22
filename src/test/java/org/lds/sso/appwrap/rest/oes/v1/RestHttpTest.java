@@ -13,6 +13,8 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.lds.sso.appwrap.Service;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
@@ -25,19 +27,59 @@ import org.testng.annotations.Test;
  */
 public class RestHttpTest {
 
+    private Service service = null;
+    private String cookieName = "the-cookie-name";
+    private Ports ports = null;
+    
+    @BeforeClass
+    public void setUpSimulator() throws Exception {
+        System.out.println("setting up simulator");
+
+        ports = new Ports();
+        // get available sockets for simulator
+        ServerSocket css = new ServerSocket();
+        css.setReuseAddress(true);
+        css.bind(null);
+        ports.console = css.getLocalPort();
+        
+        ServerSocket pss = new ServerSocket();
+        pss.setReuseAddress(true);
+        pss.bind(null);
+        ports.proxy = pss.getLocalPort();
+        
+        css.close();
+        pss.close();
+
+        StringBuffer config = new StringBuffer("string:")
+        .append("<?xml version='1.0' encoding='UTF-8'?>")
+        .append("<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' ")
+        .append(" rest-version='CD-OESv1'>")
+        .append(" <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='false'/>")
+        .append(" <sso-cookie name='" + cookieName + "' domain='.lds.org'/>")
+        .append(" <sso-traffic>")
+        .append("  <by-resource uri='app://some-resource' allow='GET'/>")
+        .append(" </sso-traffic>")
+        .append(" <users>")
+        .append("  <user name='user1' pwd='pwd'/>")
+        .append("  <user name='user2' pwd='pwd'/>")
+        .append(" </users>")
+        .append("</config>");
+        
+        service = new Service(config.toString());
+        service.start();
+}
+    
+    @AfterClass
+    public void cleanUpSimulator() throws Exception {
+        System.out.println("tearing down simulator on admin-rest port: " 
+                + ports.console + " and http-proxy port: " + ports.proxy);
+        service.stop();
+        service = null;
+        ports = null;
+    }
+    
 	@Test
 	public void test_GetCookieName() throws Exception {
-        Ports ports = getAvailablePorts();
-		String cookieName = "the-cookie-name";
-		
-		Service service = new Service("string:"
-			+ "<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-			+ " rest-version='CD-OESv1'>"
-			+ "<sso-cookie name='" + cookieName + "' domain='.lds.org'/>"
-		    + "</config>");
-		service.start();
-		
 		String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/getCookieName";
 		
         HttpClient client = new HttpClient();
@@ -49,26 +91,10 @@ public class RestHttpTest {
         String content = method.getResponseBodyAsString();
         Assert.assertNotNull(content);
         Assert.assertEquals(content, cookieName);
-        service.stop();
 	}
 	
     @Test
     public void test_AreTokensValid_multiple() throws Exception {
-        Ports ports = getAvailablePorts();
-        String cookieName = "the-cookie-name";
-        
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='" + cookieName + "' domain='.lds.org'/>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // first initiate two sessions so that we have valid tokens
         String endpoint = "http://127.0.0.1:" + ports.console + "/auth/ui/authenticate?username=user1";
         
@@ -111,7 +137,6 @@ public class RestHttpTest {
         status = client.executeMethod(post);
         Assert.assertEquals(status, 200);
         String resp = post.getResponseBodyAsString();
-        System.out.println(resp);
         Assert.assertNotNull(resp, "response should not be null");
         StringReader sr = new StringReader(resp);
         BufferedReader br = new BufferedReader(sr);
@@ -144,25 +169,10 @@ public class RestHttpTest {
         Assert.assertEquals(token_1, true, "user1 token should be valid");
         Assert.assertEquals(token_2, false, "invalid-token token should be invalid");
         Assert.assertEquals(token_3, true, "user2 token should be valid");
-        
-        service.stop();
     }
 
     @Test
     public void test_AreTokensValid_single() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // first initiate session so that we have valid token
         String endpoint = "http://127.0.0.1:" + ports.console + "/auth/ui/authenticate?username=user1";
         
@@ -188,7 +198,6 @@ public class RestHttpTest {
         status = client.executeMethod(post);
         Assert.assertEquals(status, 200);
         String resp = post.getResponseBodyAsString();
-        System.out.println(resp);
         Assert.assertNotNull(resp, "response should not be null");
         StringReader sr = new StringReader(resp);
         BufferedReader br = new BufferedReader(sr);
@@ -199,25 +208,10 @@ public class RestHttpTest {
         tokens = line.split("=");
         Assert.assertEquals(tokens[0], usrToken1);
         Assert.assertEquals(tokens[1], "true");
-        
-        service.stop();
     }
 
     @Test
     public void test_AreTokensValid_BadTokenCnt() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // craft request for AreTokensValid
         String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/areTokensValid";
         HttpClient client = new HttpClient();
@@ -228,25 +222,10 @@ public class RestHttpTest {
         Assert.assertEquals(status, 400);
         String resp = post.getResponseBodyAsString();
         Assert.assertTrue(resp.contains("no token.cnt"), "response should contain message 'no token.cnt'");
-        
-        service.stop();
     }
 
     @Test
     public void test_AreTokensValid_TokenCntNotInt() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // craft request for AreTokensValid
         String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/areTokensValid";
         HttpClient client = new HttpClient();
@@ -257,25 +236,10 @@ public class RestHttpTest {
         Assert.assertEquals(status, 400);
         String resp = post.getResponseBodyAsString();
         Assert.assertTrue(resp.contains("not an integer"), "response should contain message 'not an integer'");
-        
-        service.stop();
     }
 
     @Test
     public void test_ArePermitted_NoToken() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // craft request for AreTokensValid
         String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/arePermitted";
         HttpClient client = new HttpClient();
@@ -286,25 +250,10 @@ public class RestHttpTest {
         Assert.assertEquals(status, 400);
         String resp = post.getResponseBodyAsString();
         Assert.assertTrue(resp.contains("no token specified"), "response should contain message 'no token specified'");
-        
-        service.stop();
     }
 
     @Test
     public void test_ArePermitted_NoResCnt() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // craft request for AreTokensValid
         String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/arePermitted";
         HttpClient client = new HttpClient();
@@ -317,25 +266,10 @@ public class RestHttpTest {
         Assert.assertEquals(status, 400);
         String resp = post.getResponseBodyAsString();
         Assert.assertTrue(resp.contains("no res.cnt specified"), "response should contain message 'no res.cnt specified'");
-        
-        service.stop();
     }
 
     @Test
     public void test_ArePermitted_ResCntNotInt() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // craft request for AreTokensValid
         String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/arePermitted";
         HttpClient client = new HttpClient();
@@ -347,8 +281,6 @@ public class RestHttpTest {
         Assert.assertEquals(status, 400);
         String resp = post.getResponseBodyAsString();
         Assert.assertTrue(resp.contains("not an integer"), "response should contain message 'not and integer'");
-        
-        service.stop();
     }
 
     private void injectSampleResourcesForAreValidCall(PostMethod post) {
@@ -371,52 +303,8 @@ public class RestHttpTest {
         int proxy = -1;
     }
     
-    /**
-     * WARNING: Don't make this a one time thing and used by all tests thereafer since 
-     * shutting down the Service with service.stop() is not synchronized meaning
-     * that the service's internal threads won't exit until they awake from 
-     * sleep and see that they have been interrupted. The next test may already
-     * be underway and will result in a bind exception since the port will 
-     * already be in use.
-     * 
-     * @return
-     * @throws IOException
-     */
-    private Ports getAvailablePorts() throws IOException {
-        Ports ports = new Ports();
-        // get available sockets for simulator
-        ServerSocket css = new ServerSocket();
-        css.setReuseAddress(true);
-        css.bind(null);
-        ports.console = css.getLocalPort();
-        
-        ServerSocket pss = new ServerSocket();
-        pss.setReuseAddress(true);
-        pss.bind(null);
-        ports.proxy = pss.getLocalPort();
-        
-        css.close();
-        pss.close();
-        return ports;
-    }
-    
     @Test
     public void test_ArePermitted_ExpiredToken() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <sso-traffic>"
-            + " </sso-traffic>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // craft request for AreTokensValid
         String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/arePermitted";
         HttpClient client = new HttpClient();
@@ -458,28 +346,10 @@ public class RestHttpTest {
         Assert.assertEquals(res_1, false, "res.1 should not be permitted for invalid token");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for invalid token");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted for invalid token");
-        
-        service.stop();
     }
 
     @Test
     public void test_ArePermitted_ValidToken() throws Exception {
-        Ports ports = getAvailablePorts();
-        Service service = new Service("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='" + ports.console + "' proxy-port='" + ports.proxy + "' " 
-            + " rest-version='CD-OESv1'>"
-            + " <sso-cookie name='the-cookie-name' domain='.lds.org'/>"
-            + " <sso-traffic>"
-            + "  <by-resource uri='app://some-resource' allow='GET'/>"
-            + " </sso-traffic>"
-            + " <users>"
-            + "  <user name='user1' pwd='pwd'/>"
-            + "  <user name='user2' pwd='pwd'/>"
-            + " </users>"
-            + "</config>");
-        service.start();
-        
         // first initiate session so that we have valid token
         String endpoint = "http://127.0.0.1:" + ports.console + "/auth/ui/authenticate?username=user1";
         
@@ -536,8 +406,6 @@ public class RestHttpTest {
         Assert.assertEquals(res_1, true, "res.1 should be permitted for GET");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for POST");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted since not defined");
-        
-        service.stop();
     }
 
 }
