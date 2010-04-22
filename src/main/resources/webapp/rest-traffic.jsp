@@ -44,16 +44,19 @@ tr.odd {background: #DDF;}
 <c:forEach items="${requestScope.config.trafficRecorder.restHits}" var="rhit" varStatus="loop">
 <c:set var="rowType" scope="page"><c:choose><c:when test="${loop.count mod 2 == 1}">odd</c:when><c:otherwise>even</c:otherwise></c:choose></c:set>
 <tr class="${rowType}">
-<td style="vertical-align: top;"><span style="padding-right: 8">${rhit.path}</span></td>
+<td style="vertical-align: top;"><span style="padding-right: 8">${rhit.path}</span></td> 
 <td>
 <table cellpadding="0" cellspacing="0">
-<tr><td><span style="float: right; font-style: italic; color: green;">response:</span></td><td><span style="font-weight: bold; padding-left: 5; padding-right: 4">
+<tr><td style="vertical-align: top;">
+<span style="font-style: italic; color: green;">response:</span>
+<span style="font-weight: bold; padding-right: 4">
 <c:choose>
 <c:when test="${rhit.code < 300}"><span style="color: #3A3;">${rhit.code}</span></c:when>
 <c:when test="${rhit.code >= 300 && rhit.code < 400}"><span style="color: gray;">${rhit.code}</span></c:when>
 <c:when test="${rhit.code != 404 && (rhit.code >= 400 && rhit.code < 500)}"><span style="color: purple;">${rhit.code}</span></c:when>
 <c:when test="${rhit.code >= 500 || rhit.code == 404}"><span style="color: red;">${rhit.code}</span></c:when>
-</c:choose></span> ${rhit.response}</td>
+</c:choose></span>
+</td><td>${jsputils.crlfToBr[rhit.response]}</td>
 </tr>
 <c:forEach items="${rhit.properties}" var="entry">
 <tr><td><span style="float: right; font-style: italic; color: green;">${entry.key}:</span></td><td><span style="padding-left: 5; padding-right: 4">${entry.value}</span></td></tr>

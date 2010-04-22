@@ -6,6 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.URISyntaxException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Object used in jsp:usebean for stuff that I can't do directly in the jsp.
@@ -21,6 +23,8 @@ public class JspUtils {
 	private BaseMapImpl<String> decoder = null;
 	private BaseMapImpl<Boolean> isUnenforced = null;
 	private BaseMapImpl<String> encoder = null;
+    private BaseMapImpl<String> crlfToBr;
+    private Pattern crlfPattern = null;
 	
 	/**
 	 * Returns a Map implementation whose get takes the passed-in
@@ -69,30 +73,52 @@ public class JspUtils {
 		}
 		return encoder; 
 	}
-	
-	/**
-	 * Returns a Map implementation whose get takes the passed-in
-	 * url and returns a Boolean true if it is already in the unenforced urls
-	 * list for use in jsp pages.
-	 *  
-	 * @return
-	 */
-	public BaseMapImpl<Boolean> getIsUnenforced() {
-		if (isUnenforced == null) {
-			isUnenforced = new BaseMapImpl<Boolean>() {
-				@Override
-				public Boolean get(Object key) {
-					try {
-						return Boolean.valueOf(Config.getInstance().getTrafficManager().isUnenforced((String) key));
-					}
-					catch (URISyntaxException e) {
-						throw new RuntimeException("problem converting " + key + " to URI instance.", e);
-					}
-				}
-			};
-		}
-		return isUnenforced; 
-	}
-	
-	
+    
+    /**
+     * Returns a Map implementation whose get takes the passed-in
+     * url and returns a Boolean true if it is already in the unenforced urls
+     * list for use in jsp pages.
+     *  
+     * @return
+     */
+    public BaseMapImpl<Boolean> getIsUnenforced() {
+        if (isUnenforced == null) {
+            isUnenforced = new BaseMapImpl<Boolean>() {
+                @Override
+                public Boolean get(Object key) {
+                    try {
+                        return Boolean.valueOf(Config.getInstance().getTrafficManager().isUnenforced((String) key));
+                    }
+                    catch (URISyntaxException e) {
+                        throw new RuntimeException("problem converting " + key + " to URI instance.", e);
+                    }
+                }
+            };
+        }
+        return isUnenforced; 
+    }
+    
+    /**
+     * Returns a Map implementation whose get takes the passed-in
+     * url and returns a Boolean true if it is already in the unenforced urls
+     * list for use in jsp pages.
+     *  
+     * @return
+     */
+    public BaseMapImpl<String> getCrlfToBr() {
+        if (crlfToBr == null) {
+            crlfPattern = Pattern.compile("\r\n");
+
+            crlfToBr = new BaseMapImpl<String>() {
+                @Override
+                public String get(Object key) {
+                    String value = (String) key;
+                    Matcher m = crlfPattern.matcher((String)key);
+                    String resp = m.replaceAll("<br/>");
+                        return resp;
+                }
+            };
+        }
+        return crlfToBr; 
+    }
 }

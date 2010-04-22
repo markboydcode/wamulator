@@ -67,21 +67,49 @@ public class AreTokensValid extends RestHandlerBase {
 		}
 		StringWriter bufr = new StringWriter();
 		PrintWriter out = new PrintWriter(bufr);
+        StringWriter logBfr = null;
+        PrintWriter log = null;
+        String logReq = null;
+
+		if (cfg.getTrafficRecorder().isRecordingRest()) {
+		    // build request log chunk
+            logBfr = new StringWriter();
+            log = new PrintWriter(logBfr);
+            log.print(" for request:\r\ntoken.cnt=" + tokenCnt + "\r\n");
+            for (int t = 1; t<=tokens; t++) {
+                String parm = "token." + t;
+                String token = request.getParameter(parm);
+                log.print(parm + "=" + token + "\r\n");
+            }
+            log.flush();
+            logReq = logBfr.toString();
+            // now provide response logger
+            logBfr = new StringWriter();
+            log = new PrintWriter(logBfr);
+        }
 		
 		for (int t = 1; t<=tokens; t++) {
 			String token = request.getParameter("token." + t);
 			if (token != null && ! token.equals("")) {
-				out.println(token + "=" + cfg.getSessionManager().isValidToken(token));
+			    String resp = token + "=" + cfg.getSessionManager().isValidToken(token); 
+				out.println(resp);
+				if (log != null) {
+				    log.print(resp + "\r\n");
+				}
 			}
 		}
 		out.flush();
+		String expandedMsg = null;
 		
 		if (cfg.getTrafficRecorder().isRecordingRest()) {
 			Map<String,String> props = new HashMap<String,String>();
+			log.flush();
+			expandedMsg = "response:\r\n" + logBfr.toString() + "\r\n" + logReq; 
 			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
-					HttpServletResponse.SC_OK, bufr.toString(), 
+					HttpServletResponse.SC_OK, expandedMsg, 
 					props);
 		}
-		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, bufr.toString());
+		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, 
+		        (expandedMsg != null ? expandedMsg : bufr.toString()));
 	}
 }
