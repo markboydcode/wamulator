@@ -126,7 +126,7 @@
         <dependency> <!-- used in unit tests to validate proper rest api authz -->
             <groupId>org.lds.sso</groupId>
             <artifactId>clientlib</artifactId>
-            <version>1.1.5</version>
+            <version>CD-OESv1-1.0</version>
             <scope>test</scope>
           
             <exclusions>
