@@ -9,5 +9,5 @@
     browser's http proxy if desired for particular test scenarios.
 -->
 <config proxy-port="80" console-port="1776" allow-non-sso-traffic="false">
-    <console-recording sso="true" rest="true"/>
+    <console-recording sso="true" rest="true" max-entries="1000" enable-debug-logging="true"/>
 </config>
