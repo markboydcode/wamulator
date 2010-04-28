@@ -1,5 +1,6 @@
 * text=auto !eol
 /commandline.sh.example -text
+/mvn.sh -text
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
 /ses.dtd -text svneol=unset#text/plain
