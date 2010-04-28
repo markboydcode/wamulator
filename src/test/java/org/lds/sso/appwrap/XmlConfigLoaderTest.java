@@ -1,12 +1,8 @@
 package org.lds.sso.appwrap;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.opensso.LegacyPropsInjectorDefs;
-import org.lds.sso.clientlib.PDPAccessor;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

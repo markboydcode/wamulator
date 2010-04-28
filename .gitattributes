@@ -10,6 +10,8 @@ src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/AppEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Config.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/EndPoint.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/Entitlement.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/EntitlementsManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/LocalFileEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/NvPair.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/PermittedUri.java -text svneol=unset#text/plain
@@ -61,7 +63,6 @@ src/main/java/org/lds/sso/appwrap/ui/rest/SelectSessionHandler.java -text svneol
 src/main/java/org/lds/sso/appwrap/ui/rest/SelectUserHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSessionHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/TrafficRecordingHandler.java -text svneol=unset#text/plain
-src/main/resources/config-samples/YouthAppProxy.xml -text
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
 src/main/resources/config-samples/leader.xml -text svneol=unset#text/plain
@@ -92,18 +93,17 @@ src/main/resources/webapp/traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/unlock.gif -text
 src/test/java/org/lds/sso/appwrap/AppEndPointTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppManagerTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/IntegrationTests.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestEnc.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestJettyJspApproach.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/TestUtilities.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/UserManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/opensso/AssignmentsChainInjectorTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/opensso/UnitsChainTranslatorTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/proxy/CookiePathRewriterTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/proxy/RewriteRedirectTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/CookiePathAndRedirectRewriteTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/TestAuthZHandler.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/oes/v1/RestHttpTest.java -text svneol=unset#text/plain

@@ -111,15 +111,7 @@ public class ArePermitted extends RestHandlerBase {
 			    Map<String, String> ctx = getContextParams(cfg, request, t, logReqWrt);
 			    boolean allowed = false;
 			    if (isValid) { // only evaluate if token is still valid
-	                try {
-	                    // TODO: MUST change to allow for non-URI resources
-	                    allowed = cfg.getTrafficManager().isPermitted(act, res, user);
-	                } catch (URISyntaxException e) {
-	                    // TODO: revisit after adding support for non-URIs
-	                    cLog.error("Unable to parse uri " + res 
-	                            + " to determine if access is allowed." 
-	                            + " Denying access.", e);
-	                }
+			        allowed = cfg.getEntitlementsManager().isAllowed(act, res, user);
 			    }
 			    clientOut.println(parm + "=" + allowed);
 			}

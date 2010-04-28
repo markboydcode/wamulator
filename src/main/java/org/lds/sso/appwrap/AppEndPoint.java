@@ -121,16 +121,6 @@ public class AppEndPoint implements EndPoint {
 		StartLine appReqLn = new StartLine(reqPkg.requestLine.getMethod(), applicationContextRoot
 				+ reqPkg.requestLine.getUri().substring(canonicalContextRoot.length()), reqPkg.requestLine
 				.getHttpDecl());
-		// reqPkg.headerBfr.append("cctx: " + canonicalContextRoot);
-
-		/*
-		 * versions prior to clientlib 1.1.4 used query param not header if
-		 * (appReqLn.token2.indexOf('?') == -1) { // no query string, append one
-		 * appReqLn.token2 += "?" + Config.CANONICAL_CTX_QPARAM_NAME + "=" +
-		 * canonicalContextRoot; } else { // query string found, append to
-		 * existing appReqLn.token2 += "&" + Config.CANONICAL_CTX_QPARAM_NAME +
-		 * "=" + canonicalContextRoot; }
-		 */
 		return appReqLn;
 	}
 

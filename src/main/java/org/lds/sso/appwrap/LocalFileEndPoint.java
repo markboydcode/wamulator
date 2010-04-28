@@ -50,7 +50,7 @@ public class LocalFileEndPoint implements EndPoint {
 		if (this.filePath.length() <= 2) {
 			this.filePath = "";
 		}
-		else {
+		else if (isRelative) {
 			this.filePath = this.filePath.substring(0, this.filePath.length() - 1);
 		}
 		this.contentType = contentType;

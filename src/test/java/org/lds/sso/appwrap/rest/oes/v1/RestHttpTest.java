@@ -12,6 +12,8 @@ import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.lds.sso.appwrap.Service;
+import org.lds.sso.appwrap.TestUtilities;
+import org.lds.sso.appwrap.TestUtilities.Ports;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -34,21 +36,7 @@ public class RestHttpTest {
     @BeforeClass
     public void setUpSimulator() throws Exception {
         System.out.println("setting up simulator");
-
-        ports = new Ports();
-        // get available sockets for simulator
-        ServerSocket css = new ServerSocket();
-        css.setReuseAddress(true);
-        css.bind(null);
-        ports.console = css.getLocalPort();
-        
-        ServerSocket pss = new ServerSocket();
-        pss.setReuseAddress(true);
-        pss.bind(null);
-        ports.proxy = pss.getLocalPort();
-        
-        css.close();
-        pss.close();
+        ports = TestUtilities.getAvailableSimulatorPorts();
 
         StringBuffer config = new StringBuffer("string:")
         .append("<?xml version='1.0' encoding='UTF-8'?>")
@@ -59,12 +47,16 @@ public class RestHttpTest {
         .append(" <sso-traffic>")
         .append("  <by-resource uri='app://some-resource' allow='GET'/>")
         .append(" </sso-traffic>")
+        .append(" <sso-entitlements policy-domain='lds.org'>")
+        .append("  <allow action='WAVE,SHOVE,PUSH' urn='/some/resource'/>")
+        .append("  <allow action='SMILE,GET,DROP' urn='/some/resource'/>")
+        .append(" </sso-entitlements>")
         .append(" <users>")
         .append("  <user name='user1' pwd='pwd'/>")
         .append("  <user name='user2' pwd='pwd'/>")
         .append(" </users>")
         .append("</config>");
-        
+
         service = new Service(config.toString());
         service.start();
 }
@@ -96,45 +88,19 @@ public class RestHttpTest {
     @Test
     public void test_AreTokensValid_multiple() throws Exception {
         // first initiate two sessions so that we have valid tokens
-        String endpoint = "http://127.0.0.1:" + ports.console + "/auth/ui/authenticate?username=user1";
-        
-        HttpClient client = new HttpClient();
-        HttpMethod method = new GetMethod(endpoint);
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        
-        Header ck = method.getResponseHeader("set-cookie");
-        Assert.assertNotNull(ck, "auth should have succeeded and set-cookie set for user1");
-        String[] tokens = ck.getValue().split("=");
-        String cookie = tokens[0];
-        String cookieParms = tokens[1];
-        String[] parms = cookieParms.split(";");
-        String usrToken1 = parms[0];
-        Assert.assertEquals(cookie, cookieName);
-        
-        // authenticate user2
-        endpoint = "http://127.0.0.1:" + ports.console + "/auth/ui/authenticate?username=user2";
-        
-        method = new GetMethod(endpoint);
-        method.setFollowRedirects(false);
-        status = client.executeMethod(method);
-        
-        ck = method.getResponseHeader("set-cookie");
-        Assert.assertNotNull(ck, "auth should have succeeded and set-cookie set for user2");
-        tokens = ck.getValue().split("=");
-        String cps = tokens[1];
-        String[] pms = cookieParms.split(";");
-        String usrToken2 = pms[0];
+        String usrToken1 = TestUtilities.authenticateUser("user1", ports.console);
+        String usrToken2 =  TestUtilities.authenticateUser("user2", ports.console);
 
         // next craft request for AreTokensValid
-        endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/areTokensValid";
+        String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/areTokensValid";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt", "3");
         post.addParameter("token.1", usrToken1);
         post.addParameter("token.2", "invalid-token");
         post.addParameter("token.3", usrToken2);
         post.setFollowRedirects(false);
-        status = client.executeMethod(post);
+        HttpClient client = new HttpClient();
+        int status = client.executeMethod(post);
         Assert.assertEquals(status, 200);
         String resp = post.getResponseBodyAsString();
         Assert.assertNotNull(resp, "response should not be null");
@@ -154,7 +120,7 @@ public class RestHttpTest {
                     break;
                 }
                 else {
-                    tokens = line.split("=");
+                    String[] tokens = line.split("=");
                     if (tokens[0].equals(usrToken1)) {
                         token_1 = Boolean.parseBoolean(tokens[1]);
                     }
@@ -285,22 +251,17 @@ public class RestHttpTest {
 
     private void injectSampleResourcesForAreValidCall(PostMethod post) {
         post.addParameter("res.cnt", "3");
-        post.addParameter("res.1","app://some-resource");
+        post.addParameter("res.1","lds.org/some/resource");
         post.addParameter("act.1","GET");
         post.addParameter("ctx.1.cnt","2");
         post.addParameter("ctx.1.1.key","unit");
         post.addParameter("ctx.1.1.val","222");
         post.addParameter("ctx.1.2.key","color");
         post.addParameter("ctx.1.2.val","blue");
-        post.addParameter("res.2","app://some-resource");
+        post.addParameter("res.2","lds.org/some/resource");
         post.addParameter("act.2","POST");
-        post.addParameter("res.3","app://another-resource");
+        post.addParameter("res.3","lds.org/another/resource");
         post.addParameter("act.3","DELETE");
-    }
-    
-    private class Ports {
-        int console = -1;
-        int proxy = -1;
     }
     
     @Test
@@ -351,28 +312,16 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_ValidToken() throws Exception {
         // first initiate session so that we have valid token
-        String endpoint = "http://127.0.0.1:" + ports.console + "/auth/ui/authenticate?username=user1";
-        
-        HttpClient client = new HttpClient();
-        HttpMethod method = new GetMethod(endpoint);
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        
-        Header ck = method.getResponseHeader("set-cookie");
-        Assert.assertNotNull(ck, "auth should have succeeded and set-cookie set for user1");
-        String[] tokens = ck.getValue().split("=");
-        String cookie = tokens[0];
-        String cookieParms = tokens[1];
-        String[] parms = cookieParms.split(";");
-        String usrToken = parms[0];
+        String usrToken =  TestUtilities.authenticateUser("user1", ports.console);
         
         // craft request for AreTokensValid
-        endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/arePermitted";
+        String endpoint = "http://127.0.0.1:" + ports.console + "/rest/oes/1/arePermitted";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", usrToken);
         injectSampleResourcesForAreValidCall(post);
         post.setFollowRedirects(false);
-        status = client.executeMethod(post);
+        HttpClient client = new HttpClient();
+        int status = client.executeMethod(post);
         Assert.assertEquals(status, 200);
         String resp = post.getResponseBodyAsString();
         StringReader sr = new StringReader(resp);
@@ -391,7 +340,7 @@ public class RestHttpTest {
                 break;
             }
             else {
-                tokens = line.split("=");
+                String[] tokens = line.split("=");
                 if (tokens[0].equals("res.1")) {
                     res_1 = Boolean.parseBoolean(tokens[1]);
                 }
@@ -407,5 +356,4 @@ public class RestHttpTest {
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for POST");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted since not defined");
     }
-
 }

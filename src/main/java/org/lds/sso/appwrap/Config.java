@@ -62,6 +62,8 @@ public class Config {
 
 	private TrafficManager appMgr = new TrafficManager();
 
+	private EntitlementsManager entitlementsMgr = new EntitlementsManager();
+	
 	private TrafficRecorder trafficRcrdr = new TrafficRecorder();
 
 	/**
@@ -281,9 +283,13 @@ public class Config {
 		this.cookieDomain = cookieDomain;
 	}
 
-	public TrafficManager getTrafficManager() {
-		return appMgr;
-	}
+    public TrafficManager getTrafficManager() {
+        return appMgr;
+    }
+
+    public EntitlementsManager getEntitlementsManager() {
+        return entitlementsMgr;
+    }
 
 	/**
 	 * Adds a global header to be injected into proxy requests targeted at

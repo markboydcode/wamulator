@@ -139,6 +139,7 @@ public class XmlConfigLoader2 {
 		Config cfg = null;
 		String site = null;
 		protected Path path = new Path();
+        private String lastPolicyDomain = null;
 
 		public CfgContentHandler() {
 			cfg = Config.getInstance();
@@ -390,6 +391,32 @@ public class XmlConfigLoader2 {
 				TrafficManager mgr = cfg.getTrafficManager();
 				mgr.addRewriteForCookie(from, to);
 			}
+            else if (path.matches("/config/sso-entitlements")) {
+                lastPolicyDomain = getStringAtt("policy-domain", path, atts);
+                if (lastPolicyDomain.startsWith("/") || lastPolicyDomain.endsWith("/")) {
+                    throw new IllegalArgumentException("Attribute 'policy-domain' for " + path 
+                            + " must not start with nor end with a slash '/' character.");
+                }
+            }
+            else if (path.matches("/config/sso-entitlements/allow")) {
+                String actionAtt = getStringAtt("action", path, atts);
+                actionAtt = actionAtt.replace(" ", "");
+                String[] actions = actionAtt.split(",");
+                String cond = getCondition(path, atts);
+                String syntax = aliases.get(cond);
+
+                String urn = getStringAtt("urn",path,atts);
+                if (! urn.startsWith("/")) {
+                    throw new IllegalArgumentException("Attribute 'urn' for " + path 
+                            + " must start with a slash '/' character.");
+                }
+                urn = resolveAliases(urn);
+
+
+                Entitlement ent = new Entitlement(actions, lastPolicyDomain + urn);
+                EntitlementsManager entMgr = cfg.getEntitlementsManager();
+                entMgr.addEntitlement(ent, cond, syntax);
+            }
 		}
 
 		/**

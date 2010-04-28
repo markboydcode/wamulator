@@ -1,8 +1,5 @@
 package org.lds.sso.appwrap;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.RequestLine;
 import org.lds.sso.appwrap.proxy.StartLine;
