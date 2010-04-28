@@ -17,34 +17,24 @@ echo "Building and gathering test results, please wait..."
 mvn clean install "$@" -B \
                 -DbuildDate=$DATE \
                 -DbuildRevision=$REVISION \
-                -DbuildUrl=$SVNURL
+                -DbuildUrl=$SVNURL 
 
 if [ "$?" = "0" ]; then
-	mvn deploy site-deploy "$@" -B \
-                -DbuildDate=$DATE \
-                -DbuildRevision=$REVISION \
-                -DbuildUrl=$SVNURL \
-		-Dmaven.test.skip=true
-
-	if [ "$?" = "0" ]; then
 	   	export PORTFOLIO=Open_Community
-	       	export PROD=App-Wrap-Shim
+                export PARENTPROD=sso
+                export PROD=app-wrap-shim
 	        export VERSION=`grep -A 6 modelVersion pom.xml | grep version | awk -F\> '{ print $2 }' | awk -F\< '{ print $1 }'`
 
-	        ssh bldmgr@10.100.100.140 "/home/bldmgr/bin/check_oclib.sh $PORTFOLIO $PROD $VERSION"            # Check for folders on OCLIB
+	        #ssh bldmgr@10.100.100.140 "/home/bldmgr/bin/check_oclib.sh $PORTFOLIO $PROD $VERSION"            # Check for folders on OCLIB
+                ssh bldmgr@10.100.100.140 mkdir "/opt/LDSDev/html/artifacts/$PORTFOLIO/$PARENTPROD/$PROD/$VERSION"
 
 	        echo "[INFO] *******************************************************************"
 	        echo "[INFO] Copying jar files to artifacts library."
 	        echo "[INFO] *******************************************************************"
 	        echo "[INFO]"
-	        scp target/*.jar bldmgr@10.100.100.140:/opt/LDSDev/html/artifacts/$PORTFOLIO/$PROD/$VERSION
-	else
+                scp target/SSO*.jar bldmgr@10.100.100.140:/opt/LDSDev/html/artifacts/$PORTFOLIO/$PARENTPROD/$PROD/$VERSION/
+else
 	        echo "[ERROR] *******************************************************************"
 	        echo "[ERROR] Error building application."
 	        echo "[ERROR] *******************************************************************"
-	fi
 fi
-
-
-
-
