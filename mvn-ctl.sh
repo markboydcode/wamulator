@@ -20,21 +20,29 @@ mvn clean install "$@" -B \
                 -DbuildUrl=$SVNURL
 
 if [ "$?" = "0" ]; then
-        export PORTFOLIO=Open_Community
-        export PROD=App-Wrap-Shim
-        export VERSION=`grep -A 6 modelVersion pom.xml | grep version | awk -F\> '{ print $2 }' | awk -F\< '{ print $1 }'`
+	mvn deploy site-deploy "$@" -B \
+                -DbuildDate=$DATE \
+                -DbuildRevision=$REVISION \
+                -DbuildUrl=$SVNURL \
+		-Dmaven.test.skip=true
 
-        ssh bldmgr@10.100.100.140 "/home/bldmgr/bin/check_oclib.sh $PORTFOLIO $PROD $VERSION"            # Check for folders on OCLIB
+	if [ "$?" = "0" ]; then
+	   	export PORTFOLIO=Open_Community
+	       	export PROD=App-Wrap-Shim
+	        export VERSION=`grep -A 6 modelVersion pom.xml | grep version | awk -F\> '{ print $2 }' | awk -F\< '{ print $1 }'`
 
-        echo "[INFO] *******************************************************************"
-        echo "[INFO] Copying jar files to artifacts library."
-        echo "[INFO] *******************************************************************"
-        echo "[INFO]"
-        scp target/*.jar bldmgr@10.100.100.140:/opt/LDSDev/html/artifacts/$PORTFOLIO/$PROD/$VERSION
-else
-        echo "[ERROR] *******************************************************************"
-        echo "[ERROR] Error building application."
-        echo "[ERROR] *******************************************************************"
+	        ssh bldmgr@10.100.100.140 "/home/bldmgr/bin/check_oclib.sh $PORTFOLIO $PROD $VERSION"            # Check for folders on OCLIB
+
+	        echo "[INFO] *******************************************************************"
+	        echo "[INFO] Copying jar files to artifacts library."
+	        echo "[INFO] *******************************************************************"
+	        echo "[INFO]"
+	        scp target/*.jar bldmgr@10.100.100.140:/opt/LDSDev/html/artifacts/$PORTFOLIO/$PROD/$VERSION
+	else
+	        echo "[ERROR] *******************************************************************"
+	        echo "[ERROR] Error building application."
+	        echo "[ERROR] *******************************************************************"
+	fi
 fi
 
 
