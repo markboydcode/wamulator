@@ -88,7 +88,7 @@ public class AreTokensValid extends RestHandlerBase {
         for (int t = 1; t<=tokens; t++) {
 			String token = request.getParameter("token." + t);
 			if (token != null && ! token.equals("")) {
-			    String resp = token + "=" + cfg.getSessionManager().isValidToken(token); 
+			    String resp = "token." + t + "=" + cfg.getSessionManager().isValidToken(token); 
 				clientOut.println(resp);
 			}
 		}

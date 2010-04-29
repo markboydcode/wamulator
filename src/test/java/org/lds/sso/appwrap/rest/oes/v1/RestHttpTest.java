@@ -121,13 +121,13 @@ public class RestHttpTest {
                 }
                 else {
                     String[] tokens = line.split("=");
-                    if (tokens[0].equals(usrToken1)) {
+                    if (tokens[0].equals("token.1")) {
                         token_1 = Boolean.parseBoolean(tokens[1]);
                     }
                     if (tokens[0].equals("invalid-token")) {
                         token_2 = Boolean.parseBoolean(tokens[1]);
                     }
-                    if (tokens[0].equals(usrToken2)) {
+                    if (tokens[0].equals("token.3")) {
                         token_3 = Boolean.parseBoolean(tokens[1]);
                     }
                 }
@@ -172,7 +172,7 @@ public class RestHttpTest {
         String line = br.readLine();
         Assert.assertTrue(line != null, "should be a line in response");        
         tokens = line.split("=");
-        Assert.assertEquals(tokens[0], usrToken1);
+        Assert.assertEquals(tokens[0], "token.1");
         Assert.assertEquals(tokens[1], "true");
     }
 
