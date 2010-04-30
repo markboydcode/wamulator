@@ -218,8 +218,22 @@ public class XmlConfigLoader2 {
 			
 			path.add(name);
 			if (path.matches("/config")) {
-				cfg.setConsolePort(getIntegerAtt("console-port", path, atts));
-				cfg.setProxyPort(getIntegerAtt("proxy-port", path, atts));
+                String cpVal = atts.getValue("console-port");
+                if ("auto".equals(cpVal)) {
+                    cfg.setConsolePort(0);
+                }
+                else {
+                    cfg.setConsolePort(getIntegerAtt("console-port", path, atts));
+                }
+
+                String ppVal = atts.getValue("proxy-port");
+                if ("auto".equals(ppVal)) {
+                    cfg.setProxyPort(0);
+                }
+                else {
+                    cfg.setProxyPort(getIntegerAtt("proxy-port", path, atts));
+                }
+                
 				String allow_proxying = atts.getValue("allow-non-sso-traffic");
 				cfg.setAllowForwardProxying(Boolean.parseBoolean(allow_proxying));
 				String restVersion = atts.getValue("rest-version");

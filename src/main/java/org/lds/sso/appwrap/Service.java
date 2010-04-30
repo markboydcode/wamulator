@@ -28,7 +28,9 @@ import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
 import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
 import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
+import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.handler.HandlerCollection;
 import org.mortbay.jetty.webapp.WebAppContext;
 
@@ -63,7 +65,15 @@ public class Service {
 		// This is just a directory within your source tree, and can be exported as part of your normal .jar
 		final String WEBAPPDIR = "webapp";
 
-		server = new Server(cfg.getConsolePort());
+		if (cfg.getConsolePort() == 0) {
+		    server = new Server();
+	        Connector connector=new SocketConnector();
+	        connector.setPort(0);
+	        server.setConnectors(new Connector[]{connector});
+		}
+		else {
+	        server = new Server(cfg.getConsolePort());
+		}
 		final String CONTEXTPATH = "/admin";
 		
 		// for localhost:port/admin/index.html and whatever else is in the webapp directory
@@ -169,18 +179,31 @@ public class Service {
 	public void start() throws Exception {
 		Config cfg = Config.getInstance();
 		cfg.setShimStateCookieId(cfgSource);
-		System.out.println("admin-rest port: " + cfg.getConsolePort());
-		System.out.println("http proxy port: " + cfg.getProxyPort());
-		cLog.info("admin-rest port: " + cfg.getConsolePort());
-		cLog.info("http proxy port: " + cfg.getProxyPort());
 
-		server.start();	
+		server.start();
 		
+		Connector[] connectors = server.getConnectors();
+		cfg.setConsolePort(connectors[0].getLocalPort());
+
 		ProxyListener proxy = new ProxyListener(cfg);
 		proxyRunner = new Thread(proxy);
 		proxyRunner.setDaemon(true);
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
+
+        dualLog("admin-rest port : " + cfg.getConsolePort());
+        dualLog("http proxy port : " + cfg.getProxyPort());
+        dualLog("Rest Interface  : " + cfg.getRestVersion().getVersionId());
+	}
+	
+	/**
+	 * Logs to both console and log file.
+	 * 
+	 * @param msg
+	 */
+	private void dualLog(String msg) {
+        System.out.println(msg);
+        cLog.info(msg);
 	}
 	
 	/**

@@ -57,6 +57,7 @@ import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DecimalFormat;
@@ -74,9 +75,18 @@ import java.text.DecimalFormat;
 		 * a new thread for each connection attempt (the RequestHandler
 		 * class really does all the work)
 		 */
-		public ProxyListener (Config cfg)
+		public ProxyListener (Config cfg) throws IOException
 		{
 			this.cfg  = cfg;
+            if (cfg.getProxyPort() == 0) {
+                server = new ServerSocket();
+                server.setReuseAddress(true);
+                server.bind(null);
+                cfg.setProxyPort(server.getLocalPort());
+            }
+            else {
+                server = new ServerSocket(cfg.getProxyPort());
+            }
 		}
 		
 		/* return whether or not the socket is currently open
@@ -116,14 +126,8 @@ import java.text.DecimalFormat;
 		public void run()
 		{
 			try {
-				// create a server socket, and loop forever listening for
-				// client connections
-				server = new ServerSocket(cfg.getProxyPort());
-				String msg = "Started r-proxy on port " + cfg.getProxyPort();
-				System.out.println(msg);
-				cLog.info(msg);
-				msg = "Rest Interface " + cfg.getRestVersion().getVersionId()
-					+ " in use.";
+				// loop forever listening for client connections
+				String msg = "Started proxy handler";
 				System.out.println(msg);
 				cLog.info(msg);
 				
