@@ -75,6 +75,29 @@
         </plugins>
     </build>
 
+    <distributionManagement>
+
+        <repository>
+            <id>icslib-repo</id>
+            <name>ICS Maven2 Repository</name>
+            <url>scp://icslib//opt/icsdev/maven2/lds-repo/</url>
+
+        </repository>
+
+        <snapshotRepository>
+            <id>icslib-repo</id>
+            <name>ICSLIB Maven2 Repository</name>
+            <url>scp://icslib//opt/icsdev/maven2/lds-snapshots/</url>
+        </snapshotRepository>
+
+        <site>
+            <id>icslib-repo</id>
+            <name>ICSLIB Maven2 Site Reports</name>
+            <url>scp://icslib//var/www/html/projects/${artifactId}/${version}</url>
+        </site>
+
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
