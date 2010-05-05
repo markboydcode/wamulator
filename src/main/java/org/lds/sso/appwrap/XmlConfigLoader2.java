@@ -29,7 +29,8 @@ public class XmlConfigLoader2 {
 	public static final String MACRO_PREFIX = "{{";
 	public static final String MACRO_SUFFIX = "}}";
 	
-	public static final String SRC_CLASSPATH = "classpath:";
+    public static final String SRC_SYSTEM = "system:";
+    public static final String SRC_CLASSPATH = "classpath:";
 	public static final String SRC_STRING = "string:";
 	
 	public static void load(String xml) throws Exception {
@@ -146,26 +147,40 @@ public class XmlConfigLoader2 {
 		}
 		
 		/**
-		 * Enables processing instructions in the XML having the following two
-		 * forms. The value of the alias can be used in any attribute value by
+		 * Enables processing instructions in the XML having the following three
+		 * forms. Each declares an alias that can then be referenced
+		 * in any configuration file attribute value by
 		 * including the macro "{{name}}" within the attribute's string of 
 		 * characters or within the value portion of any later occurring alias 
-		 * declarations.
+		 * declarations including classpath files or resolved resources. Each 
+		 * has a specific use.
 		 * 
 		 * <pre>
-		 * [1] &lt;?alias name=value?&gt;
-		 * [2] &lt;?alias name=classpath:resource-file-path?&gt;
+		 * [1] &lt;?alias name=[value]?&gt;
+         * [2] &lt;?alias name=classpath:[resource-file-path]?&gt;
+         * [3] &lt;?alias name=system:[resource-name]?&gt;
 		 * </pre>
 		 * 
-		 * The first simply adds a named value pair to the map of alias. The 
-		 * second form adds a named value to the map of alias where the value is
-		 * the character content of the referenced resource. Making such file
+		 * [1] adds a named value pair to the map of aliases where the value is
+		 * the literal text although that text could be a macro causing this
+		 * alias to have the same value as the other alias or it could have
+		 * one or more alias embedded within it surrounded by literal text.
+		 * 
+		 * [2] adds a named value pair to the map of alias where the value is
+		 * the character content of the referenced resource file that must be
+		 * available from the classpath. Making such file
 		 * based content available is not accomplished by conceptually embedding
 		 * such content within the XML declaring the alias and hence won't effect
 		 * the xml processing. This allows for alias values to contain XML 
 		 * sensitive characters and hence XML constructs. Such character content
-		 * can also include macro references for earlier defined alias and will 
+		 * can also include macro references for earlier defined alias which will 
 		 * be resolved upon loading.
+		 * 
+		 * [3] adds a named value pair to the map of aliases where the value is
+		 * the character content of a java.lang.System property. This version 
+		 * is used to emulate the classpath version during unit tests without 
+		 * having to create such files. In particular, this enables condition
+		 * syntax to be used in unit tests. 
 		 */
 		public void processingInstruction(String target, String data) throws SAXException {
 			if (target.equals("alias")) {
@@ -176,36 +191,46 @@ public class XmlConfigLoader2 {
 					String rawVal = val;
 					String srcPrefix = SRC_STRING;
 					
-					if (val.toLowerCase().startsWith("classpath:")) {
-						srcPrefix = SRC_CLASSPATH;
-						String resrc = val.substring("classpath:".length());
-						ClassLoader cldr = this.getClass().getClassLoader();
-						InputStream src = cldr.getResourceAsStream(resrc);
-						
-						if (src == null) {
-							throw new IllegalArgumentException("Classpath alias resource '"
-									+ resrc + "' not found.");
-						}
-						else {
-							ByteArrayOutputStream bfr = new ByteArrayOutputStream();
-							byte[] bytes = new byte[1024];
-							
-							
-							int read;
-							try {
-								while ((read = src.read(bytes)) != -1) {
-									bfr.write(bytes, 0, read);
-								}
-								bfr.flush();
-							}
-							catch (IOException e) {
-								throw new SAXException("Unable to load content for alias '"
-										+ name + "' from classpath resource '" 
-										+ resrc + "'.", e);
-							}
-							val = bfr.toString().trim();
-						}
-					}
+                    if (val.toLowerCase().startsWith(SRC_CLASSPATH)) {
+                        srcPrefix = SRC_CLASSPATH;
+                        String resrc = val.substring(SRC_CLASSPATH.length());
+                        ClassLoader cldr = this.getClass().getClassLoader();
+                        InputStream src = cldr.getResourceAsStream(resrc);
+                        
+                        if (src == null) {
+                            throw new IllegalArgumentException("Classpath alias resource '"
+                                    + resrc + "' not found.");
+                        }
+                        else {
+                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
+                            byte[] bytes = new byte[1024];
+                            
+                            
+                            int read;
+                            try {
+                                while ((read = src.read(bytes)) != -1) {
+                                    bfr.write(bytes, 0, read);
+                                }
+                                bfr.flush();
+                            }
+                            catch (IOException e) {
+                                throw new SAXException("Unable to load content for alias '"
+                                        + name + "' from classpath resource '" 
+                                        + resrc + "'.", e);
+                            }
+                            val = bfr.toString().trim();
+                        }
+                    }
+                    else if (val.toLowerCase().startsWith(SRC_SYSTEM)) {
+                        srcPrefix = SRC_SYSTEM;
+                        String resrc = val.substring(SRC_SYSTEM.length());
+                        val = System.getProperty(resrc);
+                        
+                        if (val == null) {
+                            throw new IllegalArgumentException("System alias resource '"
+                                    + resrc + "' not found in java.lang.System.");
+                        }
+                    }
 					val = resolveAliases(val);
 					aliases.put(name, val);
 					aliasSrc.put(name, srcPrefix + rawVal);

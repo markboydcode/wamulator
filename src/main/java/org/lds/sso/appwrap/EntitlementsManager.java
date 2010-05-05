@@ -25,6 +25,10 @@ public class EntitlementsManager {
     protected Map<Entitlement, String> conditionsMap = new HashMap<Entitlement, String>();
     private Set<Entitlement> entitlements = new TreeSet<Entitlement>();
 
+    public EntitlementsManager(LogicalSyntaxEvaluationEngine eng, Map<String, String> syntax) {
+        this.cEngine = eng;
+        this.cSynMap = syntax;
+    }
     public void setConditionEnv(LogicalSyntaxEvaluationEngine engine, Map<String,String>syntaxMap) {
         cEngine = engine;
         cSynMap = syntaxMap;

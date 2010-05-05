@@ -27,9 +27,9 @@ import com.sun.identity.shared.configuration.SystemPropertiesManager;
  * 
  */
 public class TrafficManager {
-	protected static final LogicalSyntaxEvaluationEngine cEngine;
+	protected LogicalSyntaxEvaluationEngine cEngine;
 	
-	protected static final Map<String, String> cSyntaxMap = new HashMap<String, String>();  
+	protected Map<String, String> cSyntaxMap = new HashMap<String, String>();  
 
 	private List<SiteMatcher> matchers = new ArrayList<SiteMatcher>();
 
@@ -39,20 +39,13 @@ public class TrafficManager {
 
 	private Map<String,String> cookieRewrites = new HashMap<String,String>();
 
-	/**
-	 * Set up opensso's debug infrastructure to use custom implementation that
-	 * wraps Log4j. Log4j logger created is
-	 * org.lds.sso.plugins.policy.conditions
-	 * .evaluator.LogicalSyntaxEvaluationEngine
-	 */
-	static {
-		Properties p = new Properties();
-		p.put("com.sun.identity.util.debug.provider", MyProvider.class.getName());
-		SystemPropertiesManager.initializeProperties(p);
-		cEngine = new LogicalSyntaxEvaluationEngine();
-	}
+	public TrafficManager(LogicalSyntaxEvaluationEngine eng,
+            Map<String, String> syntax) {
+	    this.cEngine = eng;
+	    this.cSyntaxMap = syntax;
+    }
 
-	/**
+    /**
 	 * Determines if the passed-in url is an unenforeceUrl either starting with
 	 * a configured url ending in an asterisk minus the asterisk or matching
 	 * exactly a configured url not ending with an asterisk.

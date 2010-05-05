@@ -80,18 +80,32 @@ public class XmlConfigLoaderTest {
 		Assert.assertEquals(cfg.getLoginPage(), "http://labs-local.lds.org/auth/ui/sign-in");
 	}
 
-	@Test
-	public void testLoadTextAliasFromClasspath() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<?alias site=classpath:XmlConfigLoaderTest.txt?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ "  <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		Assert.assertEquals(cfg.getLoginPage(), "http://test-host-domain.lds.org/auth/ui/sign-in");
-	}
+    @Test
+    public void testLoadTextAliasFromClasspath() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=classpath:XmlConfigLoaderTest.txt?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + "  <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Assert.assertEquals(cfg.getLoginPage(), "http://test-host-domain.lds.org/auth/ui/sign-in");
+    }
+
+    @Test
+    public void testLoadTextAliasFromSystem() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=system:some-path-property?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + "  <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
+            + "</config>";
+        System.setProperty("some-path-property", "the-path-property");
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Assert.assertEquals(cfg.getLoginPage(), "http://the-path-property/auth/ui/sign-in");
+    }
 
 	@Test
 	public void testUnenforcedBySitePathWildcard() throws Exception {
