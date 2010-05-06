@@ -1,6 +1,6 @@
 package org.lds.sso.appwrap.ui.rest;
 
-import java.io.IOException;
+import java.io.IOException; 
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
@@ -21,11 +21,9 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.UserManager;
+import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
-import org.lds.sso.plugins.authz.LegacyPropsInjector;
-
-import com.iplanet.sso.SSOException;
 import org.lds.sso.appwrap.User;
 
 /**
@@ -233,11 +231,7 @@ public class SelectUserHandler extends RestHandlerBase {
                 userAtts.put(LegacyPropsInjector.CP_STATUS_PROPERTY, "200-coda user atts retrieved");
                 for (Iterator<Map.Entry<String, String>> itr = userAtts.entrySet().iterator(); itr.hasNext();) {
                     Map.Entry<String, String> ent = itr.next();
-                    try {
-                        uman.addHeaderForLastUserAdded(ent.getKey(), ent.getValue());
-                    } catch (SSOException e) {
-                        throw new RuntimeException("Unable to add from service " + uri + " header '" + name + "' from response '" + content + "'", e);
-                    }
+                    uman.addHeaderForLastUserAdded(ent.getKey(), ent.getValue());
                 }
             }
 

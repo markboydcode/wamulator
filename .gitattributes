@@ -1,10 +1,12 @@
 * text=auto !eol
+/AllUnitTests.xml -text svneol=unset#text/plain
 /commandline.sh.example -text
 /mvn-ctl.sh -text
 /mvn.sh -text
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
 /ses.dtd -text svneol=unset#text/plain
+/ses.log.1 -text
 /sim.bat -text
 /sim.sh -text
 src/main/assembly/jar-assembly.xml -text
@@ -29,12 +31,26 @@ src/main/java/org/lds/sso/appwrap/User.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/UserManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/VirtualSite.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/XmlConfigLoader2.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/opensso/AssignmentsChainInjector.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/opensso/HeadersToSSOTokenInjector.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/opensso/LegacyPropsInjectorDefs.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/opensso/MyDebug.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/opensso/MyProvider.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/opensso/UnitsChainInjector.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContext.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationException.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/IEvaluator.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/IEvaluatorContainer.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/LegacyPropsInjector.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEngine.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/AND.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Assignment.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasAssignment.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasLdsAccountId.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasPosition.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/IsEmployee.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/IsMember.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/LdsAccount.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/MemberOfUnit.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/NOT.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/OR.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Position.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/SyntaxBase.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Unit.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackage.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackageType.java -text svneol=unset#text/plain
@@ -103,8 +119,6 @@ src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/pla
 src/test/java/org/lds/sso/appwrap/TestUtilities.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/UserManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/opensso/AssignmentsChainInjectorTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/opensso/UnitsChainTranslatorTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/CookiePathAndRedirectRewriteTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/TestAuthZHandler.java -text svneol=unset#text/plain

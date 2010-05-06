@@ -7,12 +7,9 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.opensso.MyProvider;
+import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
-import org.lds.sso.plugins.policy.conditions.evaluator.LogicalSyntaxEvaluationEngine;
-
-import com.sun.identity.shared.configuration.SystemPropertiesManager;
 
 public class Config {
 	private static final Logger cLog = Logger.getLogger(Config.class);
@@ -66,7 +63,7 @@ public class Config {
 	private String cookieDomain = ".lds.org";
 	
 	// set up custom syntax map and engine
-	protected static final LogicalSyntaxEvaluationEngine cEngine = loadEngine();
+	protected static final LogicalSyntaxEvaluationEngine cEngine = new LogicalSyntaxEvaluationEngine();
     protected static final Map<String, String> cSyntaxMap = new HashMap<String, String>();  
 
 
@@ -125,22 +122,6 @@ public class Config {
 		}
 		instance = this;
 	}
-
-	/**
-	 * Instantiate the custom syntax engine.
-     * Sets up opensso's debug infrastructure to use custom implementation that
-     * wraps Log4j. Log4j logger created is
-     * org.lds.sso.plugins.policy.conditions
-     * .evaluator.LogicalSyntaxEvaluationEngine
-	 * 
-	 * @return
-	 */
-	private static LogicalSyntaxEvaluationEngine loadEngine() {
-        Properties p = new Properties();
-        p.put("com.sun.identity.util.debug.provider", MyProvider.class.getName());
-        SystemPropertiesManager.initializeProperties(p);
-        return new LogicalSyntaxEvaluationEngine();
-    }
 
     private static String determineCurrentVersion() {
 		String version = "current SSO Simulator in IDE";

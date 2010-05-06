@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="app-wrap-shim" parallel="false">
+  <test verbose="2" name="ALL-UNIT-TESTS" annotations="JDK">
+    <packages>
+      <package name="org.lds.sso.appwrap.*"/>
+    </packages>
+  </test>
+</suite>

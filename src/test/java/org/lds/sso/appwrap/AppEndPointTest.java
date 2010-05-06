@@ -7,6 +7,21 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class AppEndPointTest {
+    
+    @Test
+    public void regtest() {
+        String pos = "p4/7u111/5u222/1u333/:p23/7u444/5u555/1u666/1016u777/";
+        Assert.assertTrue(pos.matches(".*p4/.*")); // has position 4 
+        Assert.assertTrue(pos.matches(".*p23/.*")); // has position 23 
+        Assert.assertTrue(pos.matches(".*p4/[^:]*u333/.*")); // has position 4 in unit 333 
+        Assert.assertTrue(pos.matches(".*p4/[^:]*u333/.*")); // has position 4 in unit 111 
+        Assert.assertFalse(pos.matches(".*p4/[^:]*u444/.*")); // has not position 4 in unit 444 
+        Assert.assertFalse(pos.matches(".*p4/[^:]*u777/.*")); // has not position 4 in unit 777 
+
+        Assert.assertTrue(pos.matches(".*p23/[^:]*u777/.*")); // has position 23 in unit 333 
+        Assert.assertTrue(pos.matches(".*p23/[^:]*u444/.*")); // has position 23 in unit 111 
+    }
+    
 	@Test
 	public void testTransformC2AnoQ() {
 		AppEndPoint ep = new AppEndPoint("/mls/mbr", "/mls-membership", "", 80);

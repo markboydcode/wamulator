@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>4.14</version>
+    <version>5.0</version>
   
     <name>SSO Environment Simulator</name>
   
@@ -112,40 +112,6 @@
             <artifactId>commons-httpclient</artifactId>
             <version>3.1</version>
         </dependency>
-      
-<!-- Dependencies for support of custom syntax evaluation -->
-        <dependency>
-            <groupId>org.lds.sso</groupId>
-            <artifactId>plugins</artifactId>
-            <version>1.1.0</version>
-            <type>jar</type>
-            <scope>compile</scope>
-          
-            <exclusions>
-                <exclusion>
-                    <groupId>org.lds.platform</groupId>
-                    <artifactId>CMIS-Services-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.lds.opensso</groupId>
-            <artifactId>sharedlib</artifactId>
-            <version>8.0</version>
-            <type>jar</type>
-            <scope>compile</scope>
-        </dependency>
-      
-        <dependency>
-            <groupId>org.lds.opensso</groupId>
-            <artifactId>amserver</artifactId>
-            <version>8.0</version>
-            <type>jar</type>
-            <scope>compile</scope>
-        </dependency>
-<!-- End Dependencies for support of custom syntax evaluation -->
-      
       
         <dependency>
             <groupId>log4j</groupId>

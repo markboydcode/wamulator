@@ -1,16 +1,15 @@
 package org.lds.sso.appwrap;
 
-import java.util.HashMap;
+import java.util.HashMap; 
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
-import org.lds.sso.plugins.policy.conditions.evaluator.EvaluationContext;
-import org.lds.sso.plugins.policy.conditions.evaluator.IEvaluator;
-import org.lds.sso.plugins.policy.conditions.evaluator.LogicalSyntaxEvaluationEngine;
-
-import com.sun.identity.policy.PolicyException;
+import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
+import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
+import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
+import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 
 public class SiteMatcher {
 	private static final Logger cLog = Logger.getLogger(SiteMatcher.class);
@@ -100,7 +99,7 @@ public class SiteMatcher {
 						try {
 							evaluator = cEngine.getEvaluator(syntax);
 						}
-						catch (PolicyException e) {
+						catch (EvaluationException e) {
 							cLog.error("Disallowing access to " 
 									+ au + " since unable to obtain evaluator for condition alias "
 									+ condId + " with syntax " + syntax + ". ", e);
@@ -110,7 +109,7 @@ public class SiteMatcher {
 						try {
 							return evaluator.isConditionSatisfied(ctx);
 						}
-						catch (PolicyException e) {
+						catch (EvaluationException e) {
 							cLog.error("Error occurred for " + au + " for user " + user.getUsername()
 									+ " denying access.", e);
 						}

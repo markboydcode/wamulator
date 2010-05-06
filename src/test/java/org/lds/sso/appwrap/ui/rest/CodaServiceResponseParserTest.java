@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import org.lds.sso.plugins.authz.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

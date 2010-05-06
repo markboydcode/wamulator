@@ -1,6 +1,6 @@
 package org.lds.sso.appwrap;
 
-import java.net.URI;
+import java.net.URI; 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,11 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.lds.sso.plugins.policy.conditions.evaluator.LogicalSyntaxEvaluationEngine;
-import org.lds.sso.appwrap.opensso.MyProvider;
+import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.proxy.CookiePathRewriter;
-
-import com.sun.identity.shared.configuration.SystemPropertiesManager;
 
 /**
  * Manages in-memory registered ties between the canonical URL space and the

@@ -1,8 +1,8 @@
 package org.lds.sso.appwrap;
 
-import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler;
+import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler; 
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
-import org.lds.sso.appwrap.opensso.LegacyPropsInjectorDefs;
+import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -597,7 +597,7 @@ public class XmlConfigLoaderTest {
 	}
 
 	@Test
-	public void testConditionIsBishopAllowed() throws Exception {
+	public void testConditionIsBishopAllowedURI() throws Exception {
 		String xml = 
 			"<?xml version='1.0' encoding='UTF-8'?>"
 			+ "<?alias is-bishop=classpath:is-bishop-test.xml?>"
@@ -610,7 +610,7 @@ public class XmlConfigLoaderTest {
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
 		User bish = new User("bish", "bish"); 
-		bish.addHeader(LegacyPropsInjectorDefs.CP_POSITIONS_SESSION_PROPERTY, "P4:W100S200A300"); // 4 is a bishop
+		bish.addHeader(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY, "p4/7u100/5u200/6u300/"); // 4 is a bishop
 		User user = new User("user", "user"); 
 
 		String uri = "app://labs-local.lds.org/auth/_app/debug";
@@ -632,9 +632,9 @@ public class XmlConfigLoaderTest {
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
 		User u1234 = new User("bish", "bish"); 
-		u1234.addHeader(LegacyPropsInjectorDefs.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+		u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
 		User user = new User("user", "user"); 
-		user.addHeader(LegacyPropsInjectorDefs.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+		user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
 
 		String uri = "app://labs-local.lds.org/auth/_app/debug";
 		Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);

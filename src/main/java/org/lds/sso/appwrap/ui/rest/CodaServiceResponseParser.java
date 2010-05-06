@@ -7,16 +7,13 @@ import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.lds.sso.plugins.authz.LegacyPropsInjector;
-import org.lds.sso.plugins.policy.conditions.evaluator.LogicalSyntaxEvaluationEngine.SyntaxContentHandler;
+import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-
-import com.sun.identity.policy.PolicyException;
 
 /**
  * Parser of content response of coda user attributes service located at the

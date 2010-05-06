@@ -1,6 +1,6 @@
 package org.lds.sso.appwrap;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayOutputStream; 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -21,8 +21,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-
-import com.iplanet.sso.SSOException;
 
 public class XmlConfigLoader2 {
 
@@ -411,13 +409,7 @@ public class XmlConfigLoader2 {
 			else if (path.matches("/config/users/user/sso-header")) {
 				String hdrNm = getStringAtt("name", path, atts);
 				String hdrVl = getStringAtt("value", path, atts);
-				try {
-					cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
-				}
-				catch (SSOException e) {
-					throw new SAXException("Problem adding header " + hdrNm 
-							+ " for path", e);
-				}
+				cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
 			}
 			else if (path.matches("/config/sso-traffic/rewrite-redirect")) {
 				String from = getStringAtt("from", path, atts);
