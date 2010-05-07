@@ -63,13 +63,12 @@ public class Config {
 	private String cookieDomain = ".lds.org";
 	
 	// set up custom syntax map and engine
-	protected static final LogicalSyntaxEvaluationEngine cEngine = new LogicalSyntaxEvaluationEngine();
-    protected static final Map<String, String> cSyntaxMap = new HashMap<String, String>();  
+	private LogicalSyntaxEvaluationEngine sEngine = new LogicalSyntaxEvaluationEngine();
+    private Map<String, String> syntaxMap = new HashMap<String, String>();  
 
+	private TrafficManager appMgr = new TrafficManager(sEngine, syntaxMap);
 
-	private TrafficManager appMgr = new TrafficManager(cEngine, cSyntaxMap);
-
-	private EntitlementsManager entitlementsMgr = new EntitlementsManager(cEngine, cSyntaxMap);
+	private EntitlementsManager entitlementsMgr = new EntitlementsManager(sEngine, syntaxMap);
 	
 	private TrafficRecorder trafficRcrdr = new TrafficRecorder();
 

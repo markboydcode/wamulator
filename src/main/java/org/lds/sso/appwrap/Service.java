@@ -17,6 +17,7 @@ import org.lds.sso.appwrap.rest.AuthZHandler;
 import org.lds.sso.appwrap.rest.GetCookieName;
 import org.lds.sso.appwrap.rest.IsTokenValidHandler;
 import org.lds.sso.appwrap.rest.LogoutHandler;
+import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
@@ -85,6 +86,11 @@ public class Service {
 		cfgInjector.addHandler(adj);
 
 		HandlerCollection handlers = new HandlerCollection();
+		if (cfg.getRestVersion() == null) {
+		    throw new IllegalArgumentException("Must declare the REST interface that the Simulator should expose. " +
+		    		"See documentation for the <config> element's rest-version attribute. Supported versions are: "
+		            + RestVersion.getValidIdentifiers());
+		}
 		switch(cfg.getRestVersion()) {
 		case OPENSSO :
 			handlers.addHandler(new GetCookieName("/rest/identity/getCookieNameForToken"));

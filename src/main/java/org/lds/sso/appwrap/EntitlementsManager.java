@@ -19,18 +19,17 @@ import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
  */
 public class EntitlementsManager {
     private static final Logger cLog = Logger.getLogger(EntitlementsManager.class);
-    private LogicalSyntaxEvaluationEngine cEngine;
-    protected Map<String, String> cSynMap;
+    private LogicalSyntaxEvaluationEngine cEngine = null;
+    protected Map<String, String> cSynMap = null;
     protected Map<Entitlement, String> conditionsMap = new HashMap<Entitlement, String>();
     private Set<Entitlement> entitlements = new TreeSet<Entitlement>();
 
     public EntitlementsManager(LogicalSyntaxEvaluationEngine eng, Map<String, String> syntax) {
+        if (eng == null || syntax == null) {
+            throw new RuntimeException("Syntax Evaluation Engine and Syntax map must not be null.");
+        }
         this.cEngine = eng;
         this.cSynMap = syntax;
-    }
-    public void setConditionEnv(LogicalSyntaxEvaluationEngine engine, Map<String,String>syntaxMap) {
-        cEngine = engine;
-        cSynMap = syntaxMap;
     }
 
     public void addEntitlement(Entitlement ent, String condId, String condSyntax) {

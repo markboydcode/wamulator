@@ -1,5 +1,8 @@
 package org.lds.sso.appwrap;
 
+import java.io.File;
+import java.io.FileWriter;
+
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler; 
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
@@ -618,26 +621,82 @@ public class XmlConfigLoaderTest {
 		Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
 	}
 
-	@Test
-	public void testConditionHasSpecificLdsAccountIdAllowed() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<?alias has-lds-account-1234=classpath:has-lds-account-1234-test.xml?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{has-lds-account-1234}}'/>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		User u1234 = new User("bish", "bish"); 
-		u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
-		User user = new User("user", "user"); 
-		user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+    @Test
+    public void testConditionHasSpecificLdsAccountIdAllowed() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias has-lds-account-1234=classpath:has-lds-account-1234-test.xml?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{has-lds-account-1234}}'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        TrafficManager tman = cfg.getTrafficManager();
+        User u1234 = new User("bish", "bish"); 
+        u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+        User user = new User("user", "user"); 
+        user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
 
-		String uri = "app://labs-local.lds.org/auth/_app/debug";
-		Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
-		Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
-	}
+        String uri = "app://labs-local.lds.org/auth/_app/debug";
+        Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
+        Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
+    }
+
+    @Test
+    public void test_FileAlias() throws Exception {
+        String path = "file-has-lds-account-1234-test.xml";
+        File file = new File(path);
+        if (file.exists()) {
+            file.delete();
+        }
+        FileWriter writer = new FileWriter(path);
+        writer.write("<HasLdsAccountId id='1234'/>\n");
+        writer.flush();
+        writer.close();
+        
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias has-lds-account-1234=file:file-has-lds-account-1234-test.xml?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{has-lds-account-1234}}'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        TrafficManager tman = cfg.getTrafficManager();
+        User u1234 = new User("bish", "bish"); 
+        u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+        User user = new User("user", "user"); 
+        user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+
+        String uri = "app://labs-local.lds.org/auth/_app/debug";
+        Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
+        Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
+    }
+
+    @Test(expectedExceptions=Exception.class)
+    public void test_FileAlias_FileNotFound() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias has-lds-account-1234=file:bogus-file-name.xml?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{has-lds-account-1234}}'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        TrafficManager tman = cfg.getTrafficManager();
+        User u1234 = new User("bish", "bish"); 
+        u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+        User user = new User("user", "user"); 
+        user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+
+        String uri = "app://labs-local.lds.org/auth/_app/debug";
+        boolean u12134Answer = tman.isPermitted("POST", uri, u1234); 
+        Assert.fail("should have thrown exception");
+    }
 }

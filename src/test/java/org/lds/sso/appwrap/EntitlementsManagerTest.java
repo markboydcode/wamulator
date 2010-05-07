@@ -32,11 +32,15 @@ public class EntitlementsManagerTest {
             + "    <sso-header name='policy-positions' value='p4/7u56030/5u524735/1u791040/'/>"
             + "    <sso-header name='policy-units' value='7u56030/5u524735/1u791040/'/>"
             + "   </user>"
+            + "   <user name='ngiwb1' pwd='password1'>"
+            + "    <sso-header name='policy-positions' value='p4/7u56030/5u524735/1u791040/'/>" // bishop
+            + "   </user>"
             + "  </users>"
             + "  <sso-entitlements policy-domain='lds.org'>"
             + "   <allow action='GET' urn='/leader/focus/page' condition='{{is-employee}}'/>" // employees only
             + "   <allow action='GET' urn='/leader/list/page'/>" // all users
             + "   <allow action='GET' urn='/leader/bishop/page' condition='{{is-cdol}}'/>" // only bishops
+            + "   <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>" // only bishops
             + "   <allow action='GET' urn='/leader/ward/page' condition='{{is-in-524735}}'/>" // only members of unit 524735
             + "  </sso-entitlements>"
             + "</config>";
@@ -44,6 +48,7 @@ public class EntitlementsManagerTest {
         XmlConfigLoader2.load(xml);
         EntitlementsManager emgr = cfg.getEntitlementsManager();
         UserManager umgr = cfg.getUserManager();
+        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus", umgr.getUser("ngiwb1")));
         Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("aaa")));
         Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("bbb")));
         Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/list/page", umgr.getUser("aaa")));

@@ -1,6 +1,10 @@
 package org.lds.sso.appwrap;
 
 import java.io.ByteArrayOutputStream; 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -29,6 +33,7 @@ public class XmlConfigLoader2 {
 	
     public static final String SRC_SYSTEM = "system:";
     public static final String SRC_CLASSPATH = "classpath:";
+    public static final String SRC_FILE = "file:";
 	public static final String SRC_STRING = "string:";
 	
 	public static void load(String xml) throws Exception {
@@ -189,6 +194,7 @@ public class XmlConfigLoader2 {
 					String rawVal = val;
 					String srcPrefix = SRC_STRING;
 					
+                    // alias handling for "classpath:..."
                     if (val.toLowerCase().startsWith(SRC_CLASSPATH)) {
                         srcPrefix = SRC_CLASSPATH;
                         String resrc = val.substring(SRC_CLASSPATH.length());
@@ -219,6 +225,7 @@ public class XmlConfigLoader2 {
                             val = bfr.toString().trim();
                         }
                     }
+                    // alias handling for "system:..."
                     else if (val.toLowerCase().startsWith(SRC_SYSTEM)) {
                         srcPrefix = SRC_SYSTEM;
                         String resrc = val.substring(SRC_SYSTEM.length());
@@ -228,6 +235,48 @@ public class XmlConfigLoader2 {
                             throw new IllegalArgumentException("System alias resource '"
                                     + resrc + "' not found in java.lang.System.");
                         }
+                    }
+                    // alias handling for "file:..."
+                    else if (val.toLowerCase().startsWith(SRC_FILE)) {
+                        srcPrefix = SRC_FILE;
+                        String resrc = val.substring(SRC_FILE.length());
+                        File file = new File(resrc);
+                        
+                        
+                        if (! file.exists()) {
+                            throw new IllegalArgumentException("File alias resource '"
+                                    + resrc + "' not found at '" + file.getAbsolutePath() + "'.");
+                        }
+                        else {
+                            InputStream src;
+                            try {
+                                src = new FileInputStream(file);
+                            } catch (FileNotFoundException e) {
+                                throw new SAXException("Unable to load content for alias '"
+                                        + name + "' from file resource '" 
+                                        + file.getAbsolutePath() + "'.", e);
+                            }
+                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
+                            byte[] bytes = new byte[1024];
+                            
+                            
+                            int read;
+                            try {
+                                while ((read = src.read(bytes)) != -1) {
+                                    bfr.write(bytes, 0, read);
+                                }
+                                bfr.flush();
+                            }
+                            catch (IOException e) {
+                                throw new SAXException("Unable to load content for alias '"
+                                        + name + "' from file resource '" 
+                                        + file.getAbsolutePath() + "'.", e);
+                            }
+                            val = bfr.toString().trim();
+                        }
+                    }
+                    else {
+                        // alias handling for "literal-text" use 'val' as-is
                     }
 					val = resolveAliases(val);
 					aliases.put(name, val);
