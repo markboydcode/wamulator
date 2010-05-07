@@ -929,7 +929,7 @@ public class RequestHandler implements Runnable {
 				}
 				// check for host header
 				pos = dataLC.indexOf(HttpPackage.HOST_HDR);
-				if (pos >= 0) {
+ 				if (pos == 0) {
 					pkg.hostHdr = data.substring(pos + HttpPackage.HOST_HDR.length()).trim();
 					int colon = pkg.hostHdr.indexOf(':');
 					String host = null;
