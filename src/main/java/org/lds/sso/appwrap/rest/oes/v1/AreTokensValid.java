@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
@@ -89,7 +90,8 @@ public class AreTokensValid extends RestHandlerBase {
 			String token = request.getParameter("token." + t);
 			if (token != null && ! token.equals("")) {
 			    String resp = "token." + t + "=" + cfg.getSessionManager().isValidToken(token); 
-				clientOut.println(resp);
+				clientOut.print(resp);
+				clientOut.print(RequestHandler.CRLF);
 			}
 		}
 		clientOut.flush();
