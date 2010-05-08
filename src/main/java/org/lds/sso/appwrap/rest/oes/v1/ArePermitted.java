@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.User;
+import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
@@ -113,7 +114,8 @@ public class ArePermitted extends RestHandlerBase {
 			    if (isValid) { // only evaluate if token is still valid
 			        allowed = cfg.getEntitlementsManager().isAllowed(act, res, user);
 			    }
-			    clientOut.println(parm + "=" + allowed);
+			    clientOut.print(parm + "=" + allowed);
+			    clientOut.print(RequestHandler.CRLF);
 			}
 		}
 		clientOut.flush();
