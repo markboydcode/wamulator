@@ -6,8 +6,8 @@ import org.lds.sso.appwrap.proxy.StartLine;
 
 /**
  * Represents the mapping from canonical space URLs to application space URLs
- * for an application that can be hit through the reverse proxy on a port on the
- * same box as the proxy.
+ * for an application that can be hit through the reverse proxy not necessarily 
+ * on a port on the same box as the proxy.
  * 
  * @author Mark Boyd
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
@@ -29,7 +29,11 @@ public class AppEndPoint implements EndPoint {
 		this.canonicalContextRoot = canonicalCtx;
 		this.applicationContextRoot = appCtx;
 		this.host = host;
-		this.id = canonicalCtx + "->URI=" + host + ":" + port + appCtx;
+		updateId();
+	}
+	
+	private void updateId() {
+        this.id = this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
 	}
 
 	public String getId() {
@@ -74,8 +78,19 @@ public class AppEndPoint implements EndPoint {
 		return endpointPort;
 	}
 
+    /**
+     * Updates the configured port with the passed-in value if the endpointPort
+     * is zero indicating that its value was specified as the macro
+     * {{console-port}} and the console-port was specified as being "auto"
+     * configured meaning it is bound at start-up to an available port.
+     * 
+     * @return
+     */
 	public void setEndpointPort(int endpointPort) {
-		this.endpointPort = endpointPort;
+	    if (this.endpointPort == 0) {
+	        this.endpointPort = endpointPort;
+	        updateId();
+	    }
 	}
 
 	/**

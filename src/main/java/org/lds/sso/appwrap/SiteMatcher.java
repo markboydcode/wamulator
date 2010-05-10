@@ -1,6 +1,9 @@
 package org.lds.sso.appwrap;
 
+import java.util.ArrayList;
 import java.util.HashMap; 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -166,6 +169,76 @@ public class SiteMatcher {
 	public void addMapping(String canonicalContext, String targetHost, int targetPort, String targetPathCtx) {
 		AppEndPoint ep = new AppEndPoint(canonicalContext, targetPathCtx, targetHost, targetPort);
 		mappedEndPoints.add(ep);
+	}
+	
+    /**
+     * Called whenever proxy port changes. This allows for late binding of the
+     * SiteMatcher ports when using "auto" port binding for the proxy port and
+     * the by-site port attribute specifies use of the proxy-port alias.
+     *  
+     * @param consolePort
+     */
+	public void proxyPortChanged(int proxyPort) {
+	    if (this.port == 0) {
+	        this.port = proxyPort;
+
+	        // if matcher had zero port then all unenforced and allowed urls
+	        // will have inherited it and must be updated as well
+	        List<UnenforcedUri> unUpdates = new ArrayList<UnenforcedUri>();
+	        
+	        for (Iterator<UnenforcedUri> itr=this.unenforcedUrls.iterator(); itr.hasNext();) {
+	            UnenforcedUri un = itr.next();
+	            
+	                if (un.proxyPortChanged(proxyPort)) {
+	                    itr.remove();
+	                    unUpdates.add(un);
+	                }
+	        }
+	        if (unUpdates.size() >0) {
+	            unenforcedUrls.addAll(unUpdates);
+	        }
+
+            List<AllowedUri> aldUpdates = new ArrayList<AllowedUri>();
+            
+            for (Iterator<AllowedUri> itr=this.allowedUrls.iterator(); itr.hasNext();) {
+                AllowedUri ald = itr.next();
+                
+                    if (ald.proxyPortChanged(proxyPort)) {
+                        itr.remove();
+                        aldUpdates.add(ald);
+                    }
+            }
+            if (aldUpdates.size() >0) {
+                allowedUrls.addAll(aldUpdates);
+            }
+	    }
+	}
+	
+	/**
+	 * Called whenever console port changes. This allows for late binding of the
+	 * AppEndPoint ports when using "auto" port binding for the console port and
+	 * the cctx-mapping tport attribute specifies use of the console-port.
+	 *  
+	 * @param consolePort
+	 */
+	public void consolePortChanged(int consolePort) {
+	    List<EndPoint> updates = new ArrayList<EndPoint>();
+	    
+	    for (Iterator<EndPoint> itr=mappedEndPoints.iterator(); itr.hasNext();) {
+	        EndPoint ep = itr.next();
+	        
+	        if (ep instanceof AppEndPoint) {
+	            AppEndPoint aep = (AppEndPoint) ep;
+	            if (aep.getEndpointPort() == 0) {
+	                itr.remove();
+	                aep.setEndpointPort(consolePort);
+	                updates.add(aep);
+	            }
+	        }
+	    }
+	    if (updates.size() >0) {
+	        mappedEndPoints.addAll(updates);
+	    }
 	}
 
 	public void addUnenforcedUri(UnenforcedUri uu) {

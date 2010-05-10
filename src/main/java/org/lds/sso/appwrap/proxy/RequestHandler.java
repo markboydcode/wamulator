@@ -450,7 +450,7 @@ public class RequestHandler implements Runnable {
 	 */
 	public boolean responseThreasholdExceeded(HttpPackage reqPkg) {
 		String reqUri = reqPkg.requestLine.getUri();
-		AllowedUri uri = new AllowedUri(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, null,
+		AllowedUri uri = new AllowedUri(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query,
 				new String[] { reqPkg.requestLine.getMethod() });
 
 		Config.RepeatRecord record = cfg.getRepeatRequestRecord(uri);

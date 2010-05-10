@@ -1,12 +1,11 @@
 package org.lds.sso.appwrap;
 
-import java.net.URI; 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.proxy.CookiePathRewriter;
@@ -40,6 +39,30 @@ public class TrafficManager {
             Map<String, String> syntax) {
 	    this.cEngine = eng;
 	    this.cSyntaxMap = syntax;
+    }
+
+    /**
+     * Propagate into SiteMatchers a change in proxy port allowing for late
+     * binding when "auto" is used for the proxy port.
+     *  
+     * @param proxyPort
+     */
+    public void proxyPortChanged(int proxyPort) {
+        for (SiteMatcher m : matchers) {
+            m.proxyPortChanged(proxyPort);
+        }
+    }
+    
+    /**
+     * Propagate into SiteMatchers a change in console port allowing for late
+     * binding when "auto" is used for the console port.
+     *  
+     * @param consolePort
+     */
+    public void consolePortChanged(int consolePort) {
+        for (SiteMatcher m : matchers) {
+            m.consolePortChanged(consolePort);
+        }
     }
 
     /**

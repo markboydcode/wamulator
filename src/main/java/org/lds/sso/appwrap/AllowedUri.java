@@ -23,11 +23,20 @@ public class AllowedUri extends UnenforcedUri {
 	public AllowedUri(String scheme, String host, int port, String path, String query, String[] actions) {
 		super(scheme, host, port, path, query);
 		this.actions = actions;
-		Set<String> sorted = new TreeSet<String>(Arrays.asList(actions));
-		this.id = this.id + sorted.toString();
+		updateId();
 	}
 	
-	public boolean allowed(String action) {
+	@Override
+    protected void updateId() {
+        super.updateId();
+        // if actions are null then the id as specified by parent is done
+        if (actions != null) {
+            Set<String> sorted = new TreeSet<String>(Arrays.asList(actions));
+            this.id = this.id + sorted.toString();
+        }
+    }
+
+    public boolean allowed(String action) {
 		for(String a : actions) {
 			if (a.equals(action)) {
 				return true;

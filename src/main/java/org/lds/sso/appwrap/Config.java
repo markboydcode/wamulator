@@ -271,6 +271,9 @@ public class Config {
 
 	public void setProxyPort(int port) {
 		this.httpAppPort = port;
+		if (getTrafficManager() != null) {
+		    getTrafficManager().proxyPortChanged(port);
+		}
 	}
 
 	public int getConsolePort() {
@@ -279,6 +282,9 @@ public class Config {
 
 	public void setConsolePort(int port) {
 		this.httpAdminPort = port;
+        if (getTrafficManager() != null) {
+            getTrafficManager().consolePortChanged(port);
+        }
 	}
 
 	public String getCookieDomain() {

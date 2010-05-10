@@ -351,7 +351,22 @@ public class XmlConfigLoader2 {
 					scheme = "http";
 				}
 				String host = getStringAtt("host", path, atts);
-				int port = getIntegerAtt("port", path, atts);
+                int port = -1;
+                String portS = atts.getValue("port");
+                // check for auto proxy-port being used and allow port to follow if indicated
+                if (cfg.getProxyPort() == 0 && portS != null && portS.equals("{{proxy-port}}")) { 
+                    // for letting host choose the port to bind to for the proxy
+                    // we still want to be able to define sites with a port matching
+                    // that of the proxy catching the traffic in the by-site
+                    // config element. hence we allow for a macro matching the 
+                    // attribute name for the proxy port on the config element
+                    // and figure out the port at runtime.
+                    
+                    port = 0;
+                }
+                else {
+                    port = getIntegerAtt("port", path, atts);
+                }
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher m = new SiteMatcher(scheme, host, port, trafficMgr);
 				trafficMgr.addMatcher(m);
@@ -374,7 +389,21 @@ public class XmlConfigLoader2 {
 			else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
 				String cctx = getStringAtt("cctx", path, atts); 
 				String thost = getStringAtt("thost", path, atts);
-				int tport = getIntegerAtt("tport", path, atts);
+				int tport = -1;
+	            String tportS = atts.getValue("tport");
+				// check for auto console-port being used and allow tport to follow if indicated
+				if (cfg.getConsolePort() == 0 && tportS != null && tportS.equals("{{console-port}}")) { 
+				    // for letting host choose the port to bind to for the console
+				    // we still want to be able to direct to the console port in
+				    // cctw-mappings. hence we allow for a macro matching the 
+				    // attribute name for the console port on the config element
+				    // and figure out the port at runtime.
+				    
+				    tport = 0;
+				}
+				else {
+	                tport = getIntegerAtt("tport", path, atts);
+				}
 				String tpath = getStringAtt("tpath", path, atts);
 				// enforce terminating asterisk solely for reminding readers of
 				// the config file that these are uri root contexts that will be

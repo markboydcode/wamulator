@@ -22,7 +22,6 @@ public class UnenforcedUri implements Comparable<UnenforcedUri>{
 		this.scheme = scheme;
 		
 		pathMatch = path;
-		id = scheme + "://" + host + ":" + port + path + (query == null ? "" : "?" + query);
 		
 		if (path.startsWith("*")) {
 			pathPrefix = "";
@@ -46,6 +45,32 @@ public class UnenforcedUri implements Comparable<UnenforcedUri>{
 				useQueryPrefixMatching = true;
 			}
 		}
+		updateId();
+	}
+	
+	/**
+	 * Updates the id of this object which changes its hashcode, equals, and
+	 * toString behaviors.
+	 */
+	protected void updateId() {
+	    id = scheme + "://" + host + ":" + port + pathMatch + (queryMatch == null ? "" : "?" + queryMatch);
+	}
+	
+	/**
+	 * Allows port to be updated only if originally set to zero which only occurs
+	 * when "auto" is specified for the proxy port allowing any port to be used
+	 * for the proxy. Returns true if the port for this object changed as a 
+	 * result of this call; false otherwise.
+	 * 
+	 * @param port
+	 */
+	public boolean proxyPortChanged(int port) {
+	    if (this.port == 0) {
+	        this.port = port;
+	        updateId();
+	        return true;
+	    }
+	    return false;
 	}
 	
 	public boolean matches(String scheme, String host, int port, String path, String query) {
