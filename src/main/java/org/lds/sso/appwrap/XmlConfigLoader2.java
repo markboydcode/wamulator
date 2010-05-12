@@ -388,7 +388,9 @@ public class XmlConfigLoader2 {
 			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
 				String cctx = getStringAtt("cctx", path, atts); 
-				String thost = getStringAtt("thost", path, atts);
+                String thost = getStringAtt("thost", path, atts);
+                String preserveHost = getStringAtt("preserve-host", path, atts, false);
+                boolean preserve = (preserveHost == null ? true : Boolean.parseBoolean(preserveHost));
 				int tport = -1;
 	            String tportS = atts.getValue("tport");
 				// check for auto console-port being used and allow tport to follow if indicated
@@ -415,7 +417,7 @@ public class XmlConfigLoader2 {
 				tpath = tpath.substring(0, tpath.length()-1);
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-				sm.addMapping(cctx, thost, tport, tpath);
+				sm.addMapping(cctx, thost, tport, tpath, preserve);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/unenforced")) {
 				TrafficManager trafficMgr = cfg.getTrafficManager();

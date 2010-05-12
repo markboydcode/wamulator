@@ -8,6 +8,8 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.proxy.Header;
+import org.lds.sso.appwrap.proxy.HeaderBuffer;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
 
@@ -320,9 +322,9 @@ public class Config {
 	 * 
 	 * @param headersBfr
 	 */
-	public void injectGlobalHeaders(StringBuffer headersBfr) {
+	public void injectGlobalHeaders(HeaderBuffer headersBfr) {
 		for (Entry<String, String> e : headers.entrySet()) {
-			headersBfr.append(e.getKey()).append(": ").append(e.getValue()).append(RequestHandler.CRLF);
+			headersBfr.append(new Header(e.getKey(), e.getValue()));
 		}
 	}
 

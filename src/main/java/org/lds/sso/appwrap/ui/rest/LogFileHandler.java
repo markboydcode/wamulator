@@ -15,6 +15,10 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Iterator;
+
+import org.lds.sso.appwrap.proxy.Header;
+import org.lds.sso.appwrap.proxy.HeaderDef;
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.HttpPackageType;
 import org.lds.sso.appwrap.proxy.StartLine;
@@ -74,7 +78,9 @@ public class LogFileHandler extends RestHandlerBase {
         }
         appRespBfr.write(startLineContent.getBytes());
         appRespBfr.write(CRLF.getBytes());
-        appRespBfr.write(pkg.headerBfr.toString().getBytes());
+        for(Iterator<Header> itr = pkg.headerBfr.getIterator(); itr.hasNext();) {
+            itr.next().writeTo(appRespBfr);
+        }
         appRespBfr.write(CRLF.getBytes());
         appRespBfr.write(pkg.bodyStream.toByteArray());
 
@@ -102,8 +108,8 @@ public class LogFileHandler extends RestHandlerBase {
                 dis.close();
                 pkg.responseLine = new StartLine("HTTP/1.1", "200", "OK");
                 pkg.responseCode = 200;
-                pkg.headerBfr.append(HttpPackage.CONTENT_LNG).append(SP).append(size).append(CRLF);
-                pkg.headerBfr.append(HttpPackage.CONTENT_TYPE).append(SP).append("text/plain" + CRLF);
+                pkg.headerBfr.set(HeaderDef.createHeader(HeaderDef.ContentLength, Integer.toString(size)));
+                pkg.headerBfr.set(HeaderDef.createHeader(HeaderDef.ContentType, "text/plain"));
                 pkg.bodyStream.flush();
             } else {
                 pkg.responseLine = new StartLine("HTTP/1.1", "404", "Not Found");

@@ -7,6 +7,8 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.proxy.Header;
+import org.lds.sso.appwrap.proxy.HeaderBuffer;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 
 public class User {
@@ -86,10 +88,9 @@ public class User {
 		this.headers.put(name, value);
 	}
 
-	public void injectUserHeaders(StringBuffer headersBfr) {
+	public void injectUserHeaders(HeaderBuffer headersBfr) {
 		for(Entry<String, String> e : headers.entrySet()) {
-			headersBfr.append(e.getKey())
-				.append(": ").append(e.getValue()).append(RequestHandler.CRLF);
+			headersBfr.append(new Header(e.getKey(), e.getValue()));
 		}
 	}
 

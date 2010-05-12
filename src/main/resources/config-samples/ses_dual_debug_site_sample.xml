@@ -12,7 +12,7 @@
 <?alias console-port={{rest-port}}?>
 <?alias http-port=80?>
 
-<config proxy-port="{{http-port}}" console-port="{{console-port}}">
+<config proxy-port="{{http-port}}" console-port="{{console-port}}" rest-version='CD-OESv1'>
     <console-recording sso="true" rest="true" max-entries="1000" enable-debug-logging="true"/>
     <sso-cookie name="lds-policy" domain=".lds.org"/>
     <sso-sign-in-url value="http://local.lds.org:{{console-port}}/admin/selectUser.jsp"/>
@@ -20,7 +20,7 @@
 
     <sso-traffic>
         <by-site host="local.lds.org" port="80">
-            <cctx-mapping cctx="/public/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/*"/>
+            <cctx-mapping cctx="/public/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/*" preserve-host="false"/>
             <unenforced cpath="/public/debug.jsp"/>
             
             <cctx-mapping cctx="/secure/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/*"/>

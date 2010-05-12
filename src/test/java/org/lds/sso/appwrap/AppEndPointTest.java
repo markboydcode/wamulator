@@ -24,7 +24,7 @@ public class AppEndPointTest {
     
 	@Test
 	public void testTransformC2AnoQ() {
-		AppEndPoint ep = new AppEndPoint("/mls/mbr", "/mls-membership", "", 80);
+		AppEndPoint ep = new AppEndPoint("/mls/mbr", "/mls-membership", "", 80, true);
 		ep.setCanonicalContextRoot("/mls/mbr");
 		ep.setApplicationContextRoot("/mls-membership");
 		
@@ -40,7 +40,7 @@ public class AppEndPointTest {
 
 	@Test
 	public void testTransformC2AwQ() {
-		AppEndPoint ep = new AppEndPoint("/mls/mbr", "/mls-membership", "", 80);
+		AppEndPoint ep = new AppEndPoint("/mls/mbr", "/mls-membership", "", 80, true);
 		ep.setCanonicalContextRoot("/mls/mbr");
 		ep.setApplicationContextRoot("/mls-membership");
 		

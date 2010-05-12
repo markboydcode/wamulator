@@ -20,6 +20,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import org.apache.log4j.Level;
 
@@ -213,15 +214,15 @@ public class RequestHandler implements Runnable {
 			// sending content so that servers that don't include a content-length
 			// header don't cause the proxy to await the tcp-timeout expiration
 			// before sending the received content back to the client.
-			reqPkg.headerBfr.append("Connection: close").append(CRLF);
+			reqPkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
 			
 			// add header for prevention of infinite loops directly back to the proxy
-			reqPkg.headerBfr.append(HttpPackage.SHIM_HANDLED_HDR).append(" handled").append(RequestHandler.CRLF);
+			reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED, "handled"));
 			
 			// for non-ignored traffic perform the enforcements and translations
 			RequestLine appReqLn = reqPkg.requestLine; // default to request
 														// line as-is
-			EndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port); // default
+			EndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port, true); // default
 																							// to
 																							// no
 																							// translation
@@ -233,7 +234,7 @@ public class RequestHandler implements Runnable {
 				cfg.injectGlobalHeaders(reqPkg.headerBfr);
 				// include our connId in request headers to coordinate app logs
 				// with proxy logs if needed when troubleshooting app issues
-				reqPkg.headerBfr.append(HttpPackage.CONN_ID_HDR).append(this.connId).append(CRLF);
+				reqPkg.headerBfr.append(new Header(HttpPackage.CONN_ID, this.connId));
 
 				TrafficManager appMgr = cfg.getTrafficManager();
 				String token = cfg.getTokenFromCookie(reqPkg.cookiesHdr);
@@ -259,7 +260,7 @@ public class RequestHandler implements Runnable {
 
 				// endpoint is registered, translate request Uri and set cctx
 				// header
-				reqPkg.headerBfr.append("cctx").append(": ").append(endpoint.getCanonicalContextRoot()).append(CRLF);
+				reqPkg.headerBfr.append(new Header("cctx", endpoint.getCanonicalContextRoot()));
 
 				if (!appMgr.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
 					// so it requires enforcement
@@ -306,9 +307,14 @@ public class RequestHandler implements Runnable {
 			/////////// handle via appropriate endpoint AppEndPoint or LocalFileEndPoint
 			
 			HttpPackage resPkg = null;
+			String endpointMsg = null;
 			
 			if  (endpoint instanceof AppEndPoint) {
 				AppEndPoint appEndpoint = (AppEndPoint) endpoint;
+				if (! appEndpoint.preserveHostHeader()) {
+				    String hostHdr = appEndpoint.getHost() + (appEndpoint.getEndpointPort() != 80 ? (":" + appEndpoint.getEndpointPort()) : "");
+				    reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
+				}
 				// now build complete request to pass on to application
 				appReqLn = appEndpoint.getAppRequestUri(reqPkg);
 				request = serializePackage((StartLine) appReqLn, reqPkg);
@@ -316,8 +322,9 @@ public class RequestHandler implements Runnable {
 				Socket server = null; // socket to remote server
 
 				try {
+				    endpointMsg = "Connecting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort();
 					if (cLog.isDebugEnabled()) {
-						cLog.debug("Connecting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
+						cLog.debug(endpointMsg);
 					}
 					server = new Socket(appEndpoint.getHost(), appEndpoint.getEndpointPort());
 				}
@@ -394,15 +401,16 @@ public class RequestHandler implements Runnable {
 			else { // file endpoint
 				LocalFileEndPoint fileEp = (LocalFileEndPoint) endpoint;
 				resPkg = getFileHttpPackage(reqPkg, fileEp, log);
+				endpointMsg = fileEp.servedFromMsg;
 				request = serializePackage((StartLine) resPkg.responseLine, reqPkg);
 			}
 			
 			// ensure that client will not attempt another request
-			resPkg.headerBfr.append("Connection: close").append(CRLF);
+			resPkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
 
 			// include our connId in response headers to coordinate responses
 			// with proxy logs if needed when troubleshooting app issues
-			resPkg.headerBfr.append("X-connId: ").append(this.connId).append(CRLF);
+			resPkg.headerBfr.append(new Header(HttpPackage.CONN_ID, this.connId));
 
 			response = serializePackage((StartLine) resPkg.responseLine, resPkg);
 			int responseLength = Array.getLength(response);
@@ -418,7 +426,7 @@ public class RequestHandler implements Runnable {
 				cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()),
 						resPkg.responseCode, false, reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri());
 			}
-			logTraffic(log, reqPkg.requestLine, request, response, startTime);
+			logTraffic(log, reqPkg.requestLine, request, response, startTime, endpointMsg);
 			if (cLog.isDebugEnabled()) {
 				cLog.debug("Closing I/O to client");
 			}
@@ -499,7 +507,7 @@ public class RequestHandler implements Runnable {
 		out.flush();
 		byte[] request = serializePackage((StartLine) reqPkg.requestLine, reqPkg);
                 if(log != null) {
-                    logTraffic(log, reqPkg.requestLine, request, response, startTime);
+                    logTraffic(log, reqPkg.requestLine, request, response, startTime, "Proxy Generated Response.");
                 }
                 shutdown(in, out, log, fos);
 	}
@@ -511,7 +519,7 @@ public class RequestHandler implements Runnable {
 	 * @return
 	 * @throws IOException
 	 */
-	private byte[] serializePackage(StartLine httpStartLine, HttpPackage pkg) throws IOException {
+	protected byte[] serializePackage(StartLine httpStartLine, HttpPackage pkg) throws IOException {
 		ByteArrayOutputStream appRespBfr = new ByteArrayOutputStream();
 		String startLineContent = EMPTY_START_LINE;
 		if (httpStartLine != null) {
@@ -519,7 +527,10 @@ public class RequestHandler implements Runnable {
 		}
 		appRespBfr.write(startLineContent.getBytes());
 		appRespBfr.write(CRLF.getBytes());
-		appRespBfr.write(pkg.headerBfr.toString().getBytes());
+
+		for (Iterator<Header> itr = pkg.headerBfr.getIterator(); itr.hasNext();) {
+		    itr.next().writeTo(appRespBfr);
+		}
 		appRespBfr.write(CRLF.getBytes());
 		appRespBfr.write(pkg.bodyStream.toByteArray());
 
@@ -535,8 +546,9 @@ public class RequestHandler implements Runnable {
 	 * @param request
 	 * @param response
 	 * @param startTime
+	 * @param endpointMsg 
 	 */
-	private void logTraffic(PrintStream log, RequestLine requestLine, byte[] request, byte[] response, long startTime) {
+	private void logTraffic(PrintStream log, RequestLine requestLine, byte[] request, byte[] response, long startTime, String endpointMsg) {
 		if (log != null) {
 			String startLn = EMPTY_START_LINE;
 			if (requestLine != null) {
@@ -549,6 +561,8 @@ public class RequestHandler implements Runnable {
 			log.println("Canonical Req. Line: " + startLn);
 			log.println("Rewritten Req. Line: " + (new String(request)));
 			log.println();
+			log.println(endpointMsg);
+            log.println();
 			log.println("RESPONSE bytes returned to client: " + response.length);
 			log.println(new String(response));
 			log.flush();
@@ -773,11 +787,13 @@ public class RequestHandler implements Runnable {
 			if (path.startsWith(Service.CLASSPATH_PREFIX)) {
 				String cpath = path.substring(Service.CLASSPATH_PREFIX.length());
 				is = this.getClass().getClassLoader().getResourceAsStream(cpath);
+				endpoint.servedFromMsg = "Served from: " + path;
 			}
 			else {
 				File file = new File(path);
 				if (file.exists() && file.isFile()) {
 					is = new FileInputStream(file);
+	                endpoint.servedFromMsg = "Served from: " + file.getAbsolutePath();
 				}
 			}
 			if (is != null) {
@@ -789,13 +805,14 @@ public class RequestHandler implements Runnable {
 				dis.close();
 				pkg.responseLine = new StartLine("HTTP/1.1", "200", "OK");
 				pkg.responseCode = 200;
-				pkg.headerBfr.append(HttpPackage.CONTENT_LNG + SP + size + CRLF);
-				pkg.headerBfr.append(HttpPackage.CONTENT_TYPE + SP + endpoint.getContentType() + CRLF);
+				pkg.headerBfr.set(new Header(HeaderDef.ContentLength, Integer.toString(size)));
+				pkg.headerBfr.set(new Header(HeaderDef.ContentType, endpoint.getContentType()));
 				pkg.bodyStream.flush();
 			}
 			else {
 				pkg.responseLine = new StartLine("HTTP/1.1", "404", "Not Found");
 				pkg.responseCode = 404;
+                endpoint.servedFromMsg = "Unable to serve " + path;
 			}
 		}
 		catch (IOException e) {
@@ -806,6 +823,7 @@ public class RequestHandler implements Runnable {
 			pkg.type = HttpPackageType.RESPONSE;
 			pkg.responseLine = new StartLine("HTTP/1.1", "500", "Internal Server Error");
 			pkg.responseCode = 500;
+            endpoint.servedFromMsg = "Unable to serve " + path;
 		}
 		return pkg;
 	}
@@ -914,12 +932,14 @@ public class RequestHandler implements Runnable {
 			}
 
 			dataLC = data.toLowerCase();
+	        Header header = null;
 
 			if (pkg.type == HttpPackageType.REQUEST) {
 				// check for the Cookie header
 				pos = dataLC.indexOf(HttpPackage.COOKIE_HDR);
 				if (pos >= 0) {
 					pkg.cookiesHdr = data.substring(pos + HttpPackage.COOKIE_HDR.length()).trim();
+					header = new Header(HeaderDef.Cookie, pkg.cookiesHdr);
 				}
 				// check for header from this proxy exposing an infinite
 				// redirect
@@ -930,7 +950,8 @@ public class RequestHandler implements Runnable {
 				// check for host header
 				pos = dataLC.indexOf(HttpPackage.HOST_HDR);
  				if (pos == 0) {
-					pkg.hostHdr = data.substring(pos + HttpPackage.HOST_HDR.length()).trim();
+					pkg.hostHdr = data.substring(HttpPackage.HOST_HDR.length()).trim();
+					header = new Header(HeaderDef.Host, pkg.hostHdr);
 					int colon = pkg.hostHdr.indexOf(':');
 					String host = null;
 
@@ -950,7 +971,9 @@ public class RequestHandler implements Runnable {
 			// check for response header special handling
 			pos = dataLC.indexOf(HttpPackage.CONTENT_LNG);
 			if (pos >= 0) {
-				pkg.contentLength = Integer.parseInt(data.substring(pos + HttpPackage.CONTENT_LNG.length()).trim());
+			    String len = data.substring(pos + HttpPackage.CONTENT_LNG.length()).trim();
+				pkg.contentLength = Integer.parseInt(len);
+				header = new Header(HeaderDef.ContentLength, len);
 			}
 			pos = dataLC.indexOf(HttpPackage.LOCATION_HDR);
 			if (pos >= 0) {
@@ -963,7 +986,10 @@ public class RequestHandler implements Runnable {
 						cLog.debug("rewriting redirect from: " + redirect + " to: "
 								+ rewrite);
 					}
-					data = HttpPackage.LOCATION_HDR + " " + rewrite;
+					header = new Header(HeaderDef.Location, rewrite);
+				}
+				else {
+				    header = new Header(HeaderDef.Location, redirect);
 				}
 			}
 			pos = dataLC.indexOf(HttpPackage.SET_COOKIE_HDR);
@@ -978,11 +1004,17 @@ public class RequestHandler implements Runnable {
 						cLog.debug("rewriting cookie from: " + rawCookie + " to: "
 								+ rewrite);
 					}
-					data = HttpPackage.SET_COOKIE_HDR + " " + rewrite;
 				}
+				header = new Header(HeaderDef.SetCookie, rewrite);
+			}
+			if (header == null) {
+                int colon = data.indexOf(':');
+                String hdrName = data.substring(0, colon).trim();
+                String hdrVal = data.substring(colon+1).trim();
+			    header = new Header(hdrName, hdrVal);
 			}
 			// write the header to the buffer
-			pkg.headerBfr.append(data + CRLF);
+			pkg.headerBfr.append(header);
 		}
 	}
 

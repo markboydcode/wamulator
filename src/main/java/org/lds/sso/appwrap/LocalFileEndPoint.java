@@ -34,6 +34,8 @@ public class LocalFileEndPoint implements EndPoint {
 
 	private boolean isRelative = false;
 
+    public String servedFromMsg;
+
 	public LocalFileEndPoint(String canonicalCtx, String filePathParam, String contentType) {
 		this.canonicalContextRoot = canonicalCtx;
 		this.filePath = filePathParam;

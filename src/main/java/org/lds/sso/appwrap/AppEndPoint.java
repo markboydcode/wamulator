@@ -24,11 +24,19 @@ public class AppEndPoint implements EndPoint {
 
 	private String id = null;
 
-	public AppEndPoint(String canonicalCtx, String appCtx, String host, int port) {
+    /**
+     * If true the host header of requests will be passed as-is. When false the
+     * host header will be rewritten to the value of the endpoint host + colon +
+     * endpoint port.
+     */
+    private boolean preserveHostHeader;
+
+	public AppEndPoint(String canonicalCtx, String appCtx, String host, int port, boolean preserveHost) {
 		this.endpointPort = port;
 		this.canonicalContextRoot = canonicalCtx;
 		this.applicationContextRoot = appCtx;
 		this.host = host;
+		this.preserveHostHeader = preserveHost;
 		updateId();
 	}
 	
@@ -58,6 +66,10 @@ public class AppEndPoint implements EndPoint {
 		return id.hashCode();
 	}
 
+	public boolean preserveHostHeader() {
+	    return this.preserveHostHeader;
+	}
+	
 	public String getCanonicalContextRoot() {
 		return canonicalContextRoot;
 	}

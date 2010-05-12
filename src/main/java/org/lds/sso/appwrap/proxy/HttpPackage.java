@@ -1,6 +1,8 @@
 package org.lds.sso.appwrap.proxy;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.lds.sso.appwrap.SiteMatcher;
 
@@ -9,12 +11,14 @@ public class HttpPackage {
 	public static final String HOST_HDR = "host:";
 	public static final String CONTENT_LNG = "content-length:";
 	public static final String CONTENT_TYPE = "Content-Type:";
-	public static final String CONN_ID_HDR = "x-connId: ";
-	public static final String SHIM_HANDLED_HDR = "x-shim:";
+    public static final String CONN_ID = "X-connId";
+    public static final String CONN_ID_HDR = CONN_ID + ": ";
+    public static final String SHIM_HANDLED = "X-shim";
+    public static final String SHIM_HANDLED_HDR = SHIM_HANDLED + ":";
 	public static final String LOCATION_HDR = "location:";
 	public static final String SET_COOKIE_HDR = "set-cookie:"; // need set-cookie2?
 	
-	public StringBuffer headerBfr = new StringBuffer("");
+	public HeaderBuffer headerBfr = new HeaderBuffer();
 	public ByteArrayOutputStream bodyStream = new ByteArrayOutputStream();
 	public int responseCode = 200;
 	public int contentLength = 0;
