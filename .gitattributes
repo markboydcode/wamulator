@@ -39,6 +39,7 @@ src/main/java/org/lds/sso/appwrap/conditions/evaluator/LegacyPropsInjector.java 
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEngine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/AND.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Assignment.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/CtxMatches.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasAssignment.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasLdsAccountId.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasPosition.java -text svneol=unset#text/plain

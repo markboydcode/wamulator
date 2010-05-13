@@ -197,9 +197,14 @@ public class Service {
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
 
-        dualLog("admin-rest port : " + cfg.getConsolePort());
-        dualLog("http proxy port : " + cfg.getProxyPort());
-        dualLog("Rest Interface  : " + cfg.getRestVersion().getVersionId());
+        dualLog("admin-rest port    : " + cfg.getConsolePort());
+        dualLog("http proxy port    : " + cfg.getProxyPort());
+        dualLog("Rest Interface     : " + cfg.getRestVersion().getVersionId());
+		if (null != cfg.getGlobalHeaders()) {
+			for (NvPair pair : cfg.getGlobalHeaders()) {
+				dualLog(pair.getName() + " : " + pair.getValue());
+			}
+		}
 	}
 	
 	/**

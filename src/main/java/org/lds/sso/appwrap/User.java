@@ -13,7 +13,7 @@ import org.lds.sso.appwrap.proxy.RequestHandler;
 
 public class User {
 
-	private static final Map<String,String> defaultHeaders;
+	private static Map<String,String> defaultHeaders = new HashMap<String,String>();
 	private static final Map<String,String> defaultTokenProps;
 	
 	protected String password = null;

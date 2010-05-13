@@ -29,7 +29,7 @@ public class LogicalSyntaxEvaluationEngine {
 	 * graph of evaluators and evaluators must be thread safe so they can be shared
 	 * for evaluating policies.
 	 */
-	protected Map<String, EvaluatorUsageHolder> evaluators = new HashMap<String, EvaluatorUsageHolder>();
+	protected final Map<String, EvaluatorUsageHolder> evaluators = new HashMap<String, EvaluatorUsageHolder>();
 	
 	public LogicalSyntaxEvaluationEngine() {
 		Runnable collector = new Runnable() {
@@ -111,8 +111,9 @@ public class LogicalSyntaxEvaluationEngine {
 	 * Gets an IEvaluator for the given configuration String possibly returning
 	 * it from cache or parsing it if it has not yet been created.
 	 * 
-	 * @param syntax
-	 * @return
+	 * @param syntax the xml content of the custom rule
+	 * @return the IEvaluator object that handles the passed-in syntax
+	 * @throws EvaluationException if no evaluator is found for the syntax or if there is an error in the synatx
 	 */
 	public IEvaluator getEvaluator(String syntax) throws EvaluationException {
 		syntax = syntax.trim();
@@ -163,10 +164,7 @@ public class LogicalSyntaxEvaluationEngine {
 	 * Utility method for registering compile time dependencies on syntax 
 	 * implementation classes in a map.
 	 * 
-	 * @param hashMap
-	 * @param string
-	 * @param class1
-	 * @return
+	 * @return	the map of handlers
 	 */
 	private static Map<String, Class> getSyntax() {
 		Map<String, Class> map = new HashMap<String, Class>();
@@ -184,14 +182,15 @@ public class LogicalSyntaxEvaluationEngine {
 		add(map, OR.class);
 		add(map, NOT.class);
 		add(map, LdsAccount.class);
+		add(map, CtxMatches.class);
 
 		return map;
 	}
 	
 	/**
 	 * Convenience method making addition of supported classes simpler.
-	 * @param m
-	 * @param c
+	 * @param m	map to add the class to
+	 * @param c	class to add
 	 */
 	private static void add(Map<String, Class> m, Class c) {
 		m.put(c.getSimpleName(), c);

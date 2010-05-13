@@ -48,14 +48,14 @@ public class EntitlementsManagerTest {
         XmlConfigLoader2.load(xml);
         EntitlementsManager emgr = cfg.getEntitlementsManager();
         UserManager umgr = cfg.getUserManager();
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus", umgr.getUser("ngiwb1")));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("aaa")));
-        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("bbb")));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/list/page", umgr.getUser("aaa")));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/list/page", umgr.getUser("bbb")));
-        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/bishop/page", umgr.getUser("aaa")));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/bishop/page", umgr.getUser("bbb")));
-        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/ward/page", umgr.getUser("aaa")));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/ward/page", umgr.getUser("bbb")));
+        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus", umgr.getUser("ngiwb1"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("aaa"), null));
+        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("bbb"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/list/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/list/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/bishop/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/bishop/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/ward/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/ward/page", umgr.getUser("bbb"), null));
     }
 }

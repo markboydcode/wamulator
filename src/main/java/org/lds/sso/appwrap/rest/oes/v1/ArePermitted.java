@@ -112,7 +112,7 @@ public class ArePermitted extends RestHandlerBase {
 			    Map<String, String> ctx = getContextParams(cfg, request, t, logReqWrt);
 			    boolean allowed = false;
 			    if (isValid) { // only evaluate if token is still valid
-			        allowed = cfg.getEntitlementsManager().isAllowed(act, res, user);
+			        allowed = cfg.getEntitlementsManager().isAllowed(act, res, user, ctx);
 			    }
 			    clientOut.print(parm + "=" + allowed);
 			    clientOut.print(RequestHandler.CRLF);
