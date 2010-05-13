@@ -8,7 +8,7 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluatorContainer;
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 public class HasPosition extends SyntaxBase implements IEvaluatorContainer {
 	private List<String> cfgPositions = new ArrayList<String>();
@@ -32,8 +32,8 @@ public class HasPosition extends SyntaxBase implements IEvaluatorContainer {
 	 * @param pos
 	 */
 	private void addCfgPos(String pos) {
-		String cfgPos = LegacyPropsInjector.POSITION_HEADER_PREFIX + pos
-		+ LegacyPropsInjector.UNITS_DELIMITER;
+		String cfgPos = UserHeaderNames.POSITION_HEADER_PREFIX + pos
+		+ UserHeaderNames.UNITS_DELIMITER;
 		if (! cfgPositions.contains(cfgPos)) {
 			cfgPositions.add(cfgPos);
 		}
@@ -42,7 +42,7 @@ public class HasPosition extends SyntaxBase implements IEvaluatorContainer {
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String positions = super.getSessionValue(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY, 
+		String positions = super.getSessionValue(UserHeaderNames.POSITIONS, 
 				ctx.user);
 		if (positions == null) {
 			if (debug) {

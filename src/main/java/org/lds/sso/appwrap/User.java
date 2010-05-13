@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.proxy.Header;
 import org.lds.sso.appwrap.proxy.HeaderBuffer;
 import org.lds.sso.appwrap.proxy.RequestHandler;
@@ -30,27 +30,23 @@ public class User {
 		Map<String,String> hdr = new HashMap<String,String>(); 
 		Map<String,String> tks = new HashMap<String,String>();
 	
-		hdr.put(LegacyPropsInjector.CP_UNITS_SESSION_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CP_UNITS_SESSION_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
+		hdr.put(UserHeaderNames.UNITS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+		tks.put(UserHeaderNames.UNITS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
 		
-		hdr.put(LegacyPropsInjector.CP_STATUS_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CP_STATUS_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
+		hdr.put(UserHeaderNames.POSITIONS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+		tks.put(UserHeaderNames.POSITIONS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
 		
-		hdr.put(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CACHE_TYPE, LegacyPropsInjector.NONE);
+		hdr.put(UserHeaderNames.LDS_ACCOUNT_ID, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+		tks.put(UserHeaderNames.LDS_ACCOUNT_ID, UserHeaderNames.EMPTY_VALUE_INDICATOR);
 		
-		hdr.put(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
+		hdr.put(UserHeaderNames.DN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+		tks.put(UserHeaderNames.DN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
 		
-		hdr.put(LegacyPropsInjector.CP_DN, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CP_DN, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
+		hdr.put(UserHeaderNames.EMAIL, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+		tks.put(UserHeaderNames.EMAIL, UserHeaderNames.EMPTY_VALUE_INDICATOR);
 		
-		hdr.put(LegacyPropsInjector.CP_EMAIL, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CP_EMAIL, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		
-		hdr.put(LegacyPropsInjector.CP_LDS_MRN, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
-		tks.put(LegacyPropsInjector.CP_LDS_MRN, LegacyPropsInjector.EMPTY_VALUE_INDICATOR);
+		hdr.put(UserHeaderNames.LDS_MRN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+		tks.put(UserHeaderNames.LDS_MRN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
 		
 		defaultHeaders = hdr;
 		defaultTokenProps = tks;

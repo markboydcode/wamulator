@@ -10,7 +10,7 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluatorContainer;
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 /**
  * Evaluator implementing three equivalent syntaxes like so:
@@ -64,7 +64,7 @@ public class HasAssignment extends SyntaxBase implements IEvaluatorContainer {
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String positions = ctx.user.getProperty(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY);
+		String positions = ctx.user.getProperty(UserHeaderNames.POSITIONS);
 
 		if (positions == null) {
 			if (debug) {
@@ -72,7 +72,7 @@ public class HasAssignment extends SyntaxBase implements IEvaluatorContainer {
 			}
 			return false;
 		}
-		if (positions == LegacyPropsInjector.EMPTY_VALUE_INDICATOR) {
+		if (positions == UserHeaderNames.EMPTY_VALUE_INDICATOR) {
 			if (debug) {
 				ctx.logResult(this, false, "user does not have any assignments");
 			}
@@ -148,7 +148,7 @@ public class HasAssignment extends SyntaxBase implements IEvaluatorContainer {
 		public String id = null;
 	 	
 		public AssignmentValues(String position, String unit) {
-			this.id = position + LegacyPropsInjector.UNITS_DELIMITER + unit;
+			this.id = position + UserHeaderNames.UNITS_DELIMITER + unit;
 			this.rawPos = position;
 			this.rawUnit = unit;
 

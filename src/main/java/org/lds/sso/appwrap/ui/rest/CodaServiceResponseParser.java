@@ -7,7 +7,7 @@ import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -65,19 +65,19 @@ public class CodaServiceResponseParser implements ContentHandler{
 	 */
 	static {
 		Map<String,String> m = new HashMap<String,String>();
-		m.put("birthdate",LegacyPropsInjector.CP_BIRTH_DATE);
-		m.put("cn",LegacyPropsInjector.CP_PREFIX + "cn");
-		m.put("gender",LegacyPropsInjector.CP_GENDER);
-		m.put("givenName",LegacyPropsInjector.CP_PREFIX + "given-name");
-		m.put("individualId",LegacyPropsInjector.CP_INDIVIDUAL_ID);
-		m.put("ldsAccountId",LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY);
-		m.put("ldsMrn",LegacyPropsInjector.CP_LDS_MRN);
-		m.put("positions",LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY);
-		m.put("preferredLanguage",LegacyPropsInjector.CP_PREFIX + "preferred-language");
-		m.put("preferredName",LegacyPropsInjector.CP_PREFIX + "preferred-name");
-		m.put("sn",LegacyPropsInjector.CP_PREFIX + "sn");
-		m.put("units",LegacyPropsInjector.CP_UNITS_SESSION_PROPERTY);
-		m.put("email",LegacyPropsInjector.CP_EMAIL);
+		m.put("birthdate",UserHeaderNames.BIRTH_DATE);
+		m.put("cn",UserHeaderNames.PREFIX + "cn");
+		m.put("gender",UserHeaderNames.GENDER);
+		m.put("givenName",UserHeaderNames.PREFIX + "given-name");
+		m.put("individualId",UserHeaderNames.INDIVIDUAL_ID);
+		m.put("ldsAccountId",UserHeaderNames.LDS_ACCOUNT_ID);
+		m.put("ldsMrn",UserHeaderNames.LDS_MRN);
+		m.put("positions",UserHeaderNames.POSITIONS);
+		m.put("preferredLanguage",UserHeaderNames.PREFIX + "preferred-language");
+		m.put("preferredName",UserHeaderNames.PREFIX + "preferred-name");
+		m.put("sn",UserHeaderNames.PREFIX + "sn");
+		m.put("units",UserHeaderNames.UNITS);
+		m.put("email",UserHeaderNames.EMAIL);
 		coda2sso = m;
 	}
 	

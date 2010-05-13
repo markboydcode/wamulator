@@ -29,11 +29,11 @@ public class EntitlementsManagerTest {
             + "   </user>"
             + "   <user name='bbb' pwd='password1'>"
             + "    <sso-header name='policy-dn' value='cn=jeremy, ou=ext, o=lds'/>" // is NOT employee, is bishop
-            + "    <sso-header name='policy-positions' value='p4/7u56030/5u524735/1u791040/'/>"
-            + "    <sso-header name='policy-units' value='7u56030/5u524735/1u791040/'/>"
+            + "    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>"
+            + "    <sso-header name='policy-ldsunits' value='7u56030/5u524735/1u791040/'/>"
             + "   </user>"
             + "   <user name='ngiwb1' pwd='password1'>"
-            + "    <sso-header name='policy-positions' value='p4/7u56030/5u524735/1u791040/'/>" // bishop
+            + "    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>" // bishop
             + "   </user>"
             + "  </users>"
             + "  <sso-entitlements policy-domain='lds.org'>"

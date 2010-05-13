@@ -8,7 +8,7 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluatorContainer;
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 public class HasLdsAccountId extends SyntaxBase implements IEvaluatorContainer {
 	private List<String> cfgIds = new ArrayList<String>();
@@ -34,7 +34,7 @@ public class HasLdsAccountId extends SyntaxBase implements IEvaluatorContainer {
 
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String id = super.getSessionValue(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, 
+		String id = super.getSessionValue(UserHeaderNames.LDS_ACCOUNT_ID, 
 				ctx.user);
 		if (id == null) {
 			if (debug) {
@@ -42,7 +42,7 @@ public class HasLdsAccountId extends SyntaxBase implements IEvaluatorContainer {
 			}
 			return false; 
 		}
-		if (LegacyPropsInjector.EMPTY_VALUE_INDICATOR.equals(id)) {
+		if (UserHeaderNames.EMPTY_VALUE_INDICATOR.equals(id)) {
 			if (debug) {
 				ctx.logResult(this, false, "user id = empty");
 			}

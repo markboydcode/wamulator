@@ -8,7 +8,7 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluatorContainer;
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 /**
  * Implements support for evaluating if users are members of a unit or if they 
@@ -42,7 +42,7 @@ public class MemberOfUnit extends SyntaxBase implements IEvaluatorContainer {
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String units = super.getSessionValue(LegacyPropsInjector.CP_UNITS_SESSION_PROPERTY, 
+		String units = super.getSessionValue(UserHeaderNames.UNITS, 
 				ctx.user);
 		if (units == null) {
 			if (debug) {
@@ -50,7 +50,7 @@ public class MemberOfUnit extends SyntaxBase implements IEvaluatorContainer {
 			}
 			return false;
 		}
-		if (units == LegacyPropsInjector.EMPTY_VALUE_INDICATOR) {
+		if (units == UserHeaderNames.EMPTY_VALUE_INDICATOR) {
 			if (debug) {
 				ctx.logResult(this, false, "user is not a member of any unit");
 			}
@@ -81,9 +81,9 @@ public class MemberOfUnit extends SyntaxBase implements IEvaluatorContainer {
 		 * using the unitInPattern variable of the Values object.
 		 */
 		String unitsOfAssignment = null;
-		unitsOfAssignment = ctx.user.getProperty(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY);
+		unitsOfAssignment = ctx.user.getProperty(UserHeaderNames.POSITIONS);
 		
-		if (unitsOfAssignment != null && !unitsOfAssignment.equals(LegacyPropsInjector.EMPTY_VALUE_INDICATOR)) {
+		if (unitsOfAssignment != null && !unitsOfAssignment.equals(UserHeaderNames.EMPTY_VALUE_INDICATOR)) {
 			for (Values cfgUnit : cfgUnits) {
 				if (unitsOfAssignment.contains(cfgUnit.unitPattern)) {
 					if (debug) {
@@ -127,8 +127,8 @@ public class MemberOfUnit extends SyntaxBase implements IEvaluatorContainer {
 	        // where the first number if the unit type id and the second is the
 	        // unit number.
 	    	rawUnit = unitId;
-			unitPattern = LegacyPropsInjector.UNIT_PREFIX + unitId 
-				+ LegacyPropsInjector.UNITS_DELIMITER;
+			unitPattern = UserHeaderNames.UNIT_PREFIX + unitId 
+				+ UserHeaderNames.UNITS_DELIMITER;
 		}
 
 		@Override

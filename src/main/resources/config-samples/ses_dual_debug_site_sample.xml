@@ -8,7 +8,7 @@
  
  -->
  
-<?alias rest-port=1776?>
+<?alias rest-port=1799?>
 <?alias console-port={{rest-port}}?>
 <?alias http-port=80?>
 

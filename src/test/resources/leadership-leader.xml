@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    Leverages sso app wrap shim (SAWS) provided login page.
+    
+    Processing supports aliases with processing instructions of form name=value
+    and for each string value read thereafter replaces any occurrence of 
+    {{name}} with the specified value in the alias declaration.
+-->
+
+<?alias rest-port=1776?>
+<?alias console-port={{rest-port}}?>
+<?alias http-port=80?>
+
+<?alias is-cdol=conditions/is-cdol.xml?> 
+<?alias is-dcapp=conditions/is-dcapp.xml?> 
+<?alias is-user=conditions/is-user.xml?> 
+
+<!-- 
+    Defines the configuration for the app wrap shim. The console-port is the
+    port on which the console will be found and the rest api resides. The proxy
+    port is the port that should be set as the browser's http proxy.
+-->
+<config proxy-port="{{http-port}}" console-port="{{console-port}}" rest-version="CD-OESv1">
+
+    <sso-cookie name="ObSSOCookie" domain=".lds.org"/>
+    <sso-sign-in-url value="http://labs-local.lds.org:{{http-port}}/admin/selectUser.jsp"/>
+	<sso-header name="policy-service-url" value="http://127.0.0.1:{{rest-port}}/rest/oes/"/>    
+    <sso-header name="connection" value="close"/>
+
+    <sso-traffic>
+    
+        <by-site host="labs-local.lds.org" port="{{http-port}}">
+        	<cctx-mapping
+cctx="/resttrf/*"
+thost="127.0.0.1"
+tport="{{rest-port}}"
+tpath="/rest/*"/>
+<unenforced cpath="/resttrf/*"/>
+<unenforced cpath="/resttrf/*?*"/>
+        	
+        
+            <cctx-mapping cctx="/directory*" thost="127.0.0.1" tport="8080" tpath="/directory*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/directory/*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/directory/*?*"/>
+            <cctx-mapping cctx="/calendar*" thost="127.0.0.1" tport="8080" tpath="/calendar*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/calendar/*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/calendar/*?*"/>
+            <cctx-mapping cctx="/leader*" thost="127.0.0.1" tport="8080" tpath="/leader*"/>
+            <allow action="GET,POST" cpath="/leader/*"/>
+            <allow action="GET,POST" cpath="/leader/*?*"/>
+
+            <cctx-mapping cctx="/admin*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin*"/>
+            <unenforced cpath="/admin/*"/>
+            <unenforced cpath="/admin/*?*"/>
+            <cctx-mapping cctx="/ui/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/ui/*"/>
+            <unenforced cpath="/ui/*"/>
+            <unenforced cpath="/ui/*?*"/>
+        </by-site>
+         <by-resource uri="https://cdol-test.lds.org/cdol/security/sso/login.jsf" allow="GET" condition="{{is-cdol}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/sso/landing.jsf" allow="GET" condition="{{is-cdol}}"/>
+         <by-resource uri="http://labs-local.lds.org/mls/cr/index.jsf" allow="GET" condition="{{is-cdol}}"/>
+         <by-resource uri="http://labs-local.lds.org/mls/mbr/ail.jsf" allow="GET" condition="{{is-cdol}}"/>
+	 <by-resource uri="http://labs-local.lds.org/leader/navigation/gems.jsf" allow="GET" condition="{{is-cdol}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/links/tools.jsf" allow="GET" condition="{{is-cdol}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/links/welfare.jsf" allow="GET" condition="{{is-cdol}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/links/instruction.jsf" allow="GET" condition="{{is-cdol}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/links/reports.jsf" allow="GET" condition="{{is-dcapp}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/navigation/recommends.jsf" allow="GET" condition="{{is-dcapp}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/navigation/missionaries.jsf" allow="GET" condition="{{is-dcapp}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/navigation/focus.jsf" allow="GET" condition="{{is-dcapp}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/navigation/missionary-couples.jsf" allow="GET" condition="{{is-dcapp}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/navigation/missionary-notserved.jsf" allow="GET" condition="{{is-dcapp}}"/>
+         <by-resource uri="http://labs-local.lds.org/leader/navigation/youth-list.jsf" allow="GET" condition="{{is-dcapp}}"/>
+	 <rewrite-redirect from="/leader/" to="/leader/" />
+	 <rewrite-redirect from="http://labs-local.lds.org/leader/" to="http://labs-local.lds.org/leader/"/>
+	 <rewrite-cookie from-path="/leader" to-path="/leader" />
+    </sso-traffic>
+    <sso-entitlements policy-domain="lds.org">
+		<allow action="GET" urn="/leader/focus" condition="{{is-cdol}}"/>
+	</sso-entitlements>
+    
+    <!-- 
+        The set of defined users, headers injected per user, and urls allowed 
+        by each user url access permissions 
+    -->
+    <users session-timeout-seconds="1200">
+        <user name="ngiwc4" pwd="password1">
+            <sso-header name="policy-birthdate" value="1980-03-31"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Perry Holder"/>
+            <sso-header name="policy-sn" value="Holder"/>
+            <sso-header name="policy-lds-mrn" value="0520000133519"/>
+            <sso-header name="policy-lds-account-id" value="11"/>
+            <sso-header name="policy-units" value="7u56030/5u524735/1u791040"/>
+            <sso-header name="policy-positions" value="p57/7u56030/5u524735/1u791040"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="larteaga" pwd="password1">
+            <sso-header name="policy-birthdate" value="1963-02-18"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Lawerence Arteaga"/>
+            <sso-header name="policy-sn" value="Arteaga"/>
+            <sso-header name="policy-lds-mrn" value="0098506515987"/>
+            <sso-header name="policy-lds-account-id" value="12"/>
+            <sso-header name="policy-units" value="7u555005/5u555001/1u555000"/>
+            <sso-header name="policy-positions" value="p4/7u555005/5u555001/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="sarriaga" pwd="password1">
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Selena Arriaga"/>
+            <sso-header name="policy-sn" value="Arriaga"/>
+            <sso-header name="policy-lds-mrn" value="0087705260375"/>
+            <sso-header name="policy-lds-account-id" value="13"/>
+            <sso-header name="policy-units" value="7u555005/5u555001/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="tabraham" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Terence Abraham"/>
+            <sso-header name="policy-sn" value="Abraham"/>
+            <sso-header name="policy-lds-mrn" value="8890108266981"/>
+            <sso-header name="policy-lds-account-id" value="14"/>
+            <sso-header name="policy-units" value="7u555009/5u555001/1u555000"/>
+            <sso-header name="policy-positions" value="p1/5u555001/1u555000/p52/5u555001/1u555000/p4/7u555009/5u555001/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="fadam" pwd="password1">
+            <sso-header name="policy-birthdate" value="1973-09-03"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Fredrick Admam"/>
+            <sso-header name="policy-sn" value="Adam"/>
+            <sso-header name="policy-lds-mrn" value="8898288168436"/>
+            <sso-header name="policy-lds-account-id" value="15"/>
+            <sso-header name="policy-units" value="7u555196/5u555199/1u555000"/>
+            <sso-header name="policy-positions" value="p4/7u555196/5u555199/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="rqueen" pwd="password1">
+            <sso-header name="policy-birthdate" value="1984-12-23"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Ralph Queen"/>
+            <sso-header name="policy-sn" value="Queen"/>
+            <sso-header name="policy-lds-mrn" value="0001412545743"/>
+            <sso-header name="policy-lds-account-id" value="16"/>
+            <sso-header name="policy-units" value="7u555005/5u555001/1u555000"/>
+            <sso-header name="policy-positions" value="p58/7u555005/5u555001/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="maiken" pwd="password1">
+            <sso-header name="policy-birthdate" value="1962-08-01"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Mario Aiken"/>
+            <sso-header name="policy-sn" value="Aiken"/>
+            <sso-header name="policy-lds-mrn" value="8892820208363"/>
+            <sso-header name="policy-lds-account-id" value="17"/>
+            <sso-header name="policy-units" value="7u555048/5u555047/1u555000"/>
+            <sso-header name="policy-positions" value="p57/7u555048/5u555047/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="ngisc1" pwd="password1">
+            <sso-header name="policy-birthdate" value="1962-08-01"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="NgiSC1First NgiSC1Last"/>
+            <sso-header name="policy-sn" value="NgiSC1Last"/>
+            <sso-header name="policy-lds-mrn" value="0520000671707"/>
+            <sso-header name="policy-lds-account-id" value="3431968359712660"/>
+            <sso-header name="policy-units" value="7u258598/5u524735/1u791040"/>
+            <sso-header name="policy-positions" value="p52/5u524735/1u791040"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="SpanishForkWestStakeStakePresident" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241/5u510386/1u555000"/>
+            <sso-header name="policy-positions" value="p1/7u155241/5u510386/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="SpanishFork19thWardBishop" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Hill, Gerald"/>
+            <sso-header name="policy-sn" value="Hill"/>
+            <sso-header name="policy-lds-mrn" value="0000010663460"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="7u129631/5u510386/1u555000"/>
+            <sso-header name="policy-positions" value="p4/7u129631/5u510386/1u555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+        </user>
+        <user name="ngiwb1" pwd="password1">
+            <sso-header name="policy-sn" value="Kitara"/>
+            <sso-header name="policy-lds-mrn" value="0520000134851u"/>
+            <sso-header name="policy-positions" value="p4/7u56030/5u524735/1u791040/"/>
+            <sso-header name="policy-units" value="7u56030/5u524735/1u791040/"/>
+            <sso-header name="policy-lds-account-id" value="3431968674741880"/>
+            <sso-header name="policy-birthdate" value="1960-09-25"/>
+            <sso-header name="policy-email" value="ngiwb1@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Kitara, Sam"/>
+        </user>
+    </users>
+</config>

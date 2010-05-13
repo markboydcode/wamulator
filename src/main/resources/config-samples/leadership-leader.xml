@@ -1,0 +1,329 @@
+
+<!-- 
+    Leverages sso app wrap shim (SAWS) provided login page.
+    
+    Processing supports aliases with processing instructions of form name=value
+    and for each string value read thereafter replaces any occurrence of 
+    {{name}} with the specified value in the alias declaration.
+-->
+
+<?alias rest-port=1776?>
+<?alias console-port={{rest-port}}?>
+<?alias http-port=80?>
+
+<!-- 
+    Defines the configuration for the app wrap shim. The console-port is the
+    port on which the console will be found and the rest api resides. The proxy
+    port is the port that should be set as the browser's http proxy.
+-->
+<config proxy-port="{{http-port}}" console-port="{{console-port}}" allow-non-sso-traffic='false' rest-version='CD-OESv1'>
+    <sso-cookie name="lds-policy" domain=".lds.org"/>
+    <sso-sign-in-url value="http://local.lds.org:{{http-port}}/admin/selectUser.jsp"/>
+    <sso-header name="policy-service-url" value="http://local.lds.org:{{rest-port}}/rest/oes/1"/>
+    <sso-header name="connection" value="close"/>
+
+    <sso-traffic>
+        <by-site host="local.lds.org" port="{{http-port}}">
+            <cctx-mapping cctx="/mltest*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
+            <unenforced cpath="/mltest*"/>
+            <unenforced cpath="/mltest*?*"/>
+        
+            <cctx-file cctx="/church-calendar/services/lucrs/evt/0/*" 
+            file="classpath:config-samples/ngiwb1-cal-data.json"  
+                content-type="application/json"/>
+<!--            file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
+<!--            file="classpath:config-samples/ngiwb1-cal-data.json"   or file path could be classpath path -->
+ 
+            <cctx-file cctx="/church-calendar/services/lucrs/cal/subscribed*" 
+            file="classpath:config-samples/ngiwb1-cal-sub.json"  
+                content-type="application/json"/>
+            <unenforced cpath="/church-calendar/*"/>
+
+            <cctx-file cctx="/mls/mbr/styles/modal.css*" file="classpath:mls-mbr-modal.css" content-type="text/css"/>
+            <cctx-file cctx="/mls/mbr/scripts/member-record-modal.js*" file="classpath:member-record-modal.js" content-type="text/javascript"/>
+            <unenforced cpath="/mls/mbr/*"/>
+
+            <cctx-mapping cctx="/directory*" thost="127.0.0.1" tport="8080" tpath="/directory*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/directory/*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/directory/*?*"/>
+            <cctx-mapping cctx="/calendar*" thost="127.0.0.1" tport="8080" tpath="/calendar*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/calendar/*"/>
+            <allow action="GET,POST,PUT,DELETE" cpath="/calendar/*?*"/>
+            <cctx-mapping cctx="/leader*" thost="127.0.0.1" tport="8080" tpath="/leader*"/>
+            <allow action="GET,POST" cpath="/leader/*"/>
+            <allow action="GET,POST" cpath="/leader/*?*"/>
+
+            <cctx-mapping cctx="/admin*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin*"/>
+            <unenforced cpath="/admin/*"/>
+            <unenforced cpath="/admin/*?*"/>
+            <cctx-mapping cctx="/ui/*" thost="127.0.0.1" tport="{{console-port}}" tpath="/ui/*"/>
+            <unenforced cpath="/ui/*"/>
+            <unenforced cpath="/ui/*?*"/>
+        </by-site>  
+                 <rewrite-redirect from="/leader/" to="/leader/" />
+                 <rewrite-redirect from="http://local.lds.org/leader/" to="http://local.lds.org/leader/"/>
+                 <rewrite-cookie from-path="/leader" to-path="/leader" />
+    </sso-traffic>
+    <sso-entitlements policy-domain="lds.org">
+            <allow action="GET,POST,PUT,DELETE" urn="/directory/*" condition=""/>
+    </sso-entitlements>
+    <sso-entitlements policy-domain="mormon.org">
+            <allow action="GET,POST,PUT,DELETE" urn="/chat/*" condition=""/>
+    </sso-entitlements>
+    <!-- 
+        The set of defined users, headers injected per user, and urls allowed 
+        by each user url access permissions 
+    -->
+    <users session-timeout-seconds="1200">
+        <user name="jeremy" pwd="password1">
+            <sso-header name="policy-birthdate" value="1963-02-18"/>
+            <sso-header name="policy-email" value="admin@localhost"/>
+            <sso-header name="policy-preferred-name" value="Lawerence jeremy"/>
+            <sso-header name="policy-sn" value="jeremy"/>
+            <sso-header name="policy-lds-mrn" value="0000004306600"/>
+            <sso-header name="policy-lds-account-id" value="12"/>
+            <sso-header name="policy-units" value="W477397:S482277:A555000"/>
+            <sso-header name="policy-positions" value="P4:W477397:S482277:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="1839176289"/>
+        </user>
+        <user name="SpanishForkWestMissionMissionPresident" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P9:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="3375657388"/>
+        </user>
+        <user name="SpanishForkWestStakeStakePresident" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P1:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="3375657388"/>
+        </user>
+        <user name="SpanishForkWestStakeStakeClerk" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P52:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="3375657388"/>
+        </user>
+        <user name="SpanishForkWestStakeStakeExecSect" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P51:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="3375657388"/>
+        </user>
+        <user name="SpanishForkWestDistrictDistrictPresident" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P5:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="3375657388"/>
+        </user>
+        <user name="SpanishForkWestDistrictDistrictClerk" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P68:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="3375657388"/>
+        </user>
+        <user name="SpanishForkWestDistrictDistrictExecSect" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Shepard, Chris"/>
+            <sso-header name="policy-sn" value="Shepard"/>
+            <sso-header name="policy-cn" value="Shapardcb"/>
+            <sso-header name="policy-given-name" value="Chris Bud"/>
+            <sso-header name="policy-lds-mrn" value="0000017863570"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="155241:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P70:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="3375657388"/>
+        </user>
+        <user name="SpanishFork19thWardBishop" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Hill, Gerald"/>
+            <sso-header name="policy-sn" value="Hill"/>
+            <sso-header name="policy-given-name" value="Gerald"/>
+            <sso-header name="policy-lds-mrn" value="0000010663460"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="W129631:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P4:W129631:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="2310507095"/>
+        </user>
+        <user name="SpanishFork19thWardClerk" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Hill, Gerald"/>
+            <sso-header name="policy-sn" value="Hill"/>
+            <sso-header name="policy-given-name" value="Gerald"/>
+            <sso-header name="policy-lds-mrn" value="0000010663460"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="W129631:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P57:W129631:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="2310507095"/>
+        </user>
+        <user name="SpanishFork19thWardExecSect" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Hill, Gerald"/>
+            <sso-header name="policy-sn" value="Hill"/>
+            <sso-header name="policy-given-name" value="Gerald"/>
+            <sso-header name="policy-lds-mrn" value="0000010663460"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="W129631:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P56:W129631:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="2310507095"/>
+        </user>
+        <user name="SpanishFork19thBranchPresident" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Hill, Gerald"/>
+            <sso-header name="policy-sn" value="Hill"/>
+            <sso-header name="policy-given-name" value="Gerald"/>
+            <sso-header name="policy-lds-mrn" value="0000010663460"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="W129631:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P12:W129631:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="2310507095"/>
+        </user>
+        <user name="SpanishFork19thBranchClerk" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Hill, Gerald"/>
+            <sso-header name="policy-sn" value="Hill"/>
+            <sso-header name="policy-given-name" value="Gerald"/>
+            <sso-header name="policy-lds-mrn" value="0000010663460"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="W129631:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P789:W129631:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="2310507095"/>
+        </user>
+        <user name="SpanishFork19thBranchExecSect" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Hill, Gerald"/>
+            <sso-header name="policy-sn" value="Hill"/>
+            <sso-header name="policy-given-name" value="Gerald"/>
+            <sso-header name="policy-lds-mrn" value="0000010663460"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="W129631:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P1278:W129631:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="2310507095"/>
+        </user>
+        <user name="MarlinBenson" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-01-01"/>
+            <sso-header name="policy-email" value="mbenson@ldschurch.org"/>
+            <sso-header name="policy-preferred-name" value="Benson, Marlin"/>
+            <sso-header name="policy-sn" value="Benson"/>
+            <sso-header name="policy-lds-mrn" value="0000013615130"/>
+            <sso-header name="policy-lds-account-id" value="24"/>
+            <sso-header name="policy-units" value="W257311:S516058:A790117"/>
+            <sso-header name="policy-positions" value="P4:W257311:S516058:A790117"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="670143539"/>
+        </user>
+        <user name="stan" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-01-01"/>
+            <sso-header name="policy-email" value="williamsgs@ldschurch.org"/>
+            <sso-header name="policy-preferred-name" value="Williams, Stan"/>
+            <sso-header name="policy-sn" value="Williams"/>
+            <sso-header name="policy-lds-mrn" value="0000021274436"/>
+            <sso-header name="policy-lds-account-id" value="25"/>
+            <sso-header name="policy-units" value="W129631:S510386:A790117"/>
+            <sso-header name="policy-positions" value="P4:W129631:S510386:A790117"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="4281525310"/>
+        </user>
+        <user name="TonyBishop" pwd="password1">
+            <sso-header name="policy-birthdate" value="1955-09-27"/>
+            <sso-header name="policy-email" value="sf19b@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Perkins, Tony"/>
+            <sso-header name="policy-sn" value="Perkins"/>
+            <sso-header name="policy-given-name" value="Tony"/>
+            <sso-header name="policy-lds-mrn" value="0000001058436"/>
+            <sso-header name="policy-lds-account-id" value="19"/>
+            <sso-header name="policy-units" value="W229245:S510386:A555000"/>
+            <sso-header name="policy-positions" value="P4:W229245:S510386:A555000"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="1870729606"/>
+        </user>
+        <user name="ngiwb1" pwd="password1">
+            <sso-header name="policy-sn" value="ngiWB1LastName"/>
+            <sso-header name="policy-lds-mrn" value="052000013485A"/>
+            <sso-header name="policy-positions" value="P4:W56030:S524735:A791040"/>
+            <sso-header name="policy-units" value="W56030:S524735:A791040"/>
+            <sso-header name="policy-lds-account-id" value="3431968674741880"/>
+            <sso-header name="policy-birthdate" value="1960-09-25"/>
+            <sso-header name="policy-email" value="photo-editor@youth-approval.com"/>
+            <sso-header name="policy-preferred-name" value="Sam Kitara"/>
+            <sso-header name="policy-individual-id" value="17661222848"/>
+        </user>
+        <user name="KellyStakePresident" pwd="password1">
+            <sso-header name="policy-birthdate" value="1966-10-18"/>
+            <sso-header name="policy-email" value="sfwsp@localhost.com"/>
+            <sso-header name="policy-preferred-name" value="Nornam, Kelly"/>
+            <sso-header name="policy-sn" value="Nornam"/>
+            <sso-header name="policy-cn" value="NornamKR"/>
+            <sso-header name="policy-given-name" value="Kelly"/>
+            <sso-header name="policy-lds-mrn" value="0000008700117"/>
+            <sso-header name="policy-lds-account-id" value="18"/>
+            <sso-header name="policy-units" value="195391:S462373:A790117"/>
+            <sso-header name="policy-positions" value="P1:S462373:A790117"/>
+            <sso-header name="policy-preferred-language" value="en"/>
+            <sso-header name="policy-individual-id" value="1090478271"/>
+        </user>
+    </users>
+</config>

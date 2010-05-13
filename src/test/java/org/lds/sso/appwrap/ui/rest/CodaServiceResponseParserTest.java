@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -27,18 +27,18 @@ public class CodaServiceResponseParserTest {
 		String content = loadTestContent("CodaServiceResponseParserTest-good.txt");
 		CodaServiceResponseParser parser = new CodaServiceResponseParser(content);
 		Map<String, String> m = parser.getValues();
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_BIRTH_DATE), "1980-03-31");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_PREFIX + "cn"), "pholder");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_GENDER), "M");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_PREFIX + "given-name"), "Perry");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_INDIVIDUAL_ID), "0083419004078");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY), "1");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_LDS_MRN), "0083419004078");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY), "P57:W555005:S555001:A555000");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_PREFIX + "preferred-language"), "en");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_PREFIX + "preferred-name"), "Perry Holder");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_PREFIX + "sn"), "Holder");
-		Assert.assertEquals(m.get(LegacyPropsInjector.CP_UNITS_SESSION_PROPERTY), "W555005:S555001:A555000");
+		Assert.assertEquals(m.get(UserHeaderNames.BIRTH_DATE), "1980-03-31");
+		Assert.assertEquals(m.get(UserHeaderNames.PREFIX + "cn"), "pholder");
+		Assert.assertEquals(m.get(UserHeaderNames.GENDER), "M");
+		Assert.assertEquals(m.get(UserHeaderNames.PREFIX + "given-name"), "Perry");
+		Assert.assertEquals(m.get(UserHeaderNames.INDIVIDUAL_ID), "0083419004078");
+		Assert.assertEquals(m.get(UserHeaderNames.LDS_ACCOUNT_ID), "1");
+		Assert.assertEquals(m.get(UserHeaderNames.LDS_MRN), "0083419004078");
+		Assert.assertEquals(m.get(UserHeaderNames.POSITIONS), "P57:W555005:S555001:A555000");
+		Assert.assertEquals(m.get(UserHeaderNames.PREFIX + "preferred-language"), "en");
+		Assert.assertEquals(m.get(UserHeaderNames.PREFIX + "preferred-name"), "Perry Holder");
+		Assert.assertEquals(m.get(UserHeaderNames.PREFIX + "sn"), "Holder");
+		Assert.assertEquals(m.get(UserHeaderNames.UNITS), "W555005:S555001:A555000");
 	}
 
 	@Test

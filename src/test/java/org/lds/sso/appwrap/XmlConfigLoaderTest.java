@@ -5,7 +5,7 @@ import java.io.FileWriter;
 
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler; 
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -613,7 +613,7 @@ public class XmlConfigLoaderTest {
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
 		User bish = new User("bish", "bish"); 
-		bish.addHeader(LegacyPropsInjector.CP_POSITIONS_SESSION_PROPERTY, "p4/7u100/5u200/6u300/"); // 4 is a bishop
+		bish.addHeader(UserHeaderNames.POSITIONS, "p4/7u100/5u200/6u300/"); // 4 is a bishop
 		User user = new User("user", "user"); 
 
 		String uri = "app://labs-local.lds.org/auth/_app/debug";
@@ -635,9 +635,9 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+        u1234.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1234");
         User user = new User("user", "user"); 
-        user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+        user.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1000");
 
         String uri = "app://labs-local.lds.org/auth/_app/debug";
         Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
@@ -668,9 +668,9 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+        u1234.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1234");
         User user = new User("user", "user"); 
-        user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+        user.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1000");
 
         String uri = "app://labs-local.lds.org/auth/_app/debug";
         Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
@@ -691,9 +691,9 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1234");
+        u1234.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1234");
         User user = new User("user", "user"); 
-        user.addHeader(LegacyPropsInjector.CP_LDS_ACCOUNT_ID_PROPERTY, "1000");
+        user.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1000");
 
         String uri = "app://labs-local.lds.org/auth/_app/debug";
         boolean u12134Answer = tman.isPermitted("POST", uri, u1234); 

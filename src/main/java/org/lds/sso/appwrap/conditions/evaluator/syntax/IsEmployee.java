@@ -2,14 +2,14 @@ package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 public class IsEmployee extends SyntaxBase {
 
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String dn = super.getSessionValue(LegacyPropsInjector.CP_DN, ctx.user);
+		String dn = super.getSessionValue(UserHeaderNames.DN, ctx.user);
 		if (dn == null) {
 			if (debug) {
 				ctx.logResult(this, false, "dn not in session");

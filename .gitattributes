@@ -1,6 +1,7 @@
 * text=auto !eol
 /AllUnitTests.xml -text svneol=unset#text/plain
 /commandline.sh.example -text
+/file-has-lds-account-1234-test.xml -text svneol=unset#text/plain
 /mvn-ctl.sh -text
 /mvn.sh -text
 /pom.xml -text svneol=unset#text/plain
@@ -35,8 +36,8 @@ src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContext.java -t
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/IEvaluator.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/IEvaluatorContainer.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/conditions/evaluator/LegacyPropsInjector.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEngine.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/UserHeaderNames.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/AND.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Assignment.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/CtxMatches.java -text
@@ -88,6 +89,9 @@ src/main/java/org/lds/sso/appwrap/ui/rest/TrafficRecordingHandler.java -text svn
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
 src/main/resources/config-samples/leader.xml -text svneol=unset#text/plain
+src/main/resources/config-samples/leadership-leader.out.xml -text svneol=unset#text/plain
+src/main/resources/config-samples/leadership-leader.xml -text svneol=unset#text/plain
+src/main/resources/config-samples/ml-client-lib-tests.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/mlAuth_mlError_sample.xml -text
 src/main/resources/config-samples/ngiwb1-cal-data.json -text
 src/main/resources/config-samples/ses_console_with_users_sample.xml -text
@@ -97,6 +101,7 @@ src/main/resources/config-samples/ses_file_serving_sample.xml -text svneol=unset
 src/main/resources/config-samples/ses_login_sample.xml -text
 src/main/resources/config-samples/ses_login_sample_condition_test.xml -text
 src/main/resources/config-samples/ses_login_sample_non_site_coda.xml -text svneol=unset#text/plain
+src/main/resources/config-samples/tech-lds-org.xml -text svneol=unset#text/plain
 src/main/resources/local-config.xml -text svneol=unset#text/plain
 src/main/resources/local-config2.xml -text svneol=unset#text/plain
 src/main/resources/log4j.properties -text svneol=unset#text/plain
@@ -142,3 +147,4 @@ src/test/resources/is-field-mod.xml -text svneol=unset#text/plain
 src/test/resources/is-hq-mod.xml -text svneol=unset#text/plain
 src/test/resources/is-ip-mod.xml -text svneol=unset#text/plain
 src/test/resources/is-photo-ed.xml -text svneol=unset#text/plain
+src/test/resources/leadership-leader.xml -text svneol=unset#text/plain

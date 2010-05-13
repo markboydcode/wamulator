@@ -21,7 +21,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.UserManager;
-import org.lds.sso.appwrap.conditions.evaluator.LegacyPropsInjector;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 import org.lds.sso.appwrap.User;
@@ -228,7 +228,7 @@ public class SelectUserHandler extends RestHandlerBase {
                 // add user if found in cmis, or redirect back to sign-in if failed
                 // ie: redirectTarget = referer plus error message via query param
                 uman.setUser(name, "n/a");
-                userAtts.put(LegacyPropsInjector.CP_STATUS_PROPERTY, "200-coda user atts retrieved");
+                userAtts.put("policy-coda-status", "200-coda user atts retrieved");
                 for (Iterator<Map.Entry<String, String>> itr = userAtts.entrySet().iterator(); itr.hasNext();) {
                     Map.Entry<String, String> ent = itr.next();
                     uman.addHeaderForLastUserAdded(ent.getKey(), ent.getValue());
