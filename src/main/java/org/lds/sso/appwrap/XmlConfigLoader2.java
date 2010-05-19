@@ -489,6 +489,9 @@ public class XmlConfigLoader2 {
 			else if (path.matches("/config/users/user/sso-header")) {
 				String hdrNm = getStringAtt("name", path, atts);
 				String hdrVl = getStringAtt("value", path, atts);
+				if (hdrNm.equals("policy-ldspositions")) {
+				    System.out.println(">>> parsed sso-header policy-ldspositions with value: '" + hdrVl + "'");
+				}
 				cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
 			}
 			else if (path.matches("/config/sso-traffic/rewrite-redirect")) {

@@ -80,6 +80,7 @@ public class User {
 	}
 
 	public void addHeader(String name, String value) {
+	    System.out.println(">>> for user '" + username + "' adding hdr '" + name + "' with value '" + value + "'");
 		this.headers.remove(name);
 		this.headers.put(name, value);
 	}
