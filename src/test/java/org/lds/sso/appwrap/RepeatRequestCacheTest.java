@@ -16,66 +16,68 @@ import org.testng.annotations.Test;
  */
 public class RepeatRequestCacheTest {
 	
-	@Test
-	public void testRepeatDetected() {
-		Config c = new Config() {
-			@Override
-			protected void startRepeatRequestRecordSweeper() {
-				setMaxRepeatCount(3);
-				setMinReqOccRepeatMillis(1000);
-				setRepeatRecordSweeperSleepPeriod(3000); // <-- this is what we are testing
-				super.startRepeatRequestRecordSweeper();
-			}
-		};
-		c.setMaxRepeatCount(3);
-		c.setMinReqOccRepeatMillis(1000);
-		RequestHandler handler = new RequestHandler(null, c, "id");
-
-		HttpPackage pkg = new HttpPackage();
-		StartLine sl = new StartLine("GET", "path", "HTTP1.1");
-		pkg.requestLine = sl;
-		pkg.host = "host";
-		pkg.port = 100;
-		pkg.path = sl.getUri();
-		
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Assert.assertTrue(handler.responseThreasholdExceeded(pkg));
-		c.stopRepeatRequestRecordSweeper();
-	}
-	
-	@Test
-	public void testRepeatNotDetected() throws InterruptedException {
-		Config c = new Config() {
-			@Override
-			protected void startRepeatRequestRecordSweeper() {
-				setMaxRepeatCount(3);
-				setMinReqOccRepeatMillis(300);
-				super.startRepeatRequestRecordSweeper();
-			}
-		};
-		RequestHandler handler = new RequestHandler(null, c, "id");
-
-		HttpPackage pkg = new HttpPackage();
-		StartLine sl = new StartLine("GET", "path", "HTTP1.1");
-		pkg.requestLine = sl;
-		pkg.host = "host";
-		pkg.port = 100;
-		pkg.path = sl.getUri();
-
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Thread.sleep(500); // since exceeds watch-window count should be reset
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
-		// now threshold should show as exceeded.
-		Assert.assertTrue(handler.responseThreasholdExceeded(pkg));
-
-		c.stopRepeatRequestRecordSweeper();
-	}
+// #CRN# I'm commenting this out because the infinite redirect detection has been temporarily commented-out.				
+// #CRN# This will be in a version of the simulator that no one but Gerardo will get.
+//	@Test
+//	public void testRepeatDetected() {
+//		Config c = new Config() {
+//			@Override
+//			protected void startRepeatRequestRecordSweeper() {
+//				setMaxRepeatCount(3);
+//				setMinReqOccRepeatMillis(1000);
+//				setRepeatRecordSweeperSleepPeriod(3000); // <-- this is what we are testing
+//				super.startRepeatRequestRecordSweeper();
+//			}
+//		};
+//		c.setMaxRepeatCount(3);
+//		c.setMinReqOccRepeatMillis(1000);
+//		RequestHandler handler = new RequestHandler(null, c, "id");
+//
+//		HttpPackage pkg = new HttpPackage();
+//		StartLine sl = new StartLine("GET", "path", "HTTP1.1");
+//		pkg.requestLine = sl;
+//		pkg.host = "host";
+//		pkg.port = 100;
+//		pkg.path = sl.getUri();
+//		
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Assert.assertTrue(handler.responseThreasholdExceeded(pkg));
+//		c.stopRepeatRequestRecordSweeper();
+//	}
+//	
+//	@Test
+//	public void testRepeatNotDetected() throws InterruptedException {
+//		Config c = new Config() {
+//			@Override
+//			protected void startRepeatRequestRecordSweeper() {
+//				setMaxRepeatCount(3);
+//				setMinReqOccRepeatMillis(300);
+//				super.startRepeatRequestRecordSweeper();
+//			}
+//		};
+//		RequestHandler handler = new RequestHandler(null, c, "id");
+//
+//		HttpPackage pkg = new HttpPackage();
+//		StartLine sl = new StartLine("GET", "path", "HTTP1.1");
+//		pkg.requestLine = sl;
+//		pkg.host = "host";
+//		pkg.port = 100;
+//		pkg.path = sl.getUri();
+//
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Thread.sleep(500); // since exceeds watch-window count should be reset
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		Assert.assertFalse(handler.responseThreasholdExceeded(pkg));
+//		// now threshold should show as exceeded.
+//		Assert.assertTrue(handler.responseThreasholdExceeded(pkg));
+//
+//		c.stopRepeatRequestRecordSweeper();
+//	}
 
 	@Test
 	public void validateSweepRemoves() throws InterruptedException {

@@ -457,36 +457,38 @@ public class RequestHandler implements Runnable {
 	 * @return
 	 */
 	public boolean responseThreasholdExceeded(HttpPackage reqPkg) {
-		String reqUri = reqPkg.requestLine.getUri();
-		AllowedUri uri = new AllowedUri(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query,
-				new String[] { reqPkg.requestLine.getMethod() });
-
-		Config.RepeatRecord record = cfg.getRepeatRequestRecord(uri);
-		if (record == null) {
-			record = new Config.RepeatRecord();
-			record.millisOfLastCall = System.currentTimeMillis();
-			record.repeatCount++;
-			cfg.addRepeatRequestRecord(uri, record);
-		}
-		else {
-			record.repeatCount++;
-			long elapsedSinceLastSeen = System.currentTimeMillis() - record.millisOfLastCall;
-
-			if (elapsedSinceLastSeen < cfg.getMinimumRepeatMillis()) {
-				if (record.repeatCount > cfg.getMaxRepeatCount()) {
-					String msg = "Inifinite Redirect detected. Request '" + uri + "' seen " + elapsedSinceLastSeen
-							+ " milliseconds since last occurrence.";
-					Log.debug(msg);
-					reqPkg.rapidRepeatRequestDetected = true;
-					reqPkg.repeatRequestErrMsg = msg;
-					return true;
-				}
-			}
-			else { // window exceeded so reset count
-				record.repeatCount = 1;
-			}
-			record.millisOfLastCall = System.currentTimeMillis();
-		}
+// #CRN# I'm commenting this out so that Gerardo can get around his false infinite-redirect problem.
+// #CRN# This will be in a version of the simulator that no one but Gerardo will get.
+//		String reqUri = reqPkg.requestLine.getUri();
+//		AllowedUri uri = new AllowedUri(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query,
+//				new String[] { reqPkg.requestLine.getMethod() });
+//
+//		Config.RepeatRecord record = cfg.getRepeatRequestRecord(uri);
+//		if (record == null) {
+//			record = new Config.RepeatRecord();
+//			record.millisOfLastCall = System.currentTimeMillis();
+//			record.repeatCount++;
+//			cfg.addRepeatRequestRecord(uri, record);
+//		}
+//		else {
+//			record.repeatCount++;
+//			long elapsedSinceLastSeen = System.currentTimeMillis() - record.millisOfLastCall;
+//
+//			if (elapsedSinceLastSeen < cfg.getMinimumRepeatMillis()) {
+//				if (record.repeatCount > cfg.getMaxRepeatCount()) {
+//					String msg = "Inifinite Redirect detected. Request '" + uri + "' seen " + elapsedSinceLastSeen
+//							+ " milliseconds since last occurrence.";
+//					Log.debug(msg);
+//					reqPkg.rapidRepeatRequestDetected = true;
+//					reqPkg.repeatRequestErrMsg = msg;
+//					return true;
+//				}
+//			}
+//			else { // window exceeded so reset count
+//				record.repeatCount = 1;
+//			}
+//			record.millisOfLastCall = System.currentTimeMillis();
+//		}
 		return false;
 	}
 
@@ -943,10 +945,12 @@ public class RequestHandler implements Runnable {
 				}
 				// check for header from this proxy exposing an infinite
 				// redirect
-				pos = dataLC.indexOf(HttpPackage.SHIM_HANDLED_HDR.toLowerCase());
-				if (pos >= 0) {
-					pkg.redirectLoopDetected = true;
-				}
+// #CRN# I'm commenting this out so that Gerardo can get around his false infinite-redirect problem.				
+// #CRN# This will be in a version of the simulator that no one but Gerardo will get.
+//				pos = dataLC.indexOf(HttpPackage.SHIM_HANDLED_HDR.toLowerCase());
+//				if (pos >= 0) {
+//					pkg.redirectLoopDetected = true;
+//				}
 				// check for host header
 				pos = dataLC.indexOf(HttpPackage.HOST_HDR);
  				if (pos == 0) {
