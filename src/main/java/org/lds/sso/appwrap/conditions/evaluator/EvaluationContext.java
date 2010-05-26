@@ -22,7 +22,7 @@ import org.lds.sso.appwrap.conditions.evaluator.syntax.SyntaxBase;
  *
  */
 public class EvaluationContext {
-	public static final String DEBUG_LOG_NAME = EvaluationContext.class.getName() + ".log";
+	public static final String DEBUG_LOG_NAME = LogicalSyntaxEvaluationEngine.class.getName() + ".syntax-log";
 
 	public EvaluationContext() {
 		
@@ -63,19 +63,13 @@ public class EvaluationContext {
 			setUpLogging(ev);
 			return true;
 		}
-		// see if current evaluator specifies debug user
-		if (ev.isDebuggingUser()) {
-			String id = ev.getUser(user);
-			if (id.startsWith("id=")) {
-				String username = id.substring("id=".length(),
-						id.indexOf(','));
-				if (ev.getDebugUser().equalsIgnoreCase(username)) {
-					setUpLogging(ev);
-					return true;
-				}
-			}
-		}
-		return false;
+        // see if current evaluator specifies debug user
+		String debugNm = ev.getDebugUserName(); 
+        if (debugNm != null && debugNm.equalsIgnoreCase(user.getUsername())) {
+            setUpLogging(ev);
+            return true;
+        }
+        return false;
 	}
 	
 	/**

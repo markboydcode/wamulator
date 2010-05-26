@@ -42,7 +42,8 @@ public class UserHeaderNames {
 	 * Prefix of position identifiers for compile time ties to conditions that 
 	 * use it.
 	 */
-	public static final String POSITION_HEADER_PREFIX = "p";
+    public static final String POSITION_HEADER_PREFIX = "p";
+    public static final String POSITION_HEADER_PREFIX_UC = "P";
 
     /**
      * The character which is used to separate multiple
@@ -54,6 +55,7 @@ public class UserHeaderNames {
      * The character which starts all unit integer identifiers in headers. 
      */
     public static final char UNIT_PREFIX = 'u';
+    public static final char UNIT_PREFIX_UC = 'U';
 
     /**
      * The character which is used to delimite and terminate unit identifiers

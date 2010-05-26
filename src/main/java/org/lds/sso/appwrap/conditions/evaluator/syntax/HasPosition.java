@@ -32,18 +32,22 @@ public class HasPosition extends SyntaxBase implements IEvaluatorContainer {
 	 * @param pos
 	 */
 	private void addCfgPos(String pos) {
-		String cfgPos = UserHeaderNames.POSITION_HEADER_PREFIX + pos
-		+ UserHeaderNames.UNITS_DELIMITER;
-		if (! cfgPositions.contains(cfgPos)) {
-			cfgPositions.add(cfgPos);
-		}
+        String cfgPos = UserHeaderNames.POSITION_HEADER_PREFIX + pos
+        + UserHeaderNames.UNITS_DELIMITER;
+        if (! cfgPositions.contains(cfgPos)) {
+            cfgPositions.add(cfgPos);
+        }
+        String cfgPosUC = UserHeaderNames.POSITION_HEADER_PREFIX_UC + pos
+        + UserHeaderNames.UNITS_DELIMITER;
+        if (! cfgPositions.contains(cfgPosUC)) {
+            cfgPositions.add(cfgPosUC);
+        }
 	}
     
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String positions = super.getSessionValue(UserHeaderNames.POSITIONS, 
-				ctx.user);
+		String positions = ctx.user.getProperty(UserHeaderNames.POSITIONS);
 		if (positions == null) {
 			if (debug) {
 				ctx.logResult(this, false, "positions not in session");

@@ -89,7 +89,7 @@ public class ArePermitted extends RestHandlerBase {
             // build request log chunk
             logReq = new StringWriter();
             logReqWrt = new PrintWriter(logReq);
-            logReqWrt.print(" for request:\r\ntoken=" + token + "\r\n");
+            logReqWrt.print(" for request:\r\ntoken=" + token + "\r\n");// leave \r\n since println is op sys specific
             logReqWrt.print("res.cnt=" + resCount + "\r\n");
         }
         
@@ -104,8 +104,8 @@ public class ArePermitted extends RestHandlerBase {
             String res = request.getParameter(parm);
             String act = request.getParameter("act." + t);
             if (logReqWrt != null) {
-                logReqWrt.println(parm + "=" + res);
-                logReqWrt.println("act." + t + "=" + act);
+                logReqWrt.print(parm + "=" + res + "\r\n"); // leave \r\n since println is op sys specific
+                logReqWrt.print("act." + t + "=" + act + "\r\n");
             }
             // only process if we have both a resource and its action
 			if (res != null && ! res.equals("") && act != null && ! act.equals("")) {

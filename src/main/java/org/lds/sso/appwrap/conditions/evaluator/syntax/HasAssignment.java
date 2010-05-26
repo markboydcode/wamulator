@@ -161,7 +161,7 @@ public class HasAssignment extends SyntaxBase implements IEvaluatorContainer {
 			 * This should match on a bishop in unit 333 but no in unit 777.
 			 * 
 			 */
-			this.pattern = Pattern.compile(".*p" + rawPos + "/[^:]*u" + rawUnit + "/.*");
+			this.pattern = Pattern.compile(".*[pP]" + rawPos + "/[^:]*[uU]" + rawUnit + "/.*");
 		}
 
 		@Override

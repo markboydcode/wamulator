@@ -42,8 +42,7 @@ public class MemberOfUnit extends SyntaxBase implements IEvaluatorContainer {
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String units = super.getSessionValue(UserHeaderNames.UNITS, 
-				ctx.user);
+		String units = ctx.user.getProperty(UserHeaderNames.UNITS);
 		if (units == null) {
 			if (debug) {
 				ctx.logResult(this, false, "units not in session");
@@ -119,7 +118,8 @@ public class MemberOfUnit extends SyntaxBase implements IEvaluatorContainer {
 	 *
 	 */
 	public static class Values {
-	    public String unitPattern = null;
+        public String unitPattern = null;
+        public String unitPatternUC = null;
 		public String rawUnit = null;
 
 	    public Values(String unitId) {
@@ -127,8 +127,10 @@ public class MemberOfUnit extends SyntaxBase implements IEvaluatorContainer {
 	        // where the first number if the unit type id and the second is the
 	        // unit number.
 	    	rawUnit = unitId;
-			unitPattern = UserHeaderNames.UNIT_PREFIX + unitId 
-				+ UserHeaderNames.UNITS_DELIMITER;
+            unitPattern = UserHeaderNames.UNIT_PREFIX + unitId 
+            + UserHeaderNames.UNITS_DELIMITER;
+            unitPatternUC = UserHeaderNames.UNIT_PREFIX_UC + unitId 
+            + UserHeaderNames.UNITS_DELIMITER;
 		}
 
 		@Override

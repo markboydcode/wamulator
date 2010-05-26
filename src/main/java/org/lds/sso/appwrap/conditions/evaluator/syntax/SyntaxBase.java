@@ -13,10 +13,10 @@ public abstract class SyntaxBase
     implements IEvaluator
 {
 
-    protected String syntax;
+    protected String syntax = null;
 	private boolean debug = false;
 	private boolean debugUser = false;
-	private String user;
+	private String username = null;
 	private Map<String, String> elementAtts;
 
     public SyntaxBase()
@@ -43,7 +43,7 @@ public abstract class SyntaxBase
         if (cfg.get(DEBUG_USER) != null) {
         	debug = false;
         	debugUser = true;
-        	user = cfg.get(DEBUG_USER);
+        	username = cfg.get(DEBUG_USER);
         }
     }
 
@@ -109,8 +109,8 @@ public abstract class SyntaxBase
      * 
      * @return
      */
-    public String getDebugUser() {
-    	return user;
+    public String getDebugUserName() {
+    	return username;
     }
     
     /**
@@ -133,24 +133,6 @@ public abstract class SyntaxBase
             		+ getClass().getSimpleName() + "> in " + syntax);
         else
             return val;
-    }
-
-    /**
-     * Convenience method for obtaining the osso dn of the current user which 
-     * will have the form "
-     * @param user
-     * @return
-     */
-    public String getUser(User user)
-    {
-        String userid = "id-unavailable";
-        userid = user.getPrincipal().getName();
-        return userid;
-    }
-
-    public String getSessionValue(String name, User user)
-    {
-        return user.getProperty(name);
     }
 
     public abstract boolean isConditionSatisfied(EvaluationContext evaluationcontext)

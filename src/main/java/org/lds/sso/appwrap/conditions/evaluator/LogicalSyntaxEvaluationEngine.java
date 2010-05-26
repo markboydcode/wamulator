@@ -12,7 +12,7 @@ import java.io.StringWriter;
 import java.util.*;
 
 public class LogicalSyntaxEvaluationEngine {
-	protected static final Logger cLog = Logger.getLogger(LogicalSyntaxEvaluationEngine.class);
+	public static final Logger cLog = Logger.getLogger(LogicalSyntaxEvaluationEngine.class);
 	
 	/**
 	 * The map of syntax implementation classes.
@@ -30,73 +30,81 @@ public class LogicalSyntaxEvaluationEngine {
 	 * for evaluating policies.
 	 */
 	protected final Map<String, EvaluatorUsageHolder> evaluators = new HashMap<String, EvaluatorUsageHolder>();
+
+	/**
+	 * Starts the garbage collector. Unit tests can subclass and override this
+	 * method to prevent garbage collecting.
+	 */
+	protected void startGarbageCollector() {
+        Runnable collector = new Runnable() {
+            public void run() {
+                long samplingDelay = UNUSED_EVALUATOR_MAX_LIFE_MILLIS/2;
+                while (true) {
+                    try {
+                        StringWriter sw = null;
+                        PrintWriter pw = null;
+                        if (cLog.isDebugEnabled()){
+                            sw = new StringWriter();
+                            pw = new PrintWriter(sw);
+                            cLog.debug("SCANNER sleeping for " + samplingDelay + " milliseconds.");
+                        }
+                        Thread.sleep(samplingDelay);
+                        if (pw != null) {
+                            pw.println();
+                            pw.println("SCANNING evaluators...");
+                        }
+                        synchronized (evaluators) {
+                            for (Iterator<Map.Entry<String, EvaluatorUsageHolder>> itr = evaluators.entrySet().iterator(); itr
+                                    .hasNext();) {
+                                Map.Entry<String, EvaluatorUsageHolder> entry = itr.next();
+                                EvaluatorUsageHolder holder = entry.getValue();
+                                long current = System.currentTimeMillis();
+                                long diff = current - holder.millisTouchedTime;
+
+                                if (diff > UNUSED_EVALUATOR_MAX_LIFE_MILLIS) {
+                                    if (pw != null) {
+                                        pw.println("  evaluator unused for " + diff 
+                                            + " milliseconds. REMOVING "
+                                            + holder.evaluator.getSyntax().substring(0,20)
+                                            + "...");
+                                    }
+                                    itr.remove();
+                                }
+                                else {
+                                    if (pw != null) {
+                                        pw.println("  evaluator unused for " + diff 
+                                            + " milliseconds. LEAVING "
+                                            + holder.evaluator.getSyntax().substring(0,20)
+                                            + "...");
+                                    }
+                                }
+                            }
+                        }
+                        if (pw != null) {
+                            pw.flush();
+                            cLog.debug(sw.toString());
+                        }
+                    }
+                    catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            cLog.error(Thread.currentThread().getName()
+                                    + " interrupted. Exiting.", e);
+                            return;
+                        }
+                        cLog.error(Thread.currentThread().getName()
+                                + " incurred problem while scanning.", e);
+                    }
+                }
+            }
+        };
+        garbageCollector = new Thread(collector);
+        garbageCollector.setDaemon(true);
+        garbageCollector.setName(this.getClass().getName() + ".unused-evaluators-cleaner");
+        startGarbageCollecting();
+	}
 	
 	public LogicalSyntaxEvaluationEngine() {
-		Runnable collector = new Runnable() {
-			public void run() {
-				long samplingDelay = UNUSED_EVALUATOR_MAX_LIFE_MILLIS/2;
-				while (true) {
-					try {
-						StringWriter sw = null;
-						PrintWriter pw = null;
-						if (cLog.isDebugEnabled()){
-							sw = new StringWriter();
-							pw = new PrintWriter(sw);
-							cLog.debug("SCANNER sleeping for " + samplingDelay + " milliseconds.");
-						}
-						Thread.sleep(samplingDelay);
-						if (pw != null) {
-							pw.println();
-							pw.println("SCANNING evaluators...");
-						}
-						synchronized (evaluators) {
-							for (Iterator<Map.Entry<String, EvaluatorUsageHolder>> itr = evaluators.entrySet().iterator(); itr
-									.hasNext();) {
-								Map.Entry<String, EvaluatorUsageHolder> entry = itr.next();
-								EvaluatorUsageHolder holder = entry.getValue();
-								long current = System.currentTimeMillis();
-								long diff = current - holder.millisTouchedTime;
-
-								if (diff > UNUSED_EVALUATOR_MAX_LIFE_MILLIS) {
-									if (pw != null) {
-										pw.println("  evaluator unused for " + diff 
-											+ " milliseconds. REMOVING "
-											+ holder.evaluator.getSyntax().substring(0,20)
-											+ "...");
-									}
-									itr.remove();
-								}
-								else {
-									if (pw != null) {
-										pw.println("  evaluator unused for " + diff 
-											+ " milliseconds. LEAVING "
-											+ holder.evaluator.getSyntax().substring(0,20)
-											+ "...");
-									}
-								}
-							}
-						}
-						if (pw != null) {
-							pw.flush();
-							cLog.debug(sw.toString());
-						}
-					}
-					catch (Exception e) {
-						if (e instanceof InterruptedException) {
-							cLog.error(Thread.currentThread().getName()
-									+ " interrupted. Exiting.", e);
-							return;
-						}
-						cLog.error(Thread.currentThread().getName()
-								+ " incurred problem while scanning.", e);
-					}
-				}
-			}
-		};
-		garbageCollector = new Thread(collector);
-		garbageCollector.setDaemon(true);
-		garbageCollector.setName(this.getClass().getName() + ".unused-evaluators-cleaner");
-		startGarbageCollecting();
+	    startGarbageCollector();
 	}
 	
 	/**

@@ -38,8 +38,17 @@ public class RestHttpTest {
         System.out.println("setting up simulator");
         cfg = Config.getInstance();
 
+        System.setProperty("is-cdol-syntax", 
+                "<OR>\r\n" + 
+                "<HasPosition id='1'/>\r\n" + 
+                "<HasPosition id='4'/>\r\n" + 
+                "<HasPosition id='52'/>\r\n" + 
+                "<HasPosition id='57'/>\r\n" + 
+                "</OR>");
+
         StringBuffer config = new StringBuffer("string:")
         .append("<?xml version='1.0' encoding='UTF-8'?>")
+        .append("<?alias is-cdol=system:is-cdol-syntax?>")
         .append("<config console-port='auto' proxy-port='auto' ")
         .append(" rest-version='CD-OESv1'>")
         .append(" <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='false'/>")
@@ -50,10 +59,14 @@ public class RestHttpTest {
         .append(" <sso-entitlements policy-domain='lds.org'>")
         .append("  <allow action='WAVE,SHOVE,PUSH' urn='/some/resource'/>")
         .append("  <allow action='SMILE,GET,DROP' urn='/some/resource'/>")
+        .append("  <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>") // only bishops
         .append(" </sso-entitlements>")
         .append(" <users>")
         .append("  <user name='user1' pwd='pwd'/>")
         .append("  <user name='user2' pwd='pwd'/>")
+        .append("   <user name='ngiwb1' pwd='password1'>")
+        .append("    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>") // bishop
+        .append("   </user>")
         .append(" </users>")
         .append("</config>");
 
@@ -354,5 +367,45 @@ public class RestHttpTest {
         Assert.assertEquals(res_1, true, "res.1 should be permitted for GET");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for POST");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted since not defined");
+    }
+
+    @Test
+    public void test_ArePermitted_ValidTokenBishopEntitlement() throws Exception {
+        // first initiate session so that we have valid token
+        String ngiwb1 =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
+        
+        // craft request for AreTokensValid
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted";
+        PostMethod post = new PostMethod(endpoint);
+        post.addParameter("token", ngiwb1);
+        post.addParameter("res.cnt", "3");
+        post.addParameter("res.1","lds.org/leader/focus");
+        post.addParameter("act.1","GET");
+        post.setFollowRedirects(false);
+        HttpClient client = new HttpClient();
+        int status = client.executeMethod(post);
+        Assert.assertEquals(status, 200);
+        String resp = post.getResponseBodyAsString();
+        StringReader sr = new StringReader(resp);
+        BufferedReader br = new BufferedReader(sr);
+
+        boolean res_1 = false;
+        
+        boolean done = false;
+        while(!done) {
+            String line = br.readLine();
+                
+            if (line == null) {
+                done = true;
+                break;
+            }
+            else {
+                String[] tokens = line.split("=");
+                if (tokens[0].equals("res.1")) {
+                    res_1 = Boolean.parseBoolean(tokens[1]);
+                }
+            }
+        }
+        Assert.assertEquals(res_1, true, "res.1 should be permitted for GET by ngiwb1");
     }
 }

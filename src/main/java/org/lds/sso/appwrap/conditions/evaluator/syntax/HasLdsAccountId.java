@@ -34,8 +34,7 @@ public class HasLdsAccountId extends SyntaxBase implements IEvaluatorContainer {
 
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String id = super.getSessionValue(UserHeaderNames.LDS_ACCOUNT_ID, 
-				ctx.user);
+		String id = ctx.user.getProperty(UserHeaderNames.LDS_ACCOUNT_ID);
 		if (id == null) {
 			if (debug) {
 				ctx.logResult(this, false, "user id not in session");

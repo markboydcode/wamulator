@@ -9,7 +9,7 @@ public class IsEmployee extends SyntaxBase {
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String dn = super.getSessionValue(UserHeaderNames.DN, ctx.user);
+		String dn = ctx.user.getProperty(UserHeaderNames.DN);
 		if (dn == null) {
 			if (debug) {
 				ctx.logResult(this, false, "dn not in session");

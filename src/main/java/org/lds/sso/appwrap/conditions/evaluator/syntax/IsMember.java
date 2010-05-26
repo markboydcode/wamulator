@@ -9,7 +9,7 @@ public class IsMember extends SyntaxBase {
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		String mrn = super.getSessionValue(UserHeaderNames.LDS_MRN, ctx.user);
+		String mrn = ctx.user.getProperty(UserHeaderNames.LDS_MRN);
 		
 		if (mrn == null) {
 			if (debug) {

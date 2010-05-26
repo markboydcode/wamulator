@@ -105,10 +105,6 @@ public class User {
 		return hdr;
 	}
 
-	public Principal getPrincipal() {
-		return principal; 
-	}
-
 	public String getProperty(String name) {
 		return headers.get(name);
 	}
