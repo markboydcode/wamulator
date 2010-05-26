@@ -120,7 +120,6 @@ src/main/resources/webapp/traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/unlock.gif -text
 src/test/java/org/lds/sso/appwrap/AppEndPointTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppManagerTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/EmptyQueryParmTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
