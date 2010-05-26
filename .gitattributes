@@ -7,7 +7,6 @@
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
 /ses.dtd -text svneol=unset#text/plain
-/ses.log.1 -text
 /sim.bat -text
 /sim.sh -text
 src/main/assembly/jar-assembly.xml -text

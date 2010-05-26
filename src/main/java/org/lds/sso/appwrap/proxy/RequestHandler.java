@@ -990,6 +990,8 @@ public class RequestHandler implements Runnable {
 						cLog.debug("rewriting redirect from: " + redirect + " to: "
 								+ rewrite);
 					}
+	                pkg.headerBfr.append(new Header(HeaderDef.Location.getName() + "-WAS",
+	                        redirect));
 					header = new Header(HeaderDef.Location, rewrite);
 				}
 				else {
@@ -1009,6 +1011,8 @@ public class RequestHandler implements Runnable {
 								+ rewrite);
 					}
 				}
+				pkg.headerBfr.append(new Header(HeaderDef.SetCookie.getName() + "-WAS",
+				        rawCookie));
 				header = new Header(HeaderDef.SetCookie, rewrite);
 			}
 			if (header == null) {
