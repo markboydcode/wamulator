@@ -159,6 +159,13 @@ public class CookiePathAndRedirectRewriteTest {
                                 "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
                                 + "Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/" + RequestHandler.CRLF; 
                         }
+                        else if (input.contains("/testMH/")) {
+                            req = "MH";
+                            output =
+                                "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
+                                + "Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms" + RequestHandler.CRLF
+                                + "Set-Cookie: lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/" + RequestHandler.CRLF; 
+                        }
                         else if (input.contains("/testRR/")) {
                             req = "RR";
                             output = 
@@ -224,6 +231,8 @@ public class CookiePathAndRedirectRewriteTest {
             + "   <unenforced cpath='/testQS/*'/>"
             + "   <cctx-mapping cctx='/testMC/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testMC/*'/>"
             + "   <unenforced cpath='/testMC/*'/>"
+            + "   <cctx-mapping cctx='/testMH/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testMH/*'/>"
+            + "   <unenforced cpath='/testMH/*'/>"
             + "   <cctx-mapping cctx='/testRR/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testRR/*'/>"
             + "   <unenforced cpath='/testRR/*'/>"
             + "   <cctx-mapping cctx='/testNRR/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testNRR/*'/>"
@@ -272,7 +281,7 @@ public class CookiePathAndRedirectRewriteTest {
     }
 
     @Test
-    public void test_cookie_rewrite_WMultipleCookies() throws Exception {
+    public void test_cookie_rewrite_WMultipleCookies_SingleHeader() throws Exception {
         // now start server to spool back a redirect
         
         // now connect and verify we get redirected correctly
@@ -292,6 +301,35 @@ public class CookiePathAndRedirectRewriteTest {
         System.out.println("Cookie Received: " + cookie.getValue());
         Assert.assertEquals(cookie.getValue(), "JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/", 
         "should have been rewritten from '/leader-forms' to '/mls/cr' ");
+    }
+
+    @Test
+    public void test_cookie_rewrite_WMultipleCookies_MultipleHeaders() throws Exception {
+        // now start server to spool back a redirect
+        
+        // now connect and verify we get redirected correctly
+        String uri = "http://labs-local.lds.org:" + sitePort + "/testMH/a/path";
+        HttpClient client = new HttpClient();
+        HostConfiguration cfg = new HostConfiguration();
+        cfg.setProxy("127.0.0.1", sitePort);
+        client.setHostConfiguration(cfg);
+        HttpMethod method = new GetMethod(uri);
+        method.setFollowRedirects(false);
+        int status = client.executeMethod(method);
+        System.out.println(method.getResponseBodyAsString());
+        // sanity check that we got there
+        Assert.assertEquals(status, 304, "should have returned http 304 not modified");
+        Header[] cookies = method.getResponseHeaders("set-cookie");
+        Assert.assertEquals(cookies.length, 2, "should get two cookies back");
+        for (Header c : cookies) {
+            System.out.println("Cookie Received: " + c.getValue());
+            if (c.getValue().startsWith("JSESSIONID=")) {
+                Assert.assertEquals(c.getValue(), "JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr");
+            }
+            else if (c.getValue().startsWith("lds-preferred-lang=")) {
+                Assert.assertEquals(c.getValue(), "lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/");
+            }
+        }
     }
 
     @Test

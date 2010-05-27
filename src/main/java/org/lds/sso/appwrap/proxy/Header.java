@@ -60,15 +60,6 @@ public class Header implements Comparable<Header>{
     }
     
     /**
-     * Append another value of the header to the existing value by prefixing 
-     * the appended value with a comma according to RFC2616, section 4.2.
-     * @param value
-     */
-    public void addValue(String value) {
-        this.value += "," + value;
-    }
-    
-    /**
      * Replaces the existing value with the passed-in value.
      * @param value
      */
