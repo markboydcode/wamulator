@@ -111,10 +111,16 @@ public class CookiePathAndRedirectRewriteTest {
     
 	@BeforeClass
 	public void setupSim() throws Exception {
+	    try {
+	    System.out.println("--- 1");
         final ServerSocket sss = new ServerSocket();
+        System.out.println("--- 2");
         sss.setReuseAddress(true);
+        System.out.println("--- 3");
         sss.bind(null);
+        System.out.println("--- 4");
         int serverPort = sss.getLocalPort();
+        System.out.println("--- 5");
 
         final int[] ports = new int[] {};
         // now start server to spool back a redirect
@@ -238,6 +244,12 @@ public class CookiePathAndRedirectRewriteTest {
         service.start();
         sitePort = Config.getInstance().getProxyPort();
         System.out.println(); // to leave a gap before test output.
+	    }
+	    catch(Throwable t) {
+	        t.printStackTrace();
+	        throw new RuntimeException("failed");
+	    }
+	    
 	}
 	
 	@AfterClass
