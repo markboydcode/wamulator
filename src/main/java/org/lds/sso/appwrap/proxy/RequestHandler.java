@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.Socket;
@@ -22,6 +23,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import javax.servlet.http.Cookie;
+
 import org.apache.log4j.Level;
 
 import org.apache.log4j.Logger;
@@ -34,6 +38,7 @@ import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.User;
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.mortbay.log.Log;
 
 public class RequestHandler implements Runnable {
@@ -241,6 +246,18 @@ public class RequestHandler implements Runnable {
 				if (!cfg.getSessionManager().isValidToken(token)) {
 					token = null;
 				}
+                // check for signin/signout query parms and act accordingly
+                if (reqPkg.signMeInDetected && token == null) {
+                    sendProxyResponse(302, get302RedirectToLoginPage(reqPkg), reqPkg, clientIn, clientOut, user,
+                            startTime, log, true);
+                    return;
+                }
+                if (reqPkg.signMeOutDetected && token != null) {
+                    sendProxyResponse(302, logoutAndGet302RedirectToSameRequest(reqPkg, token), reqPkg, clientIn, clientOut, user,
+                            startTime, log, true);
+                    return;
+                }
+				
 				String username = cfg.getUsernameFromToken(token);
 				user = cfg.getUserManager().getUser(username);
 
@@ -287,10 +304,12 @@ public class RequestHandler implements Runnable {
 								user, startTime, log, true);
 						return;
 					}
-					// so it is permitted for the user, inject user headers
-					user.injectUserHeaders(reqPkg.headerBfr);
-					cfg.getSessionManager().markSessionAsActive(token);
 				}
+				// inject user headers if session is had regarless of enforced/unenforced
+			    if (user != null) {
+                    user.injectUserHeaders(reqPkg.headerBfr);
+                    cfg.getSessionManager().markSessionAsActive(token);
+			    }
 			}
 			else if (! cfg.getAllowForwardProxying()){
 				byte[] bytes = getResponse("501", "Not Allowed - Forward Proxying", 
@@ -446,7 +465,22 @@ public class RequestHandler implements Runnable {
 		}
 	}
 
-	/**
+    private byte[] logoutAndGet302RedirectToSameRequest(HttpPackage reqPkg,
+            String token) throws IOException {
+        String origReq = "http://" + reqPkg.hostHdr + reqPkg.requestLine.getUri();
+        String origEncReq = URLEncoder.encode(origReq, "utf-8");
+        String location = getLoginPageWithGotoUrl(origEncReq);
+
+        cfg.getSessionManager().terminateSession(token);
+        // deleting current session so clear out cookie
+        String resp = REDIRECT_CLEARING_SESSION_TEMPLATE;
+        resp = resp.replace("{{http-resp-code}}", "302");
+        resp = resp.replace("{{http-resp-msg}}", "Found");
+        resp = resp.replace("{{location}}", location);
+        return resp.getBytes();
+    }
+
+    /**
 	 * Watches to see if a replica of a previous request has occurred within too
 	 * short a period and increments the number of times halting those seen more
 	 * than the allowed amount in the allowed period of time since they most
@@ -590,6 +624,8 @@ public class RequestHandler implements Runnable {
 		URI uri = new URI(pkg.requestLine.getUri());
 		pkg.path = uri.getPath();
 		pkg.query = uri.getQuery();
+        pkg.signMeInDetected = GlobalHeaderNames.detectSignMeIn(pkg.query);
+        pkg.signMeOutDetected = GlobalHeaderNames.detectSignMeOut(pkg.query);
 		SiteMatcher site = appMgr.getSite(pkg.scheme, pkg.host, pkg.port, pkg.path, pkg.query);
 
 		if (site != null) {
@@ -670,14 +706,25 @@ public class RequestHandler implements Runnable {
 		return body;
 	}
 
-	private static final String REDIRECT_TEMPLATE = 
-		"HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
-		+ "Content-Type: text/html; charset=utf-8" + CRLF
-		+ "Server: " + Config.serverName() + CRLF
-		+ "Location: {{location}}" + CRLF
-		+ CRLF // empty line terminating headers
-		+ CRLF; // empty line terminating body
-	
+    private static final String REDIRECT_TEMPLATE = 
+        "HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
+        + "Content-Type: text/html; charset=utf-8" + CRLF
+        + "Server: " + Config.serverName() + CRLF
+        + "Location: {{location}}" + CRLF
+        + CRLF // empty line terminating headers
+        + CRLF; // empty line terminating body
+    
+    private static final String REDIRECT_CLEARING_SESSION_TEMPLATE = 
+        "HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
+        + "Content-Type: text/html; charset=utf-8" + CRLF
+        + "Server: " + Config.serverName() + CRLF
+        + "Set-Cookie: " + Config.getInstance().getCookieName() 
+        +     "=cookie-monster;Version=1;Path=/;Domain="
+        +     Config.getInstance().getCookieDomain() + ";Max-Age=0" + CRLF
+        + "Location: {{location}}" + CRLF
+        + CRLF // empty line terminating headers
+        + CRLF; // empty line terminating body
+    
 
 	private byte[] get302RedirectToLoginPage(HttpPackage pkg) throws IOException {
 		String origReq = "http://" + pkg.hostHdr + pkg.requestLine.getUri();
@@ -1005,14 +1052,14 @@ public class RequestHandler implements Runnable {
 				String rewrite = mgr.rewriteCookiePath(rawCookie); 
 
 				if (!rewrite.equals(rawCookie)) {
-					// rewrite matched, replace
+					// rewrite matched, replace and indicate in headers
+	                pkg.headerBfr.append(new Header(HeaderDef.SetCookie.getName() + "-WAS",
+	                        rawCookie));
 					if (cLog.isDebugEnabled()) {
 						cLog.debug("rewriting cookie from: " + rawCookie + " to: "
 								+ rewrite);
 					}
 				}
-				pkg.headerBfr.append(new Header(HeaderDef.SetCookie.getName() + "-WAS",
-				        rawCookie));
 				header = new Header(HeaderDef.SetCookie, rewrite);
 			}
 			if (header == null) {

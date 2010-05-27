@@ -51,6 +51,9 @@ public class TerminateSessionHandler extends RestHandlerBase {
 		}
 		cfg.getSessionManager().terminateSession(token);
 		String referer = request.getHeader("referer");
+		if (referer == null || referer.equals("")) {
+		    referer = cfg.getLoginPage();
+		}
 		response.sendRedirect(referer);
 	}
 

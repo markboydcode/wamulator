@@ -39,4 +39,6 @@ public class HttpPackage {
 	public String path = null;
 	public String query = null;
 	public String scheme = null;
+    public boolean signMeInDetected = false;
+    public boolean signMeOutDetected = false;
 }

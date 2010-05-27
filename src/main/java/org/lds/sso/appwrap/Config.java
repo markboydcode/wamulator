@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.proxy.Header;
 import org.lds.sso.appwrap.proxy.HeaderBuffer;
@@ -59,6 +60,11 @@ public class Config {
 	 */
 	private Map<String, String> headers = new TreeMap<String, String>();
 
+	// define signmein/signmeout headers
+	{
+        headers.put(GlobalHeaderNames.SIGNIN, GlobalHeaderNames.SIGNIN_VALUE);
+        headers.put(GlobalHeaderNames.SIGNOUT, GlobalHeaderNames.SIGNOUT_VALUE);
+	}
 	/**
 	 * The domain of the cookie set by app-wrap
 	 */
