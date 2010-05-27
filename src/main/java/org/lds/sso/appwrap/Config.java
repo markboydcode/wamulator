@@ -1,5 +1,9 @@
 package org.lds.sso.appwrap;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -131,29 +135,49 @@ public class Config {
 	}
 
     private static String determineCurrentVersion() {
-		String version = "current SSO Simulator in IDE";
+		String version = "SSO Simulator in IDE";
 		/* first see if we can get it from the package structure. The maven 
 		 * build process automatically creates a suitable manifest file the 
 		 * exposes these values. But if run in and IDE the manifest file isn't
 		 * available and the implementation values will be null.
 		 */
-		Package pkg = Config.class.getPackage();
-		if (pkg != null && pkg.getImplementationTitle() != null) {
-			version = pkg.getImplementationTitle() + " "
-			+ pkg.getImplementationVersion(); 
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("Server Name set to: " + version);
-			}
+		String resource = "about.txt";
+		InputStream is = Config.class.getClassLoader().getResourceAsStream("about.txt");
+		if (is != null) {
+		    byte[] bytes = new byte[100];
+		    try {
+                int read = is.read(bytes);
+                String content = new String(bytes, 0, read);
+                if (content.contains("project.version")) {
+                    // must be running in IDE which doesn't do maven filtering :(
+                    // hopefully current directory is the project root containing pom.xml
+                    File file = new File("pom.xml");
+                    if (file.exists()) {
+                        PomVersionExtractor pve = new PomVersionExtractor();
+                        FileReader fr = new FileReader(file);
+                        try {
+                            version = "SSO Simulator v" + pve.getVersion(fr, file.getAbsolutePath());
+                            fr.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                else {
+                    version = "SSO Simulator v" + content;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 		}
 		else {
-			if (cLog.isDebugEnabled()) {
-				cLog.debug("Server Name set to default value: " + version);
-			}
+		    System.out.println("Can't find version indicating file: " + resource);
 		}
-		/* when running in an IDE the version number is less important. we 
-		 * could require inclusion of the project's root directory and pull it
-		 * from the pom.xml file but I'll just put in a dummy version for now.
-		 */
 		return version;
 	}
 
