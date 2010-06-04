@@ -72,7 +72,7 @@ public class ConfigSamplesVerificationTest {
         service.start();
 
         // first hit URL and verify file contents served correctly
-        String endpoint = "http://local.lds.org:" + cfg.getProxyPort() + "/church-calendar/services/lucrs/evt/0/";
+        String endpoint = "http://127.0.0.1:" + cfg.getProxyPort() + "/church-calendar/services/lucrs/evt/0/";
         
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(endpoint);

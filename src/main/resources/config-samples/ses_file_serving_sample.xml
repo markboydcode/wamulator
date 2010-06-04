@@ -13,9 +13,17 @@
     <sso-traffic>
         <by-site host="local.lds.org" port="{{proxy-port}}">
             <cctx-file cctx="/church-calendar/services/lucrs/evt/0/*" 
-	          	file="classpath:config-samples/ngiwb1-cal-data.json"  
-            	content-type="application/json"/>
-<!--          	file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
+                file="classpath:config-samples/ngiwb1-cal-data.json"  
+                content-type="application/json"/>
+<!--            file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
+            <unenforced cpath="/church-calendar/*"/>
+        </by-site>
+        <!-- need this one for unit test since build system can't resolve local.lds.org -->
+        <by-site host="127.0.0.1" port="{{proxy-port}}">
+            <cctx-file cctx="/church-calendar/services/lucrs/evt/0/*" 
+                file="classpath:config-samples/ngiwb1-cal-data.json"  
+                content-type="application/json"/>
+<!--            file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
             <unenforced cpath="/church-calendar/*"/>
         </by-site>
     </sso-traffic>
