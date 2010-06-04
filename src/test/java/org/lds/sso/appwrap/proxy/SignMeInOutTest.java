@@ -51,7 +51,6 @@ public class SignMeInOutTest {
     
     @Test
     public void test_signMeInOut() throws HttpException, IOException {
-        try {
         // first try to hit without session but with signin indicator
         Config cfg = Config.getInstance();
         String endpointWSignin = "http://127.0.0.1:" + cfg.getProxyPort() + ImAliveHandler.IS_ALIVE_PATH + "?" + GlobalHeaderNames.SIGNIN_VALUE;
@@ -63,12 +62,10 @@ public class SignMeInOutTest {
         
         Assert.assertEquals(status, 302);
         Header loc = method.getResponseHeader("location");
-        System.out.println("---> location header returned: " + (loc == null ? "null" : loc.getValue()));
         Assert.assertNotNull(loc, "location header not returned for redirect");
 
         // now sign user in
         String authEp = loc.getValue().replace("/admin/selectUser.jsp", "/admin/action/set-user/user1");
-        System.out.println("---> signing in via: " + authEp);
         HttpMethod authM = new GetMethod(authEp);
         authM.setFollowRedirects(false);
         status = client.executeMethod(authM);
@@ -77,7 +74,6 @@ public class SignMeInOutTest {
         Header setCk = authM.getResponseHeader("set-cookie");
         Assert.assertNotNull(setCk, "set-cookie header not in sign-in response");
         String rawCk = setCk.getValue();
-        System.out.println(rawCk);
         Assert.assertTrue(rawCk.contains("lds-policy="));
         int start = rawCk.indexOf("lds-policy=") + "lds-policy".length();
         int end = rawCk.indexOf(";", start);
@@ -114,11 +110,6 @@ public class SignMeInOutTest {
         content = method.getResponseBodyAsString();
         Assert.assertNotNull(content);
         Assert.assertTrue(content.contains(ImAliveHandler.IS_ALIVE), "missing is alive output text.");
-        }
-        catch(Throwable t) {
-            t.printStackTrace();
-            Assert.fail("failed");
-        }
     }
 
     @Test
