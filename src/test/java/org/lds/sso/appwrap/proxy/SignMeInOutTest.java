@@ -26,7 +26,7 @@ public class SignMeInOutTest {
         .append("<?xml version='1.0' encoding='UTF-8'?>")
         .append("<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>")
         .append(" <sso-cookie name='lds-policy' domain='.lds.org'/>")
-        .append(" <sso-sign-in-url value='http://local.lds.org:{{console-port}}/admin/selectUser.jsp'/>")
+        .append(" <sso-sign-in-url value='http://127.0.0.1:{{console-port}}/admin/selectUser.jsp'/>")
         .append(" <sso-traffic>")
         .append("  <by-site scheme='http' host='127.0.0.1' port='{{proxy-port}}'>") 
         .append("    <cctx-mapping cctx='/is-alive*' thost='127.0.0.1' tport='{{console-port}}' tpath='/is-alive*'/>") 
