@@ -8,35 +8,20 @@
  
  -->
  
-<?alias rest-port=1776?>
-<?alias console-port={{rest-port}}?>
-<?alias http-port=80?>
-
-<config proxy-port="{{http-port}}" console-port="{{console-port}}">
-    <console-recording sso="true" rest="true"/>
-    <sso-cookie name="lds-policy" domain=".lds.org"/>
-    <sso-sign-in-url value="http://local.lds.org:{{console-port}}/admin/selectUser.jsp"/>
-    <sso-header name="policy-service-url" value="http://labs-local.lds.org:{{rest-port}}/rest/"/>
+<config proxy-port="auto" console-port="auto" rest-version="CD-OESv1">
+    <console-recording sso="true" rest="true" max-entries="1000" enable-debug-logging="true"/>
 
     <sso-traffic>
         <by-site host="local.lds.org" port="80">
             <cctx-file cctx="/church-calendar/services/lucrs/evt/0/*" 
                 file="classpath:config-samples/ngiwb1-cal-data.json"  
                 content-type="application/json"/>
-<!--            file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
-<!--            file="classpath:config-samples/ngiwb1-cal-data.json"   or file path could be classpath path --> 
             <unenforced cpath="/church-calendar/*"/>
+
             <cctx-file cctx="/logs/*" 
                 file="*"  
                 content-type="text/plain"/>
-<!--            file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
-<!--            file="classpath:config-samples/ngiwb1-cal-data.json"   or file path could be classpath path --> 
             <unenforced cpath="/logs/*"/>
         </by-site>
     </sso-traffic>
-
-    <users>
-        <user name="ngia" pwd="pwda"/>
-        <user name="ngib" pwd="pwdb"/>
-    </users>
 </config>

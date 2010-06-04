@@ -1,6 +1,7 @@
 package org.lds.sso.appwrap.ui;
 
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -25,6 +26,7 @@ public class JspUtils {
 	private BaseMapImpl<String> encoder = null;
     private BaseMapImpl<String> crlfToBr;
     private Pattern crlfPattern = null;
+    private BaseMapImpl<Boolean> isSsoDefinedHdr;
 	
 	/**
 	 * Returns a Map implementation whose get takes the passed-in
@@ -121,4 +123,27 @@ public class JspUtils {
         }
         return crlfToBr; 
     }
+    
+    
+    /**
+     * Returns a Map implementation whose get takes the passed-in header name
+     * and returns a Boolean true if it is a supported SSO injected header
+     * and false otherwise.
+     *  
+     * @return
+     */
+    public BaseMapImpl<Boolean> getIsSsoDefinedHeader() {
+        if (isSsoDefinedHdr == null) {
+
+            isSsoDefinedHdr = new BaseMapImpl<Boolean>() {
+                @Override
+                public Boolean get(Object key) {
+                    String value = (String) key;
+                    return UserHeaderNames.defaultHeaders.get(value) != null;
+                }
+            };
+        }
+        return isSsoDefinedHdr; 
+    }
+    
 }

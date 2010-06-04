@@ -77,6 +77,7 @@ src/main/java/org/lds/sso/appwrap/rest/oes/v1/ArePermitted.java -text svneol=uns
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/AreTokensValid.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/GetOesV1CookieName.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/BaseMapImpl.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ui/ImAliveHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/JspUtils.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/Add404UriToCfgHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParser.java -text svneol=unset#text/plain
@@ -89,11 +90,7 @@ src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSessionHandler.java -text svn
 src/main/java/org/lds/sso/appwrap/ui/rest/TrafficRecordingHandler.java -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
-src/main/resources/config-samples/leader.xml -text svneol=unset#text/plain
-src/main/resources/config-samples/leadership-leader.out.xml -text svneol=unset#text/plain
-src/main/resources/config-samples/leadership-leader.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/ml-client-lib-tests.xml -text svneol=unset#text/plain
-src/main/resources/config-samples/mlAuth_mlError_sample.xml -text
 src/main/resources/config-samples/ngiwb1-cal-data.json -text
 src/main/resources/config-samples/ses_console_with_users_sample.xml -text
 src/main/resources/config-samples/ses_directory_file_serving_sample.xml -text svneol=unset#text/plain
@@ -102,8 +99,6 @@ src/main/resources/config-samples/ses_file_serving_sample.xml -text svneol=unset
 src/main/resources/config-samples/ses_login_sample.xml -text
 src/main/resources/config-samples/ses_login_sample_condition_test.xml -text
 src/main/resources/config-samples/ses_login_sample_non_site_coda.xml -text svneol=unset#text/plain
-src/main/resources/config-samples/tech-lds-org.xml -text svneol=unset#text/plain
-src/main/resources/local-config.xml -text svneol=unset#text/plain
 src/main/resources/local-config2.xml -text svneol=unset#text/plain
 src/main/resources/log4j.properties -text svneol=unset#text/plain
 src/main/resources/webapp/add.gif -text
@@ -122,6 +117,7 @@ src/main/resources/webapp/unlock.gif -text
 src/main/versioning/about.txt -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppEndPointTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppManagerTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/ConfigSamplesVerificationTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
@@ -150,6 +146,7 @@ src/test/java/org/lds/sso/appwrap/proxy/HeaderBufferTest.java -text svneol=unset
 src/test/java/org/lds/sso/appwrap/proxy/HeaderDefTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/SignMeInOutTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/TestAuthZHandler.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/oes/v1/RestHttpTest.java -text svneol=unset#text/plain

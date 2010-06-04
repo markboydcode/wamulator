@@ -37,7 +37,7 @@ public class GetOesV1CookieName extends RestHandlerBase {
 
 		if (cfg.getTrafficRecorder().isRecordingRest()) {
 			Map<String,String> props = new HashMap<String,String>();
-			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+			cfg.getTrafficRecorder().recordRestHit(this.pathPrefixRaw, 
 					HttpServletResponse.SC_OK, cfg.getCookieName(), 
 					props);
 		}

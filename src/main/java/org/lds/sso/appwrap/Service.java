@@ -21,6 +21,7 @@ import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
+import org.lds.sso.appwrap.ui.ImAliveHandler;
 import org.lds.sso.appwrap.ui.rest.Add404UriToCfgHandler;
 import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
 import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
@@ -107,12 +108,13 @@ public class Service {
 		}
 		
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));
-                handlers.addHandler(new SelectUserHandler("/auth/ui/authenticate"));
+        handlers.addHandler(new SelectUserHandler("/auth/ui/authenticate"));
 		handlers.addHandler(new SelectSessionHandler("/admin/action/set-session"));
 		handlers.addHandler(new Add404UriToCfgHandler("/admin/action/add-uri-to-"));
 		handlers.addHandler(new TerminateSessionHandler("/admin/action/terminate-session"));
-		handlers.addHandler(new TrafficRecordingHandler("/admin/action/recording/"));
-                handlers.addHandler(new LogFileHandler("/admin/logs"));
+        handlers.addHandler(new TrafficRecordingHandler("/admin/action/recording/"));
+        handlers.addHandler(new ImAliveHandler(ImAliveHandler.IS_ALIVE_PATH));
+        handlers.addHandler(new LogFileHandler("/admin/logs"));
 		
 		// placing webapp handler after other handlers allows for actions to be placed 
 		// under same root context '/admin'.

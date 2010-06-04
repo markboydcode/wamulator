@@ -39,9 +39,16 @@ public class Config {
          * max-entries attribute of the console-recording element as follows:
          * <code><console-recording sso="true" rest="true" max-entries="1000"/></code>
          */
-        public static final int MAX_TRAFFIC_ENTRIES = 1000;
+    public static final int MAX_TRAFFIC_ENTRIES = 1000;
+    
+    /**
+     * An implicit alias made available to the configuration when auto-binding
+     * is being used for the console port.
+     */
+    public static final String CONSOLE_PORT_ALIAS = "console-port";
+    public static final String CONSOLE_PORT_MACRO = "{{" + CONSOLE_PORT_ALIAS + "}}";
 
-	/**
+    /**
 	 * Allows some classes to get at the config instance without any means of
 	 * passing the instance in.
 	 */
@@ -89,6 +96,10 @@ public class Config {
 	 */
 	private String cookieName = "app-wrap-token";
 
+	/**
+	 * The URL of the sign-in page to which the user should be redirected to
+	 * authenticate.
+	 */
 	private String loginPageUrl = null;
 
 	private long minReqOccRepeatMillis = 200;
@@ -110,11 +121,19 @@ public class Config {
 
 	private String externalUserSource = null;
 
-        private int maxEntries = MAX_TRAFFIC_ENTRIES;
+    private int maxEntries = MAX_TRAFFIC_ENTRIES;
 
-        private boolean debugLoggingEnabled = false;
+    private boolean debugLoggingEnabled = false;
 
-		private RestVersion restVersion;
+	private RestVersion restVersion;
+
+
+	/**
+	 * If true indicates that auto-binding has been specified and the sign-in
+	 * URL must be resolved replacing the console-port implicit alias reference
+	 * after port binding has taken place.
+	 */
+    private boolean signinRequiresResolution = false;
 
 	private static final String SERVER_NAME = determineCurrentVersion();
 
@@ -387,6 +406,14 @@ public class Config {
 	}
 
 	public String getLoginPage() {
+	    if (signinRequiresResolution) {
+	        String url = this.loginPageUrl;
+	        if (url.contains(CONSOLE_PORT_MACRO)) {
+	            url = url.replace(CONSOLE_PORT_MACRO, ("" + this.getConsolePort()));
+	            loginPageUrl = url;
+	            signinRequiresResolution = false;
+	        }
+	    }
 		return this.loginPageUrl;
 	}
 
@@ -609,4 +636,12 @@ public class Config {
 	public RestVersion getRestVersion() {
 		return this.restVersion;
 	}
+
+	/**
+	 * Tells config that signin page resolution must be performed before returning
+	 * the signin page url.
+	 */
+    public void setSignInRequiresResolution() {
+        signinRequiresResolution = true;
+    }
 }

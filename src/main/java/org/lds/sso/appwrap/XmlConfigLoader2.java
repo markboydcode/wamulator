@@ -338,7 +338,17 @@ public class XmlConfigLoader2 {
                                 cfg.setDebugLoggingEnabled(debugLoggingEnabled);
 			}
 			else if (path.matches("/config/sso-sign-in-url")) {
-				cfg.setSignInPage(getStringAtt("value", path, atts));
+                String signin = atts.getValue("value");
+                if (signin != null &&
+                        signin.contains("{{console-port}}") && 
+                        cfg.getConsolePort() == 0 && // auto binding specified
+                        ! aliases.containsKey("console-port")) {
+                    cfg.setSignInRequiresResolution();
+                    cfg.setSignInPage(signin); // resolve alias after start-up
+                }
+                else {
+                    cfg.setSignInPage(getStringAtt("value", path, atts));
+                }
 			}
 			else if (path.matches("/config/sso-header")) {
 				String hdrNm = getStringAtt("name", path, atts);

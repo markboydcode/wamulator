@@ -468,15 +468,13 @@ public class RequestHandler implements Runnable {
     private byte[] logoutAndGet302RedirectToSameRequest(HttpPackage reqPkg,
             String token) throws IOException {
         String origReq = "http://" + reqPkg.hostHdr + reqPkg.requestLine.getUri();
-        String origEncReq = URLEncoder.encode(origReq, "utf-8");
-        String location = getLoginPageWithGotoUrl(origEncReq);
 
         cfg.getSessionManager().terminateSession(token);
         // deleting current session so clear out cookie
         String resp = REDIRECT_CLEARING_SESSION_TEMPLATE;
         resp = resp.replace("{{http-resp-code}}", "302");
         resp = resp.replace("{{http-resp-msg}}", "Found");
-        resp = resp.replace("{{location}}", location);
+        resp = resp.replace("{{location}}", origReq);
         return resp.getBytes();
     }
 

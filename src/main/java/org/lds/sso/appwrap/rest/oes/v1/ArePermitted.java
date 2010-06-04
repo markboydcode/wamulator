@@ -46,7 +46,7 @@ public class ArePermitted extends RestHandlerBase {
         if (token == null || token.equals("")) {
             if (cfg.getTrafficRecorder().isRecordingRest()) {
                 Map<String,String> props = new HashMap<String,String>();
-                cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+                cfg.getTrafficRecorder().recordRestHit(this.pathPrefixRaw, 
                         HttpServletResponse.SC_BAD_REQUEST, "no token specified", 
                         props);
             }
@@ -59,7 +59,7 @@ public class ArePermitted extends RestHandlerBase {
         if (resCnt == null || resCnt.equals("")) {
             if (cfg.getTrafficRecorder().isRecordingRest()) {
                 Map<String,String> props = new HashMap<String,String>();
-                cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+                cfg.getTrafficRecorder().recordRestHit(this.pathPrefixRaw, 
                         HttpServletResponse.SC_BAD_REQUEST, "no res.cnt specified", 
                         props);
             }
@@ -75,7 +75,7 @@ public class ArePermitted extends RestHandlerBase {
 		catch(NumberFormatException nfe) {
 			if (cfg.getTrafficRecorder().isRecordingRest()) {
 				Map<String,String> props = new HashMap<String,String>();
-				cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+				cfg.getTrafficRecorder().recordRestHit(this.pathPrefixRaw, 
 						HttpServletResponse.SC_BAD_REQUEST, "res.cnt value '" + resCnt + "' is not an integer", 
 						props);
 			}
@@ -124,7 +124,7 @@ public class ArePermitted extends RestHandlerBase {
 		    logReqWrt.flush();
 		    String logMsg = clientRes.toString() + "\r\n" + logReq.toString(); 
 			Map<String,String> props = new HashMap<String,String>();
-			cfg.getTrafficRecorder().recordRestHit(this.pathPrefix, 
+			cfg.getTrafficRecorder().recordRestHit(this.pathPrefixRaw, 
 					HttpServletResponse.SC_OK, logMsg, 
 					props);
 		}

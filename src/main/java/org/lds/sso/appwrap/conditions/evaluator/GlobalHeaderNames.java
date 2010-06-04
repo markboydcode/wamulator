@@ -24,18 +24,26 @@ public class GlobalHeaderNames {
     /**
      * Detects signmein query parameter. Could be one of the following patterns:
      * only parm: signmein --> equals
+     * only parm: signmein= --> equals
      * first of several: signmein&... --> startswith
+     * first of several: signmein=&... --> startswith
      * last parm: ...&signmein --> endswith
+     * last parm: ...&signmein= --> endswith
      * embedded: ...&signmein&... --> contains
+     * embedded: ...&signmein=&... --> contains
      */
     public static boolean detectSignMeIn(String q) {
         if (q == null) {
             return false;
         }
-        if (q.equals(SIGNIN_VALUE) || 
+        if (q.equals(SIGNIN_VALUE) ||
+                q.equals(SIGNIN_VALUE + "=") ||
                 q.startsWith(SIGNIN_VALUE + "&") ||
+                q.startsWith(SIGNIN_VALUE + "=&") ||
                 q.endsWith("&" + SIGNIN_VALUE) ||
-                q.contains("&" + SIGNIN_VALUE + "&")) {
+                q.endsWith("&" + SIGNIN_VALUE + "=") ||
+                q.contains("&" + SIGNIN_VALUE + "&") ||
+                q.contains("&" + SIGNIN_VALUE + "=&")) {
             return true;
         }
         return false;
@@ -52,9 +60,13 @@ public class GlobalHeaderNames {
             return false;
         }
         if (q.equals(SIGNOUT_VALUE) || 
+                q.equals(SIGNOUT_VALUE + "=") || 
                 q.startsWith(SIGNOUT_VALUE + "&") ||
+                q.startsWith(SIGNOUT_VALUE + "=&") ||
                 q.endsWith("&" + SIGNOUT_VALUE) ||
-                q.contains("&" + SIGNOUT_VALUE + "&")) {
+                q.endsWith("&" + SIGNOUT_VALUE + "=") ||
+                q.contains("&" + SIGNOUT_VALUE + "&") ||
+                q.contains("&" + SIGNOUT_VALUE + "=&")) {
             return true;
         }
         return false;

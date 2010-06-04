@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <html>
 <head><title>${requestScope.config.serverName}</title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
@@ -35,7 +36,7 @@
 <!-- change to dynamically inject here via json ajax with jquery -->
 <table>
 <c:forEach items="${requestScope.selectedUser.headers}" var="hdr">
-<tr><td><span style="padding: 0 5px 0 20px;">${hdr.name}:</span></td><td>${hdr.value}</td></tr>
+<tr><td><c:choose><c:when test="${jsputils.isSsoDefinedHeader[hdr.name]}"><span style="padding: 0 5px 0 20px;">${hdr.name}:</span></c:when><c:otherwise><span title='Not an SSO Injected Header' style="padding: 0 5px 0 20px; background-color: rgb(255,180,180)">${hdr.name}:</span></c:otherwise></c:choose></td><td>${hdr.value}</td></tr>
 </c:forEach>
 </table>
 <!-- end of proposed change to dynamically inject here via json ajax -->

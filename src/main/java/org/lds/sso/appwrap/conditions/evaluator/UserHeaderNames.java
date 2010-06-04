@@ -1,12 +1,9 @@
 package org.lds.sso.appwrap.conditions.evaluator;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.lds.sso.appwrap.conditions.evaluator.syntax.HasAssignment;
 
 /**
  * Defines constants for the user headers used in the SSO environment.
@@ -34,9 +31,10 @@ public class UserHeaderNames {
     public static final String CN = PREFIX + "cn";
     public static final String GIVEN_NAME = PREFIX + "givenname";
     public static final String PREFERRED_NAME = PREFIX + "preferredname";
+    public static final String PREFERRED_LANG = PREFIX + "preferredlanguage";
     public static final String LDS_MRN = PREFIX + "ldsmrn";
     public static final String EMAIL = PREFIX + "ldsemailaddress";
-    public static final String INDIVIDUAL_ID = PREFIX + "individual-id";
+    public static final String INDIVIDUAL_ID = PREFIX + "individualid";
 
 	/**
 	 * Prefix of position identifiers for compile time ties to conditions that 
@@ -75,4 +73,33 @@ public class UserHeaderNames {
 	 * like "2009-07-04" for the fourth of July in 2009.
 	 */
 	public static final SimpleDateFormat BIRTHDATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd");
+	
+	/**
+	 * Set of headers expected to be injected by SSO. 
+	 */
+    public static Map<String,String> defaultHeaders = new HashMap<String,String>();
+
+    /**
+     * Sets up default headers so values are had by the user even if not 
+     * specified within config file.
+     */
+    static {
+        Map<String,String> hdr = new HashMap<String,String>(); 
+    
+        hdr.put(UserHeaderNames.UNITS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.POSITIONS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.LDS_ACCOUNT_ID, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.DN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.EMAIL, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.LDS_MRN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.SN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.PREFERRED_NAME, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.INDIVIDUAL_ID, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.GIVEN_NAME, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.GENDER, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.CN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.BIRTH_DATE, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        
+        defaultHeaders = Collections.unmodifiableMap(hdr);
+    }
 }

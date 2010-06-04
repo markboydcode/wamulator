@@ -12,49 +12,16 @@ import org.lds.sso.appwrap.proxy.HeaderBuffer;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 
 public class User {
-
-	private static Map<String,String> defaultHeaders = new HashMap<String,String>();
-	private static final Map<String,String> defaultTokenProps;
 	
 	protected String password = null;
 	protected String username = null;
-	private Map<String, String> headers = new TreeMap<String, String>(defaultHeaders);
+	private Map<String, String> headers = new TreeMap<String, String>(UserHeaderNames.defaultHeaders);
 	Principal principal = null;
 
-	/**
-	 * Sets up default header and sso session (token) values that will always
-	 * be made available to application if no values are had by the user in lds
-	 * systems.
-	 */
-	static {
-		Map<String,String> hdr = new HashMap<String,String>(); 
-		Map<String,String> tks = new HashMap<String,String>();
-	
-		hdr.put(UserHeaderNames.UNITS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		tks.put(UserHeaderNames.UNITS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		
-		hdr.put(UserHeaderNames.POSITIONS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		tks.put(UserHeaderNames.POSITIONS, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		
-		hdr.put(UserHeaderNames.LDS_ACCOUNT_ID, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		tks.put(UserHeaderNames.LDS_ACCOUNT_ID, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		
-		hdr.put(UserHeaderNames.DN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		tks.put(UserHeaderNames.DN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		
-		hdr.put(UserHeaderNames.EMAIL, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		tks.put(UserHeaderNames.EMAIL, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		
-		hdr.put(UserHeaderNames.LDS_MRN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		tks.put(UserHeaderNames.LDS_MRN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
-		
-		defaultHeaders = hdr;
-		defaultTokenProps = tks;
-	}
-	
 	public User(String username, String pwd) {
 		this.password = pwd;
 		this.username = username;
+        this.headers.put(UserHeaderNames.CN, username);
 		this.principal = new Principal() {
 			
 			private String name = "sso.appwrap.user." + User.this.username;
@@ -77,6 +44,7 @@ public class User {
 	}
 	public void setUsername(String username) {
 		this.username = username;
+		this.headers.put(UserHeaderNames.CN, username);
 	}
 
 	public void addHeader(String name, String value) {
@@ -108,8 +76,4 @@ public class User {
 	public String getProperty(String name) {
 		return headers.get(name);
 	}
-
-//	public void setProperty(String name, String value) {
-//		headers.put(name, value);
-//	}
 }
