@@ -111,13 +111,14 @@ public class XmlConfigLoaderTest {
     }
 
 	@Test
-	public void testUnenforcedBySitePathWildcard() throws Exception {
+	public void testNonGreedyUnenforcedBySitePathWildcard() throws Exception {
 		String xml = 
 			"<?xml version='1.0' encoding='UTF-8'?>"
 			+ "<config console-port='88' proxy-port='45'>"
 			+ " <sso-traffic>"
-			+ "  <by-site host='labs-local.lds.org' port='80'>"
-			+ "    <unenforced cpath='/auth/ui/*'/>"
+			+ "  <by-site host='labs-local.lds.org' port='80' greedy-unenforced='false'>"
+            + "    <unenforced cpath='/auth/ui/*'/>"
+            + "    <allow action='GET' cpath='/auth/ui/some/path/*'/>"
 	        + "  </by-site>"
 			+ " </sso-traffic>"
 		    + "</config>";
@@ -125,7 +126,30 @@ public class XmlConfigLoaderTest {
 		XmlConfigLoader2.load(xml);
 		TrafficManager tman = cfg.getTrafficManager();
 		
-		String url = "http://labs-local.lds.org/auth/ui/sign-in";
+        String url = "http://labs-local.lds.org/auth/ui/some/path/lower";
+        Assert.assertFalse(tman.isUnenforced(url), "should be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/some/path/lower";
+        Assert.assertFalse(tman.isUnenforced(url), "should be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:111/auth/ui/some/path/lower";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to wrong port should NOT be unenforced " + url);
+        
+        url = "apps://labs-local.lds.org/auth/ui/some/path/lower";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to wrong scheme should NOT be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/some/path/lower?locale=eng";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to query should NOT be unenforced " + url);
+        
+        url = "http://labs-local.lds.org/auth/diff/path";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to incorrect path should NOT be unenforced " + url);
+
+        
+        url = "http://labs-local.lds.org/auth/ui/sign-in";
 		Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
 		
 		url = "http://labs-local.lds.org:80/auth/ui/sign-in";
@@ -147,6 +171,45 @@ public class XmlConfigLoaderTest {
 		Assert.assertFalse(tman.isUnenforced(url), 
 		"due to incorrect path should NOT be unenforced " + url);
 	}
+
+
+    @Test
+    public void testUnenforcedBySitePathWildcard() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site host='labs-local.lds.org' port='80'>"
+            + "    <unenforced cpath='/auth/ui/*'/>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        TrafficManager tman = cfg.getTrafficManager();
+        
+        String url = "http://labs-local.lds.org/auth/ui/sign-in";
+        Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/sign-in";
+        Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:111/auth/ui/sign-in";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to wrong port should NOT be unenforced " + url);
+        
+        url = "apps://labs-local.lds.org/auth/ui/sign-in";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to wrong scheme should NOT be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to query should NOT be unenforced " + url);
+        
+        url = "http://labs-local.lds.org/auth/diff/path";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to incorrect path should NOT be unenforced " + url);
+    }
 
 
 	@Test

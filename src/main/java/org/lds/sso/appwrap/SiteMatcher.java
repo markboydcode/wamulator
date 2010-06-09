@@ -27,6 +27,7 @@ public class SiteMatcher {
 	private LogicalSyntaxEvaluationEngine cEngine;
 	protected Map<String, String> cSynMap;
 	protected Map<AllowedUri, String> conditionsMap = new HashMap<AllowedUri, String>();
+    protected boolean isUnenforcedGreedy = true;
 
 	public enum Type {
 		SITE, SINGLE_UNENFORCED, SINGLE_RESTRICTED;
@@ -260,23 +261,41 @@ public class SiteMatcher {
 		}
 	}
 	
-	/**
-	 * Determines if the passed-in url is an unenforeceUrl either starting with
-	 * a configured url ending in an asterisk minus the asterisk or matching
-	 * exactly a configured url not ending with an asterisk.
-	 * @param query 
-	 * 
-	 * @param uri
-	 * @return
-	 */
-	public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
-		for (UnenforcedUri uu : unenforcedUrls) {
-			if (uu.matches(scheme, host, port, path, query)) {
-				return true;
-			}
-		}
-		return false;
-	}
+    /**
+     * Determines if the passed-in url is an unenforeceUrl either starting with
+     * a configured url ending in an asterisk minus the asterisk or matching
+     * exactly a configured url not ending with an asterisk.
+     * @param query 
+     * 
+     * @param uri
+     * @return
+     */
+    public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
+        for (UnenforcedUri uu : unenforcedUrls) {
+            if (uu.matches(scheme, host, port, path, query)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determines if the passed-in url is an enforece Url.
+     * 
+     * @param query 
+     * 
+     * @return
+     */
+    public boolean isEnforced(String scheme, String host, int port, String path, String query) {
+        if (this.port == port && this.host.equals(host)) {
+            for(AllowedUri au : allowedUrls) {
+                if (au.matches(scheme, host, port, path, query)) {
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
 
 	public void addAllowedUri(AllowedUri au, String condId, String condSyntax) {
 		if (type == Type.SITE) {
@@ -322,4 +341,21 @@ public class SiteMatcher {
 		EndPoint ep = new LocalFileEndPoint(cctx, file, type);
 		mappedEndPoints.add(ep);
 	}
+
+    public boolean isUnenforcedGreedy() {
+        return isUnenforcedGreedy;
+    }
+
+    /**
+     * Sets isUnenforcedGreedy to the passed in value. If greedy then an 
+     * unenforced declaration will alias or hide any nested enforced URL making
+     * it too be unenforced. If NOT greedy then a nested enforced URL will take
+     * precedence over a containing unenforced URL declaration.
+     * 
+     * @param b
+     */
+    public void setUnenforcedIsGreedy(boolean b) {
+        isUnenforcedGreedy = b;
+    }
+    
 }

@@ -34,7 +34,7 @@ public class UserHeaderNames {
     public static final String PREFERRED_LANG = PREFIX + "preferredlanguage";
     public static final String LDS_MRN = PREFIX + "ldsmrn";
     public static final String EMAIL = PREFIX + "ldsemailaddress";
-    public static final String INDIVIDUAL_ID = PREFIX + "individualid";
+    public static final String INDIVIDUAL_ID = PREFIX + "ldsindividualid";
 
 	/**
 	 * Prefix of position identifiers for compile time ties to conditions that 

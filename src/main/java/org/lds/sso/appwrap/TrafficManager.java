@@ -66,28 +66,28 @@ public class TrafficManager {
     }
 
     /**
-	 * Determines if the passed-in url is an unenforeceUrl either starting with
-	 * a configured url ending in an asterisk minus the asterisk or matching
-	 * exactly a configured url not ending with an asterisk.
-	 * 
-	 * @param uri
-	 * @param string
-	 * @param i
-	 * @return
-	 */
-	public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
-		for (SiteMatcher m : matchers) {
-			if (m.isUnenforced(scheme, host, port, path, query)) {
-				return true;
-			}
-		}
-		return false;
-	}
+     * Determines if the passed-in url is an unenforeceUrl.
+     * 
+     * @param uri
+     * @param string
+     * @param i
+     * @return
+     */
+    public boolean isUnenforced(String scheme, String host, int port,
+            String path, String query) {
+        for (SiteMatcher m : matchers) {
+            if (!m.isUnenforcedGreedy() && m.isEnforced(scheme, host, port, path, query)) {
+                return false;
+            }
+            if (m.isUnenforced(scheme, host, port, path, query)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 	/**
-	 * Determines if the passed-in url is an unenforeceUrl either starting with
-	 * a configured url ending in an asterisk minus the asterisk or matching
-	 * exactly a configured url not ending with an asterisk.
+	 * Determines if the passed-in url is permitted by the user.
 	 * 
 	 * @param uri
 	 * @return

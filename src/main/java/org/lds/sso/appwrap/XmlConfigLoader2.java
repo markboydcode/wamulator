@@ -380,6 +380,11 @@ public class XmlConfigLoader2 {
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher m = new SiteMatcher(scheme, host, port, trafficMgr);
 				trafficMgr.addMatcher(m);
+				
+                String greedy = atts.getValue("greedy-unenforced");
+                if (greedy != null && ! greedy.equals("")) {
+                    m.setUnenforcedIsGreedy(Boolean.parseBoolean(greedy));
+                }
 			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-file")) {
 				String cctx = getStringAtt("cctx", path, atts); 
