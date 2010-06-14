@@ -40,7 +40,7 @@ public class ConfigSamplesVerificationTest {
         Config cfg = Config.getInstance();
         
         // hit the getCookieName rest endpoint
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/getCookieName";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName";
         
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(endpoint);

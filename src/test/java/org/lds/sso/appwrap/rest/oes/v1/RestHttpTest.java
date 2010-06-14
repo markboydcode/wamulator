@@ -84,7 +84,7 @@ public class RestHttpTest {
     
 	@Test
 	public void test_GetCookieName() throws Exception {
-		String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/getCookieName";
+		String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName";
 		
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(endpoint);
@@ -104,7 +104,7 @@ public class RestHttpTest {
         String usrToken2 =  TestUtilities.authenticateUser("user2", cfg.getConsolePort());
 
         // next craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/areTokensValid";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt", "3");
         post.addParameter("token.1", usrToken1);
@@ -168,7 +168,7 @@ public class RestHttpTest {
         String usrToken1 = parms[0];
         
         // next craft request for AreTokensValid
-        endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/areTokensValid";
+        endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt", "1");
         post.addParameter("token.1", usrToken1);
@@ -191,7 +191,7 @@ public class RestHttpTest {
     @Test
     public void test_AreTokensValid_BadTokenCnt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/areTokensValid";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt...", "1");
@@ -205,7 +205,7 @@ public class RestHttpTest {
     @Test
     public void test_AreTokensValid_TokenCntNotInt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/areTokensValid";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt", "sss");
@@ -219,7 +219,7 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_NoToken() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         // leave off token param intentionally
@@ -233,7 +233,7 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_NoResCnt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         // leave off token param intentionally
@@ -249,7 +249,7 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_ResCntNotInt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", "invalid-token");
@@ -279,7 +279,7 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_ExpiredToken() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", "invalid-token");
@@ -327,7 +327,7 @@ public class RestHttpTest {
         String usrToken =  TestUtilities.authenticateUser("user1", cfg.getConsolePort());
         
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", usrToken);
         injectSampleResourcesForAreValidCall(post);
@@ -375,7 +375,7 @@ public class RestHttpTest {
         String ngiwb1 =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
         
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", ngiwb1);
         post.addParameter("res.cnt", "3");

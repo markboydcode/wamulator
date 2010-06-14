@@ -102,9 +102,9 @@ public class Service {
 			break;
 			
 		case CD_OESv1 :
-            handlers.addHandler(new GetOesV1CookieName("/rest/oes/1/getCookieName"));
-            handlers.addHandler(new AreTokensValid("/rest/oes/1/areTokensValid"));
-            handlers.addHandler(new ArePermitted("/rest/oes/1/arePermitted"));
+            handlers.addHandler(new GetOesV1CookieName("/oes/v1.0/rest/getCookieName"));
+            handlers.addHandler(new AreTokensValid("/oes/v1.0/rest/areTokensValid"));
+            handlers.addHandler(new ArePermitted("/oes/v1.0/rest/arePermitted"));
 		}
 		
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));
