@@ -37,6 +37,10 @@ public abstract class RestHandlerBase extends AbstractHandler {
 		this.pathPrefixRaw = pathPrefix;
 	}
 	
+	public String getPathPrefix() {
+	    return pathPrefix;
+	}
+	
 	/**
 	 * Implements the path filtering feature of this base class delegating to 
 	 * doHandle if the target starts with the configured pathPrefix and then 
