@@ -82,10 +82,16 @@ public class RestHttpTest {
         service = null;
     }
     
-	@Test
-	public void test_GetCookieName() throws Exception {
-		String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName";
-		
+    @Test
+    public void test_GetCookieName() throws Exception {
+        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName");
+    }
+    @Test
+    public void test_GetCookieNameOld() throws Exception {
+        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/rest/1/getCookieName");
+    }
+
+    public void getCookieName(String endpoint) throws Exception {
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(endpoint);
         method.setFollowRedirects(false);
@@ -95,16 +101,18 @@ public class RestHttpTest {
         String content = method.getResponseBodyAsString();
         Assert.assertNotNull(content);
         Assert.assertEquals(content, cookieName);
-	}
+    }
+	
 	
     @Test
     public void test_AreTokensValid_multiple() throws Exception {
-        // first initiate two sessions so that we have valid tokens
+        // craft request for AreTokensValid
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
+
+        // initiate two sessions so that we have valid tokens
         String usrToken1 = TestUtilities.authenticateUser("user1", cfg.getConsolePort());
         String usrToken2 =  TestUtilities.authenticateUser("user2", cfg.getConsolePort());
 
-        // next craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt", "3");
         post.addParameter("token.1", usrToken1);
@@ -151,7 +159,15 @@ public class RestHttpTest {
 
     @Test
     public void test_AreTokensValid_single() throws Exception {
-        // first initiate session so that we have valid token
+        areTokensValid_single("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/rest/1/areTokensValid");
+    }
+
+    @Test
+    public void test_AreTokensValid_singleOld() throws Exception {
+        areTokensValid_single("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid");
+    }
+
+    public void areTokensValid_single(String restEndpoint) throws Exception {
         String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/auth/ui/authenticate?username=user1";
         
         HttpClient client = new HttpClient();
@@ -168,8 +184,7 @@ public class RestHttpTest {
         String usrToken1 = parms[0];
         
         // next craft request for AreTokensValid
-        endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
-        PostMethod post = new PostMethod(endpoint);
+        PostMethod post = new PostMethod(restEndpoint);
         post.addParameter("token.cnt", "1");
         post.addParameter("token.1", usrToken1);
         post.setFollowRedirects(false);
@@ -187,6 +202,7 @@ public class RestHttpTest {
         Assert.assertEquals(tokens[0], "token.1");
         Assert.assertEquals(tokens[1], "true");
     }
+
 
     @Test
     public void test_AreTokensValid_BadTokenCnt() throws Exception {
@@ -321,13 +337,11 @@ public class RestHttpTest {
         Assert.assertEquals(res_3, false, "res.3 should not be permitted for invalid token");
     }
 
-    @Test
-    public void test_ArePermitted_ValidToken() throws Exception {
+    public void arePermitted_ValidToken(String endpoint) throws Exception {
         // first initiate session so that we have valid token
         String usrToken =  TestUtilities.authenticateUser("user1", cfg.getConsolePort());
         
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", usrToken);
         injectSampleResourcesForAreValidCall(post);
@@ -367,6 +381,16 @@ public class RestHttpTest {
         Assert.assertEquals(res_1, true, "res.1 should be permitted for GET");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for POST");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted since not defined");
+    }
+
+    @Test
+    public void test_ArePermitted_ValidToken() throws Exception {
+        arePermitted_ValidToken("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted");
+    }
+
+    @Test
+    public void test_ArePermitted_ValidTokenOld() throws Exception {
+        arePermitted_ValidToken("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/rest/1/arePermitted");
     }
 
     @Test
