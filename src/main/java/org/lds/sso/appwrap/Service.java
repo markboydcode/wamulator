@@ -204,6 +204,7 @@ public class Service {
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
 
+		dualLog("simulator version  : " + cfg.getServerName());
         dualLog("admin-rest port    : " + cfg.getConsolePort());
         dualLog("http proxy port    : " + cfg.getProxyPort());
         dualLog("Rest Interface     : " + cfg.getRestVersion().getVersionId());
