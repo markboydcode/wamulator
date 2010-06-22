@@ -107,9 +107,9 @@ public class Service {
             handlers.addHandler(new AreTokensValid("/oes/v1.0/rest/areTokensValid"));
             handlers.addHandler(new ArePermitted("/oes/v1.0/rest/arePermitted"));
             // old location left 
-            handlers.addHandler(new HandlerHitLogger(new GetOesV1CookieName("/oes/rest/1/getCookieName"),"Using deprecated URL /oes/rest/1/getCookieName, replacement is /oes/v1.0/rest/getCookieName"));
-            handlers.addHandler(new HandlerHitLogger(new AreTokensValid("/oes/rest/1/areTokensValid"),"Using deprecated URL /oes/rest/1/areTokensValid, replacement is /oes/v1.0/rest/areTokensValid"));
-            handlers.addHandler(new HandlerHitLogger(new ArePermitted("/oes/rest/1/arePermitted"),"Using deprecated URL /oes/rest/1/arePermitted, replacement is /oes/v1.0/rest/arePermitted"));
+            handlers.addHandler(new HandlerHitLogger(new GetOesV1CookieName("/rest/oes/1/getCookieName"),"Using deprecated URL /oes/rest/1/getCookieName, replacement is /oes/v1.0/rest/getCookieName"));
+            handlers.addHandler(new HandlerHitLogger(new AreTokensValid("/rest/oes/1/areTokensValid"),"Using deprecated URL /oes/rest/1/areTokensValid, replacement is /oes/v1.0/rest/areTokensValid"));
+            handlers.addHandler(new HandlerHitLogger(new ArePermitted("/rest/oes/1/arePermitted"),"Using deprecated URL /oes/rest/1/arePermitted, replacement is /oes/v1.0/rest/arePermitted"));
 		}
 		
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));

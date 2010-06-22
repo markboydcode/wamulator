@@ -88,7 +88,7 @@ public class RestHttpTest {
     }
     @Test
     public void test_GetCookieNameOld() throws Exception {
-        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/rest/1/getCookieName");
+        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/getCookieName");
     }
 
     public void getCookieName(String endpoint) throws Exception {
@@ -159,7 +159,7 @@ public class RestHttpTest {
 
     @Test
     public void test_AreTokensValid_single() throws Exception {
-        areTokensValid_single("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/rest/1/areTokensValid");
+        areTokensValid_single("http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/areTokensValid");
     }
 
     @Test
@@ -390,7 +390,7 @@ public class RestHttpTest {
 
     @Test
     public void test_ArePermitted_ValidTokenOld() throws Exception {
-        arePermitted_ValidToken("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/rest/1/arePermitted");
+        arePermitted_ValidToken("http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted");
     }
 
     @Test
