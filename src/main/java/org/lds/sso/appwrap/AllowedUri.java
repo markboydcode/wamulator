@@ -15,13 +15,13 @@ public class AllowedUri extends UnenforcedUri {
 
 	protected String[] actions = null;
 	
-	public AllowedUri(String scheme, String host, int port, String path, String query) {
-		super(scheme, host, port, path, query);
+	public AllowedUri(String scheme, String host, int port, String path, String query, String cpathDeclaration) {
+		super(scheme, host, port, path, query, cpathDeclaration);
 		throw new UnsupportedOperationException("Use other constructor.");
 	}
 	
-	public AllowedUri(String scheme, String host, int port, String path, String query, String[] actions) {
-		super(scheme, host, port, path, query);
+	public AllowedUri(String scheme, String host, int port, String path, String query, String[] actions, String cpathDeclaration) {
+		super(scheme, host, port, path, query, cpathDeclaration);
 		this.actions = actions;
 		updateId();
 	}
@@ -45,3 +45,4 @@ public class AllowedUri extends UnenforcedUri {
 		return false;
 	}
 }
+

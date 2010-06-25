@@ -36,6 +36,15 @@ public class LocalFileEndPoint implements EndPoint {
 
     public String servedFromMsg;
 
+    /**
+     * A number that indicates the order of declaration in the configuation file
+     * in xml document order within a by-site element for use in comparable 
+     * operations allowing endpoint with hierarchically nested canonical urls
+     * to coexist but allow for the nested one to be declared first and match
+     * without being lost by the endpoint with the containing URL.
+     */
+    private Integer declarationOrder = null;
+
 	public LocalFileEndPoint(String canonicalCtx, String filePathParam, String contentType) {
 		this.canonicalContextRoot = canonicalCtx;
 		this.filePath = filePathParam;
@@ -63,8 +72,16 @@ public class LocalFileEndPoint implements EndPoint {
 		return this.id;
 	}
 	
+    public void setDeclarationOrder(int index) {
+        this.declarationOrder = new Integer(index);
+    }
+    
+    public Integer getDeclarationOrder() {
+        return declarationOrder;
+    }
+    
 	public int compareTo(EndPoint o) {
-		return id.compareTo(o.getId());
+		return declarationOrder.compareTo(o.getDeclarationOrder());
 	}
 
 	@Override

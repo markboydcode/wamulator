@@ -31,6 +31,15 @@ public class AppEndPoint implements EndPoint {
      */
     private boolean preserveHostHeader;
 
+    /**
+     * A number that indicates the order of declaration in the configuation file
+     * in xml document order within a by-site element for use in comparable 
+     * operations allowing endpoint with hierarchically nested canonical urls
+     * to coexist but allow for the nested one to be declared first and match
+     * without being lost by the endpoint with the containing URL.
+     */
+    private Integer declarationOrder = null;
+
 	public AppEndPoint(String canonicalCtx, String appCtx, String host, int port, boolean preserveHost) {
 		this.endpointPort = port;
 		this.canonicalContextRoot = canonicalCtx;
@@ -48,8 +57,16 @@ public class AppEndPoint implements EndPoint {
 		return id;
 	}
 	
+    public void setDeclarationOrder(int index) {
+        this.declarationOrder = new Integer(index);
+    }
+    
+	public Integer getDeclarationOrder() {
+	    return declarationOrder;
+	}
+	
 	public int compareTo(EndPoint o) {
-		return id.compareTo(o.getId());
+		return declarationOrder.compareTo(o.getDeclarationOrder());
 	}
 
 	@Override

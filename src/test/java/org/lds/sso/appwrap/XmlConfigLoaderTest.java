@@ -110,27 +110,27 @@ public class XmlConfigLoaderTest {
         Assert.assertEquals(cfg.getLoginPage(), "http://the-path-property/auth/ui/sign-in");
     }
 
-	@Test
-	public void testNonGreedyUnenforcedBySitePathWildcard() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-site host='labs-local.lds.org' port='80' greedy-unenforced='false'>"
-            + "    <unenforced cpath='/auth/ui/*'/>"
+    @Test
+    public void testOrderingOfElementsWithNestedURLs() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site host='labs-local.lds.org' port='80'>"
             + "    <allow action='GET' cpath='/auth/ui/some/path/*'/>"
-	        + "  </by-site>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		
+            + "    <unenforced cpath='/auth/ui/*'/>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        TrafficManager tman = cfg.getTrafficManager();
+        
         String url = "http://labs-local.lds.org/auth/ui/some/path/lower";
-        Assert.assertFalse(tman.isUnenforced(url), "should be unenforced " + url);
+        Assert.assertFalse(tman.isUnenforced(url), "should NOT be unenforced " + url);
         
         url = "http://labs-local.lds.org:80/auth/ui/some/path/lower";
-        Assert.assertFalse(tman.isUnenforced(url), "should be unenforced " + url);
+        Assert.assertFalse(tman.isUnenforced(url), "should be NOT unenforced " + url);
         
         url = "http://labs-local.lds.org:111/auth/ui/some/path/lower";
         Assert.assertFalse(tman.isUnenforced(url), 
@@ -149,28 +149,77 @@ public class XmlConfigLoaderTest {
         "due to incorrect path should NOT be unenforced " + url);
 
         
+        url = "http://labs-local.lds.org/auth/ui/some/path/lower";
+        Assert.assertTrue(tman.isEnforced(url), "should be enforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/some/path/lower";
+        Assert.assertTrue(tman.isEnforced(url), "should be enforced " + url);
+        
+        url = "http://labs-local.lds.org:111/auth/ui/some/path/lower";
+        Assert.assertFalse(tman.isEnforced(url), 
+        "due to wrong port should NOT be enforced " + url);
+        
+        url = "apps://labs-local.lds.org/auth/ui/some/path/lower";
+        Assert.assertFalse(tman.isEnforced(url), 
+        "due to wrong scheme should NOT be enforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/some/path/lower?locale=eng";
+        Assert.assertFalse(tman.isEnforced(url), 
+        "due to query should NOT be enforced " + url);
+        
+        url = "http://labs-local.lds.org/auth/diff/path";
+        Assert.assertFalse(tman.isEnforced(url), 
+        "due to incorrect path should NOT be enforced " + url);
+
+        
         url = "http://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
-		
-		url = "http://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
-		
-		url = "http://labs-local.lds.org:111/auth/ui/sign-in";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to wrong port should NOT be unenforced " + url);
-		
-		url = "apps://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to wrong scheme should NOT be unenforced " + url);
-		
-		url = "http://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to query should NOT be unenforced " + url);
-		
-		url = "http://labs-local.lds.org/auth/diff/path";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to incorrect path should NOT be unenforced " + url);
-	}
+        Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/sign-in";
+        Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:111/auth/ui/sign-in";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to wrong port should NOT be unenforced " + url);
+        
+        url = "apps://labs-local.lds.org/auth/ui/sign-in";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to wrong scheme should NOT be unenforced " + url);
+        
+        url = "http://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to query should NOT be unenforced " + url);
+        
+        url = "http://labs-local.lds.org/auth/diff/path";
+        Assert.assertFalse(tman.isUnenforced(url), 
+        "due to incorrect path should NOT be unenforced " + url);
+    }
+
+
+    @Test
+    public void testIncorrectOrderingOfElementsWithNestedURLsThrowExcp() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site host='labs-local.lds.org' port='80'>"
+            + "    <unenforced cpath='/auth/ui/*'/>"
+            + "    <allow action='GET' cpath='/auth/ui/some/path/*'/>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        try {
+            XmlConfigLoader2.load(xml);
+            Assert.fail("Should have thrown IllegalArgumentException since URLs " +
+            		"matching the cpath of the 'allow' element will be consumed by the cpath of the " +
+            		"preceeding 'unenforced' element.");
+        }
+        catch (Exception e) {
+            Assert.assertNotNull(e.getCause(), "Should be an underlying exception.");
+            Assert.assertSame(e.getCause().getClass(), IllegalArgumentException.class);
+        }
+    }
 
 
     @Test
@@ -213,42 +262,6 @@ public class XmlConfigLoaderTest {
 
 
 	@Test
-	public void testUnenforcedByResourcePathWildcard() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='http://labs-local.lds.org:80/auth/ui/*' unenforced='true'/>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		
-		String url = "http://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
-		
-		url = "http://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isUnenforced(url), "should be unenforced " + url);
-		
-		url = "http://labs-local.lds.org:111/auth/ui/sign-in";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to wrong port should NOT be unenforced " + url);
-		
-		url = "apps://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to wrong scheme should NOT be unenforced " + url);
-		
-		url = "http://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to query should NOT be unenforced " + url);
-		
-		url = "http://labs-local.lds.org/auth/diff/path";
-		Assert.assertFalse(tman.isUnenforced(url), 
-		"due to incorrect path should NOT be unenforced " + url);
-	}
-
-	@Test
 	public void testAllowedBySitePathWildcard() throws Exception {
 		String xml = 
 			"<?xml version='1.0' encoding='UTF-8'?>"
@@ -257,45 +270,6 @@ public class XmlConfigLoaderTest {
 			+ "  <by-site scheme='app' host='labs-local.lds.org' port='80'>"
 			+ "    <allow action='GET,PUT' cpath='/auth/ui/*'/>"
 	        + "  </by-site>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		User u = new User("", ""); // no conditions are specified so any user object can be used.
-		
-		String url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-
-		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
-	}
-
-	@Test
-	public void testAllowedByResourcePathWildcard() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='app://labs-local.lds.org:80/auth/ui/*' allow='GET,PUT'/>"
 			+ " </sso-traffic>"
 		    + "</config>";
 		Config cfg = new Config();
@@ -370,45 +344,6 @@ public class XmlConfigLoaderTest {
 	}
 
 	@Test
-	public void testAllowedByResourceEmptyPathWildcard() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='app://labs-local.lds.org/*' allow='GET,PUT'/>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		User u = new User("", ""); // no conditions are specified so any user object can be used.
-		
-		String url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-
-		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to query should NOT be allowed " + url);
-	}
-
-	@Test
 	public void testAllowedBySiteQueryWildcard() throws Exception {
 		String xml = 
 			"<?xml version='1.0' encoding='UTF-8'?>"
@@ -417,45 +352,6 @@ public class XmlConfigLoaderTest {
 			+ "  <by-site scheme='app' host='labs-local.lds.org' port='80'>"
 			+ "    <allow action='GET,PUT' cpath='/auth/ui/sign-in?*'/>"
 	        + "  </by-site>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		User u = new User("", ""); // no conditions are specified so any user object can be used.
-		
-		String url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-
-		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query should NOT be allowed " + url);
-	}
-
-	@Test
-	public void testAllowedByResourceQueryWildcard() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='app://labs-local.lds.org/auth/ui/sign-in?*' allow='GET,PUT'/>"
 			+ " </sso-traffic>"
 		    + "</config>";
 		Config cfg = new Config();
@@ -530,45 +426,6 @@ public class XmlConfigLoaderTest {
 	}
 
 	@Test
-	public void testAllowedByResourceQueryWithWildcard() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='app://labs-local.lds.org/auth/ui/sign-in?a=b&amp;*' allow='GET,PUT'/>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		User u = new User("", ""); // no conditions are specified so any user object can be used.
-		
-		String url = "app://labs-local.lds.org/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("GET", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in?a=b&locale=eng";
-		Assert.assertTrue(tman.isPermitted("PUT", url, u), "should be allowed " + url);
-
-		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query portion should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("GET", url, u), "due to missing query portion should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org:80/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query portion should NOT be allowed " + url);
-		
-		url = "app://labs-local.lds.org/auth/ui/sign-in?locale=eng";
-		Assert.assertFalse(tman.isPermitted("PUT", url, u), "due to missing query portion should NOT be allowed " + url);
-	}
-
-	@Test
 	public void testIsAllowedBySiteConfig() throws Exception {
 		String xml = 
 			"<?xml version='1.0' encoding='UTF-8'?>"
@@ -579,27 +436,6 @@ public class XmlConfigLoaderTest {
 			+ "    <unenforced cpath='/auth/ui/*'/>"
 	        + "    <allow action='GET,POST' cpath='/auth/_app/*'/>"
 	        + "  </by-site>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		boolean res = tman.isUnenforced("http://labs-local.lds.org/auth/ui/sign-in");
-		Assert.assertTrue(res, "should be unenforced http://labs-local.lds.org:/auth/ui/sign-in");
-		res = tman.isUnenforced("http://labs-local.lds.org/auth/ui/sign-in");
-		Assert.assertTrue(res, "should be unenforced http://labs-local.lds.org/auth/ui/sign-in");
-		res = tman.isUnenforced("http://labs-local.lds.org:80/auth/ui/sign-in");
-		Assert.assertTrue(res, "should be unenforced http://labs-local.lds.org/auth/ui/sign-in");
-	}
-
-	@Test
-	public void testIsAllowedByResourcesConfig() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='http://labs-local.lds.org/auth/ui/*' unenforced='true'/>"
-			+ "  <by-resource uri='http://labs-local.lds.org/auth/_app/*' allow='GET,POST'/>"
 			+ " </sso-traffic>"
 		    + "</config>";
 		Config cfg = new Config();
@@ -634,79 +470,6 @@ public class XmlConfigLoaderTest {
 		Assert.assertTrue(res, "should be unenforced http://labs-local.lds.org:/auth/ui/sign-in");
 	}
 
-	@Test
-	public void testArcaneSchemConfigByResourceIsAllowed() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='app://labs-local.lds.org/auth/ui/*' unenforced='true'/>"
-			+ "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST'/>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		User u = new User("", ""); // no conditions are specified so any user object can be used.
-
-		String uri = "http://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertFalse(tman.isUnenforced(uri), "due to wrong scheme should NOT be unenforced " + uri);
-
-		uri = "app://labs-local.lds.org/auth/ui/sign-in";
-		Assert.assertTrue(tman.isUnenforced(uri), "should be unenforced " + uri);
-
-		uri = "http://labs-local.lds.org/auth/_app/debug";
-		Assert.assertFalse(tman.isPermitted("POST", uri, u), "due to wrong scheme should NOT be allowed " + uri);
-
-		uri = "app://labs-local.lds.org/auth/_app/debug";
-		Assert.assertTrue(tman.isPermitted("POST", uri, u), "should be allowed " + uri);
-	}
-
-	@Test
-	public void testConditionIsBishopAllowedURI() throws Exception {
-		String xml = 
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<?alias is-bishop=classpath:is-bishop-test.xml?>"
-			+ "<config console-port='88' proxy-port='45'>"
-			+ " <sso-traffic>"
-			+ "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{is-bishop}}'/>"
-			+ " </sso-traffic>"
-		    + "</config>";
-		Config cfg = new Config();
-		XmlConfigLoader2.load(xml);
-		TrafficManager tman = cfg.getTrafficManager();
-		User bish = new User("bish", "bish"); 
-		bish.addHeader(UserHeaderNames.POSITIONS, "p4/7u100/5u200/6u300/"); // 4 is a bishop
-		User user = new User("user", "user"); 
-
-		String uri = "app://labs-local.lds.org/auth/_app/debug";
-		Assert.assertTrue(tman.isPermitted("POST", uri, bish), "should be allowed " + uri);
-		Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
-	}
-
-    @Test
-    public void testConditionHasSpecificLdsAccountIdAllowed() throws Exception {
-        String xml = 
-            "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<?alias has-lds-account-1234=classpath:has-lds-account-1234-test.xml?>"
-            + "<config console-port='88' proxy-port='45'>"
-            + " <sso-traffic>"
-            + "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{has-lds-account-1234}}'/>"
-            + " </sso-traffic>"
-            + "</config>";
-        Config cfg = new Config();
-        XmlConfigLoader2.load(xml);
-        TrafficManager tman = cfg.getTrafficManager();
-        User u1234 = new User("bish", "bish"); 
-        u1234.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1234");
-        User user = new User("user", "user"); 
-        user.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1000");
-
-        String uri = "app://labs-local.lds.org/auth/_app/debug";
-        Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
-        Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
-    }
-
     @Test
     public void test_FileAlias() throws Exception {
         String path = "file-has-lds-account-1234-test.xml";
@@ -724,7 +487,9 @@ public class XmlConfigLoaderTest {
             + "<?alias has-lds-account-1234=file:file-has-lds-account-1234-test.xml?>"
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-traffic>"
-            + "  <by-resource uri='app://labs-local.lds.org/auth/_app/*' allow='GET,POST' condition='{{has-lds-account-1234}}'/>"
+            + "  <by-site host='labs-local.lds.org' port='45' scheme='http'>"
+            + "   <allow cpath='/auth/_app/*' action='GET,POST' condition='{{has-lds-account-1234}}'/>"
+            + "  </by-site>"
             + " </sso-traffic>"
             + "</config>";
         Config cfg = new Config();
@@ -735,7 +500,7 @@ public class XmlConfigLoaderTest {
         User user = new User("user", "user"); 
         user.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1000");
 
-        String uri = "app://labs-local.lds.org/auth/_app/debug";
+        String uri = "http://labs-local.lds.org:45/auth/_app/debug";
         Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
         Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
     }

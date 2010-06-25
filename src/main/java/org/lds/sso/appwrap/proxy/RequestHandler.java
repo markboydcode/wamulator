@@ -266,11 +266,11 @@ public class RequestHandler implements Runnable {
 				endpoint = reqPkg.site.getEndpointForCanonicalUrl(reqPkg.requestLine.getUri());
 
 				if (endpoint == null) {
-					byte[] bytes = getResponse("404", "Not Found", 
-							"404 Not Found",
-						    "No registered application in a &lt;by-site&gt; declaration has a canonical context that matches the URL.",
+					byte[] bytes = getResponse("501", "CCTX Match Not Implemented", 
+							"501 CCTX Match Not Implemented",
+						    "There is no CCTX-MAPPING element whose CCTX attribute matches the canonical context of the URL request in the configuration file.",
 						    null, reqPkg);
-					sendProxyResponse(404, bytes, reqPkg, clientIn, clientOut, user,
+					sendProxyResponse(501, bytes, reqPkg, clientIn, clientOut, user,
 							startTime, log, true);
 					return;
 				}
@@ -624,7 +624,7 @@ public class RequestHandler implements Runnable {
 		pkg.query = uri.getQuery();
         pkg.signMeInDetected = GlobalHeaderNames.detectSignMeIn(pkg.query);
         pkg.signMeOutDetected = GlobalHeaderNames.detectSignMeOut(pkg.query);
-		SiteMatcher site = appMgr.getSite(pkg.scheme, pkg.host, pkg.port, pkg.path, pkg.query);
+		SiteMatcher site = appMgr.getSite(pkg.host, pkg.port);
 
 		if (site != null) {
 			pkg.site = site;

@@ -18,6 +18,7 @@ src/main/java/org/lds/sso/appwrap/Entitlement.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/EntitlementsManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/LocalFileEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/NvPair.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/OrderedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/PermittedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/PomVersionExtractor.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Service.java -text svneol=unset#text/plain
@@ -122,6 +123,7 @@ src/test/java/org/lds/sso/appwrap/ConfigSamplesVerificationTest.java -text svneo
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/SiteMatcherTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestJettyJspApproach.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestUtilities.java -text svneol=unset#text/plain

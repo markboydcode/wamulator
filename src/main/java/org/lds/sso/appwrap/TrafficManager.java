@@ -66,7 +66,7 @@ public class TrafficManager {
     }
 
     /**
-     * Determines if the passed-in url is an unenforeceUrl.
+     * Determines if the passed-in url is an unenforced Url.
      * 
      * @param uri
      * @param string
@@ -75,13 +75,26 @@ public class TrafficManager {
      */
     public boolean isUnenforced(String scheme, String host, int port,
             String path, String query) {
-        for (SiteMatcher m : matchers) {
-            if (!m.isUnenforcedGreedy() && m.isEnforced(scheme, host, port, path, query)) {
-                return false;
-            }
-            if (m.isUnenforced(scheme, host, port, path, query)) {
-                return true;
-            }
+        SiteMatcher m = getSite(host, port);
+        if (m != null && m.isUnenforced(scheme, host, port, path, query)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determines if the passed-in url is an enforced Url.
+     * 
+     * @param uri
+     * @param string
+     * @param i
+     * @return
+     */
+    public boolean isEnforced(String scheme, String host, int port,
+            String path, String query) {
+        SiteMatcher m = getSite(host, port);
+        if (m != null && m.isEnforced(scheme, host, port, path, query)) {
+            return true;
         }
         return false;
     }
@@ -93,11 +106,10 @@ public class TrafficManager {
 	 * @return
 	 */
 	public boolean isPermitted(String scheme, String host, int port, String action, String path, String query, User user) {
-		for (SiteMatcher m : matchers) {
-			if (m.isAllowed(scheme, host, port, action, path, query, user)) {
-				return true;
-			}
-		}
+	    SiteMatcher m = getSite(host, port);
+	    if (m != null && m.isAllowed(scheme, host, port, action, path, query, user)) {
+            return true;
+	    }
 		return false;
 	}
 
@@ -110,24 +122,34 @@ public class TrafficManager {
 		return lastMatcherAdded;
 	}
 
-	public SiteMatcher getSite(String scheme, String host, int port, String path, String query) {
+	public SiteMatcher getSite(String host, int port) {
 		for (SiteMatcher rm : matchers) {
-			if (rm.matches(scheme, host, port, path, query)) {
+			if (rm.matches(host, port)) {
 				return rm;
 			}
 		}
 		return null;
 	}
 
-	public boolean isUnenforced(String fullUri) throws URISyntaxException {
-		URI u = new URI(fullUri);
-		int port = u.getPort() == -1 ? 80 : u.getPort();
-		String query = u.getQuery();
-		if ("".equals(query)) {
-			query = null;
-		}
-		return this.isUnenforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
-	}
+    public boolean isUnenforced(String fullUri) throws URISyntaxException {
+        URI u = new URI(fullUri);
+        int port = u.getPort() == -1 ? 80 : u.getPort();
+        String query = u.getQuery();
+        if ("".equals(query)) {
+            query = null;
+        }
+        return this.isUnenforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
+    }
+
+    public boolean isEnforced(String fullUri) throws URISyntaxException {
+        URI u = new URI(fullUri);
+        int port = u.getPort() == -1 ? 80 : u.getPort();
+        String query = u.getQuery();
+        if ("".equals(query)) {
+            query = null;
+        }
+        return this.isEnforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
+    }
 
 	public boolean isPermitted(String action, String fullUri, User user) throws URISyntaxException {
 		URI u = new URI(fullUri);

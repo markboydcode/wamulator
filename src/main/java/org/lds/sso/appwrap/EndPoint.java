@@ -10,4 +10,6 @@ public interface EndPoint extends Comparable<EndPoint> {
 	public int compareTo(EndPoint o);
 	public String getId();
 	public String getCanonicalContextRoot();
+    public Integer getDeclarationOrder();
+    public void setDeclarationOrder(int index);
 }

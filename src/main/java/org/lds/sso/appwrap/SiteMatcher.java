@@ -18,20 +18,16 @@ public class SiteMatcher {
 	private static final Logger cLog = Logger.getLogger(SiteMatcher.class);
 	private String host;
 	private int port;
-	private Set<UnenforcedUri> unenforcedUrls = new TreeSet<UnenforcedUri>();
-	private Set<AllowedUri> allowedUrls = new TreeSet<AllowedUri>();
+	private Set<OrderedUri> urls = new TreeSet<OrderedUri>();
 	private Set<EndPoint> mappedEndPoints = new TreeSet<EndPoint>();
 
-	protected Type type = Type.SITE;
 	private String scheme;
 	private LogicalSyntaxEvaluationEngine cEngine;
 	protected Map<String, String> cSynMap;
 	protected Map<AllowedUri, String> conditionsMap = new HashMap<AllowedUri, String>();
-    protected boolean isUnenforcedGreedy = true;
-
-	public enum Type {
-		SITE, SINGLE_UNENFORCED, SINGLE_RESTRICTED;
-	}
+    
+    protected int endPoints = 0;
+    protected int policies = 0;
 
 	/**
 	 * Create a matcher that allows multiple URLs to be configured within it.
@@ -44,80 +40,46 @@ public class SiteMatcher {
 		this.scheme = scheme;
 		this.host = host;
 		this.port = port;
-		this.type = Type.SITE;
-	}
-
-	/**
-	 * Create a matcher that only matches on a single unenforced or restricted URL.
-	 * 
-	 * @param host
-	 * @param port
-	 * @param uu an instance of UnenforcedUri or AllowedUri
-	 * @param condId the condition alias name if specified for an AllowedUri instance, can be null
-	 * @param syntax the condition syntax if specified for an AllowedUri instance, can be null
-	 */
-	public SiteMatcher(String scheme, String host, int port, UnenforcedUri uu, String condId, String syntax, TrafficManager trafficMgr) {
-		this.setConditionEnv(trafficMgr.cEngine, trafficMgr.cSyntaxMap);
-		this.host = host;
-		this.port = port;
-		if (uu instanceof AllowedUri) {
-			AllowedUri au = (AllowedUri) uu;
-			this.type = Type.SINGLE_RESTRICTED;
-			addAllowedUri(au, condId, syntax);
-		}
-		else {
-			this.type = Type.SINGLE_UNENFORCED;
-			addUnenforcedUri(uu);
-		}
-	}
-
-	/**
-	 * Create a matcher that only matches on a single restricted URL.
-	 * 
-	 * @param host
-	 * @param port
-	 * @param au the AllowedUri
-	 * @param condId the condition alias name
-	 * @param syntax the condition syntax
-	 * @param uu
-	 */
-	public SiteMatcher(String host, int port, AllowedUri au, String condId, String syntax, TrafficManager trafficMgr) {
-		this.setConditionEnv(trafficMgr.cEngine, trafficMgr.cSyntaxMap);
-		this.host = host;
-		this.port = port;
-		addAllowedUri(au, condId, syntax);
-		this.type = Type.SINGLE_RESTRICTED;
 	}
 
 	public boolean isAllowed(String scheme, String host, int port, String action, String path, String query, User user) {
 		if (this.port == port && this.host.equals(host)) {
-			for(AllowedUri au : allowedUrls) {
-				if (au.matches(scheme, host, port, path, query) && au.allowed(action)) {
-					String condId = conditionsMap.get(au);
-					if (condId == null) { // no condition needs to be met
-						return true;
-					}
-					else { // must further meet conditions for access
-						String syntax = cSynMap.get(condId);
-						IEvaluator evaluator = null;
-						try {
-							evaluator = cEngine.getEvaluator(syntax);
-						}
-						catch (EvaluationException e) {
-							cLog.error("Disallowing access to " 
-									+ au + " since unable to obtain evaluator for condition alias "
-									+ condId + " with syntax " + syntax + ". ", e);
-							return false;
-						}
-						EvaluationContext ctx = new EvaluationContext(user, new HashMap<String,String>());
-						try {
-							return evaluator.isConditionSatisfied(ctx);
-						}
-						catch (EvaluationException e) {
-							cLog.error("Error occurred for " + au + " for user " + user.getUsername()
-									+ " denying access.", e);
-						}
-					}
+			for(OrderedUri uri : urls) {
+				if (uri.matches(scheme, host, port, path, query)) {
+				    if (uri.getClass() == UnenforcedUri.class) {
+				        return true;
+				    }
+				    // instance of AllowedUri
+				    AllowedUri au = (AllowedUri) uri;
+				    if (au.allowed(action)) {
+				
+				        String condId = conditionsMap.get(au);
+    					if (condId == null) { // no condition needs to be met
+    						return true;
+    					}
+    					else { // must further meet conditions for access
+    						String syntax = cSynMap.get(condId);
+    						IEvaluator evaluator = null;
+    						try {
+    							evaluator = cEngine.getEvaluator(syntax);
+    						}
+    						catch (EvaluationException e) {
+    							cLog.error("Disallowing access to " 
+    									+ au + " since unable to obtain evaluator for condition alias "
+    									+ condId + " with syntax " + syntax + ". ", e);
+    							return false;
+    						}
+    						EvaluationContext ctx = new EvaluationContext(user, new HashMap<String,String>());
+    						try {
+    							return evaluator.isConditionSatisfied(ctx);
+    						}
+    						catch (EvaluationException e) {
+    							cLog.error("Error occurred for " + au + " for user " + user.getUsername()
+    									+ " denying access.", e);
+    						}
+    						return false;
+    					}
+				    }
 					return true;
 				}
 			}
@@ -145,30 +107,16 @@ public class SiteMatcher {
 	/**
 	 * Returns true if this site matches on the host, port, and uri.
 	 */
-	public boolean matches(String scheme, String host, int port, String path, String query) {
-		switch(type) {
-		case SINGLE_RESTRICTED:
-			if (allowedUrls.iterator().next().matches(scheme, host, port, path, query)) {
-				return true;
-			}
+	public boolean matches(String host, int port) {
+		if (!this.host.equals(host) || this.port != port) {
 			return false;
-		case SINGLE_UNENFORCED:
-			if (unenforcedUrls.iterator().next().matches(scheme, host, port, path, query)) {
-				return true;
-			}
-			return false;
-		case SITE:
-			if (!this.host.equals(host) || this.port != port) {
-				return false;
-			}
-			return true; 
 		}
-		// should never get here.
-		return false;
+		return true; 
 	}
 	
 	public void addMapping(String canonicalContext, String targetHost, int targetPort, String targetPathCtx, boolean preserveHost) {
-		AppEndPoint ep = new AppEndPoint(canonicalContext, targetPathCtx, targetHost, targetPort, preserveHost);
+		EndPoint ep = new AppEndPoint(canonicalContext, targetPathCtx, targetHost, targetPort, preserveHost);
+		ep.setDeclarationOrder(++endPoints);
 		mappedEndPoints.add(ep);
 	}
 	
@@ -185,33 +133,19 @@ public class SiteMatcher {
 
 	        // if matcher had zero port then all unenforced and allowed urls
 	        // will have inherited it and must be updated as well
-	        List<UnenforcedUri> unUpdates = new ArrayList<UnenforcedUri>();
+	        List<OrderedUri> updates = new ArrayList<OrderedUri>();
 	        
-	        for (Iterator<UnenforcedUri> itr=this.unenforcedUrls.iterator(); itr.hasNext();) {
-	            UnenforcedUri un = itr.next();
+	        for (Iterator<OrderedUri> itr=this.urls.iterator(); itr.hasNext();) {
+	            OrderedUri uri = itr.next();
 	            
-	                if (un.proxyPortChanged(proxyPort)) {
+	                if (uri.proxyPortChanged(proxyPort)) {
 	                    itr.remove();
-	                    unUpdates.add(un);
+	                    updates.add(uri);
 	                }
 	        }
-	        if (unUpdates.size() >0) {
-	            unenforcedUrls.addAll(unUpdates);
+	        if (updates.size() >0) {
+	            urls.addAll(updates);
 	        }
-
-            List<AllowedUri> aldUpdates = new ArrayList<AllowedUri>();
-            
-            for (Iterator<AllowedUri> itr=this.allowedUrls.iterator(); itr.hasNext();) {
-                AllowedUri ald = itr.next();
-                
-                    if (ald.proxyPortChanged(proxyPort)) {
-                        itr.remove();
-                        aldUpdates.add(ald);
-                    }
-            }
-            if (aldUpdates.size() >0) {
-                allowedUrls.addAll(aldUpdates);
-            }
 	    }
 	}
 	
@@ -243,36 +177,22 @@ public class SiteMatcher {
 	}
 
 	public void addUnenforcedUri(UnenforcedUri uu) {
-		if (type == Type.SITE) {
-			unenforcedUrls.add(uu);
-		}
-		else if (type == Type.SINGLE_UNENFORCED) {
-			if (this.unenforcedUrls.size() == 0) {
-				unenforcedUrls.add(uu);
-			}
-			else {
-				throw new IllegalArgumentException("Attempting to add additional unenforced uri " 
-						+ uu + " to single-unenforced-resource site " + host + ":" + port);
-			}
-		}
-		else if (type == Type.SINGLE_RESTRICTED) {
-			throw new IllegalArgumentException("Attempting to add unenforced uri " 
-					+ uu + " to single-restricted-resource site " + host + ":" + port);
-		}
+        uu.setDeclarationOrder(++policies);
+		urls.add(uu);
 	}
 	
     /**
-     * Determines if the passed-in url is an unenforeceUrl either starting with
-     * a configured url ending in an asterisk minus the asterisk or matching
-     * exactly a configured url not ending with an asterisk.
+     * Determines if the passed-in url is an unenforeceUrl or matches a defined
+     * one.
      * @param query 
      * 
      * @param uri
      * @return
      */
     public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
-        for (UnenforcedUri uu : unenforcedUrls) {
-            if (uu.matches(scheme, host, port, path, query)) {
+        OrderedUri url = getManagerOfUri(scheme, host, port, path, query);
+        if (url != null) {
+            if (url.getClass() == UnenforcedUri.class) {
                 return true;
             }
         }
@@ -287,37 +207,44 @@ public class SiteMatcher {
      * @return
      */
     public boolean isEnforced(String scheme, String host, int port, String path, String query) {
-        if (this.port == port && this.host.equals(host)) {
-            for(AllowedUri au : allowedUrls) {
-                if (au.matches(scheme, host, port, path, query)) {
-                        return true;
-                }
+        OrderedUri url = getManagerOfUri(scheme, host, port, path, query);
+        if (url != null) {
+            if (url.getClass() == AllowedUri.class) {
+                return true;
             }
         }
         return false;
     }
 
+    /**
+     * Returns a subclass of OrderedUri that manages the specified URL or null
+     * if no registered URIs match this URL.
+     * 
+     * @param scheme
+     * @param host
+     * @param port
+     * @param path
+     * @param query
+     * @param cls
+     * @return
+     */
+    public OrderedUri getManagerOfUri(String scheme, String host, int port, String path, String query) {
+        for (OrderedUri url : urls) {
+            if (url.matches(scheme, host, port, path, query)) {
+                return url;
+            }
+        }
+        return null;
+    }
+
 	public void addAllowedUri(AllowedUri au, String condId, String condSyntax) {
-		if (type == Type.SITE) {
-			this.allowedUrls.add(au);
-		}
-		else if (type == Type.SINGLE_RESTRICTED) {
-			if (this.allowedUrls.size() == 0) {
-				this.allowedUrls.add(au);
-			}
-			else {
-				throw new IllegalArgumentException("Attempting to add additional restricted uri " 
-						+ au + " to single-restricted-resource site " + host + ":" + port);
-			}
-		}
-		else if (type == Type.SINGLE_UNENFORCED) {
-			throw new IllegalArgumentException("Attempting to add retricted uri " 
-					+ au + " to single-unenforced-resource site " + host + ":" + port);
-		}
+	    au.setDeclarationOrder(++policies);
+		this.urls.add(au);
+ 
 		if (condId != null && condSyntax != null) {
-			cSynMap.put(condId, condSyntax);
-			conditionsMap.put(au, condId);
-		}
+            cSynMap.put(condId, condSyntax);
+            conditionsMap.put(au, condId);
+        }
 	}
 
 	public String getHost() {
@@ -339,23 +266,11 @@ public class SiteMatcher {
 
 	public void addFileMapping(String cctx, String file, String type) {
 		EndPoint ep = new LocalFileEndPoint(cctx, file, type);
+        ep.setDeclarationOrder(++endPoints);
 		mappedEndPoints.add(ep);
 	}
-
-    public boolean isUnenforcedGreedy() {
-        return isUnenforcedGreedy;
-    }
-
-    /**
-     * Sets isUnenforcedGreedy to the passed in value. If greedy then an 
-     * unenforced declaration will alias or hide any nested enforced URL making
-     * it too be unenforced. If NOT greedy then a nested enforced URL will take
-     * precedence over a containing unenforced URL declaration.
-     * 
-     * @param b
-     */
-    public void setUnenforcedIsGreedy(boolean b) {
-        isUnenforcedGreedy = b;
-    }
-    
+	
+	public String toString() {
+	    return this.scheme + "://" + this.host + ":" + this.port;
+	}
 }

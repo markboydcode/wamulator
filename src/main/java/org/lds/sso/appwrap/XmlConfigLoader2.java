@@ -18,6 +18,7 @@ import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -27,7 +28,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 public class XmlConfigLoader2 {
-
+    private static final Logger cLog = Logger.getLogger(XmlConfigLoader2.class);
+    
 	public static final String MACRO_PREFIX = "{{";
 	public static final String MACRO_SUFFIX = "}}";
 	
@@ -131,6 +133,19 @@ public class XmlConfigLoader2 {
 		public String toString() {
 			return compositePath;
 		}
+	}
+
+	/**
+	 * Class used to convey the original cpath attribute value for an unenforced
+	 * or allowed declaration and its nested parts if defined.
+	 * 
+	 * @author BoydMR
+	 *
+	 */
+	public static class CPathParts {
+	    public String rawValue = null;
+	    public String path = null;
+	    public String query = null;
 	}
 	
 	public static class CfgContentHandler implements ContentHandler {
@@ -378,13 +393,15 @@ public class XmlConfigLoader2 {
                     port = getIntegerAtt("port", path, atts);
                 }
 				TrafficManager trafficMgr = cfg.getTrafficManager();
-				SiteMatcher m = new SiteMatcher(scheme, host, port, trafficMgr);
-				trafficMgr.addMatcher(m);
-				
-                String greedy = atts.getValue("greedy-unenforced");
-                if (greedy != null && ! greedy.equals("")) {
-                    m.setUnenforcedIsGreedy(Boolean.parseBoolean(greedy));
-                }
+				SiteMatcher m = trafficMgr.getSite(host, port);
+				// causes reuse of existing site matcher but this will need to change
+				// if/when we support any other protocol besides http since SiteMatcher
+				// constructor takes scheme but trafficMgr.getSite() only uses host
+				// and port to distinguish between them.
+				if (m == null) {
+				    m = new SiteMatcher(scheme, host, port, trafficMgr);
+	                trafficMgr.addMatcher(m);
+				}
 			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-file")) {
 				String cctx = getStringAtt("cctx", path, atts); 
@@ -399,6 +416,14 @@ public class XmlConfigLoader2 {
 				String type = getStringAtt("content-type", path, atts);
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
+				EndPoint ep = sm.getEndpointForCanonicalUrl(cctx);
+				if (ep != null) {
+				    throw new IllegalArgumentException("Mapping for cctx='" + cctx 
+				            + "*' in " + path + " is consumed by cctx mapping for '" 
+				            + ep.getCanonicalContextRoot() 
+				            + "*' which precedes it in document order and hence " 
+				            + "will never receive any requests.");
+				}
 				sm.addFileMapping(cctx, file, type);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
@@ -432,13 +457,22 @@ public class XmlConfigLoader2 {
 				tpath = tpath.substring(0, tpath.length()-1);
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
+                EndPoint ep = sm.getEndpointForCanonicalUrl(cctx);
+                if (ep != null) {
+                    throw new IllegalArgumentException("Mapping for cctx='" + cctx 
+                            + "*' in " + path + " is consumed by cctx mapping for '" 
+                            + ep.getCanonicalContextRoot() 
+                            + "*' which precedes it in document order and hence "  
+                            + "will never receive any requests.");
+                }
 				sm.addMapping(cctx, thost, tport, tpath, preserve);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/unenforced")) {
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-				String[] ur = getRelUriAtt("cpath", path, atts);
-				UnenforcedUri uu = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), ur[0], ur[1]);
+				CPathParts cp = getRelUriAtt("cpath", path, atts);
+                isDeclarationUseful(sm, cp, path);
+				UnenforcedUri uu = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cp.path, cp.query, cp.rawValue);
 				sm.addUnenforcedUri(uu);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/allow")) {
@@ -450,40 +484,10 @@ public class XmlConfigLoader2 {
 
 				TrafficManager trafficMgr = cfg.getTrafficManager();
 				SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-				String[] ru = getRelUriAtt("cpath", path, atts);
-				AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm.getPort(), ru[0], ru[1], actions);
+				CPathParts cp = getRelUriAtt("cpath", path, atts);
+				isDeclarationUseful(sm, cp, path);
+				AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cp.path, cp.query, actions, cp.rawValue);
 				sm.addAllowedUri(au, cond, syntax);
-			}
-			else if (path.matches("/config/sso-traffic/by-resource")) {
-				URI u=getUriAtt("uri", path, atts);
-				String host = u.getHost();
-				int port = u.getPort();
-				if (port == -1) { 
-					port = 80; // will have to change to support 443 if ever
-				}
-				SiteMatcher sm = null;
-				TrafficManager trafficMgr = cfg.getTrafficManager();
-				String unenforcedAtt = atts.getValue("unenforced");
-
-				if (unenforcedAtt != null) {
-					UnenforcedUri uu = new UnenforcedUri(u.getScheme(), host, port, u.getPath(), u.getQuery());
-					sm = new SiteMatcher(u.getScheme(), host, port, uu, null, null, trafficMgr);
-				}
-				else {
-					String actionAtt = atts.getValue("allow");
-					if (actionAtt == null) {
-						sm = new SiteMatcher(u.getScheme(), host, port, trafficMgr);
-					}
-					else {
-						actionAtt = actionAtt.replace(" ", "");
-						String[] actions = actionAtt.split(",");
-						AllowedUri au = new AllowedUri(u.getScheme(), host, port, u.getPath(), u.getQuery(), actions);
-						String cond = getCondition(path, atts);
-						String syntax = aliases.get(cond);
-						sm = new SiteMatcher(host, port, au, cond, syntax, trafficMgr);
-					}
-				}
-				trafficMgr.addMatcher(sm);
 			}
 			else if (path.matches("/config/users")) {
 				String source = getStringAtt("source", path, atts, false);
@@ -504,9 +508,6 @@ public class XmlConfigLoader2 {
 			else if (path.matches("/config/users/user/sso-header")) {
 				String hdrNm = getStringAtt("name", path, atts);
 				String hdrVl = getStringAtt("value", path, atts);
-				if (hdrNm.equals("policy-ldspositions")) {
-				    System.out.println(">>> parsed sso-header policy-ldspositions with value: '" + hdrVl + "'");
-				}
 				cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
 			}
 			else if (path.matches("/config/sso-traffic/rewrite-redirect")) {
@@ -515,7 +516,8 @@ public class XmlConfigLoader2 {
 				TrafficManager mgr = cfg.getTrafficManager();
 				mgr.addRewriteForRedirect(from, to);
 			}
-			else if (path.matches("/config/sso-traffic/rewrite-cookie")) {				String from = getStringAtt("from-path", path, atts);
+			else if (path.matches("/config/sso-traffic/rewrite-cookie")) {				
+			    String from = getStringAtt("from-path", path, atts);
 				String to = getStringAtt("to-path", path, atts);
 				TrafficManager mgr = cfg.getTrafficManager();
 				mgr.addRewriteForCookie(from, to);
@@ -546,9 +548,34 @@ public class XmlConfigLoader2 {
                 EntitlementsManager entMgr = cfg.getEntitlementsManager();
                 entMgr.addEntitlement(ent, cond, syntax);
             }
+            else {
+                cLog.error("Unsupported element at " + path + " ignoring.");
+            }
 		}
 
 		/**
+		 * Tests whether or not an 'allow' or 'unenforced' declaration is useful
+		 * meaning the URLs that match it won't be matching a preceeding declaration
+		 * and hence never make it to this declaration rendering it irrelevant.
+		 *  
+		 * @param sm
+		 * @param cp
+		 * @param path
+		 */
+		private void isDeclarationUseful(SiteMatcher sm, CPathParts cp, Path path) {
+            OrderedUri ou = sm.getManagerOfUri(sm.getScheme(), sm.getHost(), sm.getPort(), cp.path, cp.query);
+            if (ou != null) {
+                throw new IllegalArgumentException("URLs matching cpath attribute value '" 
+                        + cp.rawValue + "' of " + path + " will be consumed by '"
+                        + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
+                        + "' declaration with cpath value of '" 
+                        + ou.getCpathDeclaration() 
+                        + "' which precedes it in document order. "
+                        + "Declare elements for nested URLs first.");
+            }
+        }
+
+        /**
 		 * Validates condition attributes are a single macro for a defined 
 		 * alias and returns the alias name.
 		 *  
@@ -601,8 +628,9 @@ public class XmlConfigLoader2 {
 
 	/**
 	 * Gets an attribute purported to be a relative path url with optional
-	 * query string parameter and returns a two element array with the path in
-	 * index 0 and query in index 1. Path may be an empty string for a url of
+	 * query string parameter and returns a three element array with the path in
+	 * index 0 and query in index 1 and original raw declaration value in
+	 * index 3. Path may be an empty string for a url of
 	 * "?some/path" and query may be a null value for a url of "/some/path?"
 	 * or "/some/path".
 	 *  
@@ -611,12 +639,13 @@ public class XmlConfigLoader2 {
 	 * @param atts
 	 * @return
 	 */
-	private String[] getRelUriAtt(String attName, Path pathToElement, Attributes atts) {
+	private CPathParts getRelUriAtt(String attName, Path pathToElement, Attributes atts) {
 		String val = getStringAtt(attName,pathToElement,atts);
 		val = resolveAliases(val);
-		String[] ur = new String[2];
-		// ur[0] will hold path portion or null if not found
-		// ur[1] will hold query portion or null if not found
+		CPathParts parts = new CPathParts();
+		parts.rawValue = val;
+		// parts.path will hold path portion or null if not found
+		// parts.query will hold query portion or null if not found
 		String[] vals = val.split("\\?");
 		/* split returns the following:
 		 * 1 "hello?there"  --> [hello, there]  path=hello, query=there
@@ -624,11 +653,12 @@ public class XmlConfigLoader2 {
 		 * 3 "?hello-there" --> [, hello-there] path="", query=hello-there
 		 * 4 "hello-there?" --> [hello-there]   path=hello-there, query=null
 		 */
-		ur[0] = vals[0];
-		if (vals.length != 1) { // is 1 and 3, null otherwise
-			ur[1]=vals[1];
+		parts.path = vals[0];
+		if (vals.length != 1) { // is result 1 and 3 above, null otherwise
+			parts.query=vals[1];
 		}
-		return ur;
+		
+		return parts;
 	}
 
 	/**
