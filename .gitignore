@@ -4,6 +4,7 @@
 /C-*.log
 /nbactions.xml
 /ses.log
+/ses.log.*
 /target
 /temp-testng-customsuite.xml
 /test-output
