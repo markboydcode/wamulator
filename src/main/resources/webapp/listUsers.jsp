@@ -40,6 +40,12 @@
 </c:forEach>
 </table>
 <!-- end of proposed change to dynamically inject here via json ajax -->
+<div style="font-style: italic; color: green; padding: 3px 3px 3px 20px">Attributes</div>
+<table>
+<c:forEach items="${requestScope.selectedUser.attributes}" var="att">
+<tr><td><span style="padding: 0 5px 0 20px;">${att.name}:</span></td><td>${att.value}</td></tr>
+</c:forEach>
+</table>
 </td>
 </tr></table>
 <div style="font-size: medium; font-weight: bold; padding: 6 3 3 3px">Active Sessions:</div><table>

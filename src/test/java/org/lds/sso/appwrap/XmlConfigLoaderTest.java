@@ -2,6 +2,8 @@ package org.lds.sso.appwrap;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler; 
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
@@ -10,30 +12,60 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class XmlConfigLoaderTest {
+    
+    public void testUserAttributes () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + "  <users>"
+            + "    <user name='nnn' pwd='pwd'>"
+            + "      <sso-header name='header-a' value='aaa'/>" 
+            + "      <ldsApplication value='111'/>" 
+            + "      <ldsApplication value='222'/>" 
+            + "    </user>"
+            + "  </users>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        User u = cfg.getUserManager().getUser("nnn");
+        Assert.assertNotNull(u);
+        NvPair[] atts = u.getAttributes();
+        Assert.assertEquals(atts.length, 2);
+        Assert.assertEquals(atts[0].getName(), User.LDSAPPS_ATT);
+        Assert.assertEquals(atts[0].getValue(), "111");
+        Assert.assertEquals(atts[1].getName(), User.LDSAPPS_ATT);
+        Assert.assertEquals(atts[1].getValue(), "222");
+    }
+    
 	@Test
 	public void testResolveAliases() {
 		CfgContentHandler hndlr = new CfgContentHandler();
-		hndlr.aliases.put("aaa1", "vvv1");
-		hndlr.aliases.put("bbb", "www");
-		hndlr.aliases.put("ccc", "xxx");
-		Assert.assertEquals(hndlr.resolveAliases("{{aaa1}}"), "vvv1");
-		Assert.assertEquals(hndlr.resolveAliases("{{aaa1}}-"), "vvv1-");
-		Assert.assertEquals(hndlr.resolveAliases("-{{aaa1}}"), "-vvv1");
-		Assert.assertEquals(hndlr.resolveAliases("{{aaa1}}{{aaa1}}"), "vvv1vvv1");
-		Assert.assertEquals(hndlr.resolveAliases("this {{aaa1}} that"), "this vvv1 that");
-		Assert.assertEquals(hndlr.resolveAliases("this {{ccc}}{{aaa1}} that{{bbb}}"), "this xxxvvv1 thatwww");
+        Map<String,String> aliases 
+            = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get()
+                .get(XmlConfigLoader2.PARSING_ALIASES);
+
+		aliases.put("aaa1", "vvv1");
+		aliases.put("bbb", "www");
+		aliases.put("ccc", "xxx");
+		Assert.assertEquals(XmlConfigLoader2.resolveAliases("{{aaa1}}"), "vvv1");
+		Assert.assertEquals(XmlConfigLoader2.resolveAliases("{{aaa1}}-"), "vvv1-");
+		Assert.assertEquals(XmlConfigLoader2.resolveAliases("-{{aaa1}}"), "-vvv1");
+		Assert.assertEquals(XmlConfigLoader2.resolveAliases("{{aaa1}}{{aaa1}}"), "vvv1vvv1");
+		Assert.assertEquals(XmlConfigLoader2.resolveAliases("this {{aaa1}} that"), "this vvv1 that");
+		Assert.assertEquals(XmlConfigLoader2.resolveAliases("this {{ccc}}{{aaa1}} that{{bbb}}"), "this xxxvvv1 thatwww");
 	}
 	
 	@Test(expectedExceptions = {IllegalArgumentException.class})
 	public void testUnmatchedAlias() {
 		CfgContentHandler hndlr = new CfgContentHandler();
-		hndlr.resolveAliases("---{{---");
+		XmlConfigLoader2.resolveAliases("---{{---");
 	}
 
 	@Test(expectedExceptions = {IllegalArgumentException.class})
 	public void testMissingAlias() {
 		CfgContentHandler hndlr = new CfgContentHandler();
-		hndlr.resolveAliases("---{{jjj}}---");
+		XmlConfigLoader2.resolveAliases("---{{jjj}}---");
 	}
 	
 	@Test 
@@ -450,7 +482,7 @@ public class XmlConfigLoaderTest {
 	}
 
 	@Test
-	public void testArcaneSchemConfigIsAllowed() throws Exception {
+	public void testArcaneSchemeConfigIsAllowed() throws Exception {
 		String xml = 
 			"<?xml version='1.0' encoding='UTF-8'?>"
 			+ "<config console-port='88' proxy-port='45'>"
@@ -472,23 +504,23 @@ public class XmlConfigLoaderTest {
 
     @Test
     public void test_FileAlias() throws Exception {
-        String path = "file-has-lds-account-1234-test.xml";
+        String path = "file-has-lds-app-1234-test.xml";
         File file = new File(path);
         if (file.exists()) {
             file.delete();
         }
         FileWriter writer = new FileWriter(path);
-        writer.write("<HasLdsAccountId id='1234'/>\n");
+        writer.write("<HasLdsApplication value='1234'/>\n");
         writer.flush();
         writer.close();
         
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<?alias has-lds-account-1234=file:file-has-lds-account-1234-test.xml?>"
+            + "<?alias has-lds-app-1234=file:file-has-lds-app-1234-test.xml?>"
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-traffic>"
             + "  <by-site host='labs-local.lds.org' port='45' scheme='http'>"
-            + "   <allow cpath='/auth/_app/*' action='GET,POST' condition='{{has-lds-account-1234}}'/>"
+            + "   <allow cpath='/auth/_app/*' action='GET,POST' condition='{{has-lds-app-1234}}'/>"
             + "  </by-site>"
             + " </sso-traffic>"
             + "</config>";
@@ -496,13 +528,113 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1234");
+        u1234.addAttribute(User.LDSAPPS_ATT, "1234");
         User user = new User("user", "user"); 
-        user.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1000");
+        user.addAttribute(User.LDSAPPS_ATT, "1000");
 
         String uri = "http://labs-local.lds.org:45/auth/_app/debug";
         Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
         Assert.assertFalse(tman.isPermitted("POST", uri, user), "should NOT be allowed " + uri);
+    }
+
+    @Test
+    public void test_leadingTrailingLWSPTrimedFromAliasNameAndValue() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias embedded wsp=embedded?>"
+            + "<?alias    nameWSP   =nameWSP?>"
+            + "<?alias valueWSP=    valueWSP    ?>"
+            + "<?alias vembedded=v embedded?>"
+            + "<undefined/>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Map<String,String>vals = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get().get(XmlConfigLoader2.PARSING_SYNTAXES);
+        Assert.assertEquals(vals.get("embedded wsp"), "embedded");
+        Assert.assertEquals(vals.get("nameWSP"), "nameWSP");
+        Assert.assertEquals(vals.get("valueWSP"), "valueWSP");
+        Assert.assertEquals(vals.get("vembedded"), "v embedded");
+    }
+
+    @Test
+    public void test_conditionMustNotBePlainText() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias somealias=plain-text?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site host='labs-local.lds.org' port='45' scheme='http'>"
+            + "   <allow cpath='/auth/_app/*' action='GET,POST' condition='{{somealias}}'/>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        try {
+            XmlConfigLoader2.load(xml);
+            Assert.fail("Exception should have been thrown since condition " +
+                    "content is plain text which won't work since it is " +
+                    "XML burried within a processing instruction.");
+        }
+        catch(Exception e) {
+            Throwable c = e.getCause();
+            if (c.getClass() != IllegalArgumentException.class) {
+                Assert.fail(c.getClass().getName() + " was thrown. Should " 
+                        + "have been IllegalArgumentException.");
+            }
+        }
+    }
+
+    @Test
+    public void test_conditionMustMatchDeclaredAlias() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site host='labs-local.lds.org' port='45' scheme='http'>"
+            + "   <allow cpath='/auth/_app/*' action='GET,POST' condition='{{somealias}}'/>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        try {
+            XmlConfigLoader2.load(xml);
+            Assert.fail("Exception should have been thrown since condition " +
+                    "references non-existent alias.");
+        }
+        catch(Exception e) {
+            Throwable c = e.getCause();
+            if (c.getClass() != IllegalArgumentException.class) {
+                Assert.fail(c.getClass().getName() + " was thrown. Should " 
+                        + "have been IllegalArgumentException.");
+            }
+        }
+    }
+
+    @Test
+    public void test_conditionValuesInParseContainers() throws Exception {
+        
+        System.setProperty("condition-syntax", "<HasLdsApplication value='123'/>");
+        
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias somealias=system:condition-syntax?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site host='labs-local.lds.org' port='45' scheme='http'>"
+            + "   <allow cpath='/auth/_app/*' action='GET,POST' condition='{{somealias}}'/>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Map<String, String> conSyntaxes = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor
+                .get().get(XmlConfigLoader2.PARSING_ALIASES);
+        Assert.assertNotNull(conSyntaxes.get("somealias"));
+        Assert.assertEquals(conSyntaxes.get("somealias"), "<HasLdsApplication value='123'/>");
+        Map<String, String> aliasValues = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor
+                .get().get(XmlConfigLoader2.PARSING_SYNTAXES);
+        Assert.assertNotNull(aliasValues.get("somealias"));
+        Assert.assertEquals(aliasValues.get("somealias"), "system:condition-syntax");
+        
     }
 
     @Test(expectedExceptions=Exception.class)

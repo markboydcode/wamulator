@@ -121,4 +121,12 @@ public class UserManager {
 			lastUserAdded.addHeader(header, value);
 		}
 	}
+
+    public void addAttributeForLastUserAdded(String name, String value) {
+        if (lastUserAdded != null && name != null && value != null
+                && ! "".equals(name) && ! "".equals(value)) {
+            name = name.trim();
+            lastUserAdded.addAttribute(name, value);
+        }
+    }
 }

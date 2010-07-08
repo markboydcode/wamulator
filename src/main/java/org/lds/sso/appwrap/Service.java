@@ -57,9 +57,41 @@ public class Service {
 	protected Thread proxyRunner = null;
 	protected Server server = null;
 	private String cfgSource;
+
+	/**
+	 * Class for conveying from {@link Service#getCfgReader(String)} the config
+	 * file source unique identifier for this run and a reader ready to read the
+	 * config file.
+	 */
+	public static class SourceAndReader {
+	    private Reader reader = null;
+        private String src = null;
+
+        SourceAndReader(String source, Reader rdr){
+	        this.src = source;
+	        this.reader = rdr;
+	    }
+
+        public Reader getReader() {
+            return reader;
+        }
+
+        public String getSrc() {
+            return src;
+        }
+	}
 	
+	/**
+	 * Loads the service's configuration and sets up the jetty handling chain
+	 * so that we are ready to start listening for requests.
+	 * @param cfgPath
+	 * @throws Exception
+	 */
 	public Service(String cfgPath) throws Exception {
-		Reader cfgrd = getCfgReader(cfgPath);
+        SourceAndReader sar = getCfgReader(cfgPath);
+        Reader cfgrd = sar.getReader();
+        cfgSource = sar.getSrc();
+        
 		XmlConfigLoader2.load(cfgrd, "from " + cfgPath);
 		
 		Config cfg = Config.getInstance();
@@ -142,17 +174,17 @@ public class Service {
 	 * @param path
 	 * @return
 	 */
-	private Reader getCfgReader(String path) {
+	public static SourceAndReader getCfgReader(String path) {
     	Reader reader = null;
     	
     	if (path.toLowerCase().startsWith(STRING_PREFIX)) {
     		path = path.substring(STRING_PREFIX.length());
     		reader = new StringReader(path);
-    		this.cfgSource = "Str" + path.hashCode();
+    		return new SourceAndReader("Str" + path.hashCode(), reader);
     	}    	
     	else if (path.toLowerCase().startsWith(CLASSPATH_PREFIX)) {
     		path = path.substring(CLASSPATH_PREFIX.length());
-    		ClassLoader cldr = this.getClass().getClassLoader();
+    		ClassLoader cldr = Service.class.getClassLoader();
     		InputStream source = cldr.getResourceAsStream(path);
     		
     		if (source == null) {
@@ -160,7 +192,7 @@ public class Service {
         			+ path + "' on classpath.");
     		}
     		reader = new InputStreamReader(source);
-    		this.cfgSource = "Cp" + path.hashCode();
+            return new SourceAndReader("Cp" + path.hashCode(), reader);
     	}
     	else {
     		// assume file path 
@@ -174,14 +206,13 @@ public class Service {
     		}
     		try {
 				reader = new FileReader(file);
-	    		this.cfgSource = "File" + path.hashCode();
+	            return new SourceAndReader("File" + path.hashCode(), reader);
 			}
 			catch (FileNotFoundException e) { // should never happen
         		throw new IllegalArgumentException("Unable to load file '"
             			+ file.getAbsolutePath() + "'.");
 			}
     	}
-    	return reader;
 	}
 	
 	/**
@@ -244,10 +275,7 @@ public class Service {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		if (args.length < 1) {
-			throw new IllegalStateException("An xml configuration file path must be specified when starting.");
-		}
-		
+	    verifyArgs(args);
 		Service svc = new Service(args[0]);
 		svc.start();
 		
@@ -259,5 +287,15 @@ public class Service {
 				throw new RuntimeException("Service incurred exception. Exiting.", e);
 			}
 		}
+	}
+
+	/**
+	 * Performs validation on arguments passed to application.
+	 * @param args
+	 */
+	public static void verifyArgs(String[] args) {
+        if (args.length < 1) {
+            throw new IllegalStateException("An xml configuration file path must be specified when starting.");
+        }
 	}
 }

@@ -19,6 +19,8 @@ import java.util.Map;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.log4j.Logger;
+import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
+import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -38,31 +40,53 @@ public class XmlConfigLoader2 {
     public static final String SRC_FILE = "file:";
 	public static final String SRC_STRING = "string:";
 	
-	public static void load(String xml) throws Exception {
+    public static final String PARSING_ALIASES = "aliases";
+    public static final String PARSING_SYNTAXES = "alias-syntaxes";
+    public static final String PARSING_CONFIG = "config-instance";
+    public static final String PARSING_PATH = "path";
+    public static final String PARSING_LAST_DOMAIN = "last-policy-domain";
+
+    /**
+     * Threadlocal that creates a thread specific map used during parsing of the
+     * xml configuration file.
+     */
+    static final ThreadLocal<Map<String,Object>> parsingContextAccessor =
+        new ThreadLocal<Map<String,Object>> () {
+
+            @Override
+            protected Map<String, Object> initialValue() {
+                return new HashMap<String,Object>();
+            }
+    };
+    
+    public static void load(String xml) throws Exception {
 		load(new StringReader(xml), "from String '" + xml + "'");
 	}
 	
-	public static void load(Reader reader, String sourceInfo) throws Exception {
-		XMLReader rdr;
-		try {
-			rdr = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
-		}
-		catch (Exception e) {
-			throw new Exception("Unable to create parser for loading configuration '" 
-					+ sourceInfo + "'.", e);
-		}
-		CfgContentHandler hndlr = new CfgContentHandler(); 
-		rdr.setContentHandler(hndlr);
-		InputSource src = new InputSource(reader);
-		try {
-			rdr.parse(src);
-		}
-		catch (Exception e) {
-			throw new Exception("Unable to parse configuration '" 
-					+ sourceInfo + "'.", e);
-		}
-	}
-	
+    public static void load(Reader reader, String sourceInfo) throws Exception {
+        load(reader, sourceInfo, new CfgContentHandler());
+    }
+    
+    public static void load(Reader reader, String sourceInfo, ContentHandler hndlr) throws Exception {
+        XMLReader rdr;
+        try {
+            rdr = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+        }
+        catch (Exception e) {
+            throw new Exception("Unable to create parser for loading configuration '" 
+                    + sourceInfo + "'.", e);
+        }
+        rdr.setContentHandler(hndlr);
+        InputSource src = new InputSource(reader);
+        try {
+            rdr.parse(src);
+        }
+        catch (Exception e) {
+            throw new Exception("Unable to parse configuration '" 
+                    + sourceInfo + "'.", e);
+        }
+    }
+    
 	/**
 	 * Utility class that allows for simple testing for the full path of an 
 	 * element during parsing.
@@ -100,6 +124,23 @@ public class XmlConfigLoader2 {
 			if ("".equals(compositePath)) {
 				compositePath = "/";
 			}
+		}
+		
+		/**
+		 * Returns true only if a single step exists meaning that we are 
+		 * residing within the document's root element.
+		 * @return
+		 */
+		public boolean isAtTopLevelElement() {
+		    return steps.size() == 1;
+		}
+		
+		/**
+		 * Shortcut for {@link #isAtTopLevelElement()}.
+		 * @return
+		 */
+		public boolean isAtTLE() {
+		    return isAtTopLevelElement();
 		}
 		/**
 		 * Removes the step from the end of the path if found there.
@@ -148,20 +189,260 @@ public class XmlConfigLoader2 {
 	    public String query = null;
 	}
 	
+    /**
+     * User during config file parsing to resolve references to {{token}} to
+     * values stored in the aliases map by "token" key. If not found then an
+     * illegal argument exception is thrown.
+     * 
+     * @param val
+     * @return
+     */
+    static String resolveAliases(String val) {
+        int curIdx = 0;
+        int leftCurlys = val.indexOf("{{");
+        StringBuffer resolved = new StringBuffer();
+        boolean foundEnd = false;
+        Map<String,String> aliases = (Map<String, String>) parsingContextAccessor.get().get(PARSING_ALIASES);
+        
+        while(leftCurlys != -1) {
+            String text = val.substring(curIdx, leftCurlys);
+            resolved.append(text);
+            int rightCurlys = val.indexOf("}}", leftCurlys+2);
+            if (rightCurlys == -1) {
+                throw new IllegalArgumentException("Unmatched '}}' for alias in " + val);
+            }
+            String alias = val.substring(leftCurlys+2, rightCurlys);
+            String value = aliases.get(alias);
+            if (value == null) {
+                throw new IllegalArgumentException("Can't resolve alias '" + alias + "' in " + val);
+            }
+            resolved.append(value);
+            curIdx = rightCurlys + 2;
+            if (curIdx >= val.length()) {
+                foundEnd = true;
+                break;
+            }
+            else {
+                leftCurlys = val.indexOf("{{", curIdx);
+            }
+        }
+        if (!foundEnd) {
+            resolved.append(val.substring(curIdx));
+        }
+        
+        return resolved.toString();
+    }
+
+    /**
+     * Used during parsing to validate condition attributes are a single macro for a defined 
+     * alias and returns the alias name.
+     *  
+     * @param pathToElement
+     * @param atts
+     * @return
+     * @throws EvaluationException 
+     */
+    static String getCondition(Path pathToElement, Attributes atts, boolean verifySyntax) throws EvaluationException {
+        Map<String,String> aliases = (Map<String, String>) parsingContextAccessor.get().get(PARSING_ALIASES);
+        String con = atts.getValue("condition");
+        if (con == null || "".equals(con)) {
+            return null;
+        }
+        if (! con.startsWith(MACRO_PREFIX) || ! con.endsWith(MACRO_SUFFIX)) {
+            throw new IllegalArgumentException("Attribute 'condition' for "
+                    + pathToElement 
+                    + " must be a single macro for a defined alias. ex: '{{alias-name}}'.") ;
+        }
+        con = con.substring(MACRO_PREFIX.length(), con.length()-MACRO_SUFFIX.length());
+        if (con.contains(MACRO_PREFIX) || 
+                con.contains(MACRO_SUFFIX) ||
+                aliases.get(con) == null) {
+            throw new IllegalArgumentException("Attribute 'condition' for "
+                    + pathToElement 
+                    + " must be a single macro for a defined alias. ex: '{{alias-name}}'.") ;
+        }
+        String content = aliases.get(con);
+        if (content == null) {
+            throw new IllegalArgumentException("Macro in 'condition' attribute for "
+                    + pathToElement 
+                    + " does not match any declared alias.") ;
+        }
+        Map<String,String> aliasSyntaxes = (Map<String, String>) parsingContextAccessor.get().get(PARSING_SYNTAXES);
+        String aliasSyntax = aliasSyntaxes.get(con);
+        if (aliasSyntax != null &&
+                ! aliasSyntax.startsWith(SRC_CLASSPATH) &&
+                ! aliasSyntax.startsWith(SRC_FILE) &&
+                ! aliasSyntax.startsWith(SRC_SYSTEM)) {
+            throw new IllegalArgumentException("Attribute 'condition' for "
+                    + pathToElement 
+                    + " must be custom condition syntax loaded from file. " 
+                    + "ex: <?alias is-bishop=classpath:bishop-only-syntax.xml?>...<allow condition='{{is-bishop}}'...") ;
+        }
+        // verify validity of condition syntax
+        if (verifySyntax) {
+            LogicalSyntaxEvaluationEngine engine = new LogicalSyntaxEvaluationEngine();
+            engine.getEvaluator(content);
+        }
+        return con;
+    }
+    
+    /**
+     * Delegates to {@link #getIntegerAtt(String, Path, Attributes, boolean)}
+     * with required set to true requiring the existence of the attribute
+     * or an exception is thrown.
+     * 
+     * @param name
+     * @param pathToElement
+     * @param atts
+     * @return
+     */
+    static int getIntegerAtt(String name, Path pathToElement, Attributes atts) {
+        return getIntegerAtt(name, pathToElement, atts, true);
+    }
+
+    /**
+     * Returns 
+     * @param name
+     * @param pathToElement
+     * @param atts
+     * @param required
+     * @return
+     */
+    static int getIntegerAtt(String name, Path pathToElement, Attributes atts, boolean required) {
+        String val = atts.getValue(name);
+        if (val == null) {
+            if (required) {
+                throw new IllegalArgumentException("Attribute '" + name 
+                        + "' must be specified for element " + pathToElement 
+                        + ".");
+            }
+            else {
+                return -1;
+            }
+        }
+        val = resolveAliases(val);
+        try {
+            return Integer.parseInt(val);
+        } catch(NumberFormatException n) {
+            throw new IllegalArgumentException("Attribute '" + name 
+                    + "' for element " + pathToElement 
+                    + " must be an integer.");
+        }
+    }
+
+    static URI getUriAtt(String attName, Path pathToElement, Attributes atts) {
+        String val = getStringAtt(attName,pathToElement,atts);
+        val = resolveAliases(val);
+        URI u = null;
+        try {
+            u = new URI(val);
+        }
+        catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Unable to parse '" + attName 
+                    + "' in " + pathToElement, e);
+        }
+        return u;
+    }
+    
+    /**
+     * Gets an attribute purported to be a relative path url with optional
+     * query string parameter and returns a three element array with the path in
+     * index 0 and query in index 1 and original raw declaration value in
+     * index 3. Path may be an empty string for a url of
+     * "?some/path" and query may be a null value for a url of "/some/path?"
+     * or "/some/path".
+     *  
+     * @param attName
+     * @param pathToElement
+     * @param atts
+     * @return
+     */
+    static CPathParts getRelUriAtt(String attName, Path pathToElement, Attributes atts) {
+        String val = getStringAtt(attName,pathToElement,atts);
+        val = resolveAliases(val);
+        CPathParts parts = new CPathParts();
+        parts.rawValue = val;
+        // parts.path will hold path portion or null if not found
+        // parts.query will hold query portion or null if not found
+        String[] vals = val.split("\\?");
+        /* split returns the following:
+         * 1 "hello?there"  --> [hello, there]  path=hello, query=there
+         * 2 "hello-there"  --> [hello-there]   path=hello-there, query=null
+         * 3 "?hello-there" --> [, hello-there] path="", query=hello-there
+         * 4 "hello-there?" --> [hello-there]   path=hello-there, query=null
+         */
+        parts.path = vals[0];
+        if (vals.length != 1) { // is result 1 and 3 above, null otherwise
+            parts.query=vals[1];
+        }
+        
+        return parts;
+    }
+    
+    /**
+     * Get required String attribute tossing exception if not found.
+     * 
+     * @param attName
+     * @param pathToElement
+     * @param atts
+     * @return
+     */
+    static String getStringAtt(String attName, Path pathToElement, Attributes atts) {
+        return getStringAtt(attName, pathToElement, atts, true);
+    }
+    
+    /**
+     * Get options string attribute returning null if not found.
+     * 
+     * @param attName
+     * @param pathToElement
+     * @param atts
+     * @param required
+     * @return
+     */
+    static String getStringAtt(String attName, Path pathToElement, Attributes atts, boolean required) {
+        String val = atts.getValue(attName);
+        if (val == null || "".equals(val)) {
+            if (required) {
+                throw new IllegalArgumentException("Attribute '" + attName + "' must be specified for " + pathToElement);
+            }
+            else {
+                return null;
+            }
+        }
+        return resolveAliases(val);
+    }
+
+    /**
+     * Tests whether or not an 'allow' or 'unenforced' declaration is useful
+     * meaning the URLs that match it won't be matching a preceeding declaration
+     * and hence never make it to this declaration rendering it irrelevant.
+     *  
+     * @param sm
+     * @param cp
+     * @param path
+     */
+    static void isDeclarationUseful(SiteMatcher sm, CPathParts cp, Path path) {
+        OrderedUri ou = sm.getManagerOfUri(sm.getScheme(), sm.getHost(), sm.getPort(), cp.path, cp.query);
+        if (ou != null) {
+            throw new IllegalArgumentException("URLs matching cpath attribute value '" 
+                    + cp.rawValue + "' of " + path + " will be consumed by '"
+                    + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
+                    + "' declaration with cpath value of '" 
+                    + ou.getCpathDeclaration() 
+                    + "' which precedes it in document order. "
+                    + "Declare elements for nested URLs first.");
+        }
+    }
+
+    
 	public static class CfgContentHandler implements ContentHandler {
-		
-		Map<String,String> aliases = new HashMap<String,String>();
-		Map<String,String> aliasSrc = new HashMap<String,String>();
-		Map<String,String> conditions = new HashMap<String,String>();
-		String currentConditionId = null; 
-		StringBuffer characters = null;
-		Config cfg = null;
-		String site = null;
-		protected Path path = new Path();
-        private String lastPolicyDomain = null;
 
 		public CfgContentHandler() {
-			cfg = Config.getInstance();
+			parsingContextAccessor.get().put(PARSING_CONFIG, Config.getInstance());
+            parsingContextAccessor.get().put(PARSING_ALIASES, new HashMap<String,String>());
+            parsingContextAccessor.get().put(PARSING_SYNTAXES, new HashMap<String,String>());
+            parsingContextAccessor.get().put(PARSING_PATH, new Path());
 		}
 		
 		/**
@@ -200,18 +481,18 @@ public class XmlConfigLoader2 {
 		 * having to create such files. In particular, this enables condition
 		 * syntax to be used in unit tests. 
 		 */
-		public void processingInstruction(String target, String data) throws SAXException {
+		@SuppressWarnings("unchecked")
+        public void processingInstruction(String target, String data) throws SAXException {
 			if (target.equals("alias")) {
 				int eqIdx = data.indexOf('=');
 				if (eqIdx >= 0) {
-					String name = data.substring(0, eqIdx);
-					String val = data.substring(eqIdx+1);
+					String name = data.substring(0, eqIdx).trim();
+					String val = data.substring(eqIdx+1).trim();
 					String rawVal = val;
-					String srcPrefix = SRC_STRING;
+					//String srcPrefix = SRC_STRING;
 					
                     // alias handling for "classpath:..."
                     if (val.toLowerCase().startsWith(SRC_CLASSPATH)) {
-                        srcPrefix = SRC_CLASSPATH;
                         String resrc = val.substring(SRC_CLASSPATH.length());
                         ClassLoader cldr = this.getClass().getClassLoader();
                         InputStream src = cldr.getResourceAsStream(resrc);
@@ -242,7 +523,6 @@ public class XmlConfigLoader2 {
                     }
                     // alias handling for "system:..."
                     else if (val.toLowerCase().startsWith(SRC_SYSTEM)) {
-                        srcPrefix = SRC_SYSTEM;
                         String resrc = val.substring(SRC_SYSTEM.length());
                         val = System.getProperty(resrc);
                         
@@ -253,7 +533,6 @@ public class XmlConfigLoader2 {
                     }
                     // alias handling for "file:..."
                     else if (val.toLowerCase().startsWith(SRC_FILE)) {
-                        srcPrefix = SRC_FILE;
                         String resrc = val.substring(SRC_FILE.length());
                         File file = new File(resrc);
                         
@@ -294,14 +573,18 @@ public class XmlConfigLoader2 {
                         // alias handling for "literal-text" use 'val' as-is
                     }
 					val = resolveAliases(val);
-					aliases.put(name, val);
-					aliasSrc.put(name, srcPrefix + rawVal);
+                    Map<String,String> aliases = (Map<String, String>) parsingContextAccessor.get().get(PARSING_ALIASES);
+                    aliases.put(name, val);
+                    Map<String,String> aliasSyntax = (Map<String, String>) parsingContextAccessor.get().get(PARSING_SYNTAXES);
+					aliasSyntax.put(name, rawVal);
 				}
 			}
 		}
 
 		public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
-			characters = new StringBuffer();
+            Map<String,String> aliases = (Map<String, String>) parsingContextAccessor.get().get(PARSING_ALIASES);
+            Config cfg = (Config) parsingContextAccessor.get().get(PARSING_CONFIG);
+            Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
 			
 			path.add(name);
 			if (path.matches("/config")) {
@@ -479,7 +762,13 @@ public class XmlConfigLoader2 {
 				String actionAtt = getStringAtt("action", path, atts);
 				actionAtt = actionAtt.replace(" ", "");
 				String[] actions = actionAtt.split(",");
-				String cond = getCondition(path, atts);
+				String cond = null;
+				try {
+				    cond = getCondition(path, atts, true);
+				}
+				catch(EvaluationException ee) {
+				    throw new SAXException(ee);
+				}
 				String syntax = aliases.get(cond);
 
 				TrafficManager trafficMgr = cfg.getTrafficManager();
@@ -505,11 +794,15 @@ public class XmlConfigLoader2 {
 				UserManager mgr = cfg.getUserManager();
 				mgr.setUser(usrNm, usrPwd);
 			}
-			else if (path.matches("/config/users/user/sso-header")) {
-				String hdrNm = getStringAtt("name", path, atts);
-				String hdrVl = getStringAtt("value", path, atts);
-				cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
-			}
+            else if (path.matches("/config/users/user/sso-header")) {
+                String hdrNm = getStringAtt("name", path, atts);
+                String hdrVl = getStringAtt("value", path, atts);
+                cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
+            }
+            else if (path.matches("/config/users/user/ldsApplications")) {
+                String vl = getStringAtt("value", path, atts);
+                cfg.getUserManager().addAttributeForLastUserAdded(User.LDSAPPS_ATT, vl);
+            }
 			else if (path.matches("/config/sso-traffic/rewrite-redirect")) {
 				String from = getStringAtt("from", path, atts);
 				String to = getStringAtt("to", path, atts);
@@ -523,7 +816,8 @@ public class XmlConfigLoader2 {
 				mgr.addRewriteForCookie(from, to);
 			}
             else if (path.matches("/config/sso-entitlements")) {
-                lastPolicyDomain = getStringAtt("policy-domain", path, atts);
+                String lastPolicyDomain = getStringAtt("policy-domain", path, atts); 
+                parsingContextAccessor.get().put(PARSING_LAST_DOMAIN, lastPolicyDomain);
                 if (lastPolicyDomain.startsWith("/") || lastPolicyDomain.endsWith("/")) {
                     throw new IllegalArgumentException("Attribute 'policy-domain' for " + path 
                             + " must not start with nor end with a slash '/' character.");
@@ -533,17 +827,22 @@ public class XmlConfigLoader2 {
                 String actionAtt = getStringAtt("action", path, atts);
                 actionAtt = actionAtt.replace(" ", "");
                 String[] actions = actionAtt.split(",");
-                String cond = getCondition(path, atts);
+                String cond = null;
+                try {
+                    cond = getCondition(path, atts, true);
+                }
+                catch(EvaluationException ee) {
+                    throw new SAXException(ee);
+                }
                 String syntax = aliases.get(cond);
-
+                
                 String urn = getStringAtt("urn",path,atts);
                 if (! urn.startsWith("/")) {
                     throw new IllegalArgumentException("Attribute 'urn' for " + path 
                             + " must start with a slash '/' character.");
                 }
                 urn = resolveAliases(urn);
-
-
+                String lastPolicyDomain = (String) parsingContextAccessor.get().get(PARSING_LAST_DOMAIN);
                 Entitlement ent = new Entitlement(actions, lastPolicyDomain + urn);
                 EntitlementsManager entMgr = cfg.getEntitlementsManager();
                 entMgr.addEntitlement(ent, cond, syntax);
@@ -553,244 +852,12 @@ public class XmlConfigLoader2 {
             }
 		}
 
-		/**
-		 * Tests whether or not an 'allow' or 'unenforced' declaration is useful
-		 * meaning the URLs that match it won't be matching a preceeding declaration
-		 * and hence never make it to this declaration rendering it irrelevant.
-		 *  
-		 * @param sm
-		 * @param cp
-		 * @param path
-		 */
-		private void isDeclarationUseful(SiteMatcher sm, CPathParts cp, Path path) {
-            OrderedUri ou = sm.getManagerOfUri(sm.getScheme(), sm.getHost(), sm.getPort(), cp.path, cp.query);
-            if (ou != null) {
-                throw new IllegalArgumentException("URLs matching cpath attribute value '" 
-                        + cp.rawValue + "' of " + path + " will be consumed by '"
-                        + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
-                        + "' declaration with cpath value of '" 
-                        + ou.getCpathDeclaration() 
-                        + "' which precedes it in document order. "
-                        + "Declare elements for nested URLs first.");
-            }
-        }
-
-        /**
-		 * Validates condition attributes are a single macro for a defined 
-		 * alias and returns the alias name.
-		 *  
-		 * @param pathToElement
-		 * @param atts
-		 * @return
-		 */
-	private String getCondition(Path pathToElement, Attributes atts) {
-		String con = atts.getValue("condition");
-		if (con == null || "".equals(con)) {
-			return null;
-		}
-		if (! con.startsWith(MACRO_PREFIX) || ! con.endsWith(MACRO_SUFFIX)) {
-			throw new IllegalArgumentException("Attribute 'condition' for "
-					+ pathToElement 
-					+ " must be a single macro for a defined alias. ex: '{{alias-name}}'.") ;
-		}
-		con = con.substring(MACRO_PREFIX.length(), con.length()-MACRO_SUFFIX.length());
-		if (con.contains(MACRO_PREFIX) || 
-				con.contains(MACRO_SUFFIX) ||
-				this.aliases.get(con) == null) {
-			throw new IllegalArgumentException("Attribute 'condition' for "
-					+ pathToElement 
-					+ " must be a single macro for a defined alias. ex: '{{alias-name}}'.") ;
-		}
-		String condSrc = aliasSrc.get(con);
-		if (con.startsWith(SRC_STRING)) {
-			throw new IllegalArgumentException("Attribute 'condition' for "
-					+ pathToElement 
-					+ " must be custom condition syntax loaded from file. " 
-					+ "ex: <?alias is-bishop=classpath:bishop-only-syntax.xml?>...<allow condition='{{is-bishop}}'...") ;
-		}
-
-		return con;
-	}
-
-	private URI getUriAtt(String attName, Path pathToElement, Attributes atts) {
-		String val = getStringAtt(attName,pathToElement,atts);
-		val = resolveAliases(val);
-		URI u = null;
-		try {
-			u = new URI(val);
-		}
-		catch (URISyntaxException e) {
-			throw new IllegalArgumentException("Unable to parse '" + attName 
-					+ "' in " + path, e);
-		}
-		return u;
-	}
-
-	/**
-	 * Gets an attribute purported to be a relative path url with optional
-	 * query string parameter and returns a three element array with the path in
-	 * index 0 and query in index 1 and original raw declaration value in
-	 * index 3. Path may be an empty string for a url of
-	 * "?some/path" and query may be a null value for a url of "/some/path?"
-	 * or "/some/path".
-	 *  
-	 * @param attName
-	 * @param pathToElement
-	 * @param atts
-	 * @return
-	 */
-	private CPathParts getRelUriAtt(String attName, Path pathToElement, Attributes atts) {
-		String val = getStringAtt(attName,pathToElement,atts);
-		val = resolveAliases(val);
-		CPathParts parts = new CPathParts();
-		parts.rawValue = val;
-		// parts.path will hold path portion or null if not found
-		// parts.query will hold query portion or null if not found
-		String[] vals = val.split("\\?");
-		/* split returns the following:
-		 * 1 "hello?there"  --> [hello, there]  path=hello, query=there
-		 * 2 "hello-there"  --> [hello-there]   path=hello-there, query=null
-		 * 3 "?hello-there" --> [, hello-there] path="", query=hello-there
-		 * 4 "hello-there?" --> [hello-there]   path=hello-there, query=null
-		 */
-		parts.path = vals[0];
-		if (vals.length != 1) { // is result 1 and 3 above, null otherwise
-			parts.query=vals[1];
-		}
-		
-		return parts;
-	}
-
-	/**
-	 * Get required String attribute tossing exception if not found.
-	 * 
-	 * @param attName
-	 * @param pathToElement
-	 * @param atts
-	 * @return
-	 */
-	private String getStringAtt(String attName, Path pathToElement, Attributes atts) {
-		return getStringAtt(attName, pathToElement, atts, true);
-	}
-
-	/**
-	 * Get options string attribute returning null if not found.
-	 * 
-	 * @param attName
-	 * @param pathToElement
-	 * @param atts
-	 * @param required
-	 * @return
-	 */
-	private String getStringAtt(String attName, Path pathToElement, Attributes atts, boolean required) {
-		String val = atts.getValue(attName);
-		if (val == null || "".equals(val)) {
-			if (required) {
-				throw new IllegalArgumentException("Attribute '" + attName + "' must be specified for " + pathToElement);
-			}
-			else {
-				return null;
-			}
-		}
-		return resolveAliases(val);
-	}
-
 		public void endElement(String uri, String localName, String name) throws SAXException {
+            Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
 			path.remove(name);
-			if (path.matches("")) {
-				
-			}
-		}
-
-		/**
-		 * Delegates to {@link #getIntegerAtt(String, Path, Attributes, boolean)}
-		 * with required set to true requiring the existence of the attribute
-		 * or an exception is thrown.
-		 * 
-		 * @param name
-		 * @param pathToElement
-		 * @param atts
-		 * @return
-		 */
-		private int getIntegerAtt(String name, Path pathToElement, Attributes atts) {
-			return getIntegerAtt(name, pathToElement, atts, true);
-		}
-
-		/**
-		 * Returns 
-		 * @param name
-		 * @param pathToElement
-		 * @param atts
-		 * @param required
-		 * @return
-		 */
-		private int getIntegerAtt(String name, Path pathToElement, Attributes atts, boolean required) {
-			String val = atts.getValue(name);
-			if (val == null) {
-				if (required) {
-					throw new IllegalArgumentException("Attribute '" + name 
-							+ "' must be specified for element " + pathToElement 
-							+ ".");
-				}
-				else {
-					return -1;
-				}
-			}
-			val = resolveAliases(val);
-			try {
-				return Integer.parseInt(val);
-			} catch(NumberFormatException n) {
-				throw new IllegalArgumentException("Attribute '" + name 
-						+ "' for element " + pathToElement 
-						+ " must be an integer.");
-			}
-		}
-
-		/**
-		 * Resolves all references to {{token}} to values stored in the aliases
-		 * map by "token" key. If not found then an illegal argument exception
-		 * is thrown.
-		 * 
-		 * @param val
-		 * @return
-		 */
-		String resolveAliases(String val) {
-			int curIdx = 0;
-			int leftCurlys = val.indexOf("{{");
-			StringBuffer resolved = new StringBuffer();
-			boolean foundEnd = false;
-			
-			while(leftCurlys != -1) {
-				String text = val.substring(curIdx, leftCurlys);
-				resolved.append(text);
-				int rightCurlys = val.indexOf("}}", leftCurlys+2);
-				if (rightCurlys == -1) {
-					throw new IllegalArgumentException("Unmatched '}}' for alias in " + val);
-				}
-				String alias = val.substring(leftCurlys+2, rightCurlys);
-				String value = aliases.get(alias);
-				if (value == null) {
-					throw new IllegalArgumentException("Can't resolve alias '" + alias + "' in " + val);
-				}
-				resolved.append(value);
-				curIdx = rightCurlys + 2;
-				if (curIdx >= val.length()) {
-					foundEnd = true;
-					break;
-				}
-				else {
-					leftCurlys = val.indexOf("{{", curIdx);
-				}
-			}
-			if (!foundEnd) {
-				resolved.append(val.substring(curIdx));
-			}
-			
-			return resolved.toString();
 		}
 
 		public void characters(char[] ch, int start, int length) throws SAXException {
-			characters.append(ch, start, length);
 		}
 
 		public void endDocument() throws SAXException {

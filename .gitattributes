@@ -2,6 +2,7 @@
 /AllUnitTests.xml -text svneol=unset#text/plain
 /commandline.sh.example -text
 /file-has-lds-account-1234-test.xml -text svneol=unset#text/plain
+/file-has-lds-app-1234-test.xml -text svneol=unset#text/plain
 /mvn-ctl.sh -text
 /mvn.sh -text
 /pom.xml -text svneol=unset#text/plain
@@ -13,6 +14,7 @@ src/main/assembly/jar-assembly.xml -text
 src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/AppEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Config.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ConvertToNoLdsAccountId.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/EndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Entitlement.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/EntitlementsManager.java -text svneol=unset#text/plain
@@ -45,6 +47,7 @@ src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Assignment.java -t
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/CtxMatches.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasAssignment.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasLdsAccountId.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasLdsApplication.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasPosition.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/IsEmployee.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/IsMember.java -text svneol=unset#text/plain
@@ -120,7 +123,9 @@ src/main/versioning/about.txt -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppEndPointTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ConfigSamplesVerificationTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/ConvertToNoLdsAccountIdTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/NvPairTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SiteMatcherTest.java -text svneol=unset#text/plain
@@ -136,6 +141,7 @@ src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/ANDTest.java -text
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/ComplexSyntaxTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasAssignmentTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasLdsAccountIdTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasLdsApplicationTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasPositionTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/IsEmployeeTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/IsMemberTest.java -text svneol=unset#text/plain
@@ -157,6 +163,7 @@ src/test/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParserTest.java -te
 src/test/resources/CodaServiceResponseParserTest-bad.txt -text svneol=unset#text/plain
 src/test/resources/CodaServiceResponseParserTest-good.txt -text svneol=unset#text/plain
 src/test/resources/ComplexSyntaxTest.xml -text svneol=unset#text/plain
+src/test/resources/HasLdsAccountConversionSample.xml -text svneol=unset#text/plain
 src/test/resources/XmlConfigLoaderTest.txt -text svneol=unset#text/plain
 src/test/resources/has-lds-account-1234-test.xml -text svneol=unset#text/plain
 src/test/resources/is-bishop-test.xml -text svneol=unset#text/plain

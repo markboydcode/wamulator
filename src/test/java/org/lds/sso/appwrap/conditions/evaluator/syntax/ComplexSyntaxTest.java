@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
+import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
@@ -30,7 +31,7 @@ public class ComplexSyntaxTest extends TestBaseClass {
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getProperty(UserHeaderNames.DN)).andReturn("id=ngiwc1,ou=user,ou=people,o=lds").anyTimes();
         EasyMock.expect(usr.getProperty(UserHeaderNames.UNITS)).andReturn("/7u56030/5u524735/1u791040/");
-        EasyMock.expect(usr.getProperty(UserHeaderNames.LDS_ACCOUNT_ID)).andReturn("3431968841690661");
+        EasyMock.expect(usr.getAttributes()).andReturn(new NvPair[] {new NvPair(User.LDSAPPS_ATT, "3431968841690661")});
         EasyMock.expect(usr.getProperty(UserHeaderNames.POSITIONS)).andReturn("p57/7u56030/5u524735/1u791040/").anyTimes();
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);

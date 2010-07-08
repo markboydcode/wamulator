@@ -21,10 +21,10 @@
     <sso-cookie name="lds-policy" domain=".lds.org"/>
     <sso-sign-in-url value="http://local.lds.org:{{console-port}}/admin/selectUser.jsp"/>
 <!--     <sso-header name="policy-service-url" value="http://local.lds.org:{{rest-port}}/rest/oes"/>   -->
-    <sso-header name="policy-service-url" value="http://local.lds.org/rest/oes/1"/>
+    <sso-header name="policy-service-url" value="http://local.lds.org/oes/v{version}/rest"/>
 
     <sso-traffic>
-        <by-site host="local.lds.org" port="{{http-port}}">
+        <by-site host="local.lds.org" port="{{http-port}}" greedy-unenforced="false">
             <cctx-mapping cctx="/mltest*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
             <unenforced cpath="/mltest*"/>
             <unenforced cpath="/mltest*?*"/>
@@ -33,10 +33,10 @@
             <allow action="GET" cpath="/mlrtest*"/>
             <allow action="GET" cpath="/mlrtest*?*"/>
             
-            <cctx-mapping cctx="/rest*" thost="127.0.0.1" tport="{{rest-port}}" tpath="/rest*"/>
-            <unenforced cpath="/rest*"/>
-            <unenforced cpath="/rest*?*"/>
-            
+            <cctx-mapping cctx="/oes*" thost="localhost" tport="{{rest-port}}" tpath="/oes*"/>
+            <unenforced cpath="/oes*"/>
+            <unenforced cpath="/oes*?*"/>
+
             <cctx-mapping cctx="/public/debug*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/debug*"/>
             <unenforced cpath="/public/*"/>
             <unenforced cpath="/public/*?*"/>
@@ -45,6 +45,7 @@
     </sso-traffic>
     <sso-entitlements policy-domain="lds.org">
             <allow action="GET,POST,PUT,DELETE" urn="/directory/*" condition=""/>
+            <allow action="GET" urn="/LINK/directory/link/*" condition=""/>
     </sso-entitlements>
     <sso-entitlements policy-domain="mormon.org">
             <allow action="GET,POST,PUT,DELETE" urn="/chat/*" condition=""/>
@@ -56,14 +57,13 @@
     <users session-timeout-seconds="1200">
         <user name="ngiwb1" pwd="password1">
             <sso-header name="policy-sn" value="ngiWB1LastName"/>
-            <sso-header name="policy-lds-mrn" value="054000000"/>
-            <sso-header name="policy-positions" value="P4:W560:S524:A740"/>
-            <sso-header name="policy-units" value="W560:S524:A740"/>
-            <sso-header name="policy-lds-account-id" value="12000000"/>
-            <sso-header name="policy-birthdate" value="1960-09-25"/>
-            <sso-header name="policy-email" value="ngiwb1@someplace.com"/>
-            <sso-header name="policy-preferred-name" value="Sam Samson"/>
-            <sso-header name="policy-individual-id" value="123456"/>
+            <sso-header name="policy-preferredname" value="ngiWB1LastName"/>
+            <sso-header name="policy-ldsindividualid" value="123456"/>
+            <sso-header name="policy-ldsmrn" value="054000000"/>
+            <sso-header name="policy-ldsemailaddress" value="ngiwb1@someplace.com"/>
+            <sso-header name="policy-ldspositions" value="p4/7u560/5u524/1u740/"/>
+            <ldsApplications value='leader-admin'/>
+            <ldsApplications value='leader-teacher'/>
         </user>
         <user name="ngiwb2" pwd="password1">
             <sso-header name="policy-sn" value="ngiWB2LastName"/>
@@ -75,6 +75,7 @@
             <sso-header name="policy-email" value="ngiwb2@someplace.com"/>
             <sso-header name="policy-preferred-name" value="Joe Samson"/>
             <sso-header name="policy-individual-id" value="123457"/>
+            <ldsApplications value='leader-student'/>
         </user>
     </users>
 </config>
