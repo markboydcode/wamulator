@@ -9,6 +9,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.proxy.ProxyListener;
@@ -20,6 +23,7 @@ import org.lds.sso.appwrap.rest.LogoutHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
+import org.lds.sso.appwrap.rest.oes.v1.EncodeLinks;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.rest.oes.v1.HandlerHitLogger;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
@@ -125,23 +129,54 @@ public class Service {
 		    		"See documentation for the <config> element's rest-version attribute. Supported versions are: "
 		            + RestVersion.getValidIdentifiers());
 		}
-		switch(cfg.getRestVersion()) {
+		RestVersion rv = cfg.getRestVersion();
+        String base = rv.getRestUrlBase();
+		switch(rv) {
 		case OPENSSO :
-			handlers.addHandler(new GetCookieName("/rest/identity/getCookieNameForToken"));
-			handlers.addHandler(new AuthNHandler("/rest/identity/authenticate"));
-			handlers.addHandler(new AuthZHandler("/rest/identity/authorize"));
-			handlers.addHandler(new IsTokenValidHandler("/rest/identity/isTokenValid"));
-			handlers.addHandler(new LogoutHandler("/rest/identity/logout"));
+            System.out.println("Starting single " + rv.getVersionId() + " rest service at: " + base);
+            cfg.getTrafficRecorder().addRestInst(base, base + "getCookieNameForToken", "n/a");
+			handlers.addHandler(new GetCookieName(base + "getCookieNameForToken"));
+			handlers.addHandler(new AuthNHandler(base + "authenticate"));
+			handlers.addHandler(new AuthZHandler(base + "authorize"));
+			handlers.addHandler(new IsTokenValidHandler(base + "isTokenValid"));
+			handlers.addHandler(new LogoutHandler(base + "logout"));
 			break;
 			
 		case CD_OESv1 :
-            handlers.addHandler(new GetOesV1CookieName("/oes/v1.0/rest/getCookieName"));
-            handlers.addHandler(new AreTokensValid("/oes/v1.0/rest/areTokensValid"));
-            handlers.addHandler(new ArePermitted("/oes/v1.0/rest/arePermitted"));
-            // old location left 
-            handlers.addHandler(new HandlerHitLogger(new GetOesV1CookieName("/rest/oes/1/getCookieName"),"Using deprecated URL /oes/rest/1/getCookieName, replacement is /oes/v1.0/rest/getCookieName"));
-            handlers.addHandler(new HandlerHitLogger(new AreTokensValid("/rest/oes/1/areTokensValid"),"Using deprecated URL /oes/rest/1/areTokensValid, replacement is /oes/v1.0/rest/areTokensValid"));
-            handlers.addHandler(new HandlerHitLogger(new ArePermitted("/rest/oes/1/arePermitted"),"Using deprecated URL /oes/rest/1/arePermitted, replacement is /oes/v1.0/rest/arePermitted"));
+		    TrafficManager tmgr = cfg.getTrafficManager();
+		    /*
+		     * See if we have any by-site declarations for which we start a
+		     * rest service with a policy-domain specific to that site. If not
+		     * then start it at the base and set the policy-domain to the
+		     * empty string so that an instance will be there for the example
+		     * startup files.
+		     */
+		    if (tmgr.getSites().size() == 0) {
+		        System.out.println("Starting single " + rv.getVersionId() + " rest service at: " + base);
+	            cfg.getTrafficRecorder().addRestInst(base, base + "getCookieName", "''");
+                handlers.addHandler(new GetOesV1CookieName(base + "getCookieName"));
+                handlers.addHandler(new AreTokensValid(base + "areTokensValid"));
+                handlers.addHandler(new ArePermitted(base + "arePermitted", ""));
+                handlers.addHandler(new EncodeLinks(base + "encode"));
+		    }
+		    else {
+		        /*
+		         * Start one rest service per declared unique by-site host.
+		         */
+		        Set<String> hosts = new TreeSet<String>();
+	            for ( SiteMatcher site : tmgr.getSites()) {
+	                String serviceBase = base + site.getHost() + "/";
+	                if( ! hosts.contains(site.getHost())) {
+	                    hosts.add(site.getHost());
+	                    System.out.println("Starting " + rv.getVersionId() + " rest service for site " + site.getHost() + " at: " + serviceBase);
+	                    cfg.getTrafficRecorder().addRestInst(base, base + "getCookieName", site.getHost());
+	                    handlers.addHandler(new GetOesV1CookieName(serviceBase + "getCookieName"));
+	                    handlers.addHandler(new AreTokensValid(serviceBase + "areTokensValid"));
+	                    handlers.addHandler(new ArePermitted(serviceBase + "arePermitted", site.getHost()));
+	                    handlers.addHandler(new EncodeLinks(serviceBase + "encode"));
+	                }
+	            }
+		    }
 		}
 		
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    Requires ml-auth mark logic application for providing the sign-in
+    page mapped into the sso traffic space for the shim.
+    
+    Processing supports aliases with processing instructions of form name=value
+    and for each string value read thereafter replaces any occurrence of 
+    {{name}} with the specified value in the alias declaration.
+-->
+
+<?alias rest-port=1776?>
+<?alias console-port={{rest-port}}?>
+
+<!-- 
+    Defines the configuration for the app wrap shim. The console-port is the
+    port on which the console will be found and the rest api resides. The proxy
+    port is the port that should be set as the browser's http proxy.
+-->
+<config proxy-port="80" console-port="{{console-port}}" rest-version="openSSO">
+    <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true'/>
+    <sso-cookie name="lds-policy" domain=".lds.org"/>
+    <sso-sign-in-url value="http://local.lds.org/secure/ui/sign-in"/>
+    <sso-header name="policy-service-url" value="http://local.lds.org:{{rest-port}}/rest/"/>
+    
+    <sso-traffic>
+        <by-site scheme='http' host="local.lds.org" port="80">
+            <!-- map /secure path to backend app -->
+            <cctx-mapping cctx="/secure/*" thost="127.0.0.1" tport="8510" tpath="/auth/*"/>
+            <allow action="GET" cpath="/secure/_app/debug"/>
+            <allow action="GET" cpath="/secure/_app/debug?*"/>
+            <unenforced cpath="/secure/ui/*"/>
+            <unenforced cpath="/secure/ui/*?*"/>
+
+            <allow action="GET" cpath="/secure/access/_app/debug"/>
+            <allow action="GET" cpath="/secure/access/_app/debug?*"/>
+            <unenforced cpath="/secure/access/ui/*"/>
+            <unenforced cpath="/secure/access/ui/*?*"/>
+            
+            <!-- map /auth path to backend app -->
+            <cctx-mapping cctx="/auth*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
+            <allow action="GET" cpath="/auth/_app/debug"/>
+            <allow action="GET" cpath="/auth/_app/debug?*"/>
+            <unenforced cpath="/auth/ui/*"/>
+            <unenforced cpath="/auth/ui/*?*"/>
+            
+            <!-- map /access path to backend app -->
+            <cctx-mapping cctx="/access*" thost="127.0.0.1" tport="8510" tpath="/access*"/>
+            <allow action="GET" cpath="/access/_app/debug"/>
+            <allow action="GET" cpath="/access/_app/debug?*"/>
+            <unenforced cpath="/access/ui/*"/>
+            <unenforced cpath="/access/ui/*?*"/>
+            
+            <cctx-mapping cctx="/error/*" thost="127.0.0.1" tport="8520" tpath="/error/*"/>
+            <unenforced cpath="/error/*"/>
+            <unenforced cpath="/error/*?*"/>
+        </by-site>
+    </sso-traffic>
+    
+    <!-- 
+        The set of defined users, headers injected per user, and urls allowed 
+        by each user url access permissions 
+    -->
+    <users>
+        <user name="ngia" pwd="pwda">
+            <sso-header name="policy-birthdate" value="1960-09-25"/>
+            <sso-header name="policy-email" value="me@someplace.com"/>
+            <sso-header name="policy-preferred-name" value="Samson the great"/>
+            <sso-header name="policy-units" value="W100:S200:A300"/>
+            <sso-header name="policy-positions" value="P4:W100:S200:A300|P1:S200:A300"/>
+        </user>
+        <user name="ngib" pwd="pwdb">
+            <sso-header name="policy-birthdate" value="2002-02-20"/>
+            <sso-header name="policy-email" value="me@nowhere.com"/>
+            <sso-header name="policy-preferred-name" value="howdy doody"/>
+        </user>
+    </users>
+</config>

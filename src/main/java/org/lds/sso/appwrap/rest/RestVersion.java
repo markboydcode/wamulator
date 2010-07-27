@@ -14,13 +14,14 @@ public enum RestVersion {
 	/**
 	 * Church Defined Oracle Entitlements Server version 1 rest interface.
 	 */
-	CD_OESv1("CD-OESv1"), 
+	CD_OESv1("CD-OESv1", "/oes/v1.0/rest/"), 
 	/**
 	 * OpenSSO rest interface defined by OpenSSO 8. 
 	 */
-	OPENSSO("openSSO");
+	OPENSSO("openSSO", "/rest/identity/");
 	
-	private final String vId;
+    private final String vId;
+    private final String restBase;
 	
 	private static final Map<String, RestVersion> VERSIONS = new TreeMap<String, RestVersion>();
 	
@@ -48,18 +49,27 @@ public enum RestVersion {
 	 * 
 	 * @param vId
 	 */
-	private RestVersion(String vId) {
+	private RestVersion(String vId, String restBase) {
 		this.vId = vId;
+		this.restBase = restBase;
 	}
 	
-	/**
-	 * Returns the identifier that should be used in the configuration file
-	 * for specifying a RestVersion to be exposed.
-	 * @return
-	 */
-	public String getVersionId() {
-		return vId;
-	}
+    /**
+     * Returns the identifier that should be used in the configuration file
+     * for specifying a RestVersion to be exposed.
+     * @return
+     */
+    public String getVersionId() {
+        return vId;
+    }
+
+    /**
+     * Returns the url base on which the rest services are instantiated.
+     * @return
+     */
+    public String getRestUrlBase() {
+        return restBase;
+    }
 
 	/**
 	 * Returns the set of registered version identifiers comma and space separated.

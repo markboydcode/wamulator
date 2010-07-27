@@ -19,7 +19,7 @@ public class UserHeaderNames {
     public static final String PREFIX = "policy-";
     
     /**
-     * Custom properties injected by this processor.
+     * Custom properties injected.
      */
     public static final String UNITS = PREFIX + "ldsunits";
     public static final String GENDER = PREFIX + "gender";
@@ -35,6 +35,8 @@ public class UserHeaderNames {
     public static final String LDS_MRN = PREFIX + "ldsmrn";
     public static final String EMAIL = PREFIX + "ldsemailaddress";
     public static final String INDIVIDUAL_ID = PREFIX + "ldsindividualid";
+    
+    public static final String SERVICE_URL = PREFIX + "service-url";
 
 	/**
 	 * Prefix of position identifiers for compile time ties to conditions that 

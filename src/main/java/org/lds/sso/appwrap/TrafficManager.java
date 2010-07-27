@@ -200,4 +200,8 @@ public class TrafficManager {
 		CookiePathRewriter cpr = new CookiePathRewriter(cookie, this.cookieRewrites);
 		return cpr.getHeader();
 	}
+
+    public List<SiteMatcher> getSites() {
+        return this.matchers;
+    }
 }

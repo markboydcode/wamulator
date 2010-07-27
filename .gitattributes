@@ -1,6 +1,9 @@
 * text=auto !eol
 /AllUnitTests.xml -text svneol=unset#text/plain
+/a.out -text
+/a.txt -text svneol=unset#text/plain
 /commandline.sh.example -text
+/cp.txt -text svneol=unset#text/plain
 /file-has-lds-account-1234-test.xml -text svneol=unset#text/plain
 /file-has-lds-app-1234-test.xml -text svneol=unset#text/plain
 /mvn-ctl.sh -text
@@ -79,6 +82,8 @@ src/main/java/org/lds/sso/appwrap/rest/RestHandlerBase.java -text svneol=unset#t
 src/main/java/org/lds/sso/appwrap/rest/RestVersion.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/ArePermitted.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/AreTokensValid.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/rest/oes/v1/EncodeLinks.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/rest/oes/v1/EncodeUtils.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/GetOesV1CookieName.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/HandlerHitLogger.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/BaseMapImpl.java -text svneol=unset#text/plain
@@ -96,6 +101,7 @@ src/main/java/org/lds/sso/appwrap/ui/rest/TrafficRecordingHandler.java -text svn
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
 src/main/resources/config-samples/ml-client-lib-tests.xml -text svneol=unset#text/plain
+src/main/resources/config-samples/mlAuth.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/ngiwb1-cal-data.json -text
 src/main/resources/config-samples/ses_console_with_users_sample.xml -text
 src/main/resources/config-samples/ses_directory_file_serving_sample.xml -text svneol=unset#text/plain
@@ -154,10 +160,12 @@ src/test/java/org/lds/sso/appwrap/proxy/CookiePathAndRedirectRewriteTest.java -t
 src/test/java/org/lds/sso/appwrap/proxy/HeaderBufferTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderDefTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/PolicyServiceUrlTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/SignMeInOutTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/TestAuthZHandler.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/rest/oes/v1/ArePermittedTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/oes/v1/RestHttpTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParserTest.java -text svneol=unset#text/plain
 src/test/resources/CodaServiceResponseParserTest-bad.txt -text svneol=unset#text/plain

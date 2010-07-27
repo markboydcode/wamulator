@@ -54,13 +54,17 @@ public class RestHttpTest {
         .append(" <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='false'/>")
         .append(" <sso-cookie name='" + cookieName + "' domain='.lds.org'/>")
         .append(" <sso-traffic>")
-        .append("  <by-resource uri='app://some-resource' allow='GET'/>")
+        .append("  <by-site host='local.lds.org' port='80'>") //resource uri='app://some-resource' allow='GET'/>")
+        .append("   <allow action='GET' cpath='/some-resource'/>")
+        .append("   <entitlements>")
+        .append("    <allow link='/a/link/resource'/>")
+        .append("    <allow link='http://some.other.domain/a/link/resource'/>")
+        .append("    <allow action='WAVE,SHOVE,PUSH' urn='/some/resource'/>")
+        .append("    <allow action='SMILE,GET,DROP' urn='/some/resource'/>")
+        .append("    <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>") // only bishops
+        .append("   </entitlements>")
+        .append("  </by-site>")
         .append(" </sso-traffic>")
-        .append(" <sso-entitlements policy-domain='lds.org'>")
-        .append("  <allow action='WAVE,SHOVE,PUSH' urn='/some/resource'/>")
-        .append("  <allow action='SMILE,GET,DROP' urn='/some/resource'/>")
-        .append("  <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>") // only bishops
-        .append(" </sso-entitlements>")
         .append(" <users>")
         .append("  <user name='user1' pwd='pwd'/>")
         .append("  <user name='user2' pwd='pwd'/>")
@@ -84,11 +88,7 @@ public class RestHttpTest {
     
     @Test
     public void test_GetCookieName() throws Exception {
-        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName");
-    }
-    @Test
-    public void test_GetCookieNameOld() throws Exception {
-        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/getCookieName");
+        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
     }
 
     public void getCookieName(String endpoint) throws Exception {
@@ -107,7 +107,7 @@ public class RestHttpTest {
     @Test
     public void test_AreTokensValid_multiple() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
 
         // initiate two sessions so that we have valid tokens
         String usrToken1 = TestUtilities.authenticateUser("user1", cfg.getConsolePort());
@@ -158,16 +158,23 @@ public class RestHttpTest {
     }
 
     @Test
-    public void test_AreTokensValid_single() throws Exception {
-        areTokensValid_single("http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/areTokensValid");
+    public void test_Encode() throws Exception {
+        // craft request for AreTokensValid
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/encode?res=http://some.domain/a/path/?a=b&c=d";
+
+        GetMethod get = new GetMethod(endpoint);
+        get.setFollowRedirects(false);
+        HttpClient client = new HttpClient();
+        int status = client.executeMethod(get);
+        String resp = get.getResponseBodyAsString();
+        Assert.assertEquals(status, 200, resp);
+        Assert.assertNotNull(resp, "response should not be null");
+        Assert.assertEquals(resp.trim(), "some.domain_a_path_");
     }
 
     @Test
-    public void test_AreTokensValid_singleOld() throws Exception {
-        areTokensValid_single("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid");
-    }
-
-    public void areTokensValid_single(String restEndpoint) throws Exception {
+    public void test_AreTokensValid_single() throws Exception {
+        String restEndpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
         String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/auth/ui/authenticate?username=user1";
         
         HttpClient client = new HttpClient();
@@ -207,7 +214,7 @@ public class RestHttpTest {
     @Test
     public void test_AreTokensValid_BadTokenCnt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt...", "1");
@@ -221,7 +228,7 @@ public class RestHttpTest {
     @Test
     public void test_AreTokensValid_TokenCntNotInt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/areTokensValid";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt", "sss");
@@ -235,7 +242,7 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_NoToken() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         // leave off token param intentionally
@@ -249,7 +256,7 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_NoResCnt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         // leave off token param intentionally
@@ -265,7 +272,7 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_ResCntNotInt() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", "invalid-token");
@@ -278,24 +285,30 @@ public class RestHttpTest {
     }
 
     private void injectSampleResourcesForAreValidCall(PostMethod post) {
-        post.addParameter("res.cnt", "3");
-        post.addParameter("res.1","lds.org/some/resource");
+        post.addParameter("res.cnt", "5");
+        post.addParameter("res.1","/some/resource");
         post.addParameter("act.1","GET");
         post.addParameter("ctx.1.cnt","2");
         post.addParameter("ctx.1.1.key","unit");
         post.addParameter("ctx.1.1.val","222");
         post.addParameter("ctx.1.2.key","color");
         post.addParameter("ctx.1.2.val","blue");
-        post.addParameter("res.2","lds.org/some/resource");
+        post.addParameter("res.2","/some/resource");
         post.addParameter("act.2","POST");
-        post.addParameter("res.3","lds.org/another/resource");
+        post.addParameter("res.3","/another/resource");
         post.addParameter("act.3","DELETE");
+        post.addParameter("res.4","http://some.other.domain/a/link/resource");
+        post.addParameter("isLink.4","true");
+        post.addParameter("act.4","GET");
+        post.addParameter("res.5","http://local.lds.org/a/link/resource");
+        post.addParameter("isLink.5","true");
+        post.addParameter("act.5","GET");
     }
     
     @Test
     public void test_ArePermitted_ExpiredToken() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         HttpClient client = new HttpClient();
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", "invalid-token");
@@ -310,6 +323,8 @@ public class RestHttpTest {
         boolean res_1 = false;
         boolean res_2 = false;
         boolean res_3 = false;
+        boolean res_4 = false;
+        boolean res_5 = false;
         
             boolean done = false;
             while(!done) {
@@ -330,14 +345,24 @@ public class RestHttpTest {
                     if (tokens[0].equals("res.3")) {
                         res_3 = Boolean.parseBoolean(tokens[1]);
                     }
+                    if (tokens[0].equals("res.4")) {
+                        res_4 = Boolean.parseBoolean(tokens[1]);
+                    }
+                    if (tokens[0].equals("res.5")) {
+                        res_5 = Boolean.parseBoolean(tokens[1]);
+                    }
                 }
             }
         Assert.assertEquals(res_1, false, "res.1 should not be permitted for invalid token");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for invalid token");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted for invalid token");
+        Assert.assertEquals(res_4, false, "res.4 should not be permitted for invalid token");
+        Assert.assertEquals(res_5, false, "res.5 should not be permitted for invalid token");
     }
 
-    public void arePermitted_ValidToken(String endpoint) throws Exception {
+    @Test
+    public void arePermitted_ValidToken() throws Exception {
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         // first initiate session so that we have valid token
         String usrToken =  TestUtilities.authenticateUser("user1", cfg.getConsolePort());
         
@@ -356,6 +381,7 @@ public class RestHttpTest {
         boolean res_1 = false;
         boolean res_2 = false;
         boolean res_3 = false;
+        boolean res_4 = false;
         
         boolean done = false;
         while(!done) {
@@ -376,21 +402,15 @@ public class RestHttpTest {
                 if (tokens[0].equals("res.3")) {
                     res_3 = Boolean.parseBoolean(tokens[1]);
                 }
+                if (tokens[0].equals("res.4")) {
+                    res_4 = Boolean.parseBoolean(tokens[1]);
+                }
             }
         }
         Assert.assertEquals(res_1, true, "res.1 should be permitted for GET");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for POST");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted since not defined");
-    }
-
-    @Test
-    public void test_ArePermitted_ValidToken() throws Exception {
-        arePermitted_ValidToken("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted");
-    }
-
-    @Test
-    public void test_ArePermitted_ValidTokenOld() throws Exception {
-        arePermitted_ValidToken("http://127.0.0.1:" + cfg.getConsolePort() + "/rest/oes/1/arePermitted");
+        Assert.assertEquals(res_4, true, "res.4 should be permitted for GET");
     }
 
     @Test
@@ -399,11 +419,11 @@ public class RestHttpTest {
         String ngiwb1 =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
         
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/arePermitted";
+        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", ngiwb1);
         post.addParameter("res.cnt", "3");
-        post.addParameter("res.1","lds.org/leader/focus");
+        post.addParameter("res.1","/leader/focus");
         post.addParameter("act.1","GET");
         post.setFollowRedirects(false);
         HttpClient client = new HttpClient();

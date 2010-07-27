@@ -115,7 +115,7 @@ public class SiteMatcher {
 	}
 	
 	public void addMapping(String canonicalContext, String targetHost, int targetPort, String targetPathCtx, boolean preserveHost) {
-		EndPoint ep = new AppEndPoint(canonicalContext, targetPathCtx, targetHost, targetPort, preserveHost);
+		EndPoint ep = new AppEndPoint(getHost(), canonicalContext, targetPathCtx, targetHost, targetPort, preserveHost);
 		ep.setDeclarationOrder(++endPoints);
 		mappedEndPoints.add(ep);
 	}

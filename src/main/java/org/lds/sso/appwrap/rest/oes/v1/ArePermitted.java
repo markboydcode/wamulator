@@ -26,10 +26,18 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  *
  */
 public class ArePermitted extends RestHandlerBase {
-	private static final Logger cLog = Logger.getLogger(ArePermitted.class);
+	static final Logger cLog = Logger.getLogger(ArePermitted.class);
 
-	public ArePermitted(String pathPrefix) {
+    private static final String HTTP_SCHEME         = "http://";
+    private static final String HTTPS_SCHEME         = "https://";
+	public static final String OES_LINK_POLICY_PFX = "/LINK/";
+
+    private String policyDomain = null;
+
+
+	public ArePermitted(String pathPrefix, String policyDomain) {
 		super(pathPrefix);
+		this.policyDomain  = policyDomain;
 	}
 
 	@Override
@@ -103,8 +111,10 @@ public class ArePermitted extends RestHandlerBase {
 		    String parm = "res." + t;
             String res = request.getParameter(parm);
             String act = request.getParameter("act." + t);
+            boolean isLink = Boolean.parseBoolean(request.getParameter("isLink." + t));
             if (logReqWrt != null) {
                 logReqWrt.print(parm + "=" + res + "\r\n"); // leave \r\n since println is op sys specific
+                logReqWrt.print("isLink." + t + "=" + isLink + "\r\n");
                 logReqWrt.print("act." + t + "=" + act + "\r\n");
             }
             // only process if we have both a resource and its action
@@ -112,7 +122,16 @@ public class ArePermitted extends RestHandlerBase {
 			    Map<String, String> ctx = getContextParams(cfg, request, t, logReqWrt);
 			    boolean allowed = false;
 			    if (isValid) { // only evaluate if token is still valid
-			        allowed = cfg.getEntitlementsManager().isAllowed(act, res, user, ctx);
+                    if (isLink) {
+                        // massage the link uri so that it matches our LINK policies
+                        res = fixupLinkUri(res);
+                    }
+                    else {
+                        // massage the URN resources so that they match the domain
+                        // to which this service is bound.
+                        res = fixupUrn(res);
+                    }
+			        allowed = cfg.getEntitlementsManager().isAllowed(isLink, act, res, user, ctx);
 			    }
 			    clientOut.print(parm + "=" + allowed);
 			    clientOut.print(RequestHandler.CRLF);
@@ -131,7 +150,83 @@ public class ArePermitted extends RestHandlerBase {
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, clientRes.toString());
 	}
 
-	
+    /**
+     * Checks to see if the URN resources match those of older versions of 
+     * clientlib and patch up but log error to encourage migration to
+     * newer version.
+     */
+   String fixupUrn(String res) {
+       if (res.startsWith("/")) {
+           res = this.policyDomain + res;
+       }
+       else {
+           // log warning message and replaced passed-in domain with 
+           // that to which this instance is bound since policies
+           // won't evaluate correctly otherwise.
+           int sIdx = res.indexOf("/");
+           String msg = null;
+           String nres = null;
+           if (sIdx == -1) { 
+               // no slash. shouldn't occur but if it does then
+               // prefix with domain + "/".
+               nres = this.policyDomain + "/" + res;
+               msg = "Rest service handler at " + this.pathPrefixRaw
+                       + " received resource of '" + res
+                       + "' which does not start with '/' nor"
+                       + " does it contain '/'. Converting to"
+                       + " '" + nres + "'. Please check your"
+                       + " policies and/or update clientlib to"
+                       + " the latest version which does not prefix"
+                       + " resources with a policy-domain since"
+                       + " the REST service itself is bound to"
+                       + " a specific policy domain for storing"
+                       + " its policies and prepends this automatically.";
+           }
+           else {
+               // strip off everything up to first slash as
+               // the domain and replace with the policy-domain
+               // to which this service is bound.
+               // differs from actual rest service intentionally to force 
+               // awareness of upgrading to latest clientlib
+               nres = this.policyDomain + res.substring(sIdx);
+               msg = "Rest service handler at " + this.pathPrefixRaw
+                       + " received resource of '" + res
+                       + "' which does not start with '/'. Converting to"
+                       + " '" + nres + "'. Please check your"
+                       + " policies and/or update clientlib to"
+                       + " the latest version which does not prefix"
+                       + " resources with a policy-domain since"
+                       + " the REST service itself is bound to"
+                       + " a specific policy domain for storing"
+                       + " its policies and prepends this automatically.";
+           }
+           res = nres;
+           cLog.error(msg);
+           System.out.println(msg);
+       }
+        return res;
+    }
+
+/**
+     * Because links are handled with special policies that contain a /LINK virtual resource, we need to tweak any
+     * link uri's that are passed in.  This method takes care of the required tweaks.
+     *
+     * @param res   resouce uri to be tweaked
+     * @return the massaged uri
+     */
+    String fixupLinkUri(String res) {
+        String nres = policyDomain + OES_LINK_POLICY_PFX + EncodeUtils.encode(EncodeUtils.clean(res)); 
+        if (cLog.isInfoEnabled()) {
+            String msg = "Rest service handler at " + this.pathPrefixRaw
+            + " converting link '" + res
+            + "' to '" + nres + "' for policy evaluation.";
+            cLog.info(msg);
+            System.out.println(msg);
+        }
+
+        return nres;
+    }
+
 	/**
 	 * Converts context params for a specific resource into a map. Parameter 
 	 * 'ctx.N.cnt' indicates the number of key/value pairs to be read. Each 

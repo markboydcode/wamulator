@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.Cookie;
@@ -39,6 +40,8 @@ import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.rest.RestVersion;
 import org.mortbay.log.Log;
 
 public class RequestHandler implements Runnable {
@@ -225,12 +228,9 @@ public class RequestHandler implements Runnable {
 			reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED, "handled"));
 			
 			// for non-ignored traffic perform the enforcements and translations
-			RequestLine appReqLn = reqPkg.requestLine; // default to request
-														// line as-is
-			EndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port, true); // default
-																							// to
-																							// no
-																							// translation
+			RequestLine appReqLn = reqPkg.requestLine; // default to request line as-is
+			// default to no translation 
+			EndPoint endpoint = new AppEndPoint(null, null, null, reqPkg.host, reqPkg.port, true); 
 			byte[] response = null;
 			byte[] request = null;
 
@@ -330,7 +330,22 @@ public class RequestHandler implements Runnable {
 			
 			if  (endpoint instanceof AppEndPoint) {
 				AppEndPoint appEndpoint = (AppEndPoint) endpoint;
-				if (! appEndpoint.preserveHostHeader()) {
+                // inject the policy-service-url pointing to the one for the 
+                // by-site element that contained our context mapping end point
+                Header hdr = new Header(UserHeaderNames.SERVICE_URL, "");
+                // first remove if one was set through config
+                reqPkg.headerBfr.removeExtensionHeader(UserHeaderNames.SERVICE_URL);
+                String hdrBase = "http://" + appEndpoint.getCanonicalHost() + ":" + cfg.getConsolePort();
+                switch(cfg.getRestVersion()) {
+                case OPENSSO:
+                    hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase());
+                    break;
+                case CD_OESv1:
+                    hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase() + appEndpoint.getCanonicalHost() + "/");
+                }
+                reqPkg.headerBfr.append(hdr);
+
+                if (! appEndpoint.preserveHostHeader()) {
 				    String hostHdr = appEndpoint.getHost() + (appEndpoint.getEndpointPort() != 80 ? (":" + appEndpoint.getEndpointPort()) : "");
 				    reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
 				}

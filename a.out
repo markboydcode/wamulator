@@ -1,0 +1,482 @@
+[INFO] Scanning for projects...
+[INFO] Searching repository for plugin with prefix: 'cobertura'.
+[INFO] ------------------------------------------------------------------------
+[INFO] Building SSO Environment Simulator
+[INFO]    task-segment: [clean, cobertura:cobertura]
+[INFO] ------------------------------------------------------------------------
+[INFO] [clean:clean {execution: default-clean}]
+[INFO] Deleting directory D:\workspace\app-wrap-shim\target
+[INFO] Preparing cobertura:cobertura
+[INFO] [resources:resources {execution: default-resources}]
+[WARNING] File encoding has not been set, using platform encoding Cp1252, i.e. build is platform dependent!
+[WARNING] Using platform encoding (Cp1252 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] Copying 1 resource
+[INFO] Copying 27 resources
+[INFO] [compiler:compile {execution: default-compile}]
+[INFO] Compiling 82 source files to D:\workspace\app-wrap-shim\target\classes
+[INFO] [cobertura:instrument {execution: default-instrument}]
+[INFO] Cobertura 1.9.2 - GNU GPL License (NO WARRANTY) - See COPYRIGHT file
+Instrumenting 116 files to D:\workspace\app-wrap-shim\target\generated-classes\cobertura
+Cobertura: Saved information on 116 classes.
+Instrument time: 484ms
+
+[INFO] Instrumentation was successful.
+[INFO] [resources:testResources {execution: default-testResources}]
+[WARNING] Using platform encoding (Cp1252 actually) to copy filtered resources, i.e. build is platform dependent!
+[INFO] Copying 13 resources
+[INFO] [compiler:testCompile {execution: default-testCompile}]
+[INFO] Compiling 41 source files to D:\workspace\app-wrap-shim\target\test-classes
+[INFO] [surefire:test {execution: default-test}]
+[INFO] Surefire report directory: D:\workspace\app-wrap-shim\target\surefire-reports
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running TestSuite
+2010-07-16 16:30:39.410::INFO:  Logging to STDERR via org.mortbay.log.StdErrLog
+Starting single CD-OESv1 rest service at: /oes/v1.0/rest/
+2010-07-16 16:30:39.457::INFO:  jetty-6.1.7
+2010-07-16 16:30:39.660::INFO:  Started SocketConnector@0.0.0.0:19205
+simulator version  : SSO Simulator v5.17
+admin-rest port    : 19205
+http proxy port    : 19206
+Rest Interface     : CD-OESv1
+Started proxy handler
+policy-signin : signmein
+policy-signout : signmeout
+---> using classpath:config-samples/console-only.xml
+---> calling hitRest_getCookieName() from test_ConsoleOnly_xml
+---> running: hitRest_getCookieName()
+---> connecting to http://127.0.0.1:19205/oes/v1.0/rest/getCookieName
+---> Testing Assertions
+---> Done Testing Assertions
+Starting CD-OESv1 rest service for site local.lds.org at: /oes/v1.0/rest/local.lds.org/
+Starting CD-OESv1 rest service for site 127.0.0.1 at: /oes/v1.0/rest/127.0.0.1/
+2010-07-16 16:30:40.895::INFO:  jetty-6.1.7
+2010-07-16 16:30:40.942::INFO:  Started SocketConnector@0.0.0.0:19208
+simulator version  : SSO Simulator v5.17
+admin-rest port    : 19208
+http proxy port    : 19209
+Rest Interface     : CD-OESv1
+Started proxy handler
+policy-signin : signmein
+policy-signout : signmeout
+Starting single CD-OESv1 rest service at: /oes/v1.0/rest/
+2010-07-16 16:30:40.973::INFO:  jetty-6.1.7
+2010-07-16 16:30:40.04::INFO:  Started SocketConnector@0.0.0.0:19211
+simulator version  : SSO Simulator v5.17
+admin-rest port    : 19211
+http proxy port    : 19212
+Rest Interface     : CD-OESv1
+policy-signin : signmein
+policy-signout : signmeout
+---> using classpath:config-samples/console-only-lds-policy-cookie.xml
+---> calling hitRest_getCookieName() from test_ConsoleOnly_ldsPolicyCookie_xml
+---> running: hitRest_getCookieName()
+---> connecting to http://127.0.0.1:19211/oes/v1.0/rest/getCookieName
+Started proxy handler
+---> Testing Assertions
+---> Done Testing Assertions
+Identified alias complex-alias as a condition.
+Identified alias simple-alias as a condition.
+Identified alias non-hlai-alias as a condition.
+Creating grouping complex-alias-1 for lds account id cluster in system:complex-condition at /AND/OR
+Creating grouping complex-alias-2 for lds account id cluster in system:complex-condition at /AND/NOT
+No use of HasLdsAccountId in Condition 'non-hlai-alias'.
+Creating grouping simple-alias for lds account id cluster in system:simple-condition at /HasLdsAccountId
+>>> for user 'aaa' adding hdr 'policy-dn' with value 'cn=jeremy, ou=int, o=lds'
+>>> for user 'bbb' adding hdr 'policy-dn' with value 'cn=jeremy, ou=ext, o=lds'
+>>> for user 'bbb' adding hdr 'policy-ldspositions' with value 'p4/7u56030/5u524735/1u791040/'
+>>> for user 'bbb' adding hdr 'policy-ldsunits' with value '7u56030/5u524735/1u791040/'
+>>> for user 'ngiwb1' adding hdr 'policy-ldspositions' with value 'p4/7u56030/5u524735/1u791040/'
+Fri, 16 Jul 2010 16:30:41 MDT
+sun.util.calendar.ZoneInfo[id="America/Denver",offset=-25200000,dstSavings=3600000,useDaylight=true,transitions=157,lastRule=java.util.SimpleTimeZone[id=America/Denver,offset=-25200000,dstSavings=3600000,useDaylight=true,startYear=0,startMode=3,startMonth=2,startDay=8,startDayOfWeek=1,startTime=7200000,startTimeMode=0,endMode=3,endMonth=10,endDay=1,endDayOfWeek=1,endTime=7200000,endTimeMode=0]]
+current offset from GMT: -21600000 = -6
+Fri, 16 Jul 2010 22:30:41 GMT
+Unsupported element at /undefined ignoring.
+--main instantiating engine and hence scanner at 0
+--main sleeping for 1500 at 0
+--scanner should be sleeping now....
+--main creating two evaluators at 1500
+--main testing for 2 evaluators at 1500
+--main sleeping for 3000 at 1500
+--main creating one evaluator at 4500
+--main testing for 3 evaluators at 4500
+--main sleeping for 5500 at 4500
+--main testing for 1 evaluators at 9999
+--main sleeping for 3000 at 9999
+--main testing for 0 evaluators at 12999
+Starting CD-OESv1 rest service for site labs-local.lds.org at: /oes/v1.0/rest/labs-local.lds.org/
+2010-07-16 16:30:54.120::INFO:  jetty-6.1.7
+2010-07-16 16:30:54.151::INFO:  Started SocketConnector@0.0.0.0:19215
+simulator version  : SSO Simulator v5.17
+admin-rest port    : 19215
+http proxy port    : 19216
+Rest Interface     : CD-OESv1
+Started proxy handler
+policy-signin : signmein
+policy-signout : signmeout
+
+
+RR request detected: 
+--- received ---
+GET /testRR/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19216
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0001
+cctx: /testRR/
+policy-service-url: http://labs-local.lds.org:19215/oes/v1.0/rest/labs-local.lds.org/
+
+--- returned ---
+HTTP/1.1 302 Not Modified
+Location: http://labs-local.lds.org/test-of-redirect/some/resource.html
+
+
+Location Received: http://labs-local.lds.org/test/some/resource.html
+
+MH request detected: 
+--- received ---
+GET /testMH/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19216
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0002
+cctx: /testMH/
+policy-service-url: http://labs-local.lds.org:19215/oes/v1.0/rest/labs-local.lds.org/
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms
+Set-Cookie: lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+null
+Cookie Received: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr
+Cookie Received: lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+QS request detected: 
+--- received ---
+GET /testQS/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19216
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0003
+cctx: /testQS/
+policy-service-url: http://labs-local.lds.org:19215/oes/v1.0/rest/labs-local.lds.org/
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: lds-policy="ngia path=/leader-forms/dir";Domain=.lds.org;Path=/leader-forms/dir
+
+null
+Cookie Received: lds-policy="ngia path=/leader-forms/dir";Domain=.lds.org;Path=/mls/cr/dir
+
+MC request detected: 
+--- received ---
+GET /testMC/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19216
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0004
+cctx: /testMC/
+policy-service-url: http://labs-local.lds.org:19215/oes/v1.0/rest/labs-local.lds.org/
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+null
+Cookie Received: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+INT request detected: 
+--- received ---
+GET /testInt/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19216
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0005
+cctx: /testInt/
+policy-service-url: http://labs-local.lds.org:19215/oes/v1.0/rest/labs-local.lds.org/
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: lds-policy=ngia-27;Domain=.lds.org;Path=/leader-forms/dir
+
+Cookie Received: lds-policy=ngia-27;Domain=.lds.org;Path=/mls/cr/dir
+
+NRR request detected: 
+--- received ---
+GET /testNRR/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19216
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0006
+cctx: /testNRR/
+policy-service-url: http://labs-local.lds.org:19215/oes/v1.0/rest/labs-local.lds.org/
+
+--- returned ---
+HTTP/1.1 302 Not Modified
+Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html
+
+
+Location Received: http://labs-local.lds.org/not-rewritten-path/some/resource.html
+Starting CD-OESv1 rest service for site labs-local.lds.org at: /oes/v1.0/rest/labs-local.lds.org/
+Starting CD-OESv1 rest service for site other.lds.org at: /oes/v1.0/rest/other.lds.org/
+2010-07-16 16:30:54.276::INFO:  jetty-6.1.7
+2010-07-16 16:30:55.307::INFO:  Started SocketConnector@0.0.0.0:19230
+simulator version  : SSO Simulator v5.17
+admin-rest port    : 19230
+http proxy port    : 19231
+Rest Interface     : CD-OESv1
+policy-signin : signmein
+policy-signout : signmeout
+
+Started proxy handler
+
+QS request detected: 
+--- received ---
+GET /testQS/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0001
+cctx: /testQS/
+policy-service-url: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: lds-policy="ngia path=/leader-forms/dir";Domain=.lds.org;Path=/leader-forms/dir
+
+null
+Cookie Received: lds-policy="ngia path=/leader-forms/dir";Domain=.lds.org;Path=/mls/cr/dir
+
+INT request detected: 
+--- received ---
+GET /testInt/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0002
+cctx: /testInt/
+policy-service-url: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: lds-policy=ngia-27;Domain=.lds.org;Path=/leader-forms/dir
+
+Cookie Received: lds-policy=ngia-27;Domain=.lds.org;Path=/mls/cr/dir
+
+MC request detected: 
+--- received ---
+GET /testMC/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0003
+cctx: /testMC/
+policy-service-url: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+null
+Cookie Received: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+NRR request detected: 
+--- received ---
+GET /testNRR/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0004
+cctx: /testNRR/
+policy-service-url: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+--- returned ---
+HTTP/1.1 302 Not Modified
+Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html
+
+
+Location Received: http://labs-local.lds.org/not-rewritten-path/some/resource.html
+
+URL2 request detected: 
+--- received ---
+GET /service-url2/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: other.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0005
+cctx: /service-url2/
+policy-service-url: http://other.lds.org:19230/oes/v1.0/rest/other.lds.org/
+
+
+--- returned ---
+HTTP/1.1 302 Not Modified
+Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html
+X-SURL-RECEIVED: http://other.lds.org:19230/oes/v1.0/rest/other.lds.org/
+
+
+policy-service-url Received: http://other.lds.org:19230/oes/v1.0/rest/other.lds.org/
+
+URL request detected: 
+--- received ---
+GET /service-url/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0006
+cctx: /service-url/
+policy-service-url: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+--- returned ---
+HTTP/1.1 302 Not Modified
+Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html
+X-SURL-RECEIVED: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+policy-service-url Received: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+MH request detected: 
+--- received ---
+GET /testMH/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0007
+cctx: /testMH/
+policy-service-url: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+--- returned ---
+HTTP/1.1 304 Not Modified
+Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms
+Set-Cookie: lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+null
+Cookie Received: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr
+Cookie Received: lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/
+
+RR request detected: 
+--- received ---
+GET /testRR/a/path HTTP/1.1
+User-Agent: Jakarta Commons-HttpClient/3.1
+Host: labs-local.lds.org:19231
+Proxy-Connection: Keep-Alive
+Connection: close
+X-shim: handled
+policy-signin: signmein
+policy-signout: signmeout
+X-connId: C-0008
+cctx: /testRR/
+policy-service-url: http://labs-local.lds.org:19230/oes/v1.0/rest/labs-local.lds.org/
+
+
+--- returned ---
+HTTP/1.1 302 Not Modified
+Location: http://labs-local.lds.org/test-of-redirect/some/resource.html
+
+
+Location Received: http://labs-local.lds.org/test/some/resource.html
+Starting CD-OESv1 rest service for site 127.0.0.1 at: /oes/v1.0/rest/127.0.0.1/
+2010-07-16 16:30:55.510::INFO:  jetty-6.1.7
+2010-07-16 16:30:55.541::INFO:  Started SocketConnector@0.0.0.0:19248
+simulator version  : SSO Simulator v5.17
+admin-rest port    : 19248
+http proxy port    : 19249
+Rest Interface     : CD-OESv1
+policy-signin : signmein
+policy-signout : signmeout
+Started proxy handler
+setting up simulator
+>>> for user 'ngiwb1' adding hdr 'policy-ldspositions' with value 'p4/7u56030/5u524735/1u791040/'
+Starting CD-OESv1 rest service for site 127.0.0.1 at: /oes/v1.0/rest/127.0.0.1/
+Starting CD-OESv1 rest service for site local.lds.org at: /oes/v1.0/rest/local.lds.org/
+2010-07-16 16:30:55.620::INFO:  jetty-6.1.7
+2010-07-16 16:30:55.635::INFO:  Started SocketConnector@0.0.0.0:19258
+simulator version  : SSO Simulator v5.17
+admin-rest port    : 19258
+http proxy port    : 19259
+Rest Interface     : CD-OESv1
+Started proxy handler
+policy-signin : signmein
+policy-signout : signmeout
+tearing down simulator on admin-rest port: 19258 and http-proxy port: 19259
+Tests run: 181, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 16.374 sec
+
+Results :
+
+Tests run: 181, Failures: 0, Errors: 0, Skipped: 0
+
+Cobertura: Loaded information on 116 classes.
+Cobertura: Saved information on 116 classes.
+[INFO] [cobertura:cobertura {execution: default-cli}]
+[INFO] Cobertura 1.9.2 - GNU GPL License (NO WARRANTY) - See COPYRIGHT file
+Cobertura: Loaded information on 116 classes.
+Report time: 593ms
+
+[INFO] Cobertura Report generation was successful.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESSFUL
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 23 seconds
+[INFO] Finished at: Fri Jul 16 16:30:58 MDT 2010
+[INFO] Final Memory: 18M/49M
+[INFO] ------------------------------------------------------------------------

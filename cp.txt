@@ -1,0 +1,16 @@
+[INFO] Scanning for projects...
+[INFO] Searching repository for plugin with prefix: 'dependency'.
+[INFO] ------------------------------------------------------------------------
+[INFO] Building SSO Environment Simulator
+[INFO]    task-segment: [dependency:build-classpath]
+[INFO] ------------------------------------------------------------------------
+[INFO] [dependency:build-classpath {execution: default-cli}]
+[INFO] Dependencies classpath:
+D:\Users\BoydMR\.m2\repository\ant\ant\1.6.5\ant-1.6.5.jar;D:\Users\BoydMR\.m2\repository\asm\asm\1.5.3\asm-1.5.3.jar;D:\Users\BoydMR\.m2\repository\cglib\cglib\2.1_3\cglib-2.1_3.jar;D:\Users\BoydMR\.m2\repository\cglib\cglib-nodep\2.1_3\cglib-nodep-2.1_3.jar;D:\Users\BoydMR\.m2\repository\commons-codec\commons-codec\1.2\commons-codec-1.2.jar;D:\Users\BoydMR\.m2\repository\commons-httpclient\commons-httpclient\3.1\commons-httpclient-3.1.jar;D:\Users\BoydMR\.m2\repository\commons-logging\commons-logging\1.0.4\commons-logging-1.0.4.jar;D:\Users\BoydMR\.m2\repository\junit\junit\3.8.1\junit-3.8.1.jar;D:\Users\BoydMR\.m2\repository\log4j\log4j\1.2.12\log4j-1.2.12.jar;D:\Users\BoydMR\.m2\repository\org\apache\geronimo\specs\geronimo-servlet_2.4_spec\1.1.1\geronimo-servlet_2.4_spec-1.1.1.jar;D:\Users\BoydMR\.m2\repository\org\easymock\easymock\2.4\easymock-2.4.jar;D:\Users\BoydMR\.m2\repository\org\easymock\easymockclassextension\2.4\easymockclassextension-2.4.jar;D:\Users\BoydMR\.m2\repository\org\eclipse\jdt\core\3.1.1\core-3.1.1.jar;D:\Users\BoydMR\.m2\repository\org\mortbay\jetty\jetty\6.1.7\jetty-6.1.7.jar;D:\Users\BoydMR\.m2\repository\org\mortbay\jetty\jetty-util\6.1.7\jetty-util-6.1.7.jar;D:\Users\BoydMR\.m2\repository\org\mortbay\jetty\jsp-2.1\6.1.7\jsp-2.1-6.1.7.jar;D:\Users\BoydMR\.m2\repository\org\mortbay\jetty\jsp-api-2.1\6.1.7\jsp-api-2.1-6.1.7.jar;D:\Users\BoydMR\.m2\repository\org\mortbay\jetty\servlet-api-2.5\6.1.7\servlet-api-2.5-6.1.7.jar;D:\Users\BoydMR\.m2\repository\org\testng\testng\5.8\testng-5.8-jdk15.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESSFUL
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 1 second
+[INFO] Finished at: Wed Jun 02 16:41:53 MDT 2010
+[INFO] Final Memory: 12M/30M
+[INFO] ------------------------------------------------------------------------

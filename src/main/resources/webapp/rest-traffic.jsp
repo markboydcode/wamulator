@@ -25,8 +25,14 @@ tr.odd {background: #DDF;}
 </div>
 <!-- TABS END -->
 <div style="padding: 0 10 10 10px;">
+<div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Active Rest Interfaces and their policy-domains:</div>
+<table border='1'>
+<tr><th>Policy Domain</th><th>Location</th></tr></div>
+<c:forEach items="${requestScope.config.trafficRecorder.restInstances}" var="rInst">
+<tr><td>${rInst.policyDomain}</td><td><a href="${rInst.cookiePath}">${rInst.urlBase}</a></td></tr>
+</c:forEach>
+</table>
 <div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Watch Rest traffic. Refresh the browser to view captured traffic.</div>
-
 <div style="font-size: medium; padding: 3px">
 <span style="font-weight: bold;">Traffic:</span>
 <span style="padding: 0 5 0 10px;">

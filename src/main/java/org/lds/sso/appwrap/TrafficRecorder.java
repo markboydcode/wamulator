@@ -13,7 +13,7 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 
 /**
- * Keeps track of url hits and outcomes.
+ * Keeps track of url hits and outcomes and the rest service instances started.
  * 
  * @author Mark Boyd
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
@@ -27,7 +27,58 @@ public class TrafficRecorder {
     private int rHitCount = 0;
     private SortedSet<RestHit> rhits = new TreeSet<RestHit>();
     private boolean recordRestTraffic = false;
+    private List<RestInstanceInfo> restInstances = new ArrayList<RestInstanceInfo>();
 
+    /**
+     * Class for exposing in the UI the rest service instance locations that
+     * were started for the simulator.
+     * 
+     * @author BOYDMR
+     *
+     */
+    public static class RestInstanceInfo {
+        
+        private String policyDomain;
+        private String cookiePath;
+        private String base;
+
+        public RestInstanceInfo(String urlBase, String getCookiePoint, String policyDomain) {
+            this.base = urlBase;
+            this.cookiePath = getCookiePoint;
+            this.policyDomain = policyDomain;
+        }
+
+        public String getPolicyDomain() {
+            return policyDomain;
+        }
+
+        public String getCookiePath() {
+            return cookiePath;
+        }
+
+        public String getUrlBase() {
+            return base;
+        }
+    }
+    
+    /**
+     * Add info for a rest instance that was started.
+     * 
+     * @param urlBase
+     * @param getCookiePoint
+     * @param policyDomain
+     */
+    public void addRestInst(String urlBase, String getCookiePoint, String policyDomain) {
+       this.restInstances.add(new RestInstanceInfo(urlBase, getCookiePoint, policyDomain)); 
+    }
+    
+    /**
+     * Expose rest instance info to UI.
+     * @return
+     */
+    public List<RestInstanceInfo> getRestInstances() {
+        return restInstances;
+    }
     public synchronized void recordHit(long time, String connId, String username, int respCode, boolean isProxyRes, String method, String uri) {
         if (cLog.isInfoEnabled()) {
             cLog.info(

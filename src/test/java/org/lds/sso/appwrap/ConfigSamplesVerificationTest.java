@@ -26,7 +26,8 @@ public class ConfigSamplesVerificationTest {
         
         Service service = new Service("classpath:config-samples/console-only.xml");
         service.start();
-        hitRest_getCookieName();
+        Config cfg = Config.getInstance();
+        hitRest_getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName");
         service.stop();
     }
 
@@ -36,12 +37,10 @@ public class ConfigSamplesVerificationTest {
      * @throws IOException 
      * @throws HttpException 
      */
-    private void hitRest_getCookieName() throws HttpException, IOException {
+    private void hitRest_getCookieName(String endpoint) throws HttpException, IOException {
         Config cfg = Config.getInstance();
         
         // hit the getCookieName rest endpoint
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName";
-        
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(endpoint);
         method.setFollowRedirects(false);
@@ -55,12 +54,12 @@ public class ConfigSamplesVerificationTest {
 
     @Test
     public void test_ConsoleOnly_ldsPolicyCookie_xml() throws Exception {
-        
+        new Config(); // clear out old stuff
         Config cfg = Config.getInstance();
         Service service = new Service("classpath:config-samples/console-only-lds-policy-cookie.xml");
         service.start();
         Assert.assertEquals(cfg.getCookieName(), "lds-policy");
-        hitRest_getCookieName();
+        hitRest_getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName");
         service.stop();
     }
 

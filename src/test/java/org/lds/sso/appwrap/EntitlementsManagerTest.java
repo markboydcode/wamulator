@@ -23,6 +23,18 @@ public class EntitlementsManagerTest {
             + "<?alias is-cdol=system:is-cdol-syntax?>"
             + "<?alias is-in-524735=system:is-524735-member-syntax?>"
             + "<config console-port='88' proxy-port='45'>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.lds.org' port='80'>"
+            + "    <entitlements>"
+            + "     <allow action='GET' urn='/leader/focus/page' condition='{{is-employee}}'/>" // employees only
+            + "     <allow action='GET' urn='/leader/list/page'/>" // all users
+            + "     <allow action='GET' urn='/leader/bishop/page' condition='{{is-cdol}}'/>" // only bishops
+            + "     <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>" // only bishops
+            + "     <allow action='GET' urn='/leader/ward/page' condition='{{is-in-524735}}'/>" // only members of unit 524735
+            + "     <allow link='/leader/ward/page' condition='{{is-in-524735}}'/>" // only members of unit 524735
+            + "    </entitlements>"
+            + "   </by-site>"
+            + "  </sso-traffic>"
             + "  <users>"
             + "   <user name='aaa' pwd='password1'>"
             + "    <sso-header name='policy-dn' value='cn=jeremy, ou=int, o=lds'/>" // is employee, not bishop
@@ -36,26 +48,43 @@ public class EntitlementsManagerTest {
             + "    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>" // bishop
             + "   </user>"
             + "  </users>"
-            + "  <sso-entitlements policy-domain='lds.org'>"
-            + "   <allow action='GET' urn='/leader/focus/page' condition='{{is-employee}}'/>" // employees only
-            + "   <allow action='GET' urn='/leader/list/page'/>" // all users
-            + "   <allow action='GET' urn='/leader/bishop/page' condition='{{is-cdol}}'/>" // only bishops
-            + "   <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>" // only bishops
-            + "   <allow action='GET' urn='/leader/ward/page' condition='{{is-in-524735}}'/>" // only members of unit 524735
-            + "  </sso-entitlements>"
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
         EntitlementsManager emgr = cfg.getEntitlementsManager();
         UserManager umgr = cfg.getUserManager();
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus", umgr.getUser("ngiwb1"), null));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("aaa"), null));
-        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/focus/page", umgr.getUser("bbb"), null));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/list/page", umgr.getUser("aaa"), null));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/list/page", umgr.getUser("bbb"), null));
-        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/bishop/page", umgr.getUser("aaa"), null));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/bishop/page", umgr.getUser("bbb"), null));
-        Assert.assertFalse(emgr.isAllowed("GET", "lds.org/leader/ward/page", umgr.getUser("aaa"), null));
-        Assert.assertTrue(emgr.isAllowed("GET", "lds.org/leader/ward/page", umgr.getUser("bbb"), null));
+        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/focus", umgr.getUser("ngiwb1"), null));
+        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/focus/page", umgr.getUser("aaa"), null));
+        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/leader/focus/page", umgr.getUser("bbb"), null));
+        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/list/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/list/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/leader/bishop/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/bishop/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/leader/ward/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/ward/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/LINK/local.lds.org_leader_ward_page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/LINK/local.lds.org_leader_ward_page", umgr.getUser("bbb"), null));
+    }
+
+    @Test
+    public void testOldFormat() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-header name='policy-service-url' value='irrelevant'/>"
+            + " <sso-entitlements policy-domain='lds.org'>"
+            + "  <allow action='GET' urn='/leader/focus/page' condition='{{is-employee}}'/>" // employees only
+            + " </sso-entitlements>"
+            + "</config>";
+        Config cfg = new Config();
+        try {
+            XmlConfigLoader2.load(xml);
+            Assert.fail("Should have thrown an IllegalArgumentException");
+        }
+        catch(Exception e) {
+            if (e.getCause() == null || e.getCause().getClass() != IllegalArgumentException.class) {
+                Assert.fail("Should have thrown an IllegalArgumentException", e);
+            }
+        }
     }
 }

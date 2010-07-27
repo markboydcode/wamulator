@@ -21,7 +21,11 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.rest.RestVersion;
+import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
+import org.lds.sso.appwrap.rest.oes.v1.EncodeLinks;
+import org.lds.sso.appwrap.rest.oes.v1.EncodeUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -44,7 +48,7 @@ public class XmlConfigLoader2 {
     public static final String PARSING_SYNTAXES = "alias-syntaxes";
     public static final String PARSING_CONFIG = "config-instance";
     public static final String PARSING_PATH = "path";
-    public static final String PARSING_LAST_DOMAIN = "last-policy-domain";
+    public static final String PARSING_CURR_SITE = "by-site-host";
 
     /**
      * Threadlocal that creates a thread specific map used during parsing of the
@@ -611,7 +615,7 @@ public class XmlConfigLoader2 {
 					RestVersion ver = RestVersion.findRestVersionById(restVersion);
 					if (ver == null) {
 						throw new IllegalArgumentException("rest-version must be one of "
-								+ RestVersion.getValidIdentifiers() + " in " + path);
+								+ RestVersion.getValidIdentifiers() + " in " + path + " not '" + restVersion + "'");
 					}
 					cfg.setRestVersion(ver);
 				}
@@ -651,9 +655,19 @@ public class XmlConfigLoader2 {
 			else if (path.matches("/config/sso-header")) {
 				String hdrNm = getStringAtt("name", path, atts);
 				String hdrVl = getStringAtt("value", path, atts);
-				cfg.addGlobalHeader(hdrNm, hdrVl);
-			} //allow-non-sso-traffic
-			else if (path.matches("/config/sso-traffic/by-site")) {
+				if (hdrNm.equals(UserHeaderNames.SERVICE_URL)) {
+				    String msg = "NOTE: Global sso-header declaration for '" + hdrNm
+				        + "' is now ignored since it is automatically generated.";
+				}
+				else {
+	                cfg.addGlobalHeader(hdrNm, hdrVl);
+				}
+			} 
+            else if (path.matches("/config/sso-traffic")) {
+                // used only as container for nested elements but must match here
+                // to prevent "unsupported element" message below.
+            }
+            else if (path.matches("/config/sso-traffic/by-site")) {
 				String scheme = atts.getValue("scheme");
 				if (scheme == null || scheme.equals("")) {
 					scheme = "http";
@@ -685,6 +699,7 @@ public class XmlConfigLoader2 {
 				    m = new SiteMatcher(scheme, host, port, trafficMgr);
 	                trafficMgr.addMatcher(m);
 				}
+	            parsingContextAccessor.get().put(PARSING_CURR_SITE, host);
 			}
 			else if (path.matches("/config/sso-traffic/by-site/cctx-file")) {
 				String cctx = getStringAtt("cctx", path, atts); 
@@ -778,6 +793,71 @@ public class XmlConfigLoader2 {
 				AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cp.path, cp.query, actions, cp.rawValue);
 				sm.addAllowedUri(au, cond, syntax);
 			}
+            else if (path.matches("/config/sso-traffic/by-site/entitlements")) {
+                // used only for containment of nested <allow> elements to differentiate
+                // between course grained (URL) policies and fine grained permissions
+                // (entitlements).
+            }
+            else if (path.matches("/config/sso-traffic/by-site/entitlements/allow")) {
+                boolean isLink = getStringAtt("link", path, atts, false) != null;
+                String actionAtt = null;
+                
+                // action attribute only required for URNs not for links
+                if (isLink) {
+                    actionAtt = "GET"; // links only use GET action
+                }
+                else {
+                    actionAtt = getStringAtt("action", path, atts);
+                }
+                actionAtt = actionAtt.replace(" ", "");
+                String[] actions = actionAtt.split(",");
+                String cond = null;
+                try {
+                    cond = getCondition(path, atts, true);
+                }
+                catch(EvaluationException ee) {
+                    throw new SAXException(ee);
+                }
+                String syntax = aliases.get(cond);
+                
+                String urn = null;
+                String policyDomain = (String) parsingContextAccessor.get().get(PARSING_CURR_SITE);
+                
+                if (isLink) {
+                    urn = getStringAtt("link",path,atts);
+                    urn = resolveAliases(urn);
+                    if (! urn.startsWith("/") && 
+                        ! urn.startsWith(EncodeUtils.HTTPS_SCHEME) && 
+                        ! urn.startsWith(EncodeUtils.HTTP_SCHEME)) {
+                        throw new IllegalArgumentException("Attribute 'link' with value "
+                                + urn + " for " + path 
+                                + " must start with a slash '/' character to be a " 
+                                + "link relative to the by-site host "
+                                + policyDomain + " or must be an absolute URL "
+                                + "beginning with 'http://' or 'https://'.");
+                    }
+                    if (urn.startsWith("/")) {
+                        // is relative to by-site host so prefix it
+                        urn = policyDomain + urn;
+                    }
+                    urn = EncodeUtils.encode(EncodeUtils.clean(urn));
+                    urn = ArePermitted.OES_LINK_POLICY_PFX + urn;
+                }
+                else {
+                    urn = getStringAtt("urn",path,atts);
+                    urn = resolveAliases(urn);
+                    if (! urn.startsWith("/")) {
+                        throw new IllegalArgumentException("Attribute 'urn' with value "
+                                + urn + " for " + path 
+                                + " must start with a slash '/' character since " 
+                                + "they are relative to the by-site host " 
+                                + policyDomain + " as the urn's policy domain.");
+                    }
+                }
+                Entitlement ent = new Entitlement(actions, policyDomain + urn);
+                EntitlementsManager entMgr = cfg.getEntitlementsManager();
+                entMgr.addEntitlement(ent, cond, syntax);
+            }
 			else if (path.matches("/config/users")) {
 				String source = getStringAtt("source", path, atts, false);
 				cfg.setExternalUserSource(source);
@@ -816,39 +896,16 @@ public class XmlConfigLoader2 {
 				mgr.addRewriteForCookie(from, to);
 			}
             else if (path.matches("/config/sso-entitlements")) {
-                String lastPolicyDomain = getStringAtt("policy-domain", path, atts); 
-                parsingContextAccessor.get().put(PARSING_LAST_DOMAIN, lastPolicyDomain);
-                if (lastPolicyDomain.startsWith("/") || lastPolicyDomain.endsWith("/")) {
-                    throw new IllegalArgumentException("Attribute 'policy-domain' for " + path 
-                            + " must not start with nor end with a slash '/' character.");
-                }
-            }
-            else if (path.matches("/config/sso-entitlements/allow")) {
-                String actionAtt = getStringAtt("action", path, atts);
-                actionAtt = actionAtt.replace(" ", "");
-                String[] actions = actionAtt.split(",");
-                String cond = null;
-                try {
-                    cond = getCondition(path, atts, true);
-                }
-                catch(EvaluationException ee) {
-                    throw new SAXException(ee);
-                }
-                String syntax = aliases.get(cond);
-                
-                String urn = getStringAtt("urn",path,atts);
-                if (! urn.startsWith("/")) {
-                    throw new IllegalArgumentException("Attribute 'urn' for " + path 
-                            + " must start with a slash '/' character.");
-                }
-                urn = resolveAliases(urn);
-                String lastPolicyDomain = (String) parsingContextAccessor.get().get(PARSING_LAST_DOMAIN);
-                Entitlement ent = new Entitlement(actions, lastPolicyDomain + urn);
-                EntitlementsManager entMgr = cfg.getEntitlementsManager();
-                entMgr.addEntitlement(ent, cond, syntax);
+                throw new IllegalArgumentException("ERROR: The sso-entitlements element " 
+                        + "must now reside within its corresponding " 
+                        + "/config/sso-traffic/by-site element and be renamed to just 'entitlements'. " 
+                        + "Its policy-domain attribute is no longer used but its nested content " 
+                        + "remains unchanged. Please apply these changes and restart.");
             }
             else {
-                cLog.error("Unsupported element at " + path + " ignoring.");
+                String msg = "Unsupported element at " + path + " ignoring."; 
+                System.out.println(msg);
+                cLog.error(msg);
             }
 		}
 

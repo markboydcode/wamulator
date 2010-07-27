@@ -34,6 +34,10 @@ public class Entitlement implements Comparable<Entitlement>{
             usePathPrefixMatching = true;
         }
     }
+    
+    public String toString() {
+        return id;
+    }
 	
     public boolean matches(String urn) {
         if (usePathPrefixMatching) {

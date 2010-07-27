@@ -40,9 +40,17 @@ public class AppEndPoint implements EndPoint {
      */
     private Integer declarationOrder = null;
 
-	public AppEndPoint(String canonicalCtx, String appCtx, String host, int port, boolean preserveHost) {
+    /**
+     * The host of the by-site element within which this context mapping 
+     * application endpoint resides to facilitate exposing a rest service specific
+     * to the by-site element and injecting a corresponding policy-service-url.
+     */
+    private String canonicalHost;
+
+	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, String host, int port, boolean preserveHost) {
 		this.endpointPort = port;
-		this.canonicalContextRoot = canonicalCtx;
+        this.canonicalHost = canonicalHost;
+        this.canonicalContextRoot = canonicalCtx;
 		this.applicationContextRoot = appCtx;
 		this.host = host;
 		this.preserveHostHeader = preserveHost;
@@ -50,9 +58,13 @@ public class AppEndPoint implements EndPoint {
 	}
 	
 	private void updateId() {
-        this.id = this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
+        this.id = this.canonicalHost + this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
 	}
 
+	public String getCanonicalHost() {
+	    return this.canonicalHost;
+	}
+	
 	public String getId() {
 		return id;
 	}
