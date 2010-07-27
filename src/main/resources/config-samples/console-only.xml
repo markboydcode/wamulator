@@ -13,4 +13,8 @@
 -->
 <config proxy-port="auto" console-port="auto" rest-version="CD-OESv1">
     <console-recording sso="true" rest="true" max-entries="1000" enable-debug-logging="true"/>
+    <sso-traffic>
+      <by-site host='local.lds.org' port='{{proxy-port}}'>
+      </by-site>
+    </sso-traffic>
 </config>

@@ -24,10 +24,11 @@ public class ConfigSamplesVerificationTest {
     @Test
     public void test_ConsoleOnly_xml() throws Exception {
         
+        new Config(); // clear out old config
         Service service = new Service("classpath:config-samples/console-only.xml");
         service.start();
         Config cfg = Config.getInstance();
-        hitRest_getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName");
+        hitRest_getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
         service.stop();
     }
 
@@ -59,7 +60,7 @@ public class ConfigSamplesVerificationTest {
         Service service = new Service("classpath:config-samples/console-only-lds-policy-cookie.xml");
         service.start();
         Assert.assertEquals(cfg.getCookieName(), "lds-policy");
-        hitRest_getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/getCookieName");
+        hitRest_getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
         service.stop();
     }
 

@@ -1,7 +1,5 @@
 * text=auto !eol
 /AllUnitTests.xml -text svneol=unset#text/plain
-/a.out -text
-/a.txt -text svneol=unset#text/plain
 /commandline.sh.example -text
 /cp.txt -text svneol=unset#text/plain
 /file-has-lds-account-1234-test.xml -text svneol=unset#text/plain

@@ -41,9 +41,11 @@ public class TrafficRecorder {
         private String policyDomain;
         private String cookiePath;
         private String base;
+        private String baseResolved;
 
-        public RestInstanceInfo(String urlBase, String getCookiePoint, String policyDomain) {
+        public RestInstanceInfo(String urlBase, String urlBaseResolved, String getCookiePoint, String policyDomain) {
             this.base = urlBase;
+            this.baseResolved = urlBaseResolved;
             this.cookiePath = getCookiePoint;
             this.policyDomain = policyDomain;
         }
@@ -59,6 +61,10 @@ public class TrafficRecorder {
         public String getUrlBase() {
             return base;
         }
+
+        public String getResolvedUrlBase() {
+            return baseResolved;
+        }
     }
     
     /**
@@ -68,8 +74,8 @@ public class TrafficRecorder {
      * @param getCookiePoint
      * @param policyDomain
      */
-    public void addRestInst(String urlBase, String getCookiePoint, String policyDomain) {
-       this.restInstances.add(new RestInstanceInfo(urlBase, getCookiePoint, policyDomain)); 
+    public void addRestInst(String urlBase, String urlBaseResolved, String getCookiePoint, String policyDomain) {
+       this.restInstances.add(new RestInstanceInfo(urlBase, urlBaseResolved, getCookiePoint, policyDomain)); 
     }
     
     /**

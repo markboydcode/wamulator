@@ -134,7 +134,7 @@ public class Service {
 		switch(rv) {
 		case OPENSSO :
             System.out.println("Starting single " + rv.getVersionId() + " rest service at: " + base);
-            cfg.getTrafficRecorder().addRestInst(base, base + "getCookieNameForToken", "n/a");
+            cfg.getTrafficRecorder().addRestInst(base, base, base + "getCookieNameForToken", "n/a");
 			handlers.addHandler(new GetCookieName(base + "getCookieNameForToken"));
 			handlers.addHandler(new AuthNHandler(base + "authenticate"));
 			handlers.addHandler(new AuthZHandler(base + "authorize"));
@@ -153,11 +153,12 @@ public class Service {
 		     */
 		    if (tmgr.getSites().size() == 0) {
 		        System.out.println("Starting single " + rv.getVersionId() + " rest service at: " + base);
-	            cfg.getTrafficRecorder().addRestInst(base, base + "getCookieName", "''");
-                handlers.addHandler(new GetOesV1CookieName(base + "getCookieName"));
-                handlers.addHandler(new AreTokensValid(base + "areTokensValid"));
-                handlers.addHandler(new ArePermitted(base + "arePermitted", ""));
-                handlers.addHandler(new EncodeLinks(base + "encode"));
+		        String baseResolved = base.replace("{version}", "1.0");
+	            cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + "getCookieName", "''");
+                handlers.addHandler(new GetOesV1CookieName(baseResolved + "getCookieName"));
+                handlers.addHandler(new AreTokensValid(baseResolved + "areTokensValid"));
+                handlers.addHandler(new ArePermitted(baseResolved + "arePermitted", ""));
+                handlers.addHandler(new EncodeLinks(baseResolved + "encode"));
 		    }
 		    else {
 		        /*
@@ -165,11 +166,12 @@ public class Service {
 		         */
 		        Set<String> hosts = new TreeSet<String>();
 	            for ( SiteMatcher site : tmgr.getSites()) {
-	                String serviceBase = base + site.getHost() + "/";
+                    String baseResolved = base.replace("{version}", "1.0");
+	                String serviceBase = baseResolved + site.getHost() + "/";
 	                if( ! hosts.contains(site.getHost())) {
 	                    hosts.add(site.getHost());
 	                    System.out.println("Starting " + rv.getVersionId() + " rest service for site " + site.getHost() + " at: " + serviceBase);
-	                    cfg.getTrafficRecorder().addRestInst(base, base + "getCookieName", site.getHost());
+	                    cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + site.getHost() + "/getCookieName", site.getHost());
 	                    handlers.addHandler(new GetOesV1CookieName(serviceBase + "getCookieName"));
 	                    handlers.addHandler(new AreTokensValid(serviceBase + "areTokensValid"));
 	                    handlers.addHandler(new ArePermitted(serviceBase + "arePermitted", site.getHost()));

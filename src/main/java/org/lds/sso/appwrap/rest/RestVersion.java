@@ -14,7 +14,7 @@ public enum RestVersion {
 	/**
 	 * Church Defined Oracle Entitlements Server version 1 rest interface.
 	 */
-	CD_OESv1("CD-OESv1", "/oes/v1.0/rest/"), 
+	CD_OESv1("CD-OESv1", "/oes/v{version}/rest/"), 
 	/**
 	 * OpenSSO rest interface defined by OpenSSO 8. 
 	 */

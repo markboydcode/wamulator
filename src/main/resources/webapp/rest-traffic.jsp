@@ -29,7 +29,7 @@ tr.odd {background: #DDF;}
 <table border='1'>
 <tr><th>Policy Domain</th><th>Location</th></tr></div>
 <c:forEach items="${requestScope.config.trafficRecorder.restInstances}" var="rInst">
-<tr><td>${rInst.policyDomain}</td><td><a href="${rInst.cookiePath}">${rInst.urlBase}</a></td></tr>
+<tr><td>${rInst.policyDomain}</td><td><a href="${rInst.cookiePath}">${rInst.resolvedUrlBase}${rInst.policyDomain}/</a></td></tr>
 </c:forEach>
 </table>
 <div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Watch Rest traffic. Refresh the browser to view captured traffic.</div>
