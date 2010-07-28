@@ -3,6 +3,7 @@ package org.lds.sso.appwrap.conditions.evaluator;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,13 @@ public class EvaluationContext {
 	
 	public EvaluationContext(User user, Map env) {
 		this.user = user;
-		this.env = env;
+        this.env = env;
+		if (env == null) {
+		    this.env = new HashMap<String,String>();
+		}
+		else {
+	        this.env = env;
+		}
 	}
 	
 	public User user = null;
