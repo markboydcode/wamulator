@@ -41,7 +41,7 @@ public class EntitlementsManager {
         }
     }
     
-    public boolean isAllowed(boolean isLink, String action, String urn, User user, Map<String, String> ctx) {
+    public boolean isAllowed(String action, String urn, User user, Map<String, String> ctx) {
         for (Entitlement ent : entitlements) {
             if (ent.matches(urn) && ent.allowed(action)) {
                 String condId = conditionsMap.get(ent);
@@ -62,8 +62,6 @@ public class EntitlementsManager {
                                                 + syntax + ". ", e1);
                         return false;
                     }
-//                    EvaluationContext evaluationContext = new EvaluationContext(user,
-//                            new HashMap<String, String>());
                     EvaluationContext evaluationContext = new EvaluationContext(user, ctx);
                     try {
                         return evaluator.isConditionSatisfied(evaluationContext);
@@ -75,14 +73,6 @@ public class EntitlementsManager {
                 }
                 return true;
             }
-        }
-        /*
-         * For links, all links are allowed unless they have a policy declared
-         * for them. URNs are disallowed unless they have a policy and the user
-         * fulfills the requirements of that policy.
-         */
-        if (isLink) {
-            return true;
         }
         return false;
     }

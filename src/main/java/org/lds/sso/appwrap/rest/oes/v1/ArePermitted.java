@@ -111,10 +111,8 @@ public class ArePermitted extends RestHandlerBase {
 		    String parm = "res." + t;
             String res = request.getParameter(parm);
             String act = request.getParameter("act." + t);
-            boolean isLink = Boolean.parseBoolean(request.getParameter("isLink." + t));
             if (logReqWrt != null) {
                 logReqWrt.print(parm + "=" + res + "\r\n"); // leave \r\n since println is op sys specific
-                logReqWrt.print("isLink." + t + "=" + isLink + "\r\n");
                 logReqWrt.print("act." + t + "=" + act + "\r\n");
             }
             // only process if we have both a resource and its action
@@ -122,16 +120,10 @@ public class ArePermitted extends RestHandlerBase {
 			    Map<String, String> ctx = getContextParams(cfg, request, t, logReqWrt);
 			    boolean allowed = false;
 			    if (isValid) { // only evaluate if token is still valid
-                    if (isLink) {
-                        // massage the link uri so that it matches our LINK policies
-                        res = fixupLinkUri(res);
-                    }
-                    else {
-                        // massage the URN resources so that they match the domain
-                        // to which this service is bound.
-                        res = fixupUrn(res);
-                    }
-			        allowed = cfg.getEntitlementsManager().isAllowed(isLink, act, res, user, ctx);
+			        // massage the URN resources so that they match the domain
+			        // to which this service is bound.
+			        res = fixupUrn(res);
+			        allowed = cfg.getEntitlementsManager().isAllowed(act, res, user, ctx);
 			    }
 			    clientOut.print(parm + "=" + allowed);
 			    clientOut.print(RequestHandler.CRLF);
@@ -160,7 +152,7 @@ public class ArePermitted extends RestHandlerBase {
            res = this.policyDomain + res;
        }
        else {
-           // log warning message and replaced passed-in domain with 
+           // log warning message and replace passed-in domain with 
            // that to which this instance is bound since policies
            // won't evaluate correctly otherwise.
            int sIdx = res.indexOf("/");
@@ -205,26 +197,6 @@ public class ArePermitted extends RestHandlerBase {
            System.out.println(msg);
        }
         return res;
-    }
-
-/**
-     * Because links are handled with special policies that contain a /LINK virtual resource, we need to tweak any
-     * link uri's that are passed in.  This method takes care of the required tweaks.
-     *
-     * @param res   resouce uri to be tweaked
-     * @return the massaged uri
-     */
-    String fixupLinkUri(String res) {
-        String nres = policyDomain + OES_LINK_POLICY_PFX + EncodeUtils.encode(EncodeUtils.clean(res)); 
-        if (cLog.isInfoEnabled()) {
-            String msg = "Rest service handler at " + this.pathPrefixRaw
-            + " converting link '" + res
-            + "' to '" + nres + "' for policy evaluation.";
-            cLog.info(msg);
-            System.out.println(msg);
-        }
-
-        return nres;
     }
 
 	/**

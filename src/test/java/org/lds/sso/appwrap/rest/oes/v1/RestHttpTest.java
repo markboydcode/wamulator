@@ -57,8 +57,6 @@ public class RestHttpTest {
         .append("  <by-site host='local.lds.org' port='80'>") //resource uri='app://some-resource' allow='GET'/>")
         .append("   <allow action='GET' cpath='/some-resource'/>")
         .append("   <entitlements>")
-        .append("    <allow link='/a/link/resource'/>")
-        .append("    <allow link='http://some.other.domain/a/link/resource'/>")
         .append("    <allow action='WAVE,SHOVE,PUSH' urn='/some/resource'/>")
         .append("    <allow action='SMILE,GET,DROP' urn='/some/resource'/>")
         .append("    <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>") // only bishops
@@ -297,12 +295,6 @@ public class RestHttpTest {
         post.addParameter("act.2","POST");
         post.addParameter("res.3","/another/resource");
         post.addParameter("act.3","DELETE");
-        post.addParameter("res.4","http://some.other.domain/a/link/resource");
-        post.addParameter("isLink.4","true");
-        post.addParameter("act.4","GET");
-        post.addParameter("res.5","http://local.lds.org/a/link/resource");
-        post.addParameter("isLink.5","true");
-        post.addParameter("act.5","GET");
     }
     
     @Test
@@ -381,7 +373,6 @@ public class RestHttpTest {
         boolean res_1 = false;
         boolean res_2 = false;
         boolean res_3 = false;
-        boolean res_4 = false;
         
         boolean done = false;
         while(!done) {
@@ -402,15 +393,11 @@ public class RestHttpTest {
                 if (tokens[0].equals("res.3")) {
                     res_3 = Boolean.parseBoolean(tokens[1]);
                 }
-                if (tokens[0].equals("res.4")) {
-                    res_4 = Boolean.parseBoolean(tokens[1]);
-                }
             }
         }
         Assert.assertEquals(res_1, true, "res.1 should be permitted for GET");
         Assert.assertEquals(res_2, false, "res.2 should not be permitted for POST");
         Assert.assertEquals(res_3, false, "res.3 should not be permitted since not defined");
-        Assert.assertEquals(res_4, true, "res.4 should be permitted for GET");
     }
 
     @Test

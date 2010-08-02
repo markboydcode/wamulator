@@ -799,16 +799,8 @@ public class XmlConfigLoader2 {
                 // (entitlements).
             }
             else if (path.matches("/config/sso-traffic/by-site/entitlements/allow")) {
-                boolean isLink = getStringAtt("link", path, atts, false) != null;
                 String actionAtt = null;
-                
-                // action attribute only required for URNs not for links
-                if (isLink) {
-                    actionAtt = "GET"; // links only use GET action
-                }
-                else {
-                    actionAtt = getStringAtt("action", path, atts);
-                }
+                actionAtt = getStringAtt("action", path, atts);
                 actionAtt = actionAtt.replace(" ", "");
                 String[] actions = actionAtt.split(",");
                 String cond = null;
@@ -823,36 +815,14 @@ public class XmlConfigLoader2 {
                 String urn = null;
                 String policyDomain = (String) parsingContextAccessor.get().get(PARSING_CURR_SITE);
                 
-                if (isLink) {
-                    urn = getStringAtt("link",path,atts);
-                    urn = resolveAliases(urn);
-                    if (! urn.startsWith("/") && 
-                        ! urn.startsWith(EncodeUtils.HTTPS_SCHEME) && 
-                        ! urn.startsWith(EncodeUtils.HTTP_SCHEME)) {
-                        throw new IllegalArgumentException("Attribute 'link' with value "
-                                + urn + " for " + path 
-                                + " must start with a slash '/' character to be a " 
-                                + "link relative to the by-site host "
-                                + policyDomain + " or must be an absolute URL "
-                                + "beginning with 'http://' or 'https://'.");
-                    }
-                    if (urn.startsWith("/")) {
-                        // is relative to by-site host so prefix it
-                        urn = policyDomain + urn;
-                    }
-                    urn = EncodeUtils.encode(EncodeUtils.clean(urn));
-                    urn = ArePermitted.OES_LINK_POLICY_PFX + urn;
-                }
-                else {
-                    urn = getStringAtt("urn",path,atts);
-                    urn = resolveAliases(urn);
-                    if (! urn.startsWith("/")) {
-                        throw new IllegalArgumentException("Attribute 'urn' with value "
-                                + urn + " for " + path 
-                                + " must start with a slash '/' character since " 
-                                + "they are relative to the by-site host " 
-                                + policyDomain + " as the urn's policy domain.");
-                    }
+                urn = getStringAtt("urn",path,atts);
+                urn = resolveAliases(urn);
+                if (! urn.startsWith("/")) {
+                    throw new IllegalArgumentException("Attribute 'urn' with value "
+                            + urn + " for " + path 
+                            + " must start with a slash '/' character since " 
+                            + "they are relative to the by-site host " 
+                            + policyDomain + " as the urn's policy domain.");
                 }
                 Entitlement ent = new Entitlement(actions, policyDomain + urn);
                 EntitlementsManager entMgr = cfg.getEntitlementsManager();

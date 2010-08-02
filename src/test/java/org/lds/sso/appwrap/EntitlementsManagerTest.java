@@ -31,7 +31,6 @@ public class EntitlementsManagerTest {
             + "     <allow action='GET' urn='/leader/bishop/page' condition='{{is-cdol}}'/>" // only bishops
             + "     <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>" // only bishops
             + "     <allow action='GET' urn='/leader/ward/page' condition='{{is-in-524735}}'/>" // only members of unit 524735
-            + "     <allow link='/leader/ward/page' condition='{{is-in-524735}}'/>" // only members of unit 524735
             + "    </entitlements>"
             + "   </by-site>"
             + "  </sso-traffic>"
@@ -53,17 +52,16 @@ public class EntitlementsManagerTest {
         XmlConfigLoader2.load(xml);
         EntitlementsManager emgr = cfg.getEntitlementsManager();
         UserManager umgr = cfg.getUserManager();
-        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/focus", umgr.getUser("ngiwb1"), null));
-        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/focus/page", umgr.getUser("aaa"), null));
-        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/leader/focus/page", umgr.getUser("bbb"), null));
-        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/list/page", umgr.getUser("aaa"), null));
-        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/list/page", umgr.getUser("bbb"), null));
-        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/leader/bishop/page", umgr.getUser("aaa"), null));
-        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/bishop/page", umgr.getUser("bbb"), null));
-        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/leader/ward/page", umgr.getUser("aaa"), null));
-        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/leader/ward/page", umgr.getUser("bbb"), null));
-        Assert.assertFalse(emgr.isAllowed(false, "GET", "local.lds.org/LINK/local.lds.org_leader_ward_page", umgr.getUser("aaa"), null));
-        Assert.assertTrue(emgr.isAllowed(false, "GET", "local.lds.org/LINK/local.lds.org_leader_ward_page", umgr.getUser("bbb"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "local.lds.org/leader/focus", umgr.getUser("ngiwb1"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "local.lds.org/leader/focus/page", umgr.getUser("aaa"), null));
+        Assert.assertFalse(emgr.isAllowed("GET", "local.lds.org/leader/focus/page", umgr.getUser("bbb"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "local.lds.org/leader/list/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "local.lds.org/leader/list/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed("GET", "local.lds.org/leader/bishop/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "local.lds.org/leader/bishop/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed("GET", "local.lds.org/leader/ward/page", umgr.getUser("aaa"), null));
+        Assert.assertTrue(emgr.isAllowed("GET", "local.lds.org/leader/ward/page", umgr.getUser("bbb"), null));
+        Assert.assertFalse(emgr.isAllowed("GET", "local.lds.org/LINK/local.lds.org_leader_ward_page", umgr.getUser("aaa"), null));
     }
 
     @Test
