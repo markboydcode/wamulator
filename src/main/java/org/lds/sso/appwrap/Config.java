@@ -135,6 +135,12 @@ public class Config {
 	 */
     private boolean signinRequiresResolution = false;
 
+    /**
+     * Indicates if the proxy should strip off any empty headers if seen including 
+     * any injected by the proxy. Defaults to false.
+     */
+    private boolean stripEmptyHeaders = false;
+
 	private static final String SERVER_NAME = determineCurrentVersion();
 
 	public static final String CANONICAL_CTX_QPARAM_NAME = "cctx";
@@ -643,5 +649,23 @@ public class Config {
 	 */
     public void setSignInRequiresResolution() {
         signinRequiresResolution = true;
+    }
+
+    /**
+     * Indicates if the proxy will strip empty headers if seen
+     * including any injected by the proxy itself.
+     * @return
+     */
+    public void setStripEmptyHeaders(boolean b) {
+        this.stripEmptyHeaders = b;
+    }
+
+    /**
+     * Tells the proxy whether or not it should strip empty headers if seen
+     * including any injected by the proxy itself.
+     * @return
+     */
+    public boolean getStripEmptyHeaders() {
+        return this.stripEmptyHeaders;
     }
 }

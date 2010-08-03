@@ -23,7 +23,12 @@
 <!--     <sso-header name="policy-service-url" value="http://local.lds.org:{{rest-port}}/rest/oes"/>   -->
     <sso-header name="policy-service-url" value="http://local.lds.org/oes/v{version}/rest"/>
 
-    <sso-traffic>
+    <conditions>
+     <condition alias="test-of-context-parm">
+     </condition>
+    </conditions>
+    
+    <sso-traffic strip-empty-headers="true">
         <by-site host="local.lds.org" port="{{http-port}}">
             <cctx-mapping cctx="/mltest*" thost="127.0.0.1" tport="8510" tpath="/auth*"/>
             <unenforced cpath="/mltest*"/>

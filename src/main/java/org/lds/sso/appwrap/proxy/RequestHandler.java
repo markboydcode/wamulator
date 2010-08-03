@@ -349,6 +349,23 @@ public class RequestHandler implements Runnable {
 				    String hostHdr = appEndpoint.getHost() + (appEndpoint.getEndpointPort() != 80 ? (":" + appEndpoint.getEndpointPort()) : "");
 				    reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
 				}
+                // see if we are supposed to strip empty headers
+                if (cfg.getStripEmptyHeaders()) {
+                    StringBuffer removed = new StringBuffer();
+                    for(Iterator<Header> itr = reqPkg.headerBfr.getIterator(); itr.hasNext();) {
+                        hdr = itr.next();
+                        if (hdr.getValue() == null || "".equals(hdr.getValue())) {
+                            removed.append(",").append(hdr.getName());
+                            itr.remove();
+                        }
+                    }
+                    if (removed.length() > 1) {
+                        // take off leader comma
+                        String list = removed.substring(1).toString();
+                        reqPkg.headerBfr.append(new Header("X-stripped-empty-headers", list));
+                    }
+                }
+                
 				// now build complete request to pass on to application
 				appReqLn = appEndpoint.getAppRequestUri(reqPkg);
 				request = serializePackage((StartLine) appReqLn, reqPkg);

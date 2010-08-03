@@ -664,8 +664,10 @@ public class XmlConfigLoader2 {
 				}
 			} 
             else if (path.matches("/config/sso-traffic")) {
-                // used only as container for nested elements but must match here
-                // to prevent "unsupported element" message below.
+                cfg.setStripEmptyHeaders(Boolean.parseBoolean(getStringAtt("strip-empty-headers", path, atts, false)));
+                if (cfg.getStripEmptyHeaders()) {
+                    System.out.println("Proxy is configured to strip empty headers.");
+                }
             }
             else if (path.matches("/config/sso-traffic/by-site")) {
 				String scheme = atts.getValue("scheme");
