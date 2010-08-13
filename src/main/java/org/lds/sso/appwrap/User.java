@@ -98,4 +98,8 @@ public class User {
     public void addAttribute(String name, String value) {
         atts.add(new NvPair(name, value));
     }
+    
+    public String toString() {
+        return "user: " + username;
+    }
 }

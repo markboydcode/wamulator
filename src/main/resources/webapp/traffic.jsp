@@ -1,5 +1,4 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <html>
 <head><title>${requestScope.config.serverName}</title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
@@ -55,9 +54,6 @@
     <c:otherwise><td><span style="color: blue">${hit.uri}</span></td></c:otherwise>
 
 </c:choose>
-<td><c:if test="${hit.isProxyCode && hit.code == 401 && not(jsputils.isUnenforced[hit.uri])}"><span style="padding: 0 0 0 5px"><a href="/admin/action/add-uri-to-user/${hit.username}?uri=${jsputils.encode[hit.uri]}&method=${hit.method}"><img style="border: none;" src="add.gif" title="Allow for ${hit.username}"/></a></span></c:if></td>
-<td><c:if test="${hit.isProxyCode && hit.code == 401 && not(jsputils.isUnenforced[hit.uri])}"><span style="padding: 0 0 0 0"><a href="/admin/action/add-uri-to-unenforced?uri=${jsputils.encode[hit.uri]}"><img style="border: none;" src="unlock.gif" title="Unenforce for all users" /></a></span></c:if></td>
-<td><c:if test="${hit.isProxyCode && hit.code == 401}"><span style="padding: 0 0 0 0"><a href="/admin/action/add-uri-to-ignored?uri=${jsputils.encode[hit.uri]}"><img style="border: none;" src="cancel.gif" title="Ingore ${hit.uri}" /></a></span></c:if></td>
 </tr>
 </c:forEach>
 </table>

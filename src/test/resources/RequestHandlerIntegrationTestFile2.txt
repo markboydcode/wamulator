@@ -1,0 +1,11 @@
+<html>
+<title>Single File Serving Sample 2</title>
+<body >
+<H1>Single File Serving Sample 2</H1>
+<p>This file is served as a sample of using the cctx-file directive in the
+simulator configuration file and pointing to a single file as part of the:
+</p>
+<strong>org.lds.sso.appwrap.proxy.RequestHandlerIntegrationTest.java unit test.</strong>
+<p>Please do not remove this file.</p>
+</body>
+</html>

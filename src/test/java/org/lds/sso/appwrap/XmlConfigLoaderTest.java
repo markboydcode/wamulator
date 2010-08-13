@@ -13,6 +13,144 @@ import org.testng.annotations.Test;
 
 public class XmlConfigLoaderTest {
     
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testEmbeddedConditions () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + "  <conditions>"
+            + "   <condition alias='o&apos;hare prj'>"
+            + "    <OR site='{{site}}'>" + ((char)10) + ((char)9) + ((char)13)
+            + "     <HasLdsApplication value='o&apos;hare prj'/>"
+            + "<!-- comment gets dropped -->"
+            + "     <HasLdsApplication value='o&quot;hare prj'/>"
+            + "    </OR>"
+            + "   </condition>"
+            + "  </conditions>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='local.lds.org' port='45'>"
+            + "   <cctx-mapping cctx='/conditional/*' thost='127.0.0.1' tport='1000' tpath='/conditional/*'/>"
+            + "   <allow action='GET' cpath='/conditional/*' condition='{{o&apos;hare prj}}'/>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "  <users>"
+            + "    <user name='nnn' pwd='pwd'>"
+            + "      <sso-header name='header-a' value='aaa'/>" 
+            + "      <ldsApplication value='111'/>" 
+            + "      <ldsApplication value='222'/>" 
+            + "    </user>"
+            + "  </users>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Map<String, String> aliases = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get().get(XmlConfigLoader2.PARSING_ALIASES);
+        Assert.assertTrue(aliases.containsKey("o'hare prj"), "should have alias key of o'hare");
+        // note that white space is preserved in syntax.
+        // also note that carriage returns are normalized to line feeds
+        Assert.assertEquals(aliases.get("o'hare prj"), "    <OR site='labs-local.lds.org'>\n\t\n     <HasLdsApplication value='o&apos;hare prj'></HasLdsApplication>     <HasLdsApplication value='o&quot;hare prj'></HasLdsApplication>    </OR>   ");
+        SiteMatcher site = cfg.getTrafficManager().getSite("local.lds.org", 45);
+        OrderedUri uri = site.getUriMatcher("http", "local.lds.org", 45, "/conditional/test", null);
+        Assert.assertTrue(uri instanceof AllowedUri, "URI should have been instance of AllowedUri but was " + uri.getClass().getSimpleName());
+        AllowedUri au = (AllowedUri) uri;
+        String condId = site.conditionsMap.get(au);
+        Assert.assertNotNull(condId, "URI should have been assigned condition");
+        Assert.assertEquals(condId, "o'hare prj");
+    }
+    
+    @Test
+    public void test_default_signin_page () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='local.lds.org' port='45'/>"
+            + "  <by-site scheme='http' host='another.place.net' port='45'/>"
+            + "  <by-site scheme='http' host='other.host.com' port='45'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Assert.assertEquals(cfg.getLoginPage(), "http://local.lds.org:88/admin/selectUser.jsp");
+    }
+    
+    @Test
+    public void test_default_signin_page_w_port_auto_bind () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='auto' proxy-port='45'>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='local.lds.org' port='45'/>"
+            + "  <by-site scheme='http' host='another.place.net' port='45'/>"
+            + "  <by-site scheme='http' host='other.host.com' port='45'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Assert.assertEquals(cfg.getLoginPage(), "http://local.lds.org:" 
+                + cfg.getConsolePort() + "/admin/selectUser.jsp");
+    }
+    
+    
+    @Test
+    public void test_default_signin_page_ex_if_no_bysite () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        try {
+            cfg.getLoginPage();
+        }
+        catch(IllegalStateException e) {
+            return;
+        }
+        Assert.fail("IllegalStateException should have been thrown when defauling sign-in page with no by-site declaration");
+    }
+
+    @Test
+    public void test_default_signin_page_ex_w_wrong_cookie_domain() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
+            + "  <sso-traffic>"
+            + "   <by-site scheme='http' host='host.lds.org' port='45'/>"
+            + "  </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        try {
+            cfg.getLoginPage();
+        }
+        catch(IllegalArgumentException e) {
+            return;
+        }
+        Assert.fail("Should have thrown IllegalArgumentException since default sign-in page uses first by-site declaration and its domain differs from cookie domain preventing browser from accepting cookie.");
+    }
+
+    @Test
+    public void test_signin_page_ex_w_wrong_cookie_domain() throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
+            + "  <sso-sign-in-url value='http://my.site.com/auth/ui/sign-in'/>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        try {
+            cfg.getLoginPage();
+        }
+        catch(IllegalArgumentException e) {
+            return;
+        }
+        Assert.fail("Should have thrown IllegalArgumentException since sign-in page domain differs from cookie domain preventing browser from accepting cookie.");
+    }
+
+    @Test
     public void testUserAttributes () throws Exception {
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
@@ -21,8 +159,8 @@ public class XmlConfigLoaderTest {
             + "  <users>"
             + "    <user name='nnn' pwd='pwd'>"
             + "      <sso-header name='header-a' value='aaa'/>" 
-            + "      <ldsApplication value='111'/>" 
-            + "      <ldsApplication value='222'/>" 
+            + "      <ldsApplications value='111'/>" 
+            + "      <ldsApplications value='222'/>" 
             + "    </user>"
             + "  </users>"
             + "</config>";
@@ -134,12 +272,13 @@ public class XmlConfigLoaderTest {
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias site=system:some-path-property?>"
             + "<config console-port='88' proxy-port='45'>"
+            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
             + "  <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
             + "</config>";
-        System.setProperty("some-path-property", "the-path-property");
+        System.setProperty("some-path-property", "some.host.net");
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        Assert.assertEquals(cfg.getLoginPage(), "http://the-path-property/auth/ui/sign-in");
+        Assert.assertEquals(cfg.getLoginPage(), "http://some.host.net/auth/ui/sign-in");
     }
 
     @Test

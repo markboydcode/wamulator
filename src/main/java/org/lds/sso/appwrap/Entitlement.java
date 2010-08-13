@@ -6,7 +6,7 @@ import java.util.TreeSet;
 
 /**
  * Represents an entitlement consisting of one or more actions, a URN, and 
- * optional condition.  
+ * optional condition representative of OES entitlements.  
  * 
  * @author Mark Boyd
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
@@ -14,52 +14,51 @@ import java.util.TreeSet;
  */
 public class Entitlement implements Comparable<Entitlement>{
 
-	protected String[] actions = null;
-	   protected boolean usePathPrefixMatching = false;
-	    protected String pathPrefix = null;
-	    protected String pathMatch = null;
-	    protected String id;
+    protected String[] actions = null;
+    protected String id;
+    protected String conditionSyntax = null;
+    protected String conditionId = null;
+    private String urn;
+    
 
-    public Entitlement(String[] actions, String urn) {
-        this.pathMatch = urn;
-        this.actions = actions;
-        Set<String> sorted = new TreeSet<String>(Arrays.asList(actions));
-        this.id = urn + sorted.toString();
-        
-        if (urn.startsWith("*")) {
-            pathPrefix = "";
-            usePathPrefixMatching = true;
-        } else if (urn.endsWith("*")) {
-            pathPrefix = urn.substring(0, urn.length() - 2);
-            usePathPrefixMatching = true;
+    public String getConditionSyntax() {
+        return conditionSyntax;
+    }
+
+    public String getConditionId() {
+        return conditionId;
+    }
+
+    public String getUrn() {
+        return urn;
+    }
+
+    public Entitlement(String policyDomain, String urn, String[] actions, String conditionId, String conditionSyntax) {
+        // strip off any trailing slashes
+        if (urn.length() > 1 && urn.endsWith("/")) {
+            urn = urn.substring(0, urn.length()-1);
         }
+
+        this.urn = policyDomain + urn;
+        this.actions = actions;
+        this.conditionId = conditionId;
+        this.conditionSyntax = conditionSyntax;
+        Set<String> sorted = new TreeSet<String>(Arrays.asList(actions));
+        this.id = urn + ":" + sorted.toString() + ":" + conditionId;
     }
     
     public String toString() {
         return id;
     }
-	
-    public boolean matches(String urn) {
-        if (usePathPrefixMatching) {
-            if (urn.startsWith(pathPrefix)) {
-                return true;
-            }
-        } else {
-            if (urn.equals(pathMatch)) {
+    
+    public boolean allowed(String action) {
+        for(String a : actions) {
+            if (a.equals(action)) {
                 return true;
             }
         }
         return false;
     }
-
-	public boolean allowed(String action) {
-		for(String a : actions) {
-			if (a.equals(action)) {
-				return true;
-			}
-		}
-		return false;
-	}
 
     public int compareTo(Entitlement o) {
         return id.compareTo(o.id);

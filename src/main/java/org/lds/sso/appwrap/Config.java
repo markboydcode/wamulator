@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -55,12 +56,16 @@ public class Config {
 	private static Config instance;
 
 	/**
-	 * The port on which appwrap will listen for requests to SSO protected
-	 * applications sitting behind appwrap.
+	 * The port on which the simulator will listen for requests to SSO protected
+	 * applications sitting behind it.
 	 */
-	private int httpAppPort = DEFAULT_APP_PORT;
+	private int proxyPort = DEFAULT_APP_PORT;
 
-	private int httpAdminPort = DEFAULT_ADMIN_PORT;
+	/**
+	 * The port on which the simulator provides its console pages and its
+	 * rest interface endpoints.
+	 */
+	private int consolePort = DEFAULT_ADMIN_PORT;
 
 	private UserManager userMgr = new UserManager();
 
@@ -77,7 +82,7 @@ public class Config {
         headers.put(GlobalHeaderNames.SIGNOUT, GlobalHeaderNames.SIGNOUT_VALUE);
 	}
 	/**
-	 * The domain of the cookie set by app-wrap
+	 * The domain of the cookie set by the simulator
 	 */
 	private String cookieDomain = ".lds.org";
 	
@@ -87,14 +92,14 @@ public class Config {
 
 	private TrafficManager appMgr = new TrafficManager(sEngine, syntaxMap);
 
-	private EntitlementsManager entitlementsMgr = new EntitlementsManager(sEngine, syntaxMap);
+	private EntitlementsManager entitlementsMgr = new EntitlementsManager(sEngine);
 	
 	private TrafficRecorder trafficRcrdr = new TrafficRecorder();
 
 	/**
-	 * The name of the cookie set by app wrap. Defaults to "app-wrap-token".
+	 * The name of the cookie set by the simulator. Defaults to "simulator-token".
 	 */
-	private String cookieName = "app-wrap-token";
+	private String cookieName = "simulator-token";
 
 	/**
 	 * The URL of the sign-in page to which the user should be redirected to
@@ -102,6 +107,16 @@ public class Config {
 	 */
 	private String loginPageUrl = null;
 
+    /**
+     * The default signin page location. If that JSP ever changes this will need
+     * to be changed. Includes a macro of "{{HOST}}" that will be replaced with
+     * the host of the first by-site element declared in configuration. If no
+     * by-site element is declared then the sign-in page will not be defaulted.
+     * 
+     */
+    private static final String DEFAULT_SIGNIN_PAGE_TMPLT = "http://{{HOST}}:"
+            + CONSOLE_PORT_MACRO + "/admin/selectUser.jsp";
+	
 	private long minReqOccRepeatMillis = 200;
 
 	private int maxRepeatReqCount = 4;
@@ -125,21 +140,44 @@ public class Config {
 
     private boolean debugLoggingEnabled = false;
 
-	private RestVersion restVersion;
+	private RestVersion restVersion = RestVersion.CD_OESv1;
 
 
-	/**
-	 * If true indicates that auto-binding has been specified and the sign-in
-	 * URL must be resolved replacing the console-port implicit alias reference
-	 * after port binding has taken place.
-	 */
+    /**
+     * If true indicates that auto-binding has been specified and the sign-in
+     * URL must be resolved replacing the console-port implicit alias reference
+     * after port binding has taken place.
+     */
     private boolean signinRequiresResolution = false;
+
+    /**
+     * If true indicates that the signin page url should be checked to ensure
+     * that it will work with the configured cookie domain.
+     */
+    private boolean signinRequiresCheck = false;
 
     /**
      * Indicates if the proxy should strip off any empty headers if seen including 
      * any injected by the proxy. Defaults to false.
      */
     private boolean stripEmptyHeaders = false;
+
+    /**
+     * The socket timeout in milliseconds for which a read of the input stream
+     * of the socket connecting to the proxy will block before throwing a
+     * {@link SocketTimeoutException}. Defaults to 20000 milliseconds which is 
+     * 20 seconds.
+     */
+    private int proxyInboundSoTimeout = 20000;
+
+    /**
+     * The socket timeout in milliseconds for which a read of the input stream
+     * of the socket used by the proxy to connect to the proxied server will
+     * block before throwing a {@link SocketTimeoutException}. Defaults to 20000
+     * milliseconds which is 20 seconds.
+     */
+    private int proxyOutboundSoTimeout = 20000;
+    
 
 	private static final String SERVER_NAME = determineCurrentVersion();
 
@@ -282,24 +320,59 @@ public class Config {
 		if (cookieHdr == null) {
 			return null;
 		}
+        /*
+         * need to be careful here. HttpClient submits two copies of the 
+         * showing how careful we must be to identify the session properly.
+         * For future reference:
+         * 
+         * Netscape format = Cookie: lds-policy=user1-13165790
+         * RFC2901 format  = Cookie: $Version="1"; lds-policy="user1-13165790"; $Path="/"; $Domain=".lds.org"
+         * RFC2965 format  = Cookie: $Version="1"; lds-policy="user1-13165790"; $Path="/"; $Domain=".lds.org"; $Port
+         * 
+        HeaderBuffer [
+        Cookie: lds-policy=user1-13165790,
+        Cookie: $Version="1"; lds-policy="user1-13165790"; $Path="/"; $Domain=".lds.org",
+        User-Agent: Jakarta Commons-HttpClient/3.1,
+        Host: local.lds.org:25584,
+        Proxy-Connection: Keep-Alive,
+        Connection: close,
+        X-shim: handled,
+        policy-signin: signmein,
+        policy-signout: signmeout,
+        X-connId: C-0002
+        ]
+         *
+         * headers captured while using opensso looked like old netscape format
+         * although in the AMAuthCookie case it is also wrapping the value in
+         * quotes perhaps due to the non-alphanumeric characters.
+        Cookie: JSESSIONID=FA5497D112C24381F06293E48151E663; amlbcookie=01;
+        AMAuthCookie="AQIC5wM2LY4SfcynYE2P7XXg5qbAVZMlDWSJnLS+8Cx/TXI=@AAJTSQACMDE=#"
+        */
 		String cookieName = getCookieName() + "=";
 
 		int cIdx = cookieHdr.indexOf(cookieName);
-
+        
 		if (cIdx == -1) {
 			return null;
 		}
-		// header looks like:
-		// Cookie: JSESSIONID=FA5497D112C24381F06293E48151E663; amlbcookie=01;
-		// AMAuthCookie="AQIC5wM2LY4SfcynYE2P7XXg5qbAVZMlDWSJnLS+8Cx/TXI=@AAJTSQACMDE=#"
+
 		String value = null;
 
 		int semiColonIdx = cookieHdr.indexOf(";", cIdx);
-		if (semiColonIdx == -1) { // last cookie in list
+		if (semiColonIdx == -1) { 
+		    // must be netscape format and last cookie in list
 			value = cookieHdr.substring(cIdx + cookieName.length());
 		}
 		else {
+		    // must be: 
+	        // lds-policy="user1-13165790"; $Path...
 			value = cookieHdr.substring(cIdx + cookieName.length(), semiColonIdx);
+		}
+		// finally see if it is a quoted string and remove the quotes
+		if (value.startsWith("\"") && value.endsWith("\"")) {
+            // "user1-13165790" length is 16 chars
+            // 0123456789012345 indices
+		    value = value.substring(1,value.length()-1);
 		}
 		return value;
 	}
@@ -323,25 +396,21 @@ public class Config {
 	}
 
 	public int getProxyPort() {
-		return this.httpAppPort;
+		return this.proxyPort;
 	}
 
 	public void setProxyPort(int port) {
-		this.httpAppPort = port;
-		if (getTrafficManager() != null) {
-		    getTrafficManager().proxyPortChanged(port);
-		}
+		this.proxyPort = port;
+	    getTrafficManager().proxyPortChanged(port);
 	}
 
 	public int getConsolePort() {
-		return this.httpAdminPort;
+		return this.consolePort;
 	}
 
 	public void setConsolePort(int port) {
-		this.httpAdminPort = port;
-        if (getTrafficManager() != null) {
-            getTrafficManager().consolePortChanged(port);
-        }
+		this.consolePort = port;
+        getTrafficManager().consolePortChanged(port);
 	}
 
 	public String getCookieDomain() {
@@ -350,6 +419,7 @@ public class Config {
 
 	public void setCookieDomain(String cookieDomain) {
 		this.cookieDomain = cookieDomain;
+		this.signinRequiresCheck = true;
 	}
 
     public TrafficManager getTrafficManager() {
@@ -409,9 +479,43 @@ public class Config {
 
 	public void setSignInPage(String absoluteLoginUrl) {
 		this.loginPageUrl = absoluteLoginUrl;
+		this.signinRequiresCheck = true;
 	}
 
+	/**
+	 * Returns the URL to the sign-in page resolving the console-port implicit
+	 * alias if specified in configuration and providing reasonable default URL
+	 * if a URL is not specified in config. Also verifies that the sign-in page
+	 * URL will allow the cookie to be set for the specified domain of the cookie.
+	 * @return
+	 */
 	public String getLoginPage() {
+	    if (loginPageUrl == null) {
+	        if (appMgr.matchers.size() > 0) {
+	            SiteMatcher site = getTrafficManager().matchers.get(0);
+	            if (site.getHost().endsWith(getCookieDomain())) {
+	                loginPageUrl = DEFAULT_SIGNIN_PAGE_TMPLT.replace("{{HOST}}", site.getHost());
+	                signinRequiresResolution = true;
+	            }
+	            else {
+	                throw new IllegalArgumentException(""
+	                        + "Default sign-in page will not be able to set the "
+	                        + "cookie since it is being accessed at host '"
+	                        + site.getHost() + "' of the first by-site element "
+	                        + "but the cookie domain is set to '"
+	                        + getCookieDomain() + "'.");
+	            }
+	        }
+	        else {
+	            throw new IllegalStateException(""
+	                    + "No signin-page has been specified in configuration AND " 
+	                    + "default could not be determined since there are no <by-site> "
+	                    + "declarations. Defaulting requires at least one site "
+	                    + "be defined so that its host can be used in the default "
+	                    + "sign-in page URL to allow for the cookie set by the page "
+	                    + "to be accepted by the browser.");
+	        }
+	    }
 	    if (signinRequiresResolution) {
 	        String url = this.loginPageUrl;
 	        if (url.contains(CONSOLE_PORT_MACRO)) {
@@ -420,6 +524,19 @@ public class Config {
 	            signinRequiresResolution = false;
 	        }
 	    }
+        if (signinRequiresCheck) {
+            signinRequiresCheck = false;
+            String minusScheme = loginPageUrl.replaceFirst("^http://", "");
+            String minusPath = minusScheme.replaceFirst("/.*$", "");
+            String host = minusPath.replaceFirst(":.*$", "");
+            if (! host.endsWith(getCookieDomain()) ) {
+                throw new IllegalArgumentException(""
+                        + "Sign-in page has a host of '"
+                        + host + "' but cookie domain is set to '"
+                        + getCookieDomain() + "'. Cookie will not be "
+                        + "accepted by browser.");
+            }
+        }
 		return this.loginPageUrl;
 	}
 
@@ -667,5 +784,49 @@ public class Config {
      */
     public boolean getStripEmptyHeaders() {
         return this.stripEmptyHeaders;
+    }
+
+    /**
+     * Sets the timeout in milliseconds that the proxy will wait to receive input
+     * from the connecting input stream.
+     * 
+     * @param millis
+     * @return
+     */
+    public void setProxyInboundSoTimeout(int millis) {
+        proxyInboundSoTimeout = millis;
+    }
+
+    /**
+     * The timeout in milliseconds that the proxy will wait to receive input
+     * from the connecting input stream.
+     * 
+     * @param millis
+     * @return
+     */
+    public int getProxyInboundSoTimeout() {
+        return proxyInboundSoTimeout ;
+    }
+
+    /**
+     * Sets the timeout in milliseconds that the proxy will wait to receive input
+     * from the downstream server's input stream.
+     * 
+     * @param millis
+     * @return
+     */
+    public void setProxyOutboundSoTimeout(int millis) {
+        proxyOutboundSoTimeout = millis;
+    }
+
+    /**
+     * The timeout in milliseconds that the proxy will wait to receive input
+     * from the downstream server's input stream.
+     * 
+     * @param millis
+     * @return
+     */
+    public int getProxyOutboundSoTimeout() {
+        return proxyOutboundSoTimeout ;
     }
 }

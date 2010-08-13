@@ -130,7 +130,7 @@ public class CookiePathAndRedirectRewriteTest {
                         int endOfReq = -1;
                         for(int i =0; i<1024-8; i++) {
                             if (bytes[i] == 13 && bytes[i+1] == 10 && bytes[i] == 13 && bytes[i+1] == 10) {
-                                endOfReq = i-1;
+                                endOfReq = i;
                             }
                         }
                         if (endOfReq == -1) {

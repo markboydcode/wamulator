@@ -23,11 +23,11 @@ import org.lds.sso.appwrap.proxy.CookiePathRewriter;
  * 
  */
 public class TrafficManager {
-	protected LogicalSyntaxEvaluationEngine cEngine;
+	protected LogicalSyntaxEvaluationEngine cEngine = null;
 	
-	protected Map<String, String> cSyntaxMap = new HashMap<String, String>();  
+	protected Map<String, String> cSyntaxMap = null;  
 
-	private List<SiteMatcher> matchers = new ArrayList<SiteMatcher>();
+	protected List<SiteMatcher> matchers = new ArrayList<SiteMatcher>();
 
 	private SiteMatcher lastMatcherAdded = null;
 

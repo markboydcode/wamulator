@@ -77,33 +77,9 @@ public class JspUtils {
 	}
     
     /**
-     * Returns a Map implementation whose get takes the passed-in
-     * url and returns a Boolean true if it is already in the unenforced urls
-     * list for use in jsp pages.
-     *  
-     * @return
-     */
-    public BaseMapImpl<Boolean> getIsUnenforced() {
-        if (isUnenforced == null) {
-            isUnenforced = new BaseMapImpl<Boolean>() {
-                @Override
-                public Boolean get(Object key) {
-                    try {
-                        return Boolean.valueOf(Config.getInstance().getTrafficManager().isUnenforced((String) key));
-                    }
-                    catch (URISyntaxException e) {
-                        throw new RuntimeException("problem converting " + key + " to URI instance.", e);
-                    }
-                }
-            };
-        }
-        return isUnenforced; 
-    }
-    
-    /**
-     * Returns a Map implementation whose get takes the passed-in
-     * url and returns a Boolean true if it is already in the unenforced urls
-     * list for use in jsp pages.
+     * Returns a Map implementation whose get takes the passed-in String
+     * and returns a String with all carriage-return line-feed pairs replaced
+     * by an html break "<br/>".
      *  
      * @return
      */

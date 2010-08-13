@@ -18,7 +18,7 @@ public class SiteMatcher {
 	private static final Logger cLog = Logger.getLogger(SiteMatcher.class);
 	private String host;
 	private int port;
-	private Set<OrderedUri> urls = new TreeSet<OrderedUri>();
+	protected Set<OrderedUri> urls = new TreeSet<OrderedUri>();
 	private Set<EndPoint> mappedEndPoints = new TreeSet<EndPoint>();
 
 	private String scheme;
@@ -41,48 +41,56 @@ public class SiteMatcher {
 		this.host = host;
 		this.port = port;
 	}
+	
+	public OrderedUri getUriMatcher(String scheme, String host, int port, String path, String query) {
+        for(OrderedUri uri : urls) {
+            if (uri.matches(scheme, host, port, path, query)) {
+                return uri;
+            }
+        }
+        return null;
+	}
 
 	public boolean isAllowed(String scheme, String host, int port, String action, String path, String query, User user) {
 		if (this.port == port && this.host.equals(host)) {
-			for(OrderedUri uri : urls) {
-				if (uri.matches(scheme, host, port, path, query)) {
-				    if (uri.getClass() == UnenforcedUri.class) {
-				        return true;
-				    }
-				    // instance of AllowedUri
-				    AllowedUri au = (AllowedUri) uri;
-				    if (au.allowed(action)) {
-				
-				        String condId = conditionsMap.get(au);
-    					if (condId == null) { // no condition needs to be met
-    						return true;
-    					}
-    					else { // must further meet conditions for access
-    						String syntax = cSynMap.get(condId);
-    						IEvaluator evaluator = null;
-    						try {
-    							evaluator = cEngine.getEvaluator(syntax);
-    						}
-    						catch (EvaluationException e) {
-    							cLog.error("Disallowing access to " 
-    									+ au + " since unable to obtain evaluator for condition alias "
-    									+ condId + " with syntax " + syntax + ". ", e);
-    							return false;
-    						}
-    						EvaluationContext ctx = new EvaluationContext(user, new HashMap<String,String>());
-    						try {
-    							return evaluator.isConditionSatisfied(ctx);
-    						}
-    						catch (EvaluationException e) {
-    							cLog.error("Error occurred for " + au + " for user " + user.getUsername()
-    									+ " denying access.", e);
-    						}
-    						return false;
-    					}
-				    }
-					return true;
-				}
-			}
+		    OrderedUri uri = getUriMatcher(scheme, host, port, path, query);
+		    if (uri != null) {
+                if (uri.getClass() == UnenforcedUri.class) {
+                    return true;
+                }
+                // instance of AllowedUri
+                AllowedUri au = (AllowedUri) uri;
+                if (au.allowed(action)) {
+            
+                    String condId = conditionsMap.get(au);
+                    if (condId == null) { // no condition needs to be met
+                        return true;
+                    }
+                    else { // must further meet conditions for access
+                        String syntax = cSynMap.get(condId);
+                        IEvaluator evaluator = null;
+                        try {
+                            evaluator = cEngine.getEvaluator(syntax);
+                        }
+                        catch (EvaluationException e) {
+                            cLog.error("Disallowing access to " 
+                                    + au + " since unable to obtain evaluator for condition alias "
+                                    + condId + " with syntax " + syntax + ". ", e);
+                            return false;
+                        }
+                        EvaluationContext ctx = new EvaluationContext(user, new HashMap<String,String>());
+                        try {
+                            return evaluator.isConditionSatisfied(ctx);
+                        }
+                        catch (EvaluationException e) {
+                            cLog.error("Error occurred for " + au + " for user " + user.getUsername()
+                                    + " denying access.", e);
+                        }
+                        return false;
+                    }
+                }
+                return true;
+            }
 		}
 		return false;
 	}
@@ -134,14 +142,23 @@ public class SiteMatcher {
 	        // if matcher had zero port then all unenforced and allowed urls
 	        // will have inherited it and must be updated as well
 	        List<OrderedUri> updates = new ArrayList<OrderedUri>();
+	        Map<String, AllowedUri> cUpdates = new HashMap<String, AllowedUri>();
 	        
 	        for (Iterator<OrderedUri> itr=this.urls.iterator(); itr.hasNext();) {
 	            OrderedUri uri = itr.next();
 	            
-	                if (uri.proxyPortChanged(proxyPort)) {
-	                    itr.remove();
-	                    updates.add(uri);
-	                }
+                // remove from conditions map before changing since it
+                // affects our hashcode and we'll lose the linkage to the
+                // condition syntax if that uri had a condition
+	            String cond = conditionsMap.remove(uri);
+                if (uri.proxyPortChanged(proxyPort)) {
+                    itr.remove();
+                    updates.add(uri);
+                }
+                if (cond != null) {
+                    // cast here is fine since only allowed will have conditions
+                    conditionsMap.put((AllowedUri)uri, cond);
+                }
 	        }
 	        if (updates.size() >0) {
 	            urls.addAll(updates);

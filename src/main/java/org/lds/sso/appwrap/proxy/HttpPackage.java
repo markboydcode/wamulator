@@ -15,6 +15,7 @@ public class HttpPackage {
     public static final String CONN_ID_HDR = CONN_ID + ": ";
     public static final String SHIM_HANDLED = "X-shim";
     public static final String SHIM_HANDLED_HDR = SHIM_HANDLED + ":";
+    public static final String SHIM_STRIPPED_HEADERS = "X-stripped-empty-headers";
 	public static final String LOCATION_HDR = "location:";
 	public static final String SET_COOKIE_HDR = "set-cookie:"; // need set-cookie2?
 	
@@ -41,4 +42,13 @@ public class HttpPackage {
 	public String scheme = null;
     public boolean signMeInDetected = false;
     public boolean signMeOutDetected = false;
+    /**
+     * Indicates if a socket timeout occurred while reading the input stream
+     * for this package.
+     */
+    public boolean socketTimeout = false;
+    /**
+     * Indicates if we found the cookie that matched the simulator session cookie.
+     */
+    public boolean cookieFound = false;
 }

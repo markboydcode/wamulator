@@ -67,7 +67,6 @@ import java.text.DecimalFormat;
 		private static final Logger cLog = Logger.getLogger(ProxyListener.class);
 		
 		private ServerSocket server = null;
-		private int ptTimeout = RequestHandler.DEFAULT_TIMEOUT;
 		private volatile int count = 0;
 		private Config cfg = null;
 		
@@ -143,15 +142,14 @@ import java.text.DecimalFormat;
 				
 				while (true)
 				{
-                                        
 					count++;
-					if (count > Config.getInstance().getMaxEntries()) {
+					if (count > cfg.getMaxEntries()) {
 						count = 1;
 					}
 					String connId = "C-" + fmt.format(count); 
 					Socket client = server.accept();
+					client.setSoTimeout(cfg.getProxyInboundSoTimeout());
 					RequestHandler h = new RequestHandler(client, cfg, connId);
-					h.setTimeoutSeconds(ptTimeout);
 					Thread t = new Thread(h, "RequestHandler " + connId);
 					t.setDaemon(true);
 					t.start();

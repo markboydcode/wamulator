@@ -23,11 +23,9 @@ import org.lds.sso.appwrap.rest.LogoutHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
-import org.lds.sso.appwrap.rest.oes.v1.EncodeLinks;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.rest.oes.v1.HandlerHitLogger;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
-import org.lds.sso.appwrap.ui.rest.Add404UriToCfgHandler;
 import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
 import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
 import org.lds.sso.appwrap.ui.rest.LogFileHandler;
@@ -158,7 +156,6 @@ public class Service {
                 handlers.addHandler(new GetOesV1CookieName(baseResolved + "getCookieName"));
                 handlers.addHandler(new AreTokensValid(baseResolved + "areTokensValid"));
                 handlers.addHandler(new ArePermitted(baseResolved + "arePermitted", ""));
-                handlers.addHandler(new EncodeLinks(baseResolved + "encode"));
 		    }
 		    else {
 		        /*
@@ -175,7 +172,6 @@ public class Service {
 	                    handlers.addHandler(new GetOesV1CookieName(serviceBase + "getCookieName"));
 	                    handlers.addHandler(new AreTokensValid(serviceBase + "areTokensValid"));
 	                    handlers.addHandler(new ArePermitted(serviceBase + "arePermitted", site.getHost()));
-	                    handlers.addHandler(new EncodeLinks(serviceBase + "encode"));
 	                }
 	            }
 		    }
@@ -184,7 +180,6 @@ public class Service {
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));
         handlers.addHandler(new SelectUserHandler("/auth/ui/authenticate"));
 		handlers.addHandler(new SelectSessionHandler("/admin/action/set-session"));
-		handlers.addHandler(new Add404UriToCfgHandler("/admin/action/add-uri-to-"));
 		handlers.addHandler(new TerminateSessionHandler("/admin/action/terminate-session"));
         handlers.addHandler(new TrafficRecordingHandler("/admin/action/recording/"));
         handlers.addHandler(new ImAliveHandler(ImAliveHandler.IS_ALIVE_PATH));

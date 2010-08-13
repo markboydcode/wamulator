@@ -123,7 +123,7 @@ public class ArePermitted extends RestHandlerBase {
 			        // massage the URN resources so that they match the domain
 			        // to which this service is bound.
 			        res = fixupUrn(res);
-			        allowed = cfg.getEntitlementsManager().isAllowed(act, res, user, ctx);
+			        allowed = cfg.getEntitlementsManager().isAllowed(policyDomain, act, res, user, ctx);
 			    }
 			    clientOut.print(parm + "=" + allowed);
 			    clientOut.print(RequestHandler.CRLF);
@@ -143,56 +143,19 @@ public class ArePermitted extends RestHandlerBase {
 	}
 
     /**
-     * Checks to see if the URN resources match those of older versions of 
-     * clientlib and patch up but log error to encourage migration to
-     * newer version.
+     * Checks to see if the URN resources match those of older versions of
+     * clientlib and log error to encourage migration to newer version.
      */
    String fixupUrn(String res) {
-       if (res.startsWith("/")) {
-           res = this.policyDomain + res;
-       }
-       else {
-           // log warning message and replace passed-in domain with 
-           // that to which this instance is bound since policies
-           // won't evaluate correctly otherwise.
-           int sIdx = res.indexOf("/");
-           String msg = null;
-           String nres = null;
-           if (sIdx == -1) { 
-               // no slash. shouldn't occur but if it does then
-               // prefix with domain + "/".
-               nres = this.policyDomain + "/" + res;
-               msg = "Rest service handler at " + this.pathPrefixRaw
+       if (!res.startsWith("/")) {
+           String msg = "Rest service handler at " + this.pathPrefixRaw
                        + " received resource of '" + res
-                       + "' which does not start with '/' nor"
-                       + " does it contain '/'. Converting to"
-                       + " '" + nres + "'. Please check your"
-                       + " policies and/or update clientlib to"
+                       + "' which does not start with '/'. Please update clientlib to"
                        + " the latest version which does not prefix"
                        + " resources with a policy-domain since"
                        + " the REST service itself is bound to"
                        + " a specific policy domain for storing"
-                       + " its policies and prepends this automatically.";
-           }
-           else {
-               // strip off everything up to first slash as
-               // the domain and replace with the policy-domain
-               // to which this service is bound.
-               // differs from actual rest service intentionally to force 
-               // awareness of upgrading to latest clientlib
-               nres = this.policyDomain + res.substring(sIdx);
-               msg = "Rest service handler at " + this.pathPrefixRaw
-                       + " received resource of '" + res
-                       + "' which does not start with '/'. Converting to"
-                       + " '" + nres + "'. Please check your"
-                       + " policies and/or update clientlib to"
-                       + " the latest version which does not prefix"
-                       + " resources with a policy-domain since"
-                       + " the REST service itself is bound to"
-                       + " a specific policy domain for storing"
-                       + " its policies and prepends this automatically.";
-           }
-           res = nres;
+                       + " its policies.";
            cLog.error(msg);
            System.out.println(msg);
        }

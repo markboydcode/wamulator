@@ -25,6 +25,7 @@
 
     <conditions>
      <condition alias="test-of-context-parm">
+      <CtxMatches 
      </condition>
     </conditions>
     
@@ -38,14 +39,6 @@
             <allow action="GET" cpath="/mlrtest*"/>
             <allow action="GET" cpath="/mlrtest*?*"/>
             
-            <cctx-mapping cctx="/oes*" thost="localhost" tport="{{rest-port}}" tpath="/oes*"/>
-            <unenforced cpath="/oes*"/>
-            <unenforced cpath="/oes*?*"/>
-
-            <cctx-mapping cctx="/public/debug*" thost="127.0.0.1" tport="{{console-port}}" tpath="/admin/debug*"/>
-            <unenforced cpath="/public/*"/>
-            <unenforced cpath="/public/*?*"/>
-        
             <entitlements>
                 <allow action="GET,POST,PUT,DELETE" urn="/directory/*" condition=""/>
                 <allow action="GET" urn="/LINK/directory/link/*" condition=""/>

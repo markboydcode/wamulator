@@ -57,9 +57,9 @@ public class RestHttpTest {
         .append("  <by-site host='local.lds.org' port='80'>") //resource uri='app://some-resource' allow='GET'/>")
         .append("   <allow action='GET' cpath='/some-resource'/>")
         .append("   <entitlements>")
-        .append("    <allow action='WAVE,SHOVE,PUSH' urn='/some/resource'/>")
-        .append("    <allow action='SMILE,GET,DROP' urn='/some/resource'/>")
-        .append("    <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>") // only bishops
+        .append("    <allow action='WAVE,SHOVE,PUSH' urn='/some/resource' condition='{{is-cdol}}'/>")
+        .append("    <allow action='SMILE,GET,DROP' urn='/some/resource'  condition='{{is-cdol}}'/>")
+        .append("    <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>") 
         .append("   </entitlements>")
         .append("  </by-site>")
         .append(" </sso-traffic>")
@@ -153,21 +153,6 @@ public class RestHttpTest {
         Assert.assertEquals(token_1, true, "user1 token should be valid");
         Assert.assertEquals(token_2, false, "invalid-token token should be invalid");
         Assert.assertEquals(token_3, true, "user2 token should be valid");
-    }
-
-    @Test
-    public void test_Encode() throws Exception {
-        // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/encode?res=http://some.domain/a/path/?a=b&c=d";
-
-        GetMethod get = new GetMethod(endpoint);
-        get.setFollowRedirects(false);
-        HttpClient client = new HttpClient();
-        int status = client.executeMethod(get);
-        String resp = get.getResponseBodyAsString();
-        Assert.assertEquals(status, 200, resp);
-        Assert.assertNotNull(resp, "response should not be null");
-        Assert.assertEquals(resp.trim(), "some.domain_a_path_");
     }
 
     @Test
@@ -356,7 +341,7 @@ public class RestHttpTest {
     public void arePermitted_ValidToken() throws Exception {
         String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         // first initiate session so that we have valid token
-        String usrToken =  TestUtilities.authenticateUser("user1", cfg.getConsolePort());
+        String usrToken =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
         
         // craft request for AreTokensValid
         PostMethod post = new PostMethod(endpoint);
