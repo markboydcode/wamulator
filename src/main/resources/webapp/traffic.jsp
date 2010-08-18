@@ -37,8 +37,8 @@
 <table>
 <c:forEach items="${requestScope.config.trafficRecorder.timestampSortedHits}" var="hit">
 <tr>
-<td>${hit.longTimestamp}</td>
-<td>${hit.connId}</td>
+<td style='white-space: nowrap;'>${hit.longTimestamp}</td>
+<td style='white-space: nowrap;'>${hit.connId}</td>
 <td>${hit.username}</td>
 <td><c:choose><c:when test="${hit.isProxyCode}"><span title="Response code made by proxy" style="color: blue; cursor: default;">P</span></c:when><c:otherwise>-</c:otherwise></c:choose></td>
 <td><span style="font-weight: bold">
