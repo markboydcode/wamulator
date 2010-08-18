@@ -192,7 +192,11 @@ public class TrafficRecorder {
 
             this.code = code;
             this.method = method;
-            this.uri = uri;
+            // replace "&" with &amp; in uris since firefox freaks out if there
+            // is an "&l" in the URI like for "&lang=eng" causing rendering to
+            // break into three times the element height and replacing the 
+            // &lang with a less than char "<". Weird.
+            this.uri = uri.replace("&", "&amp;"); 
             this.isProxyCode = proxyResponse;
         }
 

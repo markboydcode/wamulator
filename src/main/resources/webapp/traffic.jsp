@@ -50,7 +50,7 @@
 </c:choose></span></td>
 <td>${hit.method}</td>
 <c:choose>
-    <c:when test="${requestScope.config.debugLoggingEnabled}"><td><span style="color: blue"><a href="logs/${hit.connId}.log" target=?newtab?>${hit.uri}</a></span></td></c:when>
+    <c:when test="${requestScope.config.debugLoggingEnabled}"><td><span style="color: blue"><a href="logs/${hit.connId}.log" target='?newtab?'>${hit.uri}</a></span></td></c:when>
     <c:otherwise><td><span style="color: blue">${hit.uri}</span></td></c:otherwise>
 
 </c:choose>
