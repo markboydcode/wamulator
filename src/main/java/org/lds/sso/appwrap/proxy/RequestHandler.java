@@ -217,7 +217,7 @@ public class RequestHandler implements Runnable {
             // for non-ignored traffic perform the enforcements and translations
             RequestLine appReqLn = reqPkg.requestLine; // default to request line as-is
             // default to no translation 
-            EndPoint endpoint = new AppEndPoint(null, null, null, reqPkg.host, reqPkg.port, true); 
+            EndPoint endpoint = new AppEndPoint(null, null, null, reqPkg.host, reqPkg.port, true, null, null); 
             byte[] response = null;
             byte[] request = null;
 
@@ -320,10 +320,19 @@ public class RequestHandler implements Runnable {
                 AppEndPoint appEndpoint = (AppEndPoint) endpoint;
                 // inject the policy-service-url pointing to the one for the 
                 // by-site element that contained our context mapping end point
+                // possibly with adjusted gateway host and port if specified
+                // like when server is behind a firewall and can't get to rest
+                // service without a reverse proxy tunnel
                 Header hdr = new Header(UserHeaderNames.SERVICE_URL, "");
                 // first remove if one was set through config
                 reqPkg.headerBfr.removeExtensionHeader(UserHeaderNames.SERVICE_URL);
-                String hdrBase = "http://" + appEndpoint.getCanonicalHost() + ":" + cfg.getConsolePort();
+                String hdrBase = "http://";
+                if (appEndpoint.getPolicyServiceGateway() == null) {
+                    hdrBase += appEndpoint.getCanonicalHost() + ":" + cfg.getConsolePort();
+                }
+                else {
+                    hdrBase += appEndpoint.getPolicyServiceGateway();
+                }
                 switch(cfg.getRestVersion()) {
                 case OPENSSO:
                     hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase());
@@ -334,7 +343,12 @@ public class RequestHandler implements Runnable {
                 reqPkg.headerBfr.append(hdr);
 
                 if (! appEndpoint.preserveHostHeader()) {
-                    String hostHdr = appEndpoint.getHost() + (appEndpoint.getEndpointPort() != 80 ? (":" + appEndpoint.getEndpointPort()) : "");
+                    String hostHdr = (appEndpoint.getHostHeader() != null ? 
+                            appEndpoint.getHostHeader() :
+                                (appEndpoint.getHost() 
+                                        + (appEndpoint.getEndpointPort() != 80 
+                                                ? (":" + appEndpoint.getEndpointPort()) 
+                                                        : "")));
                     reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
                 }
                 // see if we are supposed to strip empty headers
@@ -460,11 +474,10 @@ public class RequestHandler implements Runnable {
             
             clientOut.write(response, 0, response.length);
             clientOut.flush();
-
-            if (reqPkg.trafficType == TrafficType.SITE) {
-                cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()),
-                        resPkg.responseCode, false, reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri());
-            }
+            
+            // record all traffic regardless of whether forward or reverse (sso) proxy traffic
+            cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()),
+                    resPkg.responseCode, false, reqPkg.trafficType, reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri());
             logTraffic(log, reqPkg.requestLine, request, response, startTime, endpointMsg);
             if (cLog.isDebugEnabled()) {
                 cLog.debug("Closing I/O to client");
@@ -475,7 +488,7 @@ public class RequestHandler implements Runnable {
             e.printStackTrace();
             if (log != null && logClosed == false) {
                 cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()), 500,
-                        true, (reqPkg != null && reqPkg.requestLine != null ? reqPkg.requestLine.getMethod() : "???"),
+                        true, reqPkg.trafficType, (reqPkg != null && reqPkg.requestLine != null ? reqPkg.requestLine.getMethod() : "???"),
                         (reqPkg != null && reqPkg.requestLine != null ? reqPkg.requestLine.getUri() : "???"));
                 log.println("\nError in RequestHandler for connection " + this.connId + ": " + e);
                 e.printStackTrace(log);
@@ -555,7 +568,7 @@ public class RequestHandler implements Runnable {
         }
                 if(recordTraffic) {
                     cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()), respCode,
-                true, method, uri);
+                true, reqPkg.trafficType, method, uri);
                 }
         out.write(response, 0, response.length);
         out.flush();
@@ -639,6 +652,9 @@ public class RequestHandler implements Runnable {
         if (site != null) {
             pkg.site = site;
             pkg.trafficType = TrafficType.SITE;
+        }
+        else {
+            pkg.trafficType = TrafficType.NOT_SITE;
         }
     }
 

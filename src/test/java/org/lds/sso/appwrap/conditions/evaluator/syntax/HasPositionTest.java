@@ -21,7 +21,7 @@ public class HasPositionTest extends TestBaseClass {
 
 	@Test
 	public void testHasPositionDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasPosition" +
 				" id='4'" +
 				" debug-user='ngienglishbishop'/>");;
@@ -54,7 +54,7 @@ public class HasPositionTest extends TestBaseClass {
 
 	@Test
 	public void testHasLdsPositionNotDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasPosition" +
 				" id='4'" +
 				" debug-user='ngienglishbishop'/>");;
@@ -87,7 +87,7 @@ public class HasPositionTest extends TestBaseClass {
 
 	@Test
 	public void testHasLdsPositionsNotDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasPosition id='4' debug-user='ngienglishbishop'>" +
 				" <Position id='20'/>" +
 				" <Position id='30'/>" +
@@ -121,7 +121,7 @@ public class HasPositionTest extends TestBaseClass {
 
 	@Test
 	public void testHasLdsPositionNOTDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<NOT debug-user='ngienglishbishop'>" +
 				" <HasPosition" +
 				"  id='4'/>" +
@@ -157,7 +157,7 @@ public class HasPositionTest extends TestBaseClass {
 
 	@Test
 	public void testHasPosition_AND_NOTDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug-user='ngienglishbishop'>" +
 				" <NOT>" +
 				"  <HasPosition id='3'/>" +

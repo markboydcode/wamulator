@@ -31,7 +31,7 @@ public class MemberOfUnitTest extends TestBaseClass {
 	
 	@Test
 	public void testMemberOfUnitDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
@@ -60,7 +60,7 @@ public class MemberOfUnitTest extends TestBaseClass {
 	
 	@Test
 	public void testMemberOfUnitByAssigDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
@@ -89,7 +89,7 @@ public class MemberOfUnitTest extends TestBaseClass {
 
 	@Test
 	public void testMemberOfUnitNotDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
@@ -118,7 +118,7 @@ public class MemberOfUnitTest extends TestBaseClass {
 
 	@Test
 	public void testHasNoUnitDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<MemberOfUnit id='555' debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
@@ -146,7 +146,7 @@ public class MemberOfUnitTest extends TestBaseClass {
 
 	@Test
 	public void testMemberOfUnitNotAnyDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<MemberOfUnit id='555' debug-user='ngienglishbishop'>" +
 				" <Unit id='555'/>" +
 				" <Unit id='500'/>" +
@@ -180,7 +180,7 @@ public class MemberOfUnitTest extends TestBaseClass {
 	
 	@Test
 	public void testMemberOfUnitEmptySessionValDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<MemberOfUnit debug-user='ngienglishbishop'>" +
 				" <Unit id='650'/>" +
 				" <Unit id='550'/>" +

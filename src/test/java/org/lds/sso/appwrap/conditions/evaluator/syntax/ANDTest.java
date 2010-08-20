@@ -17,7 +17,7 @@ public class ANDTest extends TestBaseClass
 {
 	@Test
 	public void testHasPosition_AND_NOTDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug-user='ngienglishbishop'>" +
 				" <NOT>" +
 				"  <HasPosition id='3'/>" +
@@ -57,7 +57,7 @@ public class ANDTest extends TestBaseClass
 
 	@Test
 	public void testHasPosition_AND_DebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug-user='ngienglishbishop'>" +
 				" <HasPosition id='3'/>" +
 				" <IsEmployee/>" +
@@ -95,7 +95,7 @@ public class ANDTest extends TestBaseClass
 
 	@Test
 	public void testHasPosition_AND_notDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug-user='ngienglishbishop'>" +
 				" <HasPosition id='3'/>" +
 				" <IsEmployee/>" +
@@ -134,7 +134,7 @@ public class ANDTest extends TestBaseClass
 
 	@Test
 	public void test_debug_with_hashtable_in_env() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug='true'>" +
 				" <HasPosition id='3'/>" +
 				" <IsEmployee/>" +

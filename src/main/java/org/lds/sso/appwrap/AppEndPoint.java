@@ -47,13 +47,24 @@ public class AppEndPoint implements EndPoint {
      */
     private String canonicalHost;
 
-	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, String host, int port, boolean preserveHost) {
+    private String hostHdr;
+
+    private String policyServiceGateway;
+
+	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, String host, int port, 
+	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
 		this.endpointPort = port;
         this.canonicalHost = canonicalHost;
         this.canonicalContextRoot = canonicalCtx;
 		this.applicationContextRoot = appCtx;
 		this.host = host;
 		this.preserveHostHeader = preserveHost;
+		this.hostHdr = hostHdr;
+		
+		if (hostHdr != null && ! "".equals(hostHdr)) {
+		    this.preserveHostHeader = false;
+		}
+		this.policyServiceGateway = policyServiceGateway;
 		updateId();
 	}
 	
@@ -61,8 +72,16 @@ public class AppEndPoint implements EndPoint {
         this.id = this.canonicalHost + this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
 	}
 
-	public String getCanonicalHost() {
-	    return this.canonicalHost;
+    public String getCanonicalHost() {
+        return this.canonicalHost;
+    }
+    
+    public String getPolicyServiceGateway() {
+        return this.policyServiceGateway;
+    }
+    
+	public String getHostHeader() {
+	    return this.hostHdr;
 	}
 	
 	public String getId() {

@@ -105,9 +105,12 @@ public class PolicyServiceUrlTest {
                                 + RequestHandler.CRLF
                                 + "Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html" + RequestHandler.CRLF; 
                         }
-                        else if (input.contains("/service-url/") || 
-                                input.contains("/service-url2/")) {
-                            req = (input.contains("/service-url/") ? "URL" : "URL2");
+                        else if (input.contains("/service-url/") ||  
+                        		input.contains("/service-url2/") ||  
+                        		input.contains("/gateway-url/")) {
+                            req = (input.contains("/service-url/") ? "URL" 
+                                    : (input.contains("/service-url2/") ? "URL2"
+                                            : "GTURL"));
                             String sUrl = null;
                             int sIdx = input.indexOf(UserHeaderNames.SERVICE_URL);
                             if (sIdx == -1) {
@@ -121,7 +124,6 @@ public class PolicyServiceUrlTest {
                             output = 
                                 "HTTP/1.1 302 Not Modified"
                                 + RequestHandler.CRLF
-                                + "Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html" + RequestHandler.CRLF
                                 + "X-SURL-RECEIVED: " + sUrl + RequestHandler.CRLF; 
                         }
                         else {
@@ -183,6 +185,9 @@ public class PolicyServiceUrlTest {
             + "   <unenforced cpath='/testNRR/*'/>"
             + "   <cctx-mapping cctx='/service-url/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/service-url/*'/>"
             + "   <unenforced cpath='/service-url/*'/>"
+            + "   <cctx-mapping cctx='/gateway-url/*' thost='127.0.0.1' tport='" + serverPort 
+            + "'   tpath='/gateway-url/*' policy-service-url-gateway='10.10.10.10:1010'/>"
+            + "   <unenforced cpath='/gateway-url/*'/>"
             + "  </by-site>"
             + "  <by-site scheme='http' host='other.lds.org' port='{{proxy-port}}'>"
             + "   <cctx-mapping cctx='/service-url2/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/service-url2/*'/>"
@@ -204,7 +209,29 @@ public class PolicyServiceUrlTest {
         service.stop();
         server.interrupt();
 	}
-	
+    
+    @Test
+    public void test_service_url_gateway() throws Exception {
+        // now connect and verify we get the correct policy-service-url injected
+        String uri = "http://labs-local.lds.org:" + sitePort + "/gateway-url/a/path";
+        HttpClient client = new HttpClient();
+        HostConfiguration cfg = new HostConfiguration();
+        cfg.setProxy("127.0.0.1", sitePort);
+        client.setHostConfiguration(cfg);
+        HttpMethod method = new GetMethod(uri);
+        method.setFollowRedirects(false);
+        int status = client.executeMethod(method);
+        System.out.println(method.getResponseBodyAsString());
+        // sanity check that we got there
+        Assert.assertEquals(status, 302, "should have returned http 302 not modified");
+        Header url = method.getResponseHeader("X-SURL-RECEIVED");
+        
+        System.out.println(UserHeaderNames.SERVICE_URL + " Received: " + url.getValue());
+        String expected = "http://10.10.10.10:1010" + RestVersion.CD_OESv1.getRestUrlBase() + "labs-local.lds.org/";
+        Assert.assertTrue(url.getValue().equals(expected), 
+                "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");
+    }
+    
     @Test
     public void test_service_url_1() throws Exception {
         // now connect and verify we get the correct policy-service-url injected

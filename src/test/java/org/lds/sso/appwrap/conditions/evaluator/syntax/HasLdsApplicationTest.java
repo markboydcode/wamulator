@@ -23,7 +23,7 @@ public class HasLdsApplicationTest extends TestBaseClass {
 	
 	@Test
 	public void testHasLdsApplication_DebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasLdsApplication" +
 				" value='app-2'" +
 				" debug-user='bob'/>");;
@@ -59,7 +59,7 @@ public class HasLdsApplicationTest extends TestBaseClass {
 
 	@Test
 	public void testHasLdsApplicationNot_DebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasLdsApplication" +
 				" value='app-51'" +
 				" debug-user='frank'/>");;
@@ -97,7 +97,7 @@ public class HasLdsApplicationTest extends TestBaseClass {
 
 	@Test
 	public void testHasLdsApplication_noneDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasLdsApplication" +
 				" value='app-51'" +
 				" debug-user='sally'/>");;

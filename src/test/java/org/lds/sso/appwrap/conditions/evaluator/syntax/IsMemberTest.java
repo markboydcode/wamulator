@@ -21,7 +21,7 @@ public class IsMemberTest extends TestBaseClass {
 	
 	@Test
 	public void testIsMemberDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<IsMember debug-user='ngienglishbishop'/>");;
 		
 		// stuff evaluator will go after
@@ -53,7 +53,7 @@ public class IsMemberTest extends TestBaseClass {
 	
 	@Test
 	public void testIsMemberNotDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<IsMember debug-user='ngienglishbishop'/>");;
 		
 		// stuff evaluator will go after
@@ -85,7 +85,7 @@ public class IsMemberTest extends TestBaseClass {
 	
 	@Test
 	public void testIsMemberNotByNullDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<IsMember debug-user='ngienglishbishop'/>");;
 		
 		// stuff evaluator will go after

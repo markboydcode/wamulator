@@ -30,7 +30,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("<IsEmployee debug-user='boydmr'/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsEmployee debug-user='boydmr'/>");
             SyntaxBase base = (SyntaxBase) ev;
 
             Principal p = EasyMock.createMock(Principal.class);
@@ -65,7 +65,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("<IsEmployee debug='true'/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsEmployee debug='true'/>");
             SyntaxBase base = (SyntaxBase) ev;
 
             EvaluationContext ctx = new EvaluationContext();
@@ -84,7 +84,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("<IsEmployee/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsEmployee/>");
             SyntaxBase base = (SyntaxBase) ev;
 
             EvaluationContext ctx = new EvaluationContext();

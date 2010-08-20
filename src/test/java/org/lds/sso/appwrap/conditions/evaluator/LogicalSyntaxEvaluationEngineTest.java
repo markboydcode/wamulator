@@ -42,7 +42,7 @@ public class LogicalSyntaxEvaluationEngineTest {
                 + "  </HasPosition>" 
                 + "</AND>";
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-            eng.getEvaluator(policy);
+            eng.getEvaluator("test-evaluator", policy);
             Assert.assertEquals(eng.evaluators.size(), 2,
                     "should be two evaluators the root and the xml:base ref.");
             Assert.assertNotNull(eng.evaluators.get(xmlBase),
@@ -64,7 +64,7 @@ public class LogicalSyntaxEvaluationEngineTest {
                     + "    <Position id='1' type='Stake President'/>"
                     + "  </HasPosition>" 
                     + "</AND>";
-            eng.getEvaluator(policy2);
+            eng.getEvaluator("test-evaluator", policy2);
             Assert.assertEquals(eng.evaluators.size(), 3,
                             "should be three evaluators, two roots and the xml:base ref used by both.");
         } finally {
@@ -92,8 +92,8 @@ public class LogicalSyntaxEvaluationEngineTest {
 		System.out.println("--scanner should be sleeping now....");
 		System.out.println("--main creating two evaluators at " 
 				+ (System.currentTimeMillis() - start));
-		eng.getEvaluator("<HasLdsApplication value='12345' username='ngienglishbishop'/>");
-		eng.getEvaluator(
+		eng.getEvaluator("test-evaluator", "<HasLdsApplication value='12345' username='ngienglishbishop'/>");
+		eng.getEvaluator("test-evaluator", 
 				"<AND>" +
 				" <IsEmployee/>" +
 				" <IsMember/>" +
@@ -109,7 +109,7 @@ public class LogicalSyntaxEvaluationEngineTest {
 		Thread.sleep(3000);
 		System.out.println("--main creating one evaluator at " 
 				+ (System.currentTimeMillis() - start));
-		eng.getEvaluator("<HasLdsApplication value='??????' username='ngienglishbishop'/>");
+		eng.getEvaluator("test-evaluator", "<HasLdsApplication value='??????' username='ngienglishbishop'/>");
 		System.out.println("--main testing for 3 evaluators at " 
 				+ (System.currentTimeMillis() - start));
 		size = eng.evaluators.size();
@@ -143,7 +143,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
 		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-		IEvaluator ev = eng.getEvaluator("<NOT><HasLdsApplication value='12345' username='ngienglishbishop'/></NOT>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<NOT><HasLdsApplication value='12345' username='ngienglishbishop'/></NOT>");
 		Assert.assertTrue(ev instanceof NOT, "Wrong class instantiated.");
 		
 		EvaluationContext ctx = new EvaluationContext();
@@ -171,7 +171,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
 		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND>" +
 				" <IsEmployee/>" +
 				" <IsMember/>" +
@@ -243,7 +243,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
 		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<OR>" +
 				" <IsEmployee/>" +
 				" <IsMember/>" +
@@ -297,7 +297,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
 		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-		IEvaluator ev = eng.getEvaluator("<IsEmployee/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsEmployee/>");
 		Assert.assertTrue(ev instanceof IsEmployee, "Wrong class instantiated.");
 		
 		EvaluationContext ctx = new EvaluationContext();
@@ -326,7 +326,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
 		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-		IEvaluator ev = eng.getEvaluator("<IsMember/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsMember/>");
 		Assert.assertTrue(ev instanceof IsMember, "Wrong class instantiated.");
 		
 		EvaluationContext ctx = new EvaluationContext();
@@ -355,7 +355,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
 		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-		IEvaluator ev = eng.getEvaluator("<MemberOfUnit id='111'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<MemberOfUnit id='111'/>");
 		Assert.assertTrue(ev instanceof MemberOfUnit, "Wrong class instantiated.");
 		
 		EvaluationContext ctx = new EvaluationContext();
@@ -391,7 +391,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-            IEvaluator ev = eng.getEvaluator("<MemberOfUnit id='333'><Unit id='455'/><Unit id='500'/><Unit id='200'/></MemberOfUnit>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "<MemberOfUnit id='333'><Unit id='455'/><Unit id='500'/><Unit id='200'/></MemberOfUnit>");
             Assert.assertTrue(ev instanceof MemberOfUnit, "Wrong class instantiated.");
             
             EvaluationContext ctx = new EvaluationContext();
@@ -427,7 +427,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
         LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-        IEvaluator ev = eng.getEvaluator("<MemberOfUnit id='200'></MemberOfUnit>");
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "<MemberOfUnit id='200'></MemberOfUnit>");
         Assert.assertTrue(ev instanceof MemberOfUnit, "Wrong class instantiated.");
         
         EvaluationContext ctx = new EvaluationContext();
@@ -542,7 +542,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
 		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-		IEvaluator ev = eng.getEvaluator("<HasPosition id='4'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<HasPosition id='4'/>");
 		Assert.assertTrue(ev instanceof HasPosition, "Wrong class instantiated.");
 		
 		EvaluationContext ctx = new EvaluationContext();
@@ -578,7 +578,7 @@ public class LogicalSyntaxEvaluationEngineTest {
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.OFF);
         try {
     		LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
-    		IEvaluator ev = eng.getEvaluator("<HasPosition id='4'><Position id='57'/></HasPosition>");
+    		IEvaluator ev = eng.getEvaluator("test-evaluator", "<HasPosition id='4'><Position id='57'/></HasPosition>");
     		Assert.assertTrue(ev instanceof HasPosition, "Wrong class instantiated.");
     		
     		EvaluationContext ctx = new EvaluationContext();

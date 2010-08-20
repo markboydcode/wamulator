@@ -37,18 +37,20 @@
 <table>
 <c:forEach items="${requestScope.config.trafficRecorder.timestampSortedHits}" var="hit">
 <tr>
-<td style='white-space: nowrap;'>${hit.longTimestamp}</td>
-<td style='white-space: nowrap;'>${hit.connId}</td>
-<td>${hit.username}</td>
-<td><c:choose><c:when test="${hit.isProxyCode}"><span title="Response code made by proxy" style="color: blue; cursor: default;">P</span></c:when><c:otherwise>-</c:otherwise></c:choose></td>
+<td title="request timestamp" style='white-space: nowrap; cursor: default;'>${hit.longTimestamp}</td>
+<td title="simulator connection id" style='white-space: nowrap; cursor: default;'>${hit.connId}</td>
+<td title="user" style='white-space: nowrap; cursor: default;'><c:choose>
+<c:when test="${hit.username == '???'}"><span title="no simulator cookie" style="cursor: default;">${hit.username}</span></c:when><c:otherwise><span title="cookie user" style="cursor: default;">${hit.username}</span></c:otherwise></c:choose></td>
+<td><c:choose><c:when test="${hit.isProxyCode}"><span title="simulator response code" style="color: blue; cursor: default;">P</span></c:when><c:otherwise><span title="server response code" style="color: black; cursor: default;">-</span></c:otherwise></c:choose></td>
+<td><c:choose><c:when test="${hit.trafficType == '?'}"><span title="unclassified traffic" style="color: blue; cursor: default;">?</span></c:when><c:when test="${hit.trafficType == '!'}"><span title="non by-site traffic" style="color: red; cursor: default;">!</span></c:when><c:otherwise><span title="by-site traffic" style="color: black; cursor: default;">-</span></c:otherwise></c:choose></td>
 <td><span style="font-weight: bold">
 <c:choose>
-<c:when test="${hit.code < 300}"><span style="color: #3A3;">${hit.code}</span></c:when>
-<c:when test="${hit.code >= 300 && hit.code < 400}"><span style="color: gray;">${hit.code}</span></c:when>
-<c:when test="${hit.code != 404 && (hit.code >= 400 && hit.code < 500)}"><span style="color: purple;">${hit.code}</span></c:when>
-<c:when test="${hit.code >= 500 || hit.code == 404}"><span style="color: red;">${hit.code}</span></c:when>
+<c:when test="${hit.code < 300}"><span title='http response code' style="color: #3A3; cursor: default;">${hit.code}</span></c:when>
+<c:when test="${hit.code >= 300 && hit.code < 400}"><span title='http response code' style="color: gray; cursor: default;">${hit.code}</span></c:when>
+<c:when test="${hit.code != 404 && (hit.code >= 400 && hit.code < 500)}"><span title='http response code' style="color: purple; cursor: default;">${hit.code}</span></c:when>
+<c:when test="${hit.code >= 500 || hit.code == 404}"><span title='http response code' style="color: red; cursor: default;">${hit.code}</span></c:when>
 </c:choose></span></td>
-<td>${hit.method}</td>
+<td title="http method" style='cursor: default;'>${hit.method}</td>
 <c:choose>
     <c:when test="${requestScope.config.debugLoggingEnabled}"><td><span style="color: blue"><a href="logs/${hit.connId}.log" target='?newtab?'>${hit.uri}</a></span></td></c:when>
     <c:otherwise><td><span style="color: blue">${hit.uri}</span></td></c:otherwise>

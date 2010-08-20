@@ -21,7 +21,7 @@ public class IsEmployeeTest extends TestBaseClass {
     
 	@Test
 	public void testIsEmployeeDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<IsEmployee debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
@@ -52,7 +52,7 @@ public class IsEmployeeTest extends TestBaseClass {
 
 	@Test
 	public void testIsEmployeeDnNotInSessionDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<IsEmployee debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
@@ -83,7 +83,7 @@ public class IsEmployeeTest extends TestBaseClass {
 
 	@Test
 	public void testIsEmployeeNotDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<IsEmployee debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
@@ -114,7 +114,7 @@ public class IsEmployeeTest extends TestBaseClass {
 
 	@Test
 	public void testIsEmployeeNoDebugOutputForWrongUser() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<IsEmployee debug-user='someuser'/>");
 		
 		// stuff evaluator will go after

@@ -20,7 +20,7 @@ public class ORTest extends TestBaseClass {
 	
 	@Test
 	public void testHasPosition_OR_DebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<OR debug-user='ngienglishbishop'>" +
 				" <HasPosition id='3'/>" +
 				" <IsEmployee/>" +
@@ -54,7 +54,7 @@ public class ORTest extends TestBaseClass {
 	}
 	@Test
 	public void testHasPosition_OR_notDebugOutput() throws Exception {
-        IEvaluator ev = eng.getEvaluator(
+        IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<OR debug-user='ngienglishbishop'>" +
 				" <HasPosition id='3'/>" +
 				" <IsEmployee/>" +

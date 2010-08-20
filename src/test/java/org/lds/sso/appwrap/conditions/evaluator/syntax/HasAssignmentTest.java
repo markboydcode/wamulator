@@ -32,7 +32,7 @@ public class HasAssignmentTest extends TestBaseClass {
 	
 	@Test
 	public void testHasAssignmentDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("<HasAssignment position='1' unit='555' debug-user='ngienglishbishop'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<HasAssignment position='1' unit='555' debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
@@ -60,7 +60,7 @@ public class HasAssignmentTest extends TestBaseClass {
 
 	@Test
 	public void testHasAssignmentNotDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("<HasAssignment position='1' unit='555' debug-user='ngienglishbishop'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<HasAssignment position='1' unit='555' debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
@@ -88,7 +88,7 @@ public class HasAssignmentTest extends TestBaseClass {
 
 	@Test
 	public void testHasNoAssignmentDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("<HasAssignment position='1' unit='555' debug-user='ngienglishbishop'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<HasAssignment position='1' unit='555' debug-user='ngienglishbishop'/>");
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
@@ -116,7 +116,7 @@ public class HasAssignmentTest extends TestBaseClass {
 
 	@Test
 	public void testHasAssignmentNotAnyDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasAssignment position='1' unit='555' " +
 				" debug-user='ngienglishbishop'>" +
 				" <Assignment position='4' unit='555'/>" +
@@ -150,7 +150,7 @@ public class HasAssignmentTest extends TestBaseClass {
 	
 	@Test
 	public void testHasAssignmentEmptySessionValDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<HasAssignment position='1' unit='555' " +
 				" debug-user='ngienglishbishop'>" +
 				" <Assignment position='4' unit='555'/>" +

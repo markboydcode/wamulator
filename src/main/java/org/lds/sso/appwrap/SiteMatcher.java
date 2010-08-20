@@ -70,7 +70,7 @@ public class SiteMatcher {
                         String syntax = cSynMap.get(condId);
                         IEvaluator evaluator = null;
                         try {
-                            evaluator = cEngine.getEvaluator(syntax);
+                            evaluator = cEngine.getEvaluator(condId, syntax);
                         }
                         catch (EvaluationException e) {
                             cLog.error("Disallowing access to " 
@@ -122,10 +122,9 @@ public class SiteMatcher {
 		return true; 
 	}
 	
-	public void addMapping(String canonicalContext, String targetHost, int targetPort, String targetPathCtx, boolean preserveHost) {
-		EndPoint ep = new AppEndPoint(getHost(), canonicalContext, targetPathCtx, targetHost, targetPort, preserveHost);
-		ep.setDeclarationOrder(++endPoints);
-		mappedEndPoints.add(ep);
+	public void addMapping(EndPoint point) {
+		point.setDeclarationOrder(++endPoints);
+		mappedEndPoints.add(point);
 	}
 	
     /**

@@ -18,8 +18,12 @@ import java.util.*;
  * {@link IEvaluatorContainer}. The supported syntax resides in a static Map.
  * Each instance of the engine has its own Map of constructed evaluator object
  * graphs and a garbage collector that scans this map occasionally cleaning out
- * unused evaluators. Subclasses can override {@link #startGarbageCollector()}
- * to prevent garbage collecting or alter how garbage collecting takes place.
+ * unused evaluators. An instance can be acquired using the 
+ * getSyntaxEvalutionInstance() static method that subclasses this class and
+ * overrides {@link #startGarbageCollector()} to prevent garbage collecting.
+ * This is done to get evaluator graphs and hence to verify evaluator syntax
+ * where that engine instance will be discarded with all referenced objects and
+ * hence no need for a long lived garbage collector thread to be launched.
  * 
  * @author BoydMR
  * 
@@ -61,22 +65,36 @@ public class LogicalSyntaxEvaluationEngine {
         Runnable collector = new Runnable() {
             public void run() {
                 long samplingDelay = UNUSED_EVALUATOR_MAX_LIFE_MILLIS / 2;
+                StringWriter sw = null;
+                PrintWriter pw = null;
+                boolean pwLineWrapped = false;
                 while (true) {
                     try {
-                        StringWriter sw = null;
-                        PrintWriter pw = null;
                         if (cLog.isDebugEnabled()) {
+                            if (pw != null) {
+                                if (!pwLineWrapped) {
+                                    // means no evaluator log entries were written
+                                    pw.println(" sleeping for " + samplingDelay
+                                            + " milliseconds.");
+                                }
+                                else {
+                                    pw.println("SCANNER sleeping for " + samplingDelay
+                                            + " milliseconds.");
+                                }
+                                pw.flush();
+                                cLog.debug(sw.toString());
+                            }
+                            // start new ones
                             sw = new StringWriter();
                             pw = new PrintWriter(sw);
-                            cLog.debug("SCANNER sleeping for " + samplingDelay
-                                    + " milliseconds.");
                         }
                         Thread.sleep(samplingDelay);
                         if (pw != null) {
                             pw.println();
-                            pw.println("SCANNING evaluators...");
+                            pw.print("SCANNING evaluators...");
                         }
                         synchronized (evaluators) {
+                            pwLineWrapped = false;
                             for (Iterator<Map.Entry<String, EvaluatorUsageHolder>> itr = evaluators
                                     .entrySet().iterator(); itr.hasNext();) {
                                 Map.Entry<String, EvaluatorUsageHolder> entry = itr
@@ -87,29 +105,29 @@ public class LogicalSyntaxEvaluationEngine {
 
                                 if (diff > UNUSED_EVALUATOR_MAX_LIFE_MILLIS) {
                                     if (pw != null) {
-                                        pw.println("  evaluator unused for "
+                                        if (!pwLineWrapped) {
+                                            pw.println();
+                                            pwLineWrapped = true;
+                                        }
+                                        pw.println("  unused for "
                                                 + diff
-                                                + " milliseconds. REMOVING "
-                                                + holder.evaluator.getSyntax()
-                                                        .substring(0, 20)
-                                                + "...");
+                                                + " ms. REMOVING "
+                                                + holder.name);
                                     }
                                     itr.remove();
                                 } else {
                                     if (pw != null) {
+                                        if (!pwLineWrapped) {
+                                            pw.println();
+                                            pwLineWrapped = true;
+                                        }
                                         pw.println("  evaluator unused for "
                                                 + diff
-                                                + " milliseconds. LEAVING "
-                                                + holder.evaluator.getSyntax()
-                                                        .substring(0, 20)
-                                                + "...");
+                                                + " ms. LEAVING "
+                                                + holder.name);
                                     }
                                 }
                             }
-                        }
-                        if (pw != null) {
-                            pw.flush();
-                            cLog.debug(sw.toString());
                         }
                     } catch (Exception e) {
                         if (e instanceof InterruptedException) {
@@ -136,6 +154,23 @@ public class LogicalSyntaxEvaluationEngine {
     public LogicalSyntaxEvaluationEngine() {
         startGarbageCollector();
     }
+    
+    /**
+     * Creates a discardable instance of the engine that won't start an
+     * evalution garbage collector. For that use the constructor. 
+     * @return
+     */
+    public static final LogicalSyntaxEvaluationEngine getSyntaxEvalutionInstance() {
+        return new LogicalSyntaxEvaluationEngine()
+        {
+            @Override
+            public void startGarbageCollecting() {
+                // leave empty to prevent garbage collector from starting since
+                // we are only instantiating to test the syntax of the evaluator
+                // and this object should get garbage collected and discarded
+            }
+        };
+    }
 
     /**
      * Allows subclasses to change constructor behavior including launching of
@@ -156,7 +191,7 @@ public class LogicalSyntaxEvaluationEngine {
      *             if no evaluator is found for the syntax or if there is an
      *             error in the synatx
      */
-    public IEvaluator getEvaluator(String syntax) throws EvaluationException {
+    public IEvaluator getEvaluator(String alias, String syntax) throws EvaluationException {
         syntax = syntax.trim();
         EvaluatorUsageHolder holder = null;
 
@@ -187,7 +222,7 @@ public class LogicalSyntaxEvaluationEngine {
             }
 
             if (hndlr.root != null) {
-                holder = new EvaluatorUsageHolder(hndlr.root);
+                holder = new EvaluatorUsageHolder(alias, hndlr.root);
                 synchronized (evaluators) {
                     evaluators.put(syntax, holder);
                 }
@@ -252,8 +287,10 @@ public class LogicalSyntaxEvaluationEngine {
     public static class EvaluatorUsageHolder {
         public IEvaluator evaluator = null;
         public volatile long millisTouchedTime = 0;
+        private String name;
 
-        public EvaluatorUsageHolder(IEvaluator e) {
+        public EvaluatorUsageHolder(String alias, IEvaluator e) {
+            this.name = alias;
             this.evaluator = e;
             this.millisTouchedTime = System.currentTimeMillis();
         }
@@ -440,7 +477,7 @@ public class LogicalSyntaxEvaluationEngine {
             if (holder != null) {
                 ev = holder.evaluator;
                 if (holder.hasXmlBase()) {
-                    EvaluatorUsageHolder euHolder = new EvaluatorUsageHolder(ev);
+                    EvaluatorUsageHolder euHolder = new EvaluatorUsageHolder(holder.xmlBase, ev);
                     evaluators.put(holder.xmlBase, euHolder);
                 }
             }

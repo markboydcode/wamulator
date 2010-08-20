@@ -304,8 +304,8 @@ public class XmlConfigLoader2 {
         }
         // verify validity of condition syntax
         if (verifySyntax) {
-            LogicalSyntaxEvaluationEngine engine = new LogicalSyntaxEvaluationEngine();
-            engine.getEvaluator(content);
+            LogicalSyntaxEvaluationEngine engine = LogicalSyntaxEvaluationEngine.getSyntaxEvalutionInstance();
+            engine.getEvaluator(con, content);
         }
         return con;
     }
@@ -798,6 +798,8 @@ public class XmlConfigLoader2 {
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
                 String cctx = getStringAtt("cctx", path, atts);
                 String thost = getStringAtt("thost", path, atts);
+                String policyServiceGateway = getStringAtt("policy-service-url-gateway", path, atts, false);
+                String hostHdr = getStringAtt("host-header", path, atts, false);
                 String preserveHost = getStringAtt("preserve-host", path, atts,
                         false);
                 boolean preserve = (preserveHost == null ? true : Boolean
@@ -844,7 +846,8 @@ public class XmlConfigLoader2 {
                                     + "*' which precedes it in document order and hence "
                                     + "will never receive any requests.");
                 }
-                sm.addMapping(cctx, thost, tport, tpath, preserve);
+                ep = new AppEndPoint(sm.getHost(), cctx, tpath, thost, tport, preserve, hostHdr, policyServiceGateway);
+                sm.addMapping(ep);
             } else if (path.matches("/config/sso-traffic/by-site/unenforced")) {
                 TrafficManager trafficMgr = cfg.getTrafficManager();
                 SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
@@ -991,9 +994,9 @@ public class XmlConfigLoader2 {
                         PARSING_CONDITION_ALIAS);
                 String content = chars.toString();
                 addAlias(alias, content, SRC_EMBEDDED + content);
-                LogicalSyntaxEvaluationEngine engine = new LogicalSyntaxEvaluationEngine();
+                LogicalSyntaxEvaluationEngine engine = LogicalSyntaxEvaluationEngine.getSyntaxEvalutionInstance();
                 try {
-                    engine.getEvaluator(content);
+                    engine.getEvaluator(alias, content);
                 } catch (EvaluationException e) {
                     throw new SAXException(
                             "Invalid condition syntax detected.", e);

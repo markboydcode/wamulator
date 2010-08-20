@@ -101,7 +101,7 @@ public class EntitlementsManager {
                 } else { // see if they meet conditions for access
                     IEvaluator evaluator = null;
                     try {
-                        evaluator = cEngine.getEvaluator(ent.conditionSyntax);
+                        evaluator = cEngine.getEvaluator(ent.getConditionId(), ent.conditionSyntax);
                     } catch (EvaluationException e1) {
                         cLog.error("Unable to evaluate condition for entitlement "
                                 + ent.getUrn()

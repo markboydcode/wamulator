@@ -116,6 +116,24 @@ public class RequestHandlerIntegrationTest {
                             }
                             req = "no-preserve-host-test";
                         }
+                        else if (input.contains("/host-header/test/")) {
+                            answer = HttpPackage.HOST_HDR + " ???";
+                            int idx = inputLC.indexOf(HttpPackage.HOST_HDR);
+                            
+                            if (idx != -1) {
+                                int cr = input.indexOf(RequestHandler.CRLF, idx);
+                                String val = null;
+                                if (cr == -1) {
+                                    // last header
+                                    val = input.substring(idx+HttpPackage.HOST_HDR.length()).trim();
+                                }
+                                else {
+                                    val = input.substring(idx+HttpPackage.HOST_HDR.length(), cr).trim();
+                                }
+                                answer = HttpPackage.HOST_HDR + " " + val;
+                            }
+                            req = "host-header-test";
+                        }
                         else if (input.contains("/restricted/test/")) {
                             answer = "You made it";
                             req = "restricted-test";
@@ -187,7 +205,7 @@ public class RequestHandlerIntegrationTest {
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
-            + " <proxy-timeout inboundMillis='4000' outboundMillis='4000'/>"
+            + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <conditions>"
             + "  <condition alias='app-bbb'>"
             + "   <HasLdsApplication value='bbb'/>"
@@ -199,6 +217,8 @@ public class RequestHandlerIntegrationTest {
             + "   <unenforced cpath='/preserve/*'/>"
             + "   <cctx-mapping cctx='/no-preserve/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/no-preserve/*' preserve-host='false'/>"
             + "   <unenforced cpath='/no-preserve/*'/>"
+            + "   <cctx-mapping cctx='/host-header/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/host-header/*' host-header='host.lds.org:2445'/>"
+            + "   <unenforced cpath='/host-header/*'/>"
             + "   <cctx-mapping cctx='/restricted/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/restricted/*' preserve-host='false'/>"
             + "   <allow action='GET' cpath='/restricted/*'/>"
             + "   <cctx-mapping cctx='/conditional/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/conditional/*' preserve-host='false'/>"
@@ -405,7 +425,7 @@ public class RequestHandlerIntegrationTest {
         Assert.assertEquals(response, HttpPackage.HOST_HDR + " local.lds.org:" + sitePort);
         method.releaseConnection();
     }
-  
+    
     @Test
     public void test_dont_preserve_host() throws HttpException, IOException {
         System.out.println("----> test_dont_preserve_host ");
@@ -423,6 +443,26 @@ public class RequestHandlerIntegrationTest {
         String response = method.getResponseBodyAsString().trim(); 
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Assert.assertEquals(response, HttpPackage.HOST_HDR + " 127.0.0.1:" + serverPort);
+        method.releaseConnection();
+    }
+    
+    @Test
+    public void test_host_header() throws HttpException, IOException {
+        System.out.println("----> test_host_header ");
+        String uri = "http://local.lds.org:" + sitePort + "/host-header/test/";
+        HttpClient client = new HttpClient();
+        
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", sitePort);
+        client.setHostConfiguration(hcfg);
+        
+        HttpMethod method = new GetMethod(uri);
+        
+        method.setFollowRedirects(false);
+        int status = client.executeMethod(method);
+        String response = method.getResponseBodyAsString().trim(); 
+        Assert.assertEquals(status, 200, "should have returned http 200 OK");
+        Assert.assertEquals(response, HttpPackage.HOST_HDR + " host.lds.org:2445");
         method.releaseConnection();
     }
 

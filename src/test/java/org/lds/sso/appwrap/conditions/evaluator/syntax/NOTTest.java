@@ -24,7 +24,7 @@ public class NOTTest extends TestBaseClass {
 
     @Test
 	public void testHasLdsPositionNOTDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator(
+		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<NOT debug-user='ngienglishbishop'>" +
 				" <HasPosition" +
 				"  id='4'/>" +

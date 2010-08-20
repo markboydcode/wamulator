@@ -11,6 +11,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
+import org.lds.sso.appwrap.proxy.TrafficType;
 
 /**
  * Keeps track of url hits and outcomes and the rest service instances started.
@@ -85,18 +86,19 @@ public class TrafficRecorder {
     public List<RestInstanceInfo> getRestInstances() {
         return restInstances;
     }
-    public synchronized void recordHit(long time, String connId, String username, int respCode, boolean isProxyRes, String method, String uri) {
+    public synchronized void recordHit(long time, String connId, String username, int respCode, boolean isProxyRes, TrafficType trafficType, String method, String uri) {
         if (cLog.isInfoEnabled()) {
             cLog.info(
                     connId
                     + " " + username
                     + " " + (isProxyRes ? 'P' : '-')
+                    + " " + trafficType.getTypeCharForLogEntries()
                     + " " + respCode
                     + " " + method
                     + " " + uri);
         }
         if (recordTraffic) {
-            Hit hit = new Hit(time, connId, username, respCode, method, uri, isProxyRes);
+            Hit hit = new Hit(time, connId, username, respCode, method, uri, isProxyRes, trafficType.getTypeCharForLogEntries());
             /*
              * The following two lines are subtle but needed. Hits implement
              * comparable and base equality on the connection id. In the event
@@ -180,10 +182,11 @@ public class TrafficRecorder {
         private int conn = -1;
         private long time;
         private String fileName;
+        private char trafficType;
         private static final SimpleDateFormat fmtr = new SimpleDateFormat("HH:mm:ss.SSS");
         private static final SimpleDateFormat longfmtr = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
-        public Hit(long time, String connId, String username, int code, String method, String uri, boolean proxyResponse) {
+        public Hit(long time, String connId, String username, int code, String method, String uri, boolean proxyResponse, char trafficType) {
             this.username = username;
             this.time = time;
             this.connId = connId;
@@ -198,6 +201,11 @@ public class TrafficRecorder {
             // &lang with a less than char "<". Weird.
             this.uri = uri.replace("&", "&amp;"); 
             this.isProxyCode = proxyResponse;
+            this.trafficType = trafficType;
+        }
+
+        public char getTrafficType() {
+            return trafficType;
         }
 
         public String getConnId() {

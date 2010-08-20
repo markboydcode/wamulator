@@ -25,7 +25,7 @@ public class ComplexSyntaxTest extends TestBaseClass {
 		byte[] bytes = new byte[dis.available()];
 		dis.read(bytes);
 		String syntax = new String(bytes);
-		IEvaluator eval = eng.getEvaluator(syntax);
+		IEvaluator eval = eng.getEvaluator("test-evaluator", syntax);
 		
 		// stuff evaluator will go after
         User usr = EasyMock.createMock(User.class);
