@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 public class UserManager {
-	protected Map<String, User> users = new TreeMap<String,User>();
+	protected Map<String, User> users = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
 	private User lastUserAdded;
 	
 	/**
@@ -19,7 +19,7 @@ public class UserManager {
 	 */
 	public synchronized void setUser(String username, String password) {
 		// first clone the map so we don't get concurrent mod exception
-		Map<String, User> copy = new TreeMap<String,User>();
+		Map<String, User> copy = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
 		copy.putAll(users);
 			
 		User usr = copy.get(username);
@@ -49,7 +49,7 @@ public class UserManager {
 	 */
 	public synchronized void removeUser(String username) {
 		// first clone the map so we don't get concurrent mod exception
-		Map<String, User> copy = new TreeMap<String,User>();
+		Map<String, User> copy = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
 		copy.putAll(users);
 		copy.remove(username);
 		users = copy;

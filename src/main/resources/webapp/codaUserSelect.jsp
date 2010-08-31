@@ -8,7 +8,7 @@
 </c:if>
 <html>
 <head>
-<title>${requestScope.config.serverName}</title>
+<title>Console: ${requestScope.config.serverName}</title>
 <script type="text/javascript">
 
   window.signin = function(username) {
@@ -21,7 +21,7 @@
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- masthead -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">
- <span style="color: black; font-weight: bolder; font-size: large;">${requestScope.config.serverName}</span>
+ <span style="color: black; font-weight: bolder; font-size: large;">Console: ${requestScope.config.serverName}</span>
 </div>
 <!-- masthead END -->
 <div style="padding: 0 10 10 10px;  text-align:left;">

@@ -1,10 +1,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <html>
-<head><title>${requestScope.config.serverName}</title></head>
+<head><title>Console: ${requestScope.config.serverName}</title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- TABS -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">
- <span style="color: black; font-weight: bolder; font-size: large;">${requestScope.config.serverName}</span>
+ <span style="color: black; font-weight: bolder; font-size: large;">Console: ${requestScope.config.serverName}</span>
  <span style="padding-right: 10px"> </span>
  <span style="color: black; background-color: #DDF; padding: 3 8 5 8px;"><a href="/admin/listUsers.jsp">Users &amp; Sessions</a></span>
  <span style="padding-right: 10px"> </span>
@@ -37,7 +37,7 @@
 <table>
 <c:forEach items="${requestScope.config.trafficRecorder.timestampSortedHits}" var="hit">
 <tr>
-<td title="request timestamp" style='white-space: nowrap; cursor: default;'>${hit.longTimestamp}</td>
+<td title="request timestamp" style='white-space: nowrap; cursor: default;'>${hit.timestamp}</td>
 <td title="simulator connection id" style='white-space: nowrap; cursor: default;'>${hit.connId}</td>
 <td title="user" style='white-space: nowrap; cursor: default;'><c:choose>
 <c:when test="${hit.username == '???'}"><span title="no simulator cookie" style="cursor: default;">${hit.username}</span></c:when><c:otherwise><span title="cookie user" style="cursor: default;">${hit.username}</span></c:otherwise></c:choose></td>
@@ -45,12 +45,13 @@
 <td><c:choose><c:when test="${hit.trafficType == '?'}"><span title="unclassified traffic" style="color: blue; cursor: default;">?</span></c:when><c:when test="${hit.trafficType == '!'}"><span title="non by-site traffic" style="color: red; cursor: default;">!</span></c:when><c:otherwise><span title="by-site traffic" style="color: black; cursor: default;">-</span></c:otherwise></c:choose></td>
 <td><span style="font-weight: bold">
 <c:choose>
-<c:when test="${hit.code < 300}"><span title='http response code' style="color: #3A3; cursor: default;">${hit.code}</span></c:when>
-<c:when test="${hit.code >= 300 && hit.code < 400}"><span title='http response code' style="color: gray; cursor: default;">${hit.code}</span></c:when>
-<c:when test="${hit.code != 404 && (hit.code >= 400 && hit.code < 500)}"><span title='http response code' style="color: purple; cursor: default;">${hit.code}</span></c:when>
-<c:when test="${hit.code >= 500 || hit.code == 404}"><span title='http response code' style="color: red; cursor: default;">${hit.code}</span></c:when>
+<c:when test="${hit.code < 300}"><span title='${hit.httpMsg}' style="color: #3A3; cursor: default;">${hit.code}</span></c:when>
+<c:when test="${hit.code >= 300 && hit.code < 400}"><span title='${hit.httpMsg}' style="color: gray; cursor: default;">${hit.code}</span></c:when>
+<c:when test="${hit.code != 404 && (hit.code >= 400 && hit.code < 500)}"><span title='${hit.httpMsg}' style="color: purple; cursor: default;">${hit.code}</span></c:when>
+<c:when test="${hit.code >= 500 || hit.code == 404}"><span title='${hit.httpMsg}' style="color: red; cursor: default;">${hit.code}</span></c:when>
 </c:choose></span></td>
 <td title="http method" style='cursor: default;'>${hit.method}</td>
+<td title="host header" style='cursor: default;'>${hit.hostHdr}</td>
 <c:choose>
     <c:when test="${requestScope.config.debugLoggingEnabled}"><td><span style="color: blue"><a href="logs/${hit.connId}.log" target='?newtab?'>${hit.uri}</a></span></td></c:when>
     <c:otherwise><td><span style="color: blue">${hit.uri}</span></td></c:otherwise>

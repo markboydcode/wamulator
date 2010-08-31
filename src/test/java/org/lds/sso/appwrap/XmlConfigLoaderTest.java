@@ -37,9 +37,9 @@ public class XmlConfigLoaderTest {
             + " </sso-traffic>"
             + "  <users>"
             + "    <user name='nnn' pwd='pwd'>"
-            + "      <sso-header name='header-a' value='aaa'/>" 
-            + "      <ldsApplication value='111'/>" 
-            + "      <ldsApplication value='222'/>" 
+//            + "      <sso-header name='header-a' value='aaa'/>" 
+//            + "      <ldsApplication value='111'/>" 
+//            + "      <ldsApplication value='222'/>" 
             + "    </user>"
             + "  </users>"
             + "</config>";
@@ -684,7 +684,7 @@ public class XmlConfigLoaderTest {
             + "<?alias    nameWSP   =nameWSP?>"
             + "<?alias valueWSP=    valueWSP    ?>"
             + "<?alias vembedded=v embedded?>"
-            + "<undefined/>";
+            + "<config proxy-port='80' console-port='81'/>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
         Map<String,String>vals = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get().get(XmlConfigLoader2.PARSING_SYNTAXES);

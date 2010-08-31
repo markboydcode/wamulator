@@ -86,7 +86,7 @@ public class TrafficRecorder {
     public List<RestInstanceInfo> getRestInstances() {
         return restInstances;
     }
-    public synchronized void recordHit(long time, String connId, String username, int respCode, boolean isProxyRes, TrafficType trafficType, String method, String uri) {
+    public synchronized void recordHit(long time, String connId, String username, int respCode, String respMsg, boolean isProxyRes, TrafficType trafficType, String method, String hostHdr, String uri) {
         if (cLog.isInfoEnabled()) {
             cLog.info(
                     connId
@@ -94,11 +94,13 @@ public class TrafficRecorder {
                     + " " + (isProxyRes ? 'P' : '-')
                     + " " + trafficType.getTypeCharForLogEntries()
                     + " " + respCode
+                    + " " + respMsg
                     + " " + method
+                    + " " + hostHdr
                     + " " + uri);
         }
         if (recordTraffic) {
-            Hit hit = new Hit(time, connId, username, respCode, method, uri, isProxyRes, trafficType.getTypeCharForLogEntries());
+            Hit hit = new Hit(time, connId, username, respCode, respMsg, method, hostHdr, uri, isProxyRes, trafficType.getTypeCharForLogEntries());
             /*
              * The following two lines are subtle but needed. Hits implement
              * comparable and base equality on the connection id. In the event
@@ -183,10 +185,12 @@ public class TrafficRecorder {
         private long time;
         private String fileName;
         private char trafficType;
+        private String httpMsg;
+        private String hostHdr;
         private static final SimpleDateFormat fmtr = new SimpleDateFormat("HH:mm:ss.SSS");
         private static final SimpleDateFormat longfmtr = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
-        public Hit(long time, String connId, String username, int code, String method, String uri, boolean proxyResponse, char trafficType) {
+        public Hit(long time, String connId, String username, int code, String httpMsg, String method, String hostHdr, String uri, boolean proxyResponse, char trafficType) {
             this.username = username;
             this.time = time;
             this.connId = connId;
@@ -194,6 +198,8 @@ public class TrafficRecorder {
             this.conn = Integer.parseInt(cid);
 
             this.code = code;
+            this.httpMsg = httpMsg;
+            this.hostHdr = hostHdr;
             this.method = method;
             // replace "&" with &amp; in uris since firefox freaks out if there
             // is an "&l" in the URI like for "&lang=eng" causing rendering to
@@ -216,12 +222,20 @@ public class TrafficRecorder {
             return code;
         }
 
+        public String getHttpMsg() {
+            return httpMsg;
+        }
+
         public String getUsername() {
             return username;
         }
 
         public String getMethod() {
             return method;
+        }
+
+        public String getHostHdr() {
+            return this.hostHdr;
         }
 
         public String getUri() {

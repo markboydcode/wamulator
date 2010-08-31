@@ -51,4 +51,8 @@ public class HttpPackage {
      * Indicates if we found the cookie that matched the simulator session cookie.
      */
     public boolean cookieFound = false;
+    /**
+     * Holds start line before stripping signin/out query param if included.
+     */
+    public RequestLine origRequestList;
 }

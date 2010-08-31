@@ -1,11 +1,11 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <html>
-<head><title>${requestScope.config.serverName}</title></head>
+<head><title>Console: ${requestScope.config.serverName}</title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- TABS -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">
- <span style="color: black; font-weight: bolder; font-size: large;">${requestScope.config.serverName}</span>
+ <span style="color: black; font-weight: bolder; font-size: large;">Console: ${requestScope.config.serverName}</span>
  <span style="padding-right: 10px"> </span>
  <span style="color: black; background-color: #EEF; padding: 3 8 5 8px;"><a href="listUsers.jsp">Users &amp; Sessions</a></span>
  <span style="padding-right: 10px"> </span>

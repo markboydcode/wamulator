@@ -266,16 +266,21 @@ public class Service {
 		proxyRunner.setDaemon(true);
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
-
-		dualLog("simulator version  : " + cfg.getServerName());
-        dualLog("admin-rest port    : " + cfg.getConsolePort());
+		
+		while (server.isStarted() == false && proxy.isRunning() == false) {
+            Thread.sleep(1000);
+		}
+		StringBuffer line = new StringBuffer(cfg.getServerName().length());
+		for (int i=0; i<cfg.getServerName().length(); i++) {
+		    line.append('-');
+		}
+        dualLog("---------------------" + line.toString());
+        dualLog("simulator version  : " + cfg.getServerName());
+        dualLog("console-rest port  : " + cfg.getConsolePort());
         dualLog("http proxy port    : " + cfg.getProxyPort());
         dualLog("Rest Interface     : " + cfg.getRestVersion().getVersionId());
-		if (null != cfg.getGlobalHeaders()) {
-			for (NvPair pair : cfg.getGlobalHeaders()) {
-				dualLog(pair.getName() + " : " + pair.getValue());
-			}
-		}
+        dualLog("---------------------" + line.toString());
+        dualLog("Simulator Console and Proxy are ready");
 	}
 	
 	/**

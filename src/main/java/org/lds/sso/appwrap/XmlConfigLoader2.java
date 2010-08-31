@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -65,15 +66,66 @@ public class XmlConfigLoader2 {
         }
     };
 
+    /**
+     * Loads configuration from a String.
+     * 
+     * @param xml
+     * @throws Exception
+     */
     public static void load(String xml) throws Exception {
         load(new StringReader(xml), "from String '" + xml + "'");
     }
 
+    /**
+     * Loads configuration from a Reader.
+     * 
+     * @param reader
+     * @param sourceInfo
+     * @throws Exception
+     */
     public static void load(Reader reader, String sourceInfo) throws Exception {
         load(reader, sourceInfo, new CfgContentHandler());
     }
 
+    /**
+     * USE WITH CAUTION: Loads configuration using a custom content handler.  
+     * Initializes memory for parsing and implements two pass parsing delegating
+     * to _rawload for actual parsing by a single content handler.
+     * 
+     * @param reader
+     * @param sourceInfo
+     * @param hndlr
+     * @throws Exception
+     */
     public static void load(Reader reader, String sourceInfo,
+            ContentHandler hndlr) throws Exception {
+        // first cache the raw content
+        String content = getContentAsString(reader);
+        parsingContextAccessor.get().put(PARSING_CONFIG,
+                Config.getInstance());
+        parsingContextAccessor.get().put(PARSING_ALIASES,
+                new HashMap<String, String>());
+        parsingContextAccessor.get().put(PARSING_SYNTAXES,
+                new HashMap<String, String>());
+        
+        // now run alias and embedded condition parser
+        parsingContextAccessor.get().put(PARSING_PATH, new Path());
+        _rawload(new StringReader(content), sourceInfo, new CfgAliasesHandler());
+        
+        // now parse non alias/condition directives
+        parsingContextAccessor.get().put(PARSING_PATH, new Path());
+        _rawload(new StringReader(content), sourceInfo, hndlr);
+    }
+
+    /**
+     * Launches the parsing with suitable exception handling.
+     * 
+     * @param reader
+     * @param sourceInfo
+     * @param hndlr
+     * @throws Exception
+     */
+    private static void _rawload(Reader reader, String sourceInfo,
             ContentHandler hndlr) throws Exception {
         XMLReader rdr;
         try {
@@ -91,6 +143,25 @@ public class XmlConfigLoader2 {
             throw new Exception("Unable to parse configuration '" + sourceInfo
                     + "'.", e);
         }
+    }
+    
+    /**
+     * Utility method for reading config content in and returning as a String.
+     * 
+     * @param reader
+     * @return
+     * @throws IOException
+     */
+    public static String getContentAsString(Reader reader) throws IOException {
+        char[] chars = new char[1024];
+        StringWriter sw = new StringWriter();
+        int read = reader.read(chars);
+
+        while (read != -1) {
+            sw.write(chars, 0, read);
+            read = reader.read(chars);
+        }
+        return sw.toString();
     }
 
     /**
@@ -462,170 +533,31 @@ public class XmlConfigLoader2 {
         }
     }
 
+    /**
+     * Accepts the name, contextual value, and raw value (example: may
+     * include a 'classpath:' prefix) and adds them to the appropriate
+     * caches for later consumption.
+     * 
+     * @param name
+     * @param value
+     * @param rawValue
+     */
+    private static void addAlias(String name, String value, String rawValue) {
+        String val = resolveAliases(value);
+        Map<String, String> aliases = (Map<String, String>) parsingContextAccessor.get().get(PARSING_ALIASES);
+        aliases.put(name, val);
+        Map<String, String> aliasSyntax = (Map<String, String>) parsingContextAccessor.get().get(PARSING_SYNTAXES);
+        aliasSyntax.put(name, rawValue);
+    }
+
     public static class CfgContentHandler implements ContentHandler {
 
         public CfgContentHandler() {
-            parsingContextAccessor.get().put(PARSING_CONFIG,
-                    Config.getInstance());
-            parsingContextAccessor.get().put(PARSING_ALIASES,
-                    new HashMap<String, String>());
-            parsingContextAccessor.get().put(PARSING_SYNTAXES,
-                    new HashMap<String, String>());
-            parsingContextAccessor.get().put(PARSING_PATH, new Path());
         }
 
-        /**
-         * Enables processing instructions in the XML having the following three
-         * forms. Each declares an alias that can then be referenced in any
-         * configuration file attribute value by including the macro "{{name}}"
-         * within the attribute's string of characters or within the value
-         * portion of any later occurring alias declarations including classpath
-         * files or resolved resources. Each has a specific use.
-         * 
-         * <pre>
-         * [1] &lt;?alias name=[value]?&gt;
-         * [2] &lt;?alias name=classpath:[resource-file-path]?&gt;
-         * [3] &lt;?alias name=system:[resource-name]?&gt;
-         * </pre>
-         * 
-         * [1] adds a named value pair to the map of aliases where the value is
-         * the literal text although that text could be a macro causing this
-         * alias to have the same value as the other alias or it could have one
-         * or more alias embedded within it surrounded by literal text.
-         * 
-         * [2] adds a named value pair to the map of alias where the value is
-         * the character content of the referenced resource file that must be
-         * available from the classpath. Making such file based content
-         * available is not accomplished by conceptually embedding such content
-         * within the XML declaring the alias and hence won't effect the xml
-         * processing. This allows for alias values to contain XML sensitive
-         * characters and hence XML constructs. Such character content can also
-         * include macro references for earlier defined alias which will be
-         * resolved upon loading.
-         * 
-         * [3] adds a named value pair to the map of aliases where the value is
-         * the character content of a java.lang.System property. This version is
-         * used to emulate the classpath version during unit tests without
-         * having to create such files. In particular, this enables condition
-         * syntax to be used in unit tests.
-         */
-        @SuppressWarnings("unchecked")
-        public void processingInstruction(String target, String data)
-                throws SAXException {
-            if (target.equals("alias")) {
-                int eqIdx = data.indexOf('=');
-                if (eqIdx >= 0) {
-                    String name = data.substring(0, eqIdx).trim();
-                    String val = data.substring(eqIdx + 1).trim();
-                    String rawVal = val;
-                    // String srcPrefix = SRC_STRING;
 
-                    // alias handling for "classpath:..."
-                    if (val.toLowerCase().startsWith(SRC_CLASSPATH)) {
-                        String resrc = val.substring(SRC_CLASSPATH.length());
-                        ClassLoader cldr = this.getClass().getClassLoader();
-                        InputStream src = cldr.getResourceAsStream(resrc);
-
-                        if (src == null) {
-                            throw new IllegalArgumentException(
-                                    "Classpath alias resource '" + resrc
-                                            + "' not found.");
-                        } else {
-                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
-                            byte[] bytes = new byte[1024];
-
-                            int read;
-                            try {
-                                while ((read = src.read(bytes)) != -1) {
-                                    bfr.write(bytes, 0, read);
-                                }
-                                bfr.flush();
-                            } catch (IOException e) {
-                                throw new SAXException(
-                                        "Unable to load content for alias '"
-                                                + name
-                                                + "' from classpath resource '"
-                                                + resrc + "'.", e);
-                            }
-                            val = bfr.toString().trim();
-                        }
-                    }
-                    // alias handling for "system:..."
-                    else if (val.toLowerCase().startsWith(SRC_SYSTEM)) {
-                        String resrc = val.substring(SRC_SYSTEM.length());
-                        val = System.getProperty(resrc);
-
-                        if (val == null) {
-                            throw new IllegalArgumentException(
-                                    "System alias resource '"
-                                            + resrc
-                                            + "' not found in java.lang.System.");
-                        }
-                    }
-                    // alias handling for "file:..."
-                    else if (val.toLowerCase().startsWith(SRC_FILE)) {
-                        String resrc = val.substring(SRC_FILE.length());
-                        File file = new File(resrc);
-
-                        if (!file.exists()) {
-                            throw new IllegalArgumentException(
-                                    "File alias resource '" + resrc
-                                            + "' not found at '"
-                                            + file.getAbsolutePath() + "'.");
-                        } else {
-                            InputStream src;
-                            try {
-                                src = new FileInputStream(file);
-                            } catch (FileNotFoundException e) {
-                                throw new SAXException(
-                                        "Unable to load content for alias '"
-                                                + name
-                                                + "' from file resource '"
-                                                + file.getAbsolutePath() + "'.",
-                                        e);
-                            }
-                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
-                            byte[] bytes = new byte[1024];
-
-                            int read;
-                            try {
-                                while ((read = src.read(bytes)) != -1) {
-                                    bfr.write(bytes, 0, read);
-                                }
-                                bfr.flush();
-                            } catch (IOException e) {
-                                throw new SAXException(
-                                        "Unable to load content for alias '"
-                                                + name
-                                                + "' from file resource '"
-                                                + file.getAbsolutePath() + "'.",
-                                        e);
-                            }
-                            val = bfr.toString().trim();
-                        }
-                    } else {
-                        // alias handling for "literal-text" use 'val' as-is
-                    }
-                    addAlias(name, val, rawVal);
-                }
-            }
-        }
-
-        /**
-         * Accepts the name, contextual value, and raw value (example: may
-         * include a 'classpath:' prefix) and adds them to the appropriate
-         * caches for later consumption.
-         * 
-         * @param name
-         * @param value
-         * @param rawValue
-         */
-        private void addAlias(String name, String value, String rawValue) {
-            String val = resolveAliases(value);
-            Map<String, String> aliases = (Map<String, String>) parsingContextAccessor.get().get(PARSING_ALIASES);
-            aliases.put(name, val);
-            Map<String, String> aliasSyntax = (Map<String, String>) parsingContextAccessor.get().get(PARSING_SYNTAXES);
-            aliasSyntax.put(name, rawValue);
+        public void processingInstruction(String paramString1,
+                String paramString2) throws SAXException {
         }
 
         public void startElement(String uri, String localName, String name,
@@ -673,10 +605,8 @@ public class XmlConfigLoader2 {
             } else if (path.matches("/config/conditions")) {
                 // prevents log of unsupported element below since captured here
             } else if (path.matches("/config/conditions/condition")) {
-                String alias = getStringAtt("alias", path, atts);
+                // allows nested elements to be ignored without warning message of unsupported elements
                 parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION, Boolean.TRUE);
-                parsingContextAccessor.get().put(PARSING_CONDITION_CONTENT, new StringBuffer());
-                parsingContextAccessor.get().put(PARSING_CONDITION_ALIAS, alias);
             } else if (path.matches("/config/proxy-timeout")) {
                 cfg.setProxyInboundSoTimeout(getIntegerAtt("inboundMillis",
                         path, atts));
@@ -958,6 +888,222 @@ public class XmlConfigLoader2 {
                                 + "Its policy-domain attribute is no longer used but its nested content "
                                 + "remains unchanged. Please apply these changes and restart.");
             } else {
+                if (parsingContextAccessor.get().get(PARSING_IS_IN_CONDITION) != Boolean.TRUE) {
+                    String msg = "Unsupported element at " + path
+                            + " ignoring.";
+                    System.out.println(msg);
+                    cLog.error(msg);
+                }
+            }
+        }
+
+        public void endElement(String uri, String localName, String name)
+                throws SAXException {
+            Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
+            if (path.matches("/config/conditions/condition")) {
+                parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION,
+                        Boolean.FALSE);
+            }
+            path.remove(name);
+        }
+
+        public void characters(char[] ch, int start, int length)
+                throws SAXException {
+        }
+
+        public void endDocument() throws SAXException {
+        }
+
+        public void endPrefixMapping(String prefix) throws SAXException {
+        }
+
+        public void ignorableWhitespace(char[] ch, int start, int length)
+                throws SAXException {
+        }
+
+        public void setDocumentLocator(Locator locator) {
+        }
+
+        public void skippedEntity(String name) throws SAXException {
+        }
+
+        public void startDocument() throws SAXException {
+        }
+
+        public void startPrefixMapping(String prefix, String uri)
+                throws SAXException {
+        }
+    }
+
+    
+    /**
+     * Handles processing of alias processing instruction and condition elements
+     * allowing for these to be located anywhere in the file and not necessarily 
+     * at the top. This is for allowing conditions to be placed at the end of 
+     * the file but be referenced anywhere else.
+     * 
+     * @author BOYDMR
+     *
+     */
+    public static class CfgAliasesHandler implements ContentHandler {
+
+        public CfgAliasesHandler() {
+        }
+
+        /**
+         * Enables processing instructions in the XML having the following three
+         * forms. Each declares an alias that can then be referenced in any
+         * configuration file attribute value by including the macro "{{name}}"
+         * within the attribute's string of characters or within the value
+         * portion of any later occurring alias declarations including classpath
+         * files or resolved resources. Each has a specific use.
+         * 
+         * <pre>
+         * [1] &lt;?alias name=[value]?&gt;
+         * [2] &lt;?alias name=classpath:[resource-file-path]?&gt;
+         * [3] &lt;?alias name=system:[resource-name]?&gt;
+         * </pre>
+         * 
+         * [1] adds a named value pair to the map of aliases where the value is
+         * the literal text although that text could be a macro causing this
+         * alias to have the same value as the other alias or it could have one
+         * or more alias embedded within it surrounded by literal text.
+         * 
+         * [2] adds a named value pair to the map of alias where the value is
+         * the character content of the referenced resource file that must be
+         * available from the classpath. Making such file based content
+         * available is not accomplished by conceptually embedding such content
+         * within the XML declaring the alias and hence won't effect the xml
+         * processing. This allows for alias values to contain XML sensitive
+         * characters and hence XML constructs. Such character content can also
+         * include macro references for earlier defined alias which will be
+         * resolved upon loading.
+         * 
+         * [3] adds a named value pair to the map of aliases where the value is
+         * the character content of a java.lang.System property. This version is
+         * used to emulate the classpath version during unit tests without
+         * having to create such files. In particular, this enables condition
+         * syntax to be used in unit tests.
+         */
+        @SuppressWarnings("unchecked")
+        public void processingInstruction(String target, String data)
+                throws SAXException {
+            if (target.equals("alias")) {
+                int eqIdx = data.indexOf('=');
+                if (eqIdx >= 0) {
+                    String name = data.substring(0, eqIdx).trim();
+                    String val = data.substring(eqIdx + 1).trim();
+                    String rawVal = val;
+                    // String srcPrefix = SRC_STRING;
+
+                    // alias handling for "classpath:..."
+                    if (val.toLowerCase().startsWith(SRC_CLASSPATH)) {
+                        String resrc = val.substring(SRC_CLASSPATH.length());
+                        ClassLoader cldr = this.getClass().getClassLoader();
+                        InputStream src = cldr.getResourceAsStream(resrc);
+
+                        if (src == null) {
+                            throw new IllegalArgumentException(
+                                    "Classpath alias resource '" + resrc
+                                            + "' not found.");
+                        } else {
+                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
+                            byte[] bytes = new byte[1024];
+
+                            int read;
+                            try {
+                                while ((read = src.read(bytes)) != -1) {
+                                    bfr.write(bytes, 0, read);
+                                }
+                                bfr.flush();
+                            } catch (IOException e) {
+                                throw new SAXException(
+                                        "Unable to load content for alias '"
+                                                + name
+                                                + "' from classpath resource '"
+                                                + resrc + "'.", e);
+                            }
+                            val = bfr.toString().trim();
+                        }
+                    }
+                    // alias handling for "system:..."
+                    else if (val.toLowerCase().startsWith(SRC_SYSTEM)) {
+                        String resrc = val.substring(SRC_SYSTEM.length());
+                        val = System.getProperty(resrc);
+
+                        if (val == null) {
+                            throw new IllegalArgumentException(
+                                    "System alias resource '"
+                                            + resrc
+                                            + "' not found in java.lang.System.");
+                        }
+                    }
+                    // alias handling for "file:..."
+                    else if (val.toLowerCase().startsWith(SRC_FILE)) {
+                        String resrc = val.substring(SRC_FILE.length());
+                        File file = new File(resrc);
+
+                        if (!file.exists()) {
+                            throw new IllegalArgumentException(
+                                    "File alias resource '" + resrc
+                                            + "' not found at '"
+                                            + file.getAbsolutePath() + "'.");
+                        } else {
+                            InputStream src;
+                            try {
+                                src = new FileInputStream(file);
+                            } catch (FileNotFoundException e) {
+                                throw new SAXException(
+                                        "Unable to load content for alias '"
+                                                + name
+                                                + "' from file resource '"
+                                                + file.getAbsolutePath() + "'.",
+                                        e);
+                            }
+                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
+                            byte[] bytes = new byte[1024];
+
+                            int read;
+                            try {
+                                while ((read = src.read(bytes)) != -1) {
+                                    bfr.write(bytes, 0, read);
+                                }
+                                bfr.flush();
+                            } catch (IOException e) {
+                                throw new SAXException(
+                                        "Unable to load content for alias '"
+                                                + name
+                                                + "' from file resource '"
+                                                + file.getAbsolutePath() + "'.",
+                                        e);
+                            }
+                            val = bfr.toString().trim();
+                        }
+                    } else {
+                        // alias handling for "literal-text" use 'val' as-is
+                    }
+                    addAlias(name, val, rawVal);
+                }
+            }
+        }
+
+        public void startElement(String uri, String localName, String name,
+                Attributes atts) throws SAXException {
+            Map<String, String> aliases = (Map<String, String>) parsingContextAccessor
+                    .get().get(PARSING_ALIASES);
+            Config cfg = (Config) parsingContextAccessor.get().get(
+                    PARSING_CONFIG);
+            Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
+
+            path.add(name);
+            if (path.matches("/config/conditions")) {
+                // prevents log of unsupported element below since captured here
+            } else if (path.matches("/config/conditions/condition")) {
+                String alias = getStringAtt("alias", path, atts);
+                parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION, Boolean.TRUE);
+                parsingContextAccessor.get().put(PARSING_CONDITION_CONTENT, new StringBuffer());
+                parsingContextAccessor.get().put(PARSING_CONDITION_ALIAS, alias);
+            } else {
                 if (parsingContextAccessor.get().get(PARSING_IS_IN_CONDITION) == Boolean.TRUE) {
                     StringBuffer element = new StringBuffer().append("<")
                             .append(name);
@@ -974,11 +1120,6 @@ public class XmlConfigLoader2 {
                     StringBuffer chars = (StringBuffer) parsingContextAccessor
                             .get().get(PARSING_CONDITION_CONTENT);
                     chars.append(element.toString());
-                } else {
-                    String msg = "Unsupported element at " + path
-                            + " ignoring.";
-                    System.out.println(msg);
-                    cLog.error(msg);
                 }
             }
         }

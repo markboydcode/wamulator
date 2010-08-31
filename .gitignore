@@ -3,6 +3,8 @@
 /.settings
 /C-*.log
 /nbactions.xml
+/saw.log
+/saw.log.*
 /ses.log
 /ses.log.*
 /target

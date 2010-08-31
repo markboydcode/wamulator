@@ -67,6 +67,7 @@ import java.text.DecimalFormat;
 		private static final Logger cLog = Logger.getLogger(ProxyListener.class);
 		
 		private ServerSocket server = null;
+		private boolean started = false;
 		private volatile int count = 0;
 		private Config cfg = null;
 		
@@ -92,7 +93,7 @@ import java.text.DecimalFormat;
 		 */
 		public boolean isRunning ()
 		{
-			if (server == null)
+			if (server == null || !started)
 				return false;
 			else
 				return true;
@@ -126,9 +127,6 @@ import java.text.DecimalFormat;
 		{
 			try {
 				// loop forever listening for client connections
-				String msg = "Started proxy handler";
-				System.out.println(msg);
-				cLog.info(msg);
 				
 				for (File f : new File(".").listFiles()) {
 					String nm = f.getName();
@@ -139,6 +137,7 @@ import java.text.DecimalFormat;
 					}
 				}
 				DecimalFormat fmt = new DecimalFormat("0000");
+				started = true;
 				
 				while (true)
 				{
@@ -160,7 +159,7 @@ import java.text.DecimalFormat;
 				System.out.println(msg);
 				cLog.error("Proxy Listener error: ", e);
 			}
-			
+			started = false;
 			closeSocket();
 		}
 		
