@@ -82,17 +82,18 @@ public class RequestHandlerIntegrationTest {
                         
                         if (input.contains("/preserve/host/test/")) {
                             answer = HttpPackage.HOST_HDR + " ???";
-                            int idx = inputLC.indexOf(HttpPackage.HOST_HDR);
+                            String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
+                            int idx = inputLC.indexOf(hstHdrKey);
                             
                             if (idx != -1) {
-                                int cr = input.indexOf(RequestHandler.CRLF, idx);
+                                int cr = input.indexOf(RequestHandler.CRLF, idx+1);
                                 String val = null;
                                 if (cr == -1) {
                                     // last header
-                                    val = input.substring(idx+HttpPackage.HOST_HDR.length()).trim();
+                                    val = input.substring(idx+hstHdrKey.length()).trim();
                                 }
                                 else {
-                                    val = input.substring(idx+HttpPackage.HOST_HDR.length(), cr).trim();
+                                    val = input.substring(idx+hstHdrKey.length(), cr).trim();
                                 }
                                 answer = HttpPackage.HOST_HDR + " " + val;
                             }
@@ -100,17 +101,18 @@ public class RequestHandlerIntegrationTest {
                         }
                         else if (input.contains("/no-preserve/host/test/")) {
                             answer = HttpPackage.HOST_HDR + " ???";
-                            int idx = inputLC.indexOf(HttpPackage.HOST_HDR);
+                            String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
+                            int idx = inputLC.indexOf(hstHdrKey);
                             
                             if (idx != -1) {
-                                int cr = input.indexOf(RequestHandler.CRLF, idx);
+                                int cr = input.indexOf(RequestHandler.CRLF, idx+1);
                                 String val = null;
                                 if (cr == -1) {
                                     // last header
-                                    val = input.substring(idx+HttpPackage.HOST_HDR.length()).trim();
+                                    val = input.substring(idx+hstHdrKey.length()).trim();
                                 }
                                 else {
-                                    val = input.substring(idx+HttpPackage.HOST_HDR.length(), cr).trim();
+                                    val = input.substring(idx+hstHdrKey.length(), cr).trim();
                                 }
                                 answer = HttpPackage.HOST_HDR + " " + val;
                             }
@@ -118,17 +120,18 @@ public class RequestHandlerIntegrationTest {
                         }
                         else if (input.contains("/host-header/test/")) {
                             answer = HttpPackage.HOST_HDR + " ???";
-                            int idx = inputLC.indexOf(HttpPackage.HOST_HDR);
+                            String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
+                            int idx = inputLC.indexOf(hstHdrKey);
                             
                             if (idx != -1) {
-                                int cr = input.indexOf(RequestHandler.CRLF, idx);
+                                int cr = input.indexOf(RequestHandler.CRLF, idx+1);
                                 String val = null;
                                 if (cr == -1) {
                                     // last header
-                                    val = input.substring(idx+HttpPackage.HOST_HDR.length()).trim();
+                                    val = input.substring(idx+hstHdrKey.length()).trim();
                                 }
                                 else {
-                                    val = input.substring(idx+HttpPackage.HOST_HDR.length(), cr).trim();
+                                    val = input.substring(idx+hstHdrKey.length(), cr).trim();
                                 }
                                 answer = HttpPackage.HOST_HDR + " " + val;
                             }

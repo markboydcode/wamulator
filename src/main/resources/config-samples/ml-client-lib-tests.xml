@@ -24,9 +24,15 @@
     <sso-header name="policy-service-url" value="http://local.lds.org/oes/v{version}/rest"/>
 
     <conditions>
-     <condition alias="test-of-context-parm">
-      <CtxMatches 
+     <condition alias='is-admin'><HasLdsApplication value='leader-admin'/></condition>
+     
+     <condition alias='in-school'>
+      <OR>
+       <HasLdsApplication value='leader-teacher'/>
+       <HasLdsApplication value='leader-student'/>
+      </OR>
      </condition>
+     
     </conditions>
     
     <sso-traffic strip-empty-headers="true">
@@ -40,8 +46,8 @@
             <allow action="GET" cpath="/mlrtest*?*"/>
             
             <entitlements>
-                <allow action="GET,POST,PUT,DELETE" urn="/directory/*" condition=""/>
-                <allow action="GET" urn="/LINK/directory/link/*" condition=""/>
+                <allow action="GET,POST,PUT,DELETE" urn="/directory/" condition="{{is-admin}}"/>
+                <allow action="GET" urn="/directory/link/" condition="{{in-school}}"/>
             </entitlements>
         </by-site>  
     </sso-traffic>

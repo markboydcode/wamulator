@@ -13,7 +13,9 @@ import java.util.TreeSet;
  */
 public class AllowedUri extends UnenforcedUri {
 
-	protected String[] actions = null;
+	private static final String ALLOW_ALL_ACTIONS_PATTERN = "*";
+    protected String[] actions = null;
+    private boolean allow_all;
 	
 	public AllowedUri(String scheme, String host, int port, String path, String query, String cpathDeclaration) {
 		super(scheme, host, port, path, query, cpathDeclaration);
@@ -23,6 +25,12 @@ public class AllowedUri extends UnenforcedUri {
 	public AllowedUri(String scheme, String host, int port, String path, String query, String[] actions, String cpathDeclaration) {
 		super(scheme, host, port, path, query, cpathDeclaration);
 		this.actions = actions;
+		for(String action : actions) {
+		    if (action.equals(ALLOW_ALL_ACTIONS_PATTERN)) {
+		        allow_all = true;
+		        break;
+		    }
+		}
 		updateId();
 	}
 	
@@ -37,6 +45,9 @@ public class AllowedUri extends UnenforcedUri {
     }
 
     public boolean allowed(String action) {
+        if (allow_all) {
+            return true;
+        }
 		for(String a : actions) {
 			if (a.equals(action)) {
 				return true;

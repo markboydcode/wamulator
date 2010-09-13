@@ -28,7 +28,7 @@ public class OrderedUri implements Comparable<OrderedUri>{
             usePathPrefixMatching = true;
         }
         else if(path.endsWith("*")) {
-            pathPrefix = path.substring(0, path.length()-2);
+            pathPrefix = path.substring(0, path.length()-1);
             usePathPrefixMatching = true;
         }
         

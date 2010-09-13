@@ -1,0 +1,40 @@
+
+<?alias rest-port=1776?>
+<?alias console-port={{rest-port}}?>
+<?alias http-port=80?>
+
+<config proxy-port="{{http-port}}" console-port="{{console-port}}">
+    <console-recording sso="true" rest="true" max-entries="100" enable-debug-logging='true'/>
+    <sso-cookie name="wamulator" domain=".lds.org"/>
+
+    <sso-traffic strip-empty-headers="true">
+        <by-site host="local.lds.org" port="{{http-port}}">
+            <cctx-mapping cctx="/*" thost="127.0.0.1" tport="8460" tpath="/*"/>
+            <unenforced cpath="/*"/>
+            <unenforced cpath="/*?*"/>
+        </by-site>
+        <by-site host="preview.lds.org" port="{{http-port}}">
+            <cctx-mapping cctx="/*" thost="127.0.0.1" tport="8469" tpath="/*"/>
+            <unenforced cpath="/*"/>
+            <unenforced cpath="/*?*"/>
+        </by-site>
+    </sso-traffic>
+    
+    <users session-timeout-seconds='600'>
+        <user name='boydmr' pwd=''>
+        </user>
+        <user name='boydkr' pwd=''>
+        </user>
+        <user name="ngiwb1" pwd="password1">
+            <sso-header name="policy-sn" value="ngiWB1LastName"/>
+            <sso-header name="policy-preferredname" value="ngiWB1LastName"/>
+            <sso-header name="policy-ldsindividualid" value="123456"/>
+            <sso-header name="policy-ldsmrn" value="054000000"/>
+            <sso-header name="policy-ldsemailaddress" value="ngiwb1@someplace.com"/>
+            <sso-header name="policy-ldspositions" value="p4/7u560/5u524/1u740/"/>
+            <ldsApplications value='leader-admin'/>
+            <ldsApplications value='leader-teacher'/>
+        </user>
+    </users>
+    
+</config>

@@ -547,12 +547,17 @@ public class RequestHandler implements Runnable {
         reqPkg.headerBfr.append(hdr);
 
         if (! appEndpoint.preserveHostHeader()) {
+            Header hhdr = reqPkg.headerBfr.getHeader(HeaderDef.Host);
+            String h = reqPkg.hostHdr;
             String hostHdr = (appEndpoint.getHostHeader() != null ? 
                     appEndpoint.getHostHeader() :
                         (appEndpoint.getHost() 
                                 + (appEndpoint.getEndpointPort() != 80 
                                         ? (":" + appEndpoint.getEndpointPort()) 
                                                 : "")));
+            if (hhdr != null && hhdr.getValue() != hostHdr) {
+                reqPkg.headerBfr.set(new Header("X-Forwarded-Host", hhdr.getValue()));
+            }
             reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
         }
     }

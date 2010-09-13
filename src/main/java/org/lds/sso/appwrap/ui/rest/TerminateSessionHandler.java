@@ -35,19 +35,21 @@ public class TerminateSessionHandler extends RestHandlerBase {
 
 		String uri = request.getRequestURI();
 		String token = uri.substring(uri.lastIndexOf('/')+1);
-		String cookieHdr = request.getHeader("Cookie");
-		if (cookieHdr != null) {
-			String currToken = cfg.getTokenFromCookie(cookieHdr);
-			
-			if (currToken.equals(token)) {
-				// deleting current session so clear out cookie
-				Cookie c = new Cookie(cfg.getCookieName(), token);
-				c.setPath("/");
-				c.setDomain(cfg.getCookieDomain());
-				c.setMaxAge(0); // clears the cookie
-				c.setVersion(1);
-				response.addCookie(c);
-			}
+		Cookie[] cookies = request.getCookies();
+		for(Cookie ck : cookies) {
+		    if (ck.getName().equals(cfg.getCookieName())) {
+		        String currToken = ck.getValue();
+                if (currToken.equals(token)) {
+                    // deleting current session so clear out cookie
+                    Cookie c = new Cookie(cfg.getCookieName(), token);
+                    c.setPath("/");
+                    c.setDomain(cfg.getCookieDomain());
+                    c.setMaxAge(0); // clears the cookie
+                    c.setVersion(1);
+                    response.addCookie(c);
+                }
+                break;
+		    }
 		}
 		cfg.getSessionManager().terminateSession(token);
 		String referer = request.getHeader("referer");

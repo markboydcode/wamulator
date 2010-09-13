@@ -8,6 +8,8 @@
 /mvn.sh -text
 /pom.xml -text svneol=unset#text/plain
 /run-all-unit-tests.xml -text svneol=unset#text/plain
+/sample-output.txt -text svneol=unset#text/plain
+/sample-output2.txt -text svneol=unset#text/plain
 /ses.dtd -text svneol=unset#text/plain
 /sim.bat -text
 /sim.sh -text
@@ -95,6 +97,7 @@ src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSessionHandler.java -text svn
 src/main/java/org/lds/sso/appwrap/ui/rest/TrafficRecordingHandler.java -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
+src/main/resources/config-samples/ldsorg.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/ml-client-lib-tests.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/mlAuth.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/ngiwb1-cal-data.json -text
