@@ -23,27 +23,27 @@ import org.testng.annotations.Test;
  * Tests the Oracle Entitlements Server version 1 rest interface written by the
  * church allowing all technologies to use REST to evaluate authoriation
  * questions.
- * 
+ *
  * @author boydmr
- * 
+ *
  */
 public class RestHttpTest {
 
     private Service service = null;
     private String cookieName = "the-cookie-name";
     Config cfg = null;
-    
+
     @BeforeClass
     public void setUpSimulator() throws Exception {
         System.out.println("setting up simulator");
         cfg = Config.getInstance();
 
-        System.setProperty("is-cdol-syntax", 
-                "<OR>\r\n" + 
-                "<HasPosition id='1'/>\r\n" + 
-                "<HasPosition id='4'/>\r\n" + 
-                "<HasPosition id='52'/>\r\n" + 
-                "<HasPosition id='57'/>\r\n" + 
+        System.setProperty("is-cdol-syntax",
+                "<OR>\r\n" +
+                "<HasPosition id='1'/>\r\n" +
+                "<HasPosition id='4'/>\r\n" +
+                "<HasPosition id='52'/>\r\n" +
+                "<HasPosition id='57'/>\r\n" +
                 "</OR>");
 
         StringBuffer config = new StringBuffer("string:")
@@ -59,7 +59,7 @@ public class RestHttpTest {
         .append("   <entitlements>")
         .append("    <allow action='WAVE,SHOVE,PUSH' urn='/some/resource' condition='{{is-cdol}}'/>")
         .append("    <allow action='SMILE,GET,DROP' urn='/some/resource'  condition='{{is-cdol}}'/>")
-        .append("    <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>") 
+        .append("    <allow action='GET' urn='/leader/focus' condition='{{is-cdol}}'/>")
         .append("   </entitlements>")
         .append("  </by-site>")
         .append(" </sso-traffic>")
@@ -72,18 +72,18 @@ public class RestHttpTest {
         .append(" </users>")
         .append("</config>");
 
-        service = new Service(config.toString());
+        service = Service.getService(config.toString());
         service.start();
 }
-    
+
     @AfterClass
     public void cleanUpSimulator() throws Exception {
-        System.out.println("tearing down simulator on admin-rest port: " 
+        System.out.println("tearing down simulator on admin-rest port: "
                 + cfg.getConsolePort() + " and http-proxy port: " + cfg.getProxyPort());
         service.stop();
         service = null;
     }
-    
+
     @Test
     public void test_GetCookieName() throws Exception {
         getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
@@ -94,14 +94,14 @@ public class RestHttpTest {
         HttpMethod method = new GetMethod(endpoint);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        
+
         Assert.assertEquals(status, 200);
         String content = method.getResponseBodyAsString();
         Assert.assertNotNull(content);
         Assert.assertEquals(content, cookieName);
     }
-	
-	
+
+
     @Test
     public void test_AreTokensValid_multiple() throws Exception {
         // craft request for AreTokensValid
@@ -128,11 +128,11 @@ public class RestHttpTest {
         boolean token_1 = false;
         boolean token_2 = false;
         boolean token_3 = false;
-        
+
             boolean done = false;
             while(!done) {
                 String line = br.readLine();
-                
+
                 if (line == null) {
                     done = true;
                     break;
@@ -159,12 +159,12 @@ public class RestHttpTest {
     public void test_AreTokensValid_single() throws Exception {
         String restEndpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
         String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/auth/ui/authenticate?username=user1";
-        
+
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(endpoint);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        
+
         Header ck = method.getResponseHeader("set-cookie");
         Assert.assertNotNull(ck, "auth should have succeeded and set-cookie set for user1");
         String[] tokens = ck.getValue().split("=");
@@ -172,7 +172,7 @@ public class RestHttpTest {
         String cookieParms = tokens[1];
         String[] parms = cookieParms.split(";");
         String usrToken1 = parms[0];
-        
+
         // next craft request for AreTokensValid
         PostMethod post = new PostMethod(restEndpoint);
         post.addParameter("token.cnt", "1");
@@ -187,7 +187,7 @@ public class RestHttpTest {
 
         boolean token_1 = false;
         String line = br.readLine();
-        Assert.assertTrue(line != null, "should be a line in response");        
+        Assert.assertTrue(line != null, "should be a line in response");
         tokens = line.split("=");
         Assert.assertEquals(tokens[0], "token.1");
         Assert.assertEquals(tokens[1], "true");
@@ -281,7 +281,7 @@ public class RestHttpTest {
         post.addParameter("res.3","/another/resource");
         post.addParameter("act.3","DELETE");
     }
-    
+
     @Test
     public void test_ArePermitted_ExpiredToken() throws Exception {
         // craft request for AreTokensValid
@@ -302,11 +302,11 @@ public class RestHttpTest {
         boolean res_3 = false;
         boolean res_4 = false;
         boolean res_5 = false;
-        
+
             boolean done = false;
             while(!done) {
                 String line = br.readLine();
-                
+
                 if (line == null) {
                     done = true;
                     break;
@@ -342,7 +342,7 @@ public class RestHttpTest {
         String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         // first initiate session so that we have valid token
         String usrToken =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
-        
+
         // craft request for AreTokensValid
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", usrToken);
@@ -358,11 +358,11 @@ public class RestHttpTest {
         boolean res_1 = false;
         boolean res_2 = false;
         boolean res_3 = false;
-        
+
         boolean done = false;
         while(!done) {
             String line = br.readLine();
-                
+
             if (line == null) {
                 done = true;
                 break;
@@ -389,7 +389,7 @@ public class RestHttpTest {
     public void test_ArePermitted_ValidTokenBishopEntitlement() throws Exception {
         // first initiate session so that we have valid token
         String ngiwb1 =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
-        
+
         // craft request for AreTokensValid
         String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         PostMethod post = new PostMethod(endpoint);
@@ -406,11 +406,11 @@ public class RestHttpTest {
         BufferedReader br = new BufferedReader(sr);
 
         boolean res_1 = false;
-        
+
         boolean done = false;
         while(!done) {
             String line = br.readLine();
-                
+
             if (line == null) {
                 done = true;
                 break;

@@ -26,14 +26,14 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class PolicyServiceUrlTest {
-	
+
 	private Service service = null;
     private Thread server = null;
     private int sitePort = -1;
-    
+
 	@BeforeClass
 	public void setupSim() throws Exception {
-	    
+
         final ServerSocket sss = new ServerSocket();
         sss.setReuseAddress(true);
         sss.bind(null);
@@ -53,7 +53,7 @@ public class PolicyServiceUrlTest {
                         /*
                         int endOfReq = -1;
                         for(int i =0; i<bytesRead-8; i++) {
-                            // looks for dual cr lf empty line indicator 
+                            // looks for dual cr lf empty line indicator
                             if (bytes[i] == 13 && bytes[i+1] == 10 && bytes[i+2] == 13 && bytes[i+3] == 10) {
                                 endOfReq = i+1; // includes last line-terminating cr lf
                             }
@@ -70,45 +70,45 @@ public class PolicyServiceUrlTest {
                             req = "INT";
                             output =
                                 "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
-                                + "Set-Cookie: lds-policy=ngia-27;Domain=.lds.org;Path=/leader-forms/dir" + RequestHandler.CRLF; 
+                                + "Set-Cookie: lds-policy=ngia-27;Domain=.lds.org;Path=/leader-forms/dir" + RequestHandler.CRLF;
                         }
                         else if (input.contains("/testQS/")) {
                             req = "QS";
                             output =
                                 "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
-                                + "Set-Cookie: lds-policy=\"ngia path=/leader-forms/dir\";Domain=.lds.org;Path=/leader-forms/dir" + RequestHandler.CRLF; 
+                                + "Set-Cookie: lds-policy=\"ngia path=/leader-forms/dir\";Domain=.lds.org;Path=/leader-forms/dir" + RequestHandler.CRLF;
                         }
                         else if (input.contains("/testMC/")) {
                             req = "MC";
                             output =
                                 "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
-                                + "Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/" + RequestHandler.CRLF; 
+                                + "Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/" + RequestHandler.CRLF;
                         }
                         else if (input.contains("/testMH/")) {
                             req = "MH";
                             output =
                                 "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
                                 + "Set-Cookie: JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/leader-forms" + RequestHandler.CRLF
-                                + "Set-Cookie: lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/" + RequestHandler.CRLF; 
+                                + "Set-Cookie: lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/" + RequestHandler.CRLF;
                         }
                         else if (input.contains("/testRR/")) {
                             req = "RR";
-                            output = 
+                            output =
                                 "HTTP/1.1 302 Not Modified"
                                 + RequestHandler.CRLF
-                                + "Location: http://labs-local.lds.org/test-of-redirect/some/resource.html" + RequestHandler.CRLF; 
+                                + "Location: http://labs-local.lds.org/test-of-redirect/some/resource.html" + RequestHandler.CRLF;
                         }
                         else if (input.contains("/testNRR/")) {
                             req = "NRR";
-                            output = 
+                            output =
                                 "HTTP/1.1 302 Not Modified"
                                 + RequestHandler.CRLF
-                                + "Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html" + RequestHandler.CRLF; 
+                                + "Location: http://labs-local.lds.org/not-rewritten-path/some/resource.html" + RequestHandler.CRLF;
                         }
-                        else if (input.contains("/service-url/") ||  
-                        		input.contains("/service-url2/") ||  
+                        else if (input.contains("/service-url/") ||
+                        		input.contains("/service-url2/") ||
                         		input.contains("/gateway-url/")) {
-                            req = (input.contains("/service-url/") ? "URL" 
+                            req = (input.contains("/service-url/") ? "URL"
                                     : (input.contains("/service-url2/") ? "URL2"
                                             : "GTURL"));
                             String sUrl = null;
@@ -121,27 +121,27 @@ public class PolicyServiceUrlTest {
                                 int eIdx = input.indexOf(RequestHandler.CRLF, cIdx+1);
                                 sUrl = input.substring(cIdx + 1, eIdx).trim();
                             }
-                            output = 
+                            output =
                                 "HTTP/1.1 302 Not Modified"
                                 + RequestHandler.CRLF
-                                + "X-SURL-RECEIVED: " + sUrl + RequestHandler.CRLF; 
+                                + "X-SURL-RECEIVED: " + sUrl + RequestHandler.CRLF;
                         }
                         else {
                             req = "UNEXPECTED";
-                            output = 
-                                "HTTP/1.1 500 Internal Server Error" + RequestHandler.CRLF; 
+                            output =
+                                "HTTP/1.1 500 Internal Server Error" + RequestHandler.CRLF;
                         }
-                        
+
                         System.out.println();
                         System.out.println(req + " request detected: ");
                         System.out.println("--- received ---");
                         System.out.println(input);
                         System.out.println("--- returned ---");
                         System.out.println(output);
-                        
+
                         // add header/body termination indicators.
                         output += RequestHandler.CRLF + RequestHandler.CRLF;
-                        
+
                         out.write(output.getBytes());
                         out.flush();
                         is.close();
@@ -151,7 +151,7 @@ public class PolicyServiceUrlTest {
                     System.out.println("Server test thread incurred Exception, exiting.");
                     e.printStackTrace();
                 }
-                        
+
                 if (sss != null && sss.isBound()) {
                     try {
                         sss.close();
@@ -165,7 +165,7 @@ public class PolicyServiceUrlTest {
         server.start();
 
         // now set up the shim
-        service = new Service("string:"
+        service = Service.getService("string:"
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='auto' proxy-port='auto' rest-version='" + RestVersion.CD_OESv1.getVersionId() + "'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
@@ -185,7 +185,7 @@ public class PolicyServiceUrlTest {
             + "   <unenforced cpath='/testNRR/*'/>"
             + "   <cctx-mapping cctx='/service-url/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/service-url/*'/>"
             + "   <unenforced cpath='/service-url/*'/>"
-            + "   <cctx-mapping cctx='/gateway-url/*' thost='127.0.0.1' tport='" + serverPort 
+            + "   <cctx-mapping cctx='/gateway-url/*' thost='127.0.0.1' tport='" + serverPort
             + "'   tpath='/gateway-url/*' policy-service-url-gateway='10.10.10.10:1010'/>"
             + "   <unenforced cpath='/gateway-url/*'/>"
             + "  </by-site>"
@@ -194,7 +194,7 @@ public class PolicyServiceUrlTest {
             + "   <unenforced cpath='/service-url2/*'/>"
             + "  </by-site>"
             + "  <rewrite-cookie from-path='/leader-forms' to-path='/mls/cr' />"
-            + "  <rewrite-redirect " 
+            + "  <rewrite-redirect "
             + "    from='http://labs-local.lds.org/test-of-redirect' "
             + "    to='http://labs-local.lds.org/test' />"
             + " </sso-traffic>"
@@ -203,13 +203,13 @@ public class PolicyServiceUrlTest {
         sitePort = Config.getInstance().getProxyPort();
         System.out.println(); // to leave a gap before test output.
 	}
-	
+
 	@AfterClass
 	public void teardownSim() throws Exception {
         service.stop();
         server.interrupt();
 	}
-    
+
     @Test
     public void test_service_url_gateway() throws Exception {
         // now connect and verify we get the correct policy-service-url injected
@@ -225,13 +225,13 @@ public class PolicyServiceUrlTest {
         // sanity check that we got there
         Assert.assertEquals(status, 302, "should have returned http 302 not modified");
         Header url = method.getResponseHeader("X-SURL-RECEIVED");
-        
+
         System.out.println(UserHeaderNames.SERVICE_URL + " Received: " + url.getValue());
         String expected = "http://10.10.10.10:1010" + RestVersion.CD_OESv1.getRestUrlBase() + "labs-local.lds.org/";
-        Assert.assertTrue(url.getValue().equals(expected), 
+        Assert.assertTrue(url.getValue().equals(expected),
                 "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");
     }
-    
+
     @Test
     public void test_service_url_1() throws Exception {
         // now connect and verify we get the correct policy-service-url injected
@@ -247,10 +247,10 @@ public class PolicyServiceUrlTest {
         // sanity check that we got there
         Assert.assertEquals(status, 302, "should have returned http 302 not modified");
         Header url = method.getResponseHeader("X-SURL-RECEIVED");
-        
+
         System.out.println(UserHeaderNames.SERVICE_URL + " Received: " + url.getValue());
         String expected = "http://labs-local.lds.org:" + Config.getInstance().getConsolePort() + RestVersion.CD_OESv1.getRestUrlBase() + "labs-local.lds.org/";
-        Assert.assertTrue(url.getValue().equals(expected), 
+        Assert.assertTrue(url.getValue().equals(expected),
                 "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");
     }
 
@@ -269,10 +269,10 @@ public class PolicyServiceUrlTest {
         // sanity check that we got there
         Assert.assertEquals(status, 302, "should have returned http 302 not modified");
         Header url = method.getResponseHeader("X-SURL-RECEIVED");
-        
+
         System.out.println(UserHeaderNames.SERVICE_URL + " Received: " + url.getValue());
         String expected = "http://other.lds.org:" + Config.getInstance().getConsolePort() + RestVersion.CD_OESv1.getRestUrlBase() + "other.lds.org/";
-        Assert.assertTrue(url.getValue().equals(expected), 
+        Assert.assertTrue(url.getValue().equals(expected),
         "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");
     }
 
@@ -291,11 +291,11 @@ public class PolicyServiceUrlTest {
         // sanity check that we got there
         Assert.assertEquals(status, 304, "should have returned http 304 not modified");
         Header cookie = method.getResponseHeader("set-cookie");
-        
+
         System.out.println("Cookie Received: " + cookie.getValue());
-        Assert.assertTrue(cookie.getValue().contains("Path=/mls/cr/dir"), 
+        Assert.assertTrue(cookie.getValue().contains("Path=/mls/cr/dir"),
         "should have been rewritten from '/leader-forms/dir' to '/mls/cr/dir' ");
-        Assert.assertTrue(cookie.getValue().contains("ngia path=/leader-forms/dir"), 
+        Assert.assertTrue(cookie.getValue().contains("ngia path=/leader-forms/dir"),
         "should NOT have rewritten quote string portion");
     }
 
@@ -314,15 +314,15 @@ public class PolicyServiceUrlTest {
         // sanity check that we got there
         Assert.assertEquals(status, 304, "should have returned http 304 not modified");
         Header cookie = method.getResponseHeader("set-cookie");
-        
+
         System.out.println("Cookie Received: " + cookie.getValue());
         Assert.assertEquals(cookie.getValue(),"lds-policy=ngia-27;Domain=.lds.org;Path=/mls/cr/dir");
     }
-    
+
     @Test
     public void test_cookie_rewrite_WMultipleCookies_SingleHeader() throws Exception {
         // now start server to spool back a redirect
-        
+
         // now connect and verify we get redirected correctly
         String uri = "http://labs-local.lds.org:" + sitePort + "/testMC/a/path";
         HttpClient client = new HttpClient();
@@ -336,16 +336,16 @@ public class PolicyServiceUrlTest {
         // sanity check that we got there
         Assert.assertEquals(status, 304, "should have returned http 304 not modified");
         Header cookie = method.getResponseHeader("set-cookie");
-        
+
         System.out.println("Cookie Received: " + cookie.getValue());
-        Assert.assertEquals(cookie.getValue(), "JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/", 
+        Assert.assertEquals(cookie.getValue(), "JSESSIONID=D34E5E47A0227DBCFDE5E66884E4C445; Path=/mls/cr,lds-preferred-lang=eng; Expires=Wed, 02-Jun-2010 16:43:27 GMT Path=/",
         "should have been rewritten from '/leader-forms' to '/mls/cr' ");
     }
 
     @Test
     public void test_cookie_rewrite_WMultipleCookies_MultipleHeaders() throws Exception {
         // now start server to spool back a redirect
-        
+
         // now connect and verify we get redirected correctly
         String uri = "http://labs-local.lds.org:" + sitePort + "/testMH/a/path";
         HttpClient client = new HttpClient();
@@ -373,7 +373,7 @@ public class PolicyServiceUrlTest {
 
     @Test
     public void testDoesRewriteRedirect() throws Exception {
-        
+
         // now lets connect and verify we get redirected correctly
         String uri = "http://labs-local.lds.org:" + sitePort + "/testRR/a/path";
         HttpClient client = new HttpClient();
@@ -389,10 +389,10 @@ public class PolicyServiceUrlTest {
         System.out.println("Location Received: " + loc.getValue());
         Assert.assertEquals(loc.getValue(), "http://labs-local.lds.org/test/some/resource.html", "should have been rewritten from '.../test-of-redirect...' to '.../test...' ");
     }
-    
+
     @Test
     public void testDoesNotRewriteRedirect() throws Exception {
-        
+
         // now lets connect and verify we get redirected correctly
         String uri = "http://labs-local.lds.org:" + sitePort + "/testNRR/a/path";
         HttpClient client = new HttpClient();

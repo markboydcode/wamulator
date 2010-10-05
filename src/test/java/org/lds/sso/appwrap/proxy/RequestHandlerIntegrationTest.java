@@ -33,12 +33,12 @@ public class RequestHandlerIntegrationTest {
     private int sitePort;
     private int serverPort;
     private int freePort;
-    
+
     @BeforeClass
     public void setUpSimulator () throws Exception {
         // first clear any config residue
         Config cfg = new Config();
-        
+
         // find a free port on which nothing is listening
         ServerSocket portFinder = new ServerSocket();
         portFinder.setReuseAddress(true);
@@ -79,12 +79,12 @@ public class RequestHandlerIntegrationTest {
                         String output = null;
                         String answer = null;
                         String hostHdrLC = HttpPackage.HOST_HDR.toLowerCase();
-                        
+
                         if (input.contains("/preserve/host/test/")) {
                             answer = HttpPackage.HOST_HDR + " ???";
                             String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
                             int idx = inputLC.indexOf(hstHdrKey);
-                            
+
                             if (idx != -1) {
                                 int cr = input.indexOf(RequestHandler.CRLF, idx+1);
                                 String val = null;
@@ -103,7 +103,7 @@ public class RequestHandlerIntegrationTest {
                             answer = HttpPackage.HOST_HDR + " ???";
                             String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
                             int idx = inputLC.indexOf(hstHdrKey);
-                            
+
                             if (idx != -1) {
                                 int cr = input.indexOf(RequestHandler.CRLF, idx+1);
                                 String val = null;
@@ -122,7 +122,7 @@ public class RequestHandlerIntegrationTest {
                             answer = HttpPackage.HOST_HDR + " ???";
                             String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
                             int idx = inputLC.indexOf(hstHdrKey);
-                            
+
                             if (idx != -1) {
                                 int cr = input.indexOf(RequestHandler.CRLF, idx+1);
                                 String val = null;
@@ -156,10 +156,10 @@ public class RequestHandlerIntegrationTest {
                             output = RequestHandler.CRLF + RequestHandler.CRLF + RequestHandler.CRLF;
                             req = "bad-gateway-empty-message";
                         }
-                        else { 
+                        else {
                             req = "UNEXPECTED";
-                            output = 
-                                "HTTP/1.1 500 Internal Server Error due to unexpected request" + RequestHandler.CRLF; 
+                            output =
+                                "HTTP/1.1 500 Internal Server Error due to unexpected request" + RequestHandler.CRLF;
                         }
 
                         if (output == null) {
@@ -167,20 +167,20 @@ public class RequestHandlerIntegrationTest {
                                 "HTTP/1.1 200 OK" + RequestHandler.CRLF
                                 + "Content-type: text/plain" + RequestHandler.CRLF
                                 + "Content-length: " + answer.toCharArray().length + RequestHandler.CRLF
-                                + RequestHandler.CRLF 
-                                + answer; 
+                                + RequestHandler.CRLF
+                                + answer;
                         }
-                        
+
                         System.out.println();
                         System.out.println("*** test server detected request: " + req);
                         System.out.println("--- received ---");
                         System.out.println(input);
                         System.out.println("--- returned ---");
                         System.out.println(output);
-                        
+
                         // add header/body termination indicators.
                         output += RequestHandler.CRLF + RequestHandler.CRLF;
-                        
+
                         out.write(output.getBytes());
                         out.flush();
                         is.close();
@@ -190,7 +190,7 @@ public class RequestHandlerIntegrationTest {
                     System.out.println("Server test thread incurred Exception, exiting.");
                     e.printStackTrace();
                 }
-                        
+
                 if (sss != null && sss.isBound()) {
                     try {
                         sss.close();
@@ -204,7 +204,7 @@ public class RequestHandlerIntegrationTest {
         server.start();
 
         // now set up the shim to verify empty headers are injected
-        service = new Service("string:"
+        service = Service.getService("string:"
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
@@ -226,7 +226,7 @@ public class RequestHandlerIntegrationTest {
             + "   <allow action='GET' cpath='/restricted/*'/>"
             + "   <cctx-mapping cctx='/conditional/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/conditional/*' preserve-host='false'/>"
             + "   <allow action='GET' cpath='/conditional/*' condition='{{app-bbb}}'/>"
-            
+
             + "   <cctx-mapping cctx='/bad/gateway/test*' thost='127.0.0.1' tport='" + freePort + "' tpath='/bad/gateway/test*'/>"
             + "   <cctx-mapping cctx='/bad/gateway/empty/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/bad/gateway/empty/*'/>"
             + "   <cctx-mapping cctx='/bad/gateway/message*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/bad/gateway/message*'/>"
@@ -251,7 +251,7 @@ public class RequestHandlerIntegrationTest {
 
 
     }
-    
+
     @AfterClass
     public void tearDownSimulator() throws Exception {
         service.stop();
@@ -270,20 +270,20 @@ public class RequestHandlerIntegrationTest {
         fos.write("---Sample Local File Serving 2---".getBytes());
         fos.flush();
         fos.close();
-        
+
         // now serve it up
         String uri = "http://local.lds.org:" + sitePort + "/file/local/relative/sample-output2.txt";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Header type = method.getResponseHeader("content-type");
         Assert.assertEquals(type.getValue(), "text/plain", "type should be text/plain as defined in the mapping");
@@ -304,20 +304,20 @@ public class RequestHandlerIntegrationTest {
         fos.write("---Sample Local File Serving---".getBytes());
         fos.flush();
         fos.close();
-        
+
         // now serve it up
         String uri = "http://local.lds.org:" + sitePort + "/file/local/fixed/any-name-gets-same-content.html";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Header type = method.getResponseHeader("content-type");
         Assert.assertEquals(type.getValue(), "text/plain", "type should be text/plain as defined in the mapping");
@@ -330,16 +330,16 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_fixed_classpath_file_mapping");
         String uri = "http://local.lds.org:" + sitePort + "/file/cp/fixed/any-name-gets-same-content.html";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Header type = method.getResponseHeader("content-type");
         Assert.assertEquals(type.getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
@@ -352,16 +352,16 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_relative_classpath_file_mapping1");
         String uri = "http://local.lds.org:" + sitePort + "/file/cp/relative/RequestHandlerIntegrationTestFile1.txt";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Header type = method.getResponseHeader("content-type");
         Assert.assertEquals(type.getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
@@ -374,16 +374,16 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_relative_classpath_file_mapping2");
         String uri = "http://local.lds.org:" + sitePort + "/file/cp/relative/RequestHandlerIntegrationTestFile2.txt";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Header type = method.getResponseHeader("content-type");
         Assert.assertEquals(type.getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
@@ -396,13 +396,13 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_relative_classpath_file_mapping3");
         String uri = "http://local.lds.org:" + sitePort + "/file/cp/relative/non-existent-file.txt";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
         Assert.assertEquals(status, 404, "should have returned http 404 OK");
@@ -414,56 +414,56 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_preserve_host ");
         String uri = "http://local.lds.org:" + sitePort + "/preserve/host/test/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Assert.assertEquals(response, HttpPackage.HOST_HDR + " local.lds.org:" + sitePort);
         method.releaseConnection();
     }
-    
+
     @Test
     public void test_dont_preserve_host() throws HttpException, IOException {
         System.out.println("----> test_dont_preserve_host ");
         String uri = "http://local.lds.org:" + sitePort + "/no-preserve/host/test/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Assert.assertEquals(response, HttpPackage.HOST_HDR + " 127.0.0.1:" + serverPort);
         method.releaseConnection();
     }
-    
+
     @Test
     public void test_host_header() throws HttpException, IOException {
         System.out.println("----> test_host_header ");
         String uri = "http://local.lds.org:" + sitePort + "/host-header/test/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Assert.assertEquals(response, HttpPackage.HOST_HDR + " host.lds.org:2445");
         method.releaseConnection();
@@ -474,43 +474,43 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_req_with_no_cctx_match");
         String uri = "http://local.lds.org:" + sitePort + "/unconfigured/path/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim(); 
+        String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 501, "should have returned http 501 Not Implemented");
         method.releaseConnection();
     }
-   
+
     @Test
     public void test_restricted_with_no_session_redir_2_signin() throws HttpException, IOException {
         System.out.println("----> test_restricted_with_no_session_redir_2_signin");
         String uri = "http://local.lds.org:" + sitePort + "/restricted/path/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
-        
+
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
         Assert.assertEquals(status, 302, "should have returned http 302");
         Header loc = method.getResponseHeader("location");
-        
+
         Assert.assertEquals(loc.getValue(), Config.getInstance().getLoginPage()
-                + "?goto=" + URLEncoder.encode(uri, "utf-8"), 
+                + "?goto=" + URLEncoder.encode(uri, "utf-8"),
                 "redirect location was wrong.");
         method.releaseConnection();
     }
-   
+
     @Test
     public void test_restricted_with_good_session_proxied() throws HttpException, IOException {
         Config cfg = Config.getInstance();
@@ -518,11 +518,11 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_restricted_with_good_session_proxied");
         String uri = "http://local.lds.org:" + sitePort + "/restricted/test/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
         method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
         method.setFollowRedirects(false);
@@ -532,7 +532,7 @@ public class RequestHandlerIntegrationTest {
         Assert.assertEquals(content, "You made it", "wrong content returned.");
         method.releaseConnection();
     }
-   
+
     @Test
     public void test_restricted_with_good_session_not_cond_403() throws HttpException, IOException {
         Config cfg = Config.getInstance();
@@ -540,11 +540,11 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_restricted_with_good_session_not_cond_403");
         String uri = "http://local.lds.org:" + sitePort + "/conditional/test/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
         method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
         method.setFollowRedirects(false);
@@ -556,18 +556,18 @@ public class RequestHandlerIntegrationTest {
         Assert.assertEquals(status, 403, "should have returned http 403");
         method.releaseConnection();
     }
-   
+
     @Test
     public void test_forward_proxying_blocked() throws HttpException, IOException {
         Config cfg = Config.getInstance();
         System.out.println("----> test_forward_proxying_blocked");
         String uri = "http://unmapped-host.lds.org:" + sitePort + "/any/path/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
@@ -578,18 +578,18 @@ public class RequestHandlerIntegrationTest {
         Assert.assertEquals(status, 501, "should have returned http 501");
         method.releaseConnection();
     }
-    
+
     @Test
     public void test_bad_gateway_when_connecting() throws HttpException, IOException {
         Config cfg = Config.getInstance();
         System.out.println("----> test_bad_gateway_when_connecting");
         String uri = "http://local.lds.org:" + sitePort + "/bad/gateway/test";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
@@ -600,18 +600,18 @@ public class RequestHandlerIntegrationTest {
         Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
         method.releaseConnection();
     }
-    
+
     @Test
     public void test_bad_gateway_empty_message() throws HttpException, IOException {
         Config cfg = Config.getInstance();
         System.out.println("----> test_bad_gateway_empty_message");
         String uri = "http://local.lds.org:" + sitePort + "/bad/gateway/empty/msg";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
@@ -622,18 +622,18 @@ public class RequestHandlerIntegrationTest {
         Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
         method.releaseConnection();
     }
-   
+
     @Test
     public void test_bad_gateway_message() throws HttpException, IOException {
         Config cfg = Config.getInstance();
         System.out.println("----> test_bad_gateway_message");
         String uri = "http://local.lds.org:" + sitePort + "/bad/gateway/message";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
@@ -644,7 +644,7 @@ public class RequestHandlerIntegrationTest {
         Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
         method.releaseConnection();
     }
-   
+
     @Test
     public void test_restricted_with_expired_session_redir_2_signin() throws HttpException, IOException {
         Config cfg = Config.getInstance();
@@ -653,24 +653,24 @@ public class RequestHandlerIntegrationTest {
         System.out.println("----> test_restricted_with_expired_session_redir_2_signin");
         String uri = "http://local.lds.org:" + sitePort + "/restricted/path/";
         HttpClient client = new HttpClient();
-        
+
         HostConfiguration hcfg = new HostConfiguration();
         hcfg.setProxy("127.0.0.1", sitePort);
         client.setHostConfiguration(hcfg);
-        
+
         HttpMethod method = new GetMethod(uri);
         method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
         Assert.assertEquals(status, 302, "should have returned http 302");
         Header loc = method.getResponseHeader("location");
-        
+
         Assert.assertEquals(loc.getValue(), Config.getInstance().getLoginPage()
-                + "?goto=" + URLEncoder.encode(uri, "utf-8"), 
+                + "?goto=" + URLEncoder.encode(uri, "utf-8"),
                 "redirect location was wrong.");
         method.releaseConnection();
     }
-   
+
     @Test
     public void test_empty_bad_request() throws HttpException, IOException {
         System.out.println("----> test_empty_bad_request");
@@ -686,7 +686,7 @@ public class RequestHandlerIntegrationTest {
 
     @Test
     public void test_client_request_timeout() throws HttpException, IOException {
-        Config cfg = Config.getInstance(); 
+        Config cfg = Config.getInstance();
         int old = cfg.getProxyInboundSoTimeout();
         try {
         System.out.println("----> test_client_request_timeout");

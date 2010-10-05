@@ -1,7 +1,6 @@
 package org.lds.sso.appwrap;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStream;
@@ -9,11 +8,13 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
+import org.lds.sso.appwrap.bootstrap.Command;
 import org.lds.sso.appwrap.proxy.ProxyListener;
 import org.lds.sso.appwrap.rest.AuthNHandler;
 import org.lds.sso.appwrap.rest.AuthZHandler;
@@ -24,7 +25,6 @@ import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
-import org.lds.sso.appwrap.rest.oes.v1.HandlerHitLogger;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
 import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
 import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
@@ -32,6 +32,7 @@ import org.lds.sso.appwrap.ui.rest.LogFileHandler;
 import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
 import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
+import org.lds.sso.appwrap.ui.rest.TerminateSimulatorHandler;
 import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
@@ -44,21 +45,24 @@ import org.mortbay.jetty.webapp.WebAppContext;
  * via a main method and programmatic execution via constructor
  * {@link #Service(String)} and the {@link #start()} and {@link #stop()}
  * methods.
- * 
+ *
  * @author Mark Boyd
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
- * 
+ *
  */
 public class Service {
 	private static final Logger cLog = Logger.getLogger(Service.class);
-	
+
 	public static final String CLASSPATH_PREFIX = "classpath:";
 	private static final String STRING_PREFIX = "string:";
-	
+
 	//protected ProxyListener proxy = null;
 	protected Thread proxyRunner = null;
 	protected Server server = null;
 	private String cfgSource;
+	private final String cfgPath;
+
+	private static final Map<String, Service> instances = new HashMap<String, Service>();
 
 	/**
 	 * Class for conveying from {@link Service#getCfgReader(String)} the config
@@ -82,20 +86,64 @@ public class Service {
             return src;
         }
 	}
-	
+
+	private static Thread shutdownHook = new Thread( "Wamulator shutdown" )
+    {
+        public void run()
+        {
+            if ( instances != null && instances.size() > 0 ) {
+            	for ( Map.Entry<String, Service> entry : instances.entrySet() ) {
+	            	try {
+	            		entry.getValue().stop();
+	            	} catch ( Exception e ) {
+	            		cLog.error("Shutdown failed for service with cfgPath: " + entry.getKey(), e);
+	            	}
+            	}
+            }
+        }
+    };
+
+    static
+    {
+        shutdownHook.setContextClassLoader( null );
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
+
+	public static final Service invoke(Command command) {
+		command.execute();
+		return getService(command.getCfgPath());
+	}
+
+	public static final Service getService(String cfgPath) {
+		if ( instances.get(cfgPath) == null ) {
+			synchronized(Service.class) {
+				if ( instances.get(cfgPath) == null ) {
+					try {
+						instances.put(cfgPath, new Service(cfgPath));
+					} catch ( Exception e ) {
+						throw new RuntimeException(e);
+					}
+				}
+			}
+		}
+		return instances.get(cfgPath);
+	}
+
 	/**
 	 * Loads the service's configuration and sets up the jetty handling chain
 	 * so that we are ready to start listening for requests.
 	 * @param cfgPath
 	 * @throws Exception
 	 */
-	public Service(String cfgPath) throws Exception {
+	private Service(String cfgPath) throws Exception {
+		this.cfgPath = cfgPath;
+
         SourceAndReader sar = getCfgReader(cfgPath);
         Reader cfgrd = sar.getReader();
         cfgSource = sar.getSrc();
-        
+
 		XmlConfigLoader2.load(cfgrd, "from " + cfgPath);
-		
+
 		Config cfg = Config.getInstance();
 
 		// assumes that this directory contains .html and .jsp files
@@ -112,7 +160,7 @@ public class Service {
 	        server = new Server(cfg.getConsolePort());
 		}
 		final String CONTEXTPATH = "/admin";
-		
+
 		// for localhost:port/admin/index.html and whatever else is in the webapp directory
 		final URL warUrl = Service.class.getClassLoader().getResource(WEBAPPDIR);
 		final String warUrlString = warUrl.toExternalForm();
@@ -139,7 +187,7 @@ public class Service {
 			handlers.addHandler(new IsTokenValidHandler(base + "isTokenValid"));
 			handlers.addHandler(new LogoutHandler(base + "logout"));
 			break;
-			
+
 		case CD_OESv1 :
 		    TrafficManager tmgr = cfg.getTrafficManager();
 		    /*
@@ -176,7 +224,7 @@ public class Service {
 	            }
 		    }
 		}
-		
+
 		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));
         handlers.addHandler(new SelectUserHandler("/auth/ui/authenticate"));
 		handlers.addHandler(new SelectSessionHandler("/admin/action/set-session"));
@@ -184,8 +232,9 @@ public class Service {
         handlers.addHandler(new TrafficRecordingHandler("/admin/action/recording/"));
         handlers.addHandler(new ImAliveHandler(ImAliveHandler.IS_ALIVE_PATH));
         handlers.addHandler(new LogFileHandler("/admin/logs"));
-		
-		// placing webapp handler after other handlers allows for actions to be placed 
+        handlers.addHandler(new TerminateSimulatorHandler("/admin/shutdown"));
+
+		// placing webapp handler after other handlers allows for actions to be placed
 		// under same root context '/admin'.
 		handlers.addHandler(cfgInjector);
 		server.setHandler(handlers);
@@ -196,29 +245,29 @@ public class Service {
 	 * for file, classpath, and String based resources. To indicate a classpath
 	 * based resource prefix the path with "classpath:". To indicate a String
 	 * based resource prefix the xml configuration String with "string:".
-	 * 
+	 *
 	 * Examples:
-	 * 
+	 *
 	 * "/some/current/directory/relative/path.txt"
 	 * "classpath:/file/relative/to/classpath.txt"
 	 * "string:<config console-port='88' proxy-port='45'>..."
-	 * 
+	 *
 	 * @param path
 	 * @return
 	 */
 	public static SourceAndReader getCfgReader(String path) {
     	Reader reader = null;
-    	
+
     	if (path.toLowerCase().startsWith(STRING_PREFIX)) {
     		path = path.substring(STRING_PREFIX.length());
     		reader = new StringReader(path);
     		return new SourceAndReader("Str" + path.hashCode(), reader);
-    	}    	
+    	}
     	else if (path.toLowerCase().startsWith(CLASSPATH_PREFIX)) {
     		path = path.substring(CLASSPATH_PREFIX.length());
     		ClassLoader cldr = Service.class.getClassLoader();
     		InputStream source = cldr.getResourceAsStream(path);
-    		
+
     		if (source == null) {
         		throw new IllegalArgumentException("Unable to find resource '"
         			+ path + "' on classpath.");
@@ -227,7 +276,7 @@ public class Service {
             return new SourceAndReader("Cp" + path.hashCode(), reader);
     	}
     	else {
-    		// assume file path 
+    		// assume file path
     		File file = new File(path);
     		if (! file.exists()) {
         		throw new IllegalArgumentException("Unable to find file '"
@@ -246,10 +295,14 @@ public class Service {
 			}
     	}
 	}
-	
+
+	public String getCfgPath() {
+		return cfgPath;
+	}
+
 	/**
 	 * Starts the embedded jetty server and http proxy.
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	public void start() throws Exception {
@@ -257,7 +310,7 @@ public class Service {
 		cfg.setShimStateCookieId(cfgSource);
 
 		server.start();
-		
+
 		Connector[] connectors = server.getConnectors();
 		cfg.setConsolePort(connectors[0].getLocalPort());
 
@@ -266,7 +319,7 @@ public class Service {
 		proxyRunner.setDaemon(true);
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
-		
+
 		while (server.isStarted() == false && proxy.isRunning() == false) {
             Thread.sleep(1000);
 		}
@@ -282,40 +335,10 @@ public class Service {
         dualLog("---------------------" + line.toString());
         dualLog("Simulator Console and Proxy are ready");
 	}
-	
-	/**
-	 * Logs to both console and log file.
-	 * 
-	 * @param msg
-	 */
-	private void dualLog(String msg) {
-        System.out.println(msg);
-        cLog.info(msg);
-	}
-	
-	/**
-	 * Stops the embedded jetty web server and http proxy.
-	 * 
-	 * @throws Exception
-	 */
-	public void stop() throws Exception {
-		if (server.isStarted()) {
-			server.stop();
-		}
-		proxyRunner.interrupt();
-	}
 
-	/**
-	 * Java application entry point.
-	 * 
-	 * @param args
-	 * @throws Exception
-	 */
-	public static void main(String[] args) throws Exception {
-	    verifyArgs(args);
-		Service svc = new Service(args[0]);
-		svc.start();
-		
+	public void startAndBlock() throws Exception {
+		start();
+
 		while (true) {
 			try {
 				Thread.sleep(10000);
@@ -324,6 +347,51 @@ public class Service {
 				throw new RuntimeException("Service incurred exception. Exiting.", e);
 			}
 		}
+	}
+
+	/**
+	 * Logs to both console and log file.
+	 *
+	 * @param msg
+	 */
+	private void dualLog(String msg) {
+        System.out.println(msg);
+        cLog.info(msg);
+	}
+
+	/**
+	 * Stops the embedded jetty web server and http proxy.
+	 *
+	 * @throws Exception
+	 */
+	public void stop() throws Exception {
+		if (server.isStarted()) {
+			server.stop();
+		}
+		if ( proxyRunner != null ) {
+			proxyRunner.interrupt();
+		}
+	}
+
+	public boolean isStarted() {
+		return server.isStarted() && proxyRunner.isAlive();
+	}
+
+	public boolean isStopped() {
+		return server.isStopped() && !proxyRunner.isAlive();
+	}
+
+	/**
+	 * Java application entry point.
+	 *
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception {
+	    verifyArgs(args);
+
+	    Command command = Command.parseCommand(args);
+	    command.execute();
 	}
 
 	/**

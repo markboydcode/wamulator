@@ -38,6 +38,11 @@ src/main/java/org/lds/sso/appwrap/User.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/UserManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/VirtualSite.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/XmlConfigLoader2.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/bootstrap/BlockingServiceCommand.java -text
+src/main/java/org/lds/sso/appwrap/bootstrap/Command.java -text
+src/main/java/org/lds/sso/appwrap/bootstrap/RemoteStartServiceCommand.java -text
+src/main/java/org/lds/sso/appwrap/bootstrap/RemoteStopServiceCommand.java -text
+src/main/java/org/lds/sso/appwrap/bootstrap/StartingServiceCommand.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContext.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/GlobalHeaderNames.java -text svneol=unset#text/plain
@@ -61,6 +66,10 @@ src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/OR.java -text svne
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Position.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/SyntaxBase.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Unit.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/exception/ServerFailureException.java -text
+src/main/java/org/lds/sso/appwrap/exception/ServerStartFailureException.java -text
+src/main/java/org/lds/sso/appwrap/exception/ServerStopFailureException.java -text
+src/main/java/org/lds/sso/appwrap/exception/ServerTimeoutFailureException.java -text
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/Header.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HeaderBuffer.java -text svneol=unset#text/plain
@@ -80,6 +89,7 @@ src/main/java/org/lds/sso/appwrap/rest/IsTokenValidHandler.java -text svneol=uns
 src/main/java/org/lds/sso/appwrap/rest/LogoutHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/RestHandlerBase.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/RestVersion.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/rest/URLConnectionTemplate.java -text
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/ArePermitted.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/AreTokensValid.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/GetOesV1CookieName.java -text svneol=unset#text/plain
@@ -94,6 +104,7 @@ src/main/java/org/lds/sso/appwrap/ui/rest/LogFileHandler.java -text
 src/main/java/org/lds/sso/appwrap/ui/rest/SelectSessionHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/SelectUserHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSessionHandler.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSimulatorHandler.java -text
 src/main/java/org/lds/sso/appwrap/ui/rest/TrafficRecordingHandler.java -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
@@ -132,6 +143,7 @@ src/test/java/org/lds/sso/appwrap/ConvertToNoLdsAccountIdTest.java -text svneol=
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerOESConformanceTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/NvPairTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/RemoteStartStopTest.java -text
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SiteMatcherTest.java -text svneol=unset#text/plain
