@@ -28,11 +28,13 @@ if [ "$?" = "0" ]; then
 	        #ssh bldmgr@10.100.100.140 "/home/bldmgr/bin/check_oclib.sh $PORTFOLIO $PROD $VERSION"            # Check for folders on OCLIB
                 ssh bldmgr@10.100.100.140 mkdir "/opt/LDSDev/html/artifacts/$PORTFOLIO/$PARENTPROD/$PROD/$VERSION"
 
+
 	        echo "[INFO] *******************************************************************"
 	        echo "[INFO] Copying jar files to artifacts library."
 	        echo "[INFO] *******************************************************************"
 	        echo "[INFO]"
-                scp target/SSO*.jar bldmgr@10.100.100.140:/opt/LDSDev/html/artifacts/$PORTFOLIO/$PARENTPROD/$PROD/$VERSION/
+                #scp target/SSO*.jar bldmgr@10.100.100.140:/opt/LDSDev/html/artifacts/$PORTFOLIO/$PARENTPROD/$PROD/$VERSION/
+                scp target/appwrap-$VERSION-uber.jar bldmgr@10.100.100.140:/opt/LDSDev/html/artifacts/$PORTFOLIO/$PARENTPROD/$PROD/$VERSION/SSOSim-$VERSION.jar
 else
 	        echo "[ERROR] *******************************************************************"
 	        echo "[ERROR] Error building application."

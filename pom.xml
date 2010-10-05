@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.25</version>
+    <version>5.26</version>
   
     <name>SSO Environment Simulator</name>
   
@@ -67,7 +67,7 @@
                                     <mainClass>org.lds.sso.appwrap.Service</mainClass>
                                 </manifest>
                             </archive>
-                            <finalName>SSOSim</finalName>
+                            <attach>true</attach>
                         </configuration>
                     </execution>
                 </executions>
