@@ -23,10 +23,10 @@ public class RemoteStartServiceCommand extends Command {
 		try {
 			String[] args = { "java", "-cp", classpath, Service.class.getName(), "start", cfgPath };
 			Process p = Runtime.getRuntime().exec(args);
-			StreamOutputter err = new StreamOutputter("STDERR", p.getErrorStream());
+			/*StreamOutputter err = new StreamOutputter("STDERR", p.getErrorStream());
 			StreamOutputter out = new StreamOutputter("STDOUT", p.getInputStream());
 			new Thread(err).start();
-			new Thread(out).start();
+			new Thread(out).start();*/
 		} catch ( IOException e ) {
 			throw new ServerFailureException(e);
 		}
