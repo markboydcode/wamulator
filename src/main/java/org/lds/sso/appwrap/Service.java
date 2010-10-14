@@ -179,7 +179,7 @@ public class Service {
         String base = rv.getRestUrlBase();
 		switch(rv) {
 		case OPENSSO :
-            System.out.println("Starting single " + rv.getVersionId() + " rest service at: " + base);
+            System.out.println("Configuring single " + rv.getVersionId() + " rest service at: " + base);
             cfg.getTrafficRecorder().addRestInst(base, base, base + "getCookieNameForToken", "n/a");
 			handlers.addHandler(new GetCookieName(base + "getCookieNameForToken"));
 			handlers.addHandler(new AuthNHandler(base + "authenticate"));
@@ -198,7 +198,7 @@ public class Service {
 		     * startup files.
 		     */
 		    if (tmgr.getSites().size() == 0) {
-		        System.out.println("Starting single " + rv.getVersionId() + " rest service at: " + base);
+		        System.out.println("Configuring single " + rv.getVersionId() + " rest service at: " + base);
 		        String baseResolved = base.replace("{version}", "1.0");
 	            cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + "getCookieName", "''");
                 handlers.addHandler(new GetOesV1CookieName(baseResolved + "getCookieName"));
@@ -215,7 +215,7 @@ public class Service {
 	                String serviceBase = baseResolved + site.getHost() + "/";
 	                if( ! hosts.contains(site.getHost())) {
 	                    hosts.add(site.getHost());
-	                    System.out.println("Starting " + rv.getVersionId() + " rest service for site " + site.getHost() + " at: " + serviceBase);
+	                    System.out.println("Configuring " + rv.getVersionId() + " rest service for site " + site.getHost() + " at: " + serviceBase);
 	                    cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + site.getHost() + "/getCookieName", site.getHost());
 	                    handlers.addHandler(new GetOesV1CookieName(serviceBase + "getCookieName"));
 	                    handlers.addHandler(new AreTokensValid(serviceBase + "areTokensValid"));

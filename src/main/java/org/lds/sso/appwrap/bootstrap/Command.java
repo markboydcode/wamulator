@@ -30,7 +30,7 @@ public abstract class Command {
 
 	public static final Command parseCommand(String... args) {
 		String cfgPath = null;
-		Integer timeout = 5000;
+		Integer timeout = 40000;
 		String command = "start";
 		if ( args.length > 2 ) {
 			cfgPath = args[2];

@@ -26,7 +26,9 @@ public class RemoteStartServiceCommand extends Command {
 	}
 
 	protected void executeJavaCommand(String... args) throws IOException {
-		Process p = Runtime.getRuntime().exec(args, new String[] { "JRE_HOME=" + System.getProperty("java.home") });
+		String javaHomeDirectory = System.getProperty("java.home");
+		args[0] = javaHomeDirectory + "/bin/" + args[0];
+		Process p = Runtime.getRuntime().exec(args);
 	}
 
 	@Override
