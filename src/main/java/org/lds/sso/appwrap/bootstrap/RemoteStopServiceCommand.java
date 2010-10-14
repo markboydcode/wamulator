@@ -2,6 +2,7 @@ package org.lds.sso.appwrap.bootstrap;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -19,13 +20,15 @@ public class RemoteStopServiceCommand extends Command {
 	@Override
 	void doExecute(Service service, Config cfg) {
 		try {
-			URL url = new URL("http://localhost:" + cfg.getConsolePort() + "/admin/shutdown");
-			URLConnection connection = url.openConnection();
-			connection.connect();
+			URLConnection connection = openConnection(getShutdownURL(cfg.getConsolePort()));
 			int responseCode = ((HttpURLConnection)connection).getResponseCode();
 		} catch ( IOException e ) {
 			// ignore... it just means we've stopped
 		}
+	}
+
+	protected URL getShutdownURL(int port) throws MalformedURLException {
+		return new URL("http://localhost:" + port + "/admin/shutdown");
 	}
 
 	@Override

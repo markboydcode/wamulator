@@ -143,7 +143,6 @@ src/test/java/org/lds/sso/appwrap/ConvertToNoLdsAccountIdTest.java -text svneol=
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerOESConformanceTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/EntitlementsManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/NvPairTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/RemoteStartStopTest.java -text
 src/test/java/org/lds/sso/appwrap/RepeatRequestCacheTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SessionManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/SiteMatcherTest.java -text svneol=unset#text/plain
@@ -152,6 +151,7 @@ src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/pla
 src/test/java/org/lds/sso/appwrap/TestUtilities.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/UserManagerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/bootstrap/RemoteStartStopTest.java -text
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContextTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/GlobalHeaderNamesTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEngineTest.java -text svneol=unset#text/plain

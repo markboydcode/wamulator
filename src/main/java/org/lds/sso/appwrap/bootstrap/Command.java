@@ -2,6 +2,7 @@ package org.lds.sso.appwrap.bootstrap;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -73,8 +74,7 @@ public abstract class Command {
 		do {
 			cLog.info("Trying to hit: " + getCheckUrl(cfg.getConsolePort()));
 			try {
-				URLConnection connection = new URL(getCheckUrl(cfg.getConsolePort())).openConnection();
-				connection.connect();
+				URLConnection connection = openConnection(getCheckUrl(cfg.getConsolePort()));
 				responseCode = ((HttpURLConnection)connection).getResponseCode();
 			} catch ( IOException e ) {
 				responseCode = 404;
@@ -92,10 +92,23 @@ public abstract class Command {
 		}
 	}
 
-	String getCheckUrl(int port) {
-		return "http://localhost:" + port + "/is-alive";
+	protected URLConnection openConnection(URL url) throws IOException {
+		try {
+			URLConnection connection = url.openConnection();
+			connection.connect();
+			return connection;
+		} catch ( IOException inTheTowel ) {
+			throw inTheTowel;
+		}
 	}
 
+	protected URL getCheckUrl(int port) throws IOException {
+		try {
+			return new URL("http://localhost:" + port + "/is-alive");
+		} catch ( IOException inTheTowel ) {
+			throw inTheTowel;
+		}
+	}
 	abstract int getTargetResponseCode();
 	abstract void doExecute(Service service, Config cfg);
 }
