@@ -25,4 +25,9 @@ public class StartingServiceCommand extends Command {
 	int getTargetResponseCode() {
 		return 200;
 	}
+	
+	@Override
+	String getCommandName() {
+		return "Start Service";
+	}
 }

@@ -56,9 +56,10 @@ public class RemoteStartStopTest {
 		EasyMock.expect(connection.getResponseCode()).andReturn(404).andReturn(200).andReturn(404);
 		EasyMock.expect(start.openConnection(start.getCheckUrl(8088))).andReturn(connection).times(2);
 		EasyMock.expect(slowStart.openConnection(slowStart.getCheckUrl(8088))).andReturn(connection).times(1);
-		start.executeJavaCommand((String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
+		start.executeJavaCommand((String[])EasyMock.anyObject());
 		EasyMock.expectLastCall();
-		slowStart.executeJavaCommand((String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
+		slowStart.executeJavaCommand((String[])EasyMock.anyObject());
+		EasyMock.expectLastCall();
 		EasyMock.replay(start, slowStart, connection);
 
 		Service.invoke(start);

@@ -35,4 +35,9 @@ public class RemoteStopServiceCommand extends Command {
 	int getTargetResponseCode() {
 		return 404;
 	}
+	
+	@Override
+	String getCommandName() {
+		return "Remote Stop Service";
+	}
 }
