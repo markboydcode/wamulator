@@ -26,7 +26,8 @@ public class IsTokenValidHandler extends RestHandlerBase {
 		super(pathPrefix);
 	}
 
-	@Override
+	@SuppressWarnings("deprecation")
+    @Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException {
 		/**
@@ -37,6 +38,8 @@ public class IsTokenValidHandler extends RestHandlerBase {
 
 		String rawT = request.getParameter("token");
 		String token = URLDecoder.decode(rawT, "utf-8");
+		// for this old opensso interface to maintain compatibility I'll scan
+		// all cookie domains and return true if the token is valid in any of them.
 		boolean is = cfg.getSessionManager().isValidToken(token);
 
 		if (cfg.getTrafficRecorder().isRecordingRest()) {

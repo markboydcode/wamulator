@@ -6,6 +6,7 @@ import java.io.StringReader;
 import java.net.ServerSocket;
 
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.StatusLine;
@@ -36,6 +37,7 @@ public class RestHttpTest {
     @BeforeClass
     public void setUpSimulator() throws Exception {
         System.out.println("setting up simulator");
+        new Config(); // purge out all other configuration and start fresh.
         cfg = Config.getInstance();
 
         System.setProperty("is-cdol-syntax",
@@ -86,11 +88,14 @@ public class RestHttpTest {
 
     @Test
     public void test_GetCookieName() throws Exception {
-        getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
+        getCookieName("http://local.lds.org:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
     }
 
     public void getCookieName(String endpoint) throws Exception {
         HttpClient client = new HttpClient();
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", cfg.getConsolePort());
+        client.setHostConfiguration(hcfg);
         HttpMethod method = new GetMethod(endpoint);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
@@ -105,11 +110,11 @@ public class RestHttpTest {
     @Test
     public void test_AreTokensValid_multiple() throws Exception {
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
+        String endpoint = "http://local.lds.org:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
 
         // initiate two sessions so that we have valid tokens
-        String usrToken1 = TestUtilities.authenticateUser("user1", cfg.getConsolePort());
-        String usrToken2 =  TestUtilities.authenticateUser("user2", cfg.getConsolePort());
+        String usrToken1 = TestUtilities.authenticateUser("user1", cfg.getConsolePort(), "local.lds.org");
+        String usrToken2 =  TestUtilities.authenticateUser("user2", cfg.getConsolePort(), "local.lds.org");
 
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token.cnt", "3");
@@ -118,6 +123,9 @@ public class RestHttpTest {
         post.addParameter("token.3", usrToken2);
         post.setFollowRedirects(false);
         HttpClient client = new HttpClient();
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", cfg.getConsolePort());
+        client.setHostConfiguration(hcfg);
         int status = client.executeMethod(post);
         Assert.assertEquals(status, 200);
         String resp = post.getResponseBodyAsString();
@@ -157,10 +165,13 @@ public class RestHttpTest {
 
     @Test
     public void test_AreTokensValid_single() throws Exception {
-        String restEndpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/auth/ui/authenticate?username=user1";
+        String restEndpoint = "http://local.lds.org:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/areTokensValid";
+        String endpoint = "http://local.lds.org:" + cfg.getConsolePort() + "/auth/ui/authenticate?username=user1";
 
         HttpClient client = new HttpClient();
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", cfg.getConsolePort());
+        client.setHostConfiguration(hcfg);
         HttpMethod method = new GetMethod(endpoint);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
@@ -339,9 +350,9 @@ public class RestHttpTest {
 
     @Test
     public void arePermitted_ValidToken() throws Exception {
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
+        String endpoint = "http://local.lds.org:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         // first initiate session so that we have valid token
-        String usrToken =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
+        String usrToken =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
 
         // craft request for AreTokensValid
         PostMethod post = new PostMethod(endpoint);
@@ -349,6 +360,9 @@ public class RestHttpTest {
         injectSampleResourcesForAreValidCall(post);
         post.setFollowRedirects(false);
         HttpClient client = new HttpClient();
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", cfg.getConsolePort());
+        client.setHostConfiguration(hcfg);
         int status = client.executeMethod(post);
         Assert.assertEquals(status, 200);
         String resp = post.getResponseBodyAsString();
@@ -388,10 +402,10 @@ public class RestHttpTest {
     @Test
     public void test_ArePermitted_ValidTokenBishopEntitlement() throws Exception {
         // first initiate session so that we have valid token
-        String ngiwb1 =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
+        String ngiwb1 =  TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
 
         // craft request for AreTokensValid
-        String endpoint = "http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
+        String endpoint = "http://local.lds.org:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/arePermitted";
         PostMethod post = new PostMethod(endpoint);
         post.addParameter("token", ngiwb1);
         post.addParameter("res.cnt", "3");
@@ -399,6 +413,9 @@ public class RestHttpTest {
         post.addParameter("act.1","GET");
         post.setFollowRedirects(false);
         HttpClient client = new HttpClient();
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", cfg.getConsolePort());
+        client.setHostConfiguration(hcfg);
         int status = client.executeMethod(post);
         Assert.assertEquals(status, 200);
         String resp = post.getResponseBodyAsString();

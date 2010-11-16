@@ -570,20 +570,18 @@ public class XmlConfigLoader2 {
 
             path.add(name);
             if (path.matches("/config")) {
-                String cpVal = atts.getValue("console-port");
+                String cpVal = atts.getValue(Config.CONSOLE_PORT_ALIAS);
                 if ("auto".equals(cpVal)) {
                     cfg.setConsolePort(0);
                 } else {
-                    cfg
-                            .setConsolePort(getIntegerAtt("console-port", path,
-                                    atts));
+                    cfg.setConsolePort(getIntegerAtt(Config.CONSOLE_PORT_ALIAS, path, atts));
                 }
 
-                String ppVal = atts.getValue("proxy-port");
+                String ppVal = atts.getValue(Config.PROXY_PORT_ALIAS);
                 if ("auto".equals(ppVal)) {
                     cfg.setProxyPort(0);
                 } else {
-                    cfg.setProxyPort(getIntegerAtt("proxy-port", path, atts));
+                    cfg.setProxyPort(getIntegerAtt(Config.PROXY_PORT_ALIAS, path, atts));
                 }
 
                 String allow_proxying = atts.getValue("allow-non-sso-traffic");
@@ -614,7 +612,10 @@ public class XmlConfigLoader2 {
                         path, atts));
             } else if (path.matches("/config/sso-cookie")) {
                 cfg.setCookieName(getStringAtt("name", path, atts));
-                cfg.setCookieDomain(getStringAtt("domain", path, atts));
+                cfg.getSessionManager().setMasterCookieDomain(getStringAtt("domain", path, atts));
+                cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
+            } else if (path.matches("/config/sso-cookie/cdsso")) {
+                cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
             } else if (path.matches("/config/console-recording")) {
                 boolean sso = Boolean.parseBoolean(getStringAtt("sso", path,
                         atts));
@@ -636,10 +637,20 @@ public class XmlConfigLoader2 {
                 cfg.setDebugLoggingEnabled(debugLoggingEnabled);
             } else if (path.matches("/config/sso-sign-in-url")) {
                 String signin = atts.getValue("value");
-                if (signin != null && signin.contains("{{console-port}}")
-                        && cfg.getConsolePort() == 0 && // auto binding
-                                                        // specified
-                        !aliases.containsKey("console-port")) {
+                if (signin != null && 
+                    (
+                     (
+                      signin.contains(Config.CONSOLE_PORT_MACRO) && 
+                      cfg.getConsolePort() == 0 && // auto binding
+                      !aliases.containsKey(Config.CONSOLE_PORT_ALIAS)
+                     ) || 
+                     (
+                      signin.contains(Config.PROXY_PORT_MACRO) && 
+                      cfg.getProxyPort() == 0 && // auto binding
+                      !aliases.containsKey(Config.PROXY_PORT_ALIAS)
+                     )
+                    )
+                   ) {
                     cfg.setSignInRequiresResolution();
                     cfg.setSignInPage(signin); // resolve alias after start-up
                 } else {
@@ -739,7 +750,7 @@ public class XmlConfigLoader2 {
                 // check for auto console-port being used and allow tport to
                 // follow if indicated
                 if (cfg.getConsolePort() == 0 && tportS != null
-                        && tportS.equals("{{console-port}}")) {
+                        && tportS.equals(Config.CONSOLE_PORT_MACRO)) {
                     // for letting host choose the port to bind to for the
                     // console
                     // we still want to be able to direct to the console port in
@@ -900,9 +911,22 @@ public class XmlConfigLoader2 {
         public void endElement(String uri, String localName, String name)
                 throws SAXException {
             Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
+            Config cfg = (Config) parsingContextAccessor.get().get(
+                    PARSING_CONFIG);
+
             if (path.matches("/config/conditions/condition")) {
                 parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION,
                         Boolean.FALSE);
+            } else if (path.matches("/config")) {
+                if (cfg.getTrafficManager().getMasterSite() == null){
+                    throw new IllegalStateException("The master cookie domain was set to '"
+                            + cfg.getSessionManager().getMasterCookieDomain() 
+                            + "' but no site was defined that resides in that " 
+                            + "domain. The sign-in page requires that such "
+                            + "a site be defined so that it can be presented "
+                            + "within that site's host and thus be able to set the cookie " 
+                            + "for that domain.");
+                }
             }
             path.remove(name);
         }

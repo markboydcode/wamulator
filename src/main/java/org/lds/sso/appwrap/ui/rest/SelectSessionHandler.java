@@ -1,15 +1,15 @@
 package org.lds.sso.appwrap.ui.rest;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.SessionManager;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
-import org.mortbay.jetty.Request;
 
 /**
  * Handles request to start a session for a user by setting a suitable
@@ -20,6 +20,7 @@ import org.mortbay.jetty.Request;
  *
  */
 public class SelectSessionHandler extends RestHandlerBase {
+    private static final Logger cLog = Logger.getLogger(SelectSessionHandler.class);
 
 	public SelectSessionHandler(String pathPrefix) {
 		super(pathPrefix);
@@ -38,12 +39,23 @@ public class SelectSessionHandler extends RestHandlerBase {
 		String token = uri.substring(uri.lastIndexOf('/')+1);
 		Cookie c = new Cookie(cfg.getCookieName(), token);
 		c.setPath("/");
-		c.setDomain(cfg.getCookieDomain());
-		c.setMaxAge(-1);
-		c.setVersion(1);
-		response.addCookie(c);
-		cfg.getSessionManager().markSessionAsActive(token);
-		
+		SessionManager smgr = cfg.getSessionManager();
+		String cookieDomain = null;
+		try {
+		    cookieDomain = smgr.getCookieDomainForHost(request.getServerName());
+		}
+		catch( IllegalArgumentException e) {
+            cLog.info("Unable to select session since can't find configured "
+                + "cookie domain for host '" + request.getServerName() + "'");
+		}
+		if (cookieDomain != null) {
+	        smgr.generateSessionToken(token, cookieDomain);
+	        c.setDomain(cookieDomain);
+	        c.setMaxAge(-1);
+	        c.setVersion(1);
+	        response.addCookie(c);
+	        smgr.markSessionAsActiveInDomain(token, cookieDomain);
+		}
 		String referer = request.getHeader("referer");
 		response.sendRedirect(referer);
 	}

@@ -11,9 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
-import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -23,27 +21,22 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.Cookie;
-
 import org.apache.log4j.Level;
-
 import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.AllowedUri;
 import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.EndPoint;
 import org.lds.sso.appwrap.LocalFileEndPoint;
 import org.lds.sso.appwrap.Service;
+import org.lds.sso.appwrap.SessionManager;
 import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
-import org.lds.sso.appwrap.rest.RestVersion;
-import org.mortbay.log.Log;
+import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 
 public class RequestHandler implements Runnable {
     private static final Logger cLog = Logger.getLogger(RequestHandler.class);
@@ -179,6 +172,17 @@ public class RequestHandler implements Runnable {
                 reqPkg.scheme = "http";
             }
             determineTrafficType(reqPkg);
+            // see if we are being redirected for cross domain single sign-in
+            if (reqPkg.query != null && reqPkg.query.contains(SignInPageCdssoHandler.CDSSO_PARAM_NAME + "=")) {
+                byte[] bytes = get302CdssoRedirect(reqPkg, "CDSSO");
+                SessionManager smgr = cfg.getSessionManager();
+                smgr.addSessionViaCdsso(reqPkg.tokenForCdsso, reqPkg.host);
+                String username = cfg.getUsernameFromToken(reqPkg.tokenForCdsso);
+                user = cfg.getUserManager().getUser(username);
+                sendProxyResponse(302, "CDSSO", bytes, reqPkg, clientIn, clientOut, user, startTime,
+                        log, true);
+                return;
+            }
             if (reqPkg.redirectLoopDetected || responseThreasholdExceeded(reqPkg)) {
                 /*
                  * TODO Need to add to this. If the response from a server is
@@ -309,7 +313,7 @@ public class RequestHandler implements Runnable {
                 // inject user headers if session is had regarless of enforced/unenforced
                 if (user != null) {
                     user.injectUserHeaders(reqPkg.headerBfr);
-                    cfg.getSessionManager().markSessionAsActive(token);
+                    cfg.getSessionManager().markSessionAsActive(token, reqPkg.host);
                 }
                 // now strip empty headers and inject policy-service-url
                 if  (endpoint instanceof AppEndPoint) {
@@ -589,12 +593,14 @@ public class RequestHandler implements Runnable {
             String token, String httpMsg) throws IOException {
         String origReq = "http://" + reqPkg.hostHdr + reqPkg.requestLine.getUri();
 
-        cfg.getSessionManager().terminateSession(token);
+        String domain = cfg.getSessionManager().getCookieDomainForHost(reqPkg.host);
+        cfg.getSessionManager().terminateSession(token, domain);
         // deleting current session so clear out cookie
         String resp = REDIRECT_CLEARING_SESSION_TEMPLATE;
         resp = resp.replace("{{http-resp-code}}", "302");
         resp = resp.replace("{{http-resp-msg}}", httpMsg);
         resp = resp.replace("{{location}}", origReq);
+        resp = resp.replace("{{cookie-domain}}", domain);
         return resp.getBytes();
     }
 
@@ -856,8 +862,18 @@ public class RequestHandler implements Runnable {
         + "Content-Type: text/html; charset=utf-8" + CRLF
         + "Server: " + Config.serverName() + CRLF
         + "Set-Cookie: " + Config.getInstance().getCookieName() 
-        +     "=cookie-monster;Version=1;Path=/;Domain="
-        +     Config.getInstance().getCookieDomain() + ";Max-Age=0" + CRLF
+        +     "=cookie-monster;Version=1;Path=/;Domain={{cookie-domain}}"
+        +     ";Max-Age=0" + CRLF
+        + "Location: {{location}}" + CRLF
+        + CRLF // empty line terminating headers
+        + CRLF; // empty line terminating body
+    
+    private static final String REDIRECT_TO_SET_CDSSO_SESSION_TEMPLATE = 
+        "HTTP/1.1 {{http-resp-code}} {{http-resp-msg}}" + CRLF
+        + "Content-Type: text/html; charset=utf-8" + CRLF
+        + "Server: " + Config.serverName() + CRLF
+        + "Set-Cookie: " + Config.getInstance().getCookieName() 
+        +     "={{token}};Version=1;Path=/;Domain={{cookie-domain}};Discard" + CRLF
         + "Location: {{location}}" + CRLF
         + CRLF // empty line terminating headers
         + CRLF; // empty line terminating body
@@ -873,6 +889,64 @@ public class RequestHandler implements Runnable {
         resp = resp.replace("{{http-resp-msg}}", httpReasonMsg);
         resp = resp.replace("{{location}}", location);
         
+        return resp.getBytes();
+    }
+
+    /**
+     * Returns bytes for an http payload response to set a cookie in the domain
+     * in which the request was received while redirecting back to the same
+     * requested resource but without the cdsso query parameter used to trigger
+     * setting the cookie in this domain. Other query parameters are preserved.
+     *  
+     * @param pkg
+     * @param httpReasonMsg
+     * @return
+     * @throws IOException
+     */
+    private byte[] get302CdssoRedirect(HttpPackage pkg, String httpReasonMsg) throws IOException {
+        String q = pkg.query;
+        String cleaned = null;
+        String token = null;
+        
+        if (q.startsWith(SignInPageCdssoHandler.CDSSO_PARAM_NAME)) { 
+            int idxE = q.indexOf("&");
+            
+            if (idxE == -1) { // only param
+                cleaned = null; 
+                token = q.substring((SignInPageCdssoHandler.CDSSO_PARAM_NAME + "=").length());
+            }
+            else { // first param
+                cleaned = q.substring(idxE+1);
+                token = q.substring((SignInPageCdssoHandler.CDSSO_PARAM_NAME + "=").length(), idxE);
+            }
+        }
+        else {
+            // idx > 0 otherwise we wouldn't be calling this method
+            int idx = q.indexOf(SignInPageCdssoHandler.CDSSO_PARAM_NAME);
+            int idxE = q.indexOf("&",idx);
+            
+            if (idxE == -1) { // last param
+                cleaned = q.substring(0, idx);
+                token = q.substring(idx + (SignInPageCdssoHandler.CDSSO_PARAM_NAME + "=").length());
+            }
+            else { // middle param
+                cleaned = q.substring(0, idx) + q.substring(idxE+1);
+                token = q.substring(idx + (SignInPageCdssoHandler.CDSSO_PARAM_NAME + "=").length(), idxE);
+            }
+        }
+        String location = "http://" + pkg.hostHdr + pkg.path;
+        if (cleaned != null) {
+            location += "?" + cleaned;
+        }
+        SessionManager smgr = cfg.getSessionManager();
+        String ckDomain = smgr.getCookieDomainForHost(pkg.host);
+        String resp = REDIRECT_TO_SET_CDSSO_SESSION_TEMPLATE;
+        resp = resp.replace("{{http-resp-code}}", "302");
+        resp = resp.replace("{{http-resp-msg}}", httpReasonMsg);
+        resp = resp.replace("{{location}}", location);
+        resp = resp.replace("{{token}}", token);
+        resp = resp.replace("{{cookie-domain}}", ckDomain);
+        pkg.tokenForCdsso = token;
         return resp.getBytes();
     }
 

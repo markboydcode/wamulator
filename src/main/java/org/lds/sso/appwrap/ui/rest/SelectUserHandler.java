@@ -1,12 +1,11 @@
 package org.lds.sso.appwrap.ui.rest;
 
-import java.io.IOException; 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -20,11 +19,11 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.SessionManager;
+import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.UserManager;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
-import org.lds.sso.appwrap.User;
 
 /**
  * Handles request to start a session for a user by setting a suitable
@@ -187,13 +186,26 @@ public class SelectUserHandler extends RestHandlerBase {
         }
 
         if (authenticated) {
-            String token = cfg.getSessionManager().generateSessionToken(usr);
-            Cookie c = new Cookie(cfg.getCookieName(), token);
-            c.setPath("/");
-            c.setDomain(cfg.getCookieDomain());
-            c.setMaxAge(-1);
-            c.setVersion(1);
-            response.addCookie(c);
+            SessionManager smgr = cfg.getSessionManager();
+            String cookieDomain = null;
+            try {
+                cookieDomain = smgr.getCookieDomainForHost(request.getServerName());
+            }
+            catch( IllegalArgumentException e) {
+                cLog.info("Unable to set cookie for to complete authentication since can't find configured "
+                    + "cookie domain for host '" + request.getServerName() + "'");
+            }
+            if (cookieDomain != null) {
+                String token = smgr.generateSessionToken(usr, request.getServerName());
+                Cookie c = new Cookie(cfg.getCookieName(), token);
+                c.setPath("/");
+                if (! cookieDomain.equals("localhost")) {
+                    c.setDomain(cookieDomain);
+                }
+                c.setMaxAge(-1);
+                c.setVersion(1);
+                response.addCookie(c);
+            }
         }
 
         // handle case without referer and without goto by sending page w/cookie

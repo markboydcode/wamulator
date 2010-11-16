@@ -27,7 +27,8 @@ public class AuthZHandler extends RestHandlerBase {
 		super(pathPrefix);
 	}
 
-	@Override
+	@SuppressWarnings("deprecation")
+    @Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException {
 		/**

@@ -39,10 +39,11 @@ public class LogoutHandler extends RestHandlerBase {
 		 * should first look for the token from the cookie and if found use
 		 * that token. If not found then fallback on the subjectid parameter.
 		 */
-		String rawT = request.getParameter("subjectid");
+        String rawT = request.getParameter("subjectid");
+        String domain = request.getParameter("domain");
 		if (rawT != null && ! "".equals(rawT) ) {
 			String token = URLDecoder.decode(rawT, "utf-8");
-			cfg.getSessionManager().terminateSession(token);
+			cfg.getSessionManager().terminateSession(token, domain);
 
 			if (cfg.getTrafficRecorder().isRecordingRest()) {
 				Map<String, String> props = new HashMap<String, String>();

@@ -48,11 +48,19 @@
 </table>
 </td>
 </tr></table>
-<div style="font-size: medium; font-weight: bold; padding: 6 3 3 3px">Active Sessions:</div><table>
-<c:forEach items="${requestScope.config.sessionManager.sessions}" var="session">
-<tr><td>${session.token}</td>
+<div style="font-size: medium; font-weight: bold; padding: 6 3 3 3px">Active Sessions:</div>
+<table>
+<c:forEach items="${requestScope.config.sessionManager.cookieDomains}" var="domain">
+<tr><td>&nbsp;</td>
+<td>Domain:</td>
+<td> <strong>${domain}</strong></td>
+</tr>
+<c:forEach items="${jsputils.domainSessions[domain]}" var="session">
+<tr><td><c:if test="${session.token == requestScope.currentToken}"><IMG src="pointer.png"/></c:if></td>
+<td><a href="/admin/action/set-session/${session.token}">${session.token}</a></td>
 <td>${session.remainingSeconds}</td>
-<td><a href="/admin/action/terminate-session/${session.token}"><img src="delete.gif" style="border: none"/></a></td></tr>
+</tr>
+</c:forEach>
 </c:forEach>
 </table>
 </div>

@@ -35,6 +35,8 @@ public class TrafficManager {
 
 	private Map<String,String> cookieRewrites = new HashMap<String,String>();
 
+    private SiteMatcher masterSite;
+
 	public TrafficManager(LogicalSyntaxEvaluationEngine eng,
             Map<String, String> syntax) {
 	    this.cEngine = eng;
@@ -113,9 +115,30 @@ public class TrafficManager {
 		return false;
 	}
 
+	/**
+	 * Adds a SiteMatcher which is the embodiment of each by-site directive in 
+	 * the configuration file.
+	 * 
+	 * @param m
+	 */
 	public void addMatcher(SiteMatcher m) {
 		this.matchers.add(m);
 		this.lastMatcherAdded = m;
+		if (this.masterSite == null) {
+		   String host = m.getHost();
+		   SessionManager smgr = Config.getInstance().getSessionManager();
+		   String md = smgr.getMasterCookieDomain();
+		   if (md.startsWith(".")) {
+		       if (host.endsWith(md)) {
+		           masterSite = m;
+		       }
+		   }
+		   else {
+		       if (host.equals(md)) {
+                   masterSite = m;
+		       }
+		   }
+		}
 	}
 
 	public SiteMatcher getLastMatcherAdded() {
@@ -203,5 +226,16 @@ public class TrafficManager {
 
     public List<SiteMatcher> getSites() {
         return this.matchers;
+    }
+    
+    /**
+     * Gets the site that is configured to be the master site meaning the site
+     * in which the single authority authentication sign-in page is exposed and
+     * to which other cdsso domains will redirect for authentication.
+     * 
+     * @return
+     */
+    public SiteMatcher getMasterSite() {
+        return this.masterSite;
     }
 }

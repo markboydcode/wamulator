@@ -29,7 +29,8 @@ public class AuthNHandler extends RestHandlerBase {
 		super(pathPrefix);
 	}
 
-	@Override
+	@SuppressWarnings("deprecation")
+    @Override
 	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException {
 		/**
 		 * Get the current config instance each time which allows for reconfig

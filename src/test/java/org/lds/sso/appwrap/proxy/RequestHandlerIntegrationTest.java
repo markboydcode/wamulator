@@ -48,7 +48,7 @@ public class RequestHandlerIntegrationTest {
             portFinder.close();
         }
         catch(Exception e) {
-            System.out.println("Exception releasing server port " + e);
+            System.out.println("Exception releasing server port for use as bad gateway test " + e);
         }
 
         // get socket of server emulator
@@ -208,6 +208,7 @@ public class RequestHandlerIntegrationTest {
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
+            + " <sso-cookie name='lds-policy' domain='.lds.org' />"
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <conditions>"
             + "  <condition alias='app-bbb'>"
@@ -514,7 +515,7 @@ public class RequestHandlerIntegrationTest {
     @Test
     public void test_restricted_with_good_session_proxied() throws HttpException, IOException {
         Config cfg = Config.getInstance();
-        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
+        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
         System.out.println("----> test_restricted_with_good_session_proxied");
         String uri = "http://local.lds.org:" + sitePort + "/restricted/test/";
         HttpClient client = new HttpClient();
@@ -536,7 +537,7 @@ public class RequestHandlerIntegrationTest {
     @Test
     public void test_restricted_with_good_session_not_cond_403() throws HttpException, IOException {
         Config cfg = Config.getInstance();
-        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
+        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
         System.out.println("----> test_restricted_with_good_session_not_cond_403");
         String uri = "http://local.lds.org:" + sitePort + "/conditional/test/";
         HttpClient client = new HttpClient();
@@ -648,7 +649,7 @@ public class RequestHandlerIntegrationTest {
     @Test
     public void test_restricted_with_expired_session_redir_2_signin() throws HttpException, IOException {
         Config cfg = Config.getInstance();
-        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
+        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
         cfg.getSessionManager().terminateAllSessions();
         System.out.println("----> test_restricted_with_expired_session_redir_2_signin");
         String uri = "http://local.lds.org:" + sitePort + "/restricted/path/";

@@ -16,11 +16,23 @@ public class Session {
 	public long scheduledMillisTimeoutPoint = 0;
 	public String token = null;
 	
+	private Session() {
+	    // for copying only
+	}
+	
 	Session(SessionManager mgr, String username) {
 		
 		this.mgr = mgr;
 		this.token = username + "-" + this.hashCode();
 		markAsActive();
+	}
+	
+	public Session copy() {
+	    Session s = new Session();
+	    s.mgr = this.mgr;
+	    s.token = this.token;
+	    s.markAsActive();
+	    return s;
 	}
 	
 	public String getToken() {

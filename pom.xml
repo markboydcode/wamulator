@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.28</version>
+    <version>5.29</version>
 
     <name>SSO Environment Simulator</name>
 
@@ -165,8 +165,7 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>5.8</version>
-            <classifier>jdk15</classifier>
+            <version>5.14</version>
             <scope>test</scope>
         </dependency>
 

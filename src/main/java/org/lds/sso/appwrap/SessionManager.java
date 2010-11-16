@@ -1,10 +1,10 @@
 package org.lds.sso.appwrap;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
@@ -14,13 +14,27 @@ import org.apache.log4j.Logger;
 public class SessionManager {
 	private static final Logger cLog = Logger.getLogger(SessionManager.class);
 
-	protected Map<String, Session> sessions = new TreeMap<String, Session>();
+	/**
+	 * Map of domain specific session maps.
+	 */
+    protected Map<String, DomainSessionsMapHolder> domainSessions = new TreeMap<String, DomainSessionsMapHolder>();
+    
+    /**
+     * The list of declared cookie domains in documentation order.
+     */
+    protected List<String> cookieDomains = new ArrayList<String>();
 
 	public static final int DEFAULT_INACTIVITY_TIMEOUT_SECONDS = 300;
 
 	private int sessionInactivityTimeoutSeconds = DEFAULT_INACTIVITY_TIMEOUT_SECONDS;
 
 	long sessionInactivityTimeoutMillis = DEFAULT_INACTIVITY_TIMEOUT_SECONDS * 1000;
+
+	/**
+	 * The domain in which the sign-in page will be served and act as the 
+	 * single authentication authority among all configured cookie domains.
+	 */
+    private String masterCookieDomain = Config.DEFAULT_COOKIE_DOMAIN;
 
 	public SessionManager(){
 		startSessionTimeoutSentry();
@@ -38,18 +52,24 @@ public class SessionManager {
 				while (true) {
 					try {
 						synchronized(this) {
-							Map<String, Session> copy = copySessionContainer();
-							for (Iterator<Entry<String, Session>> itr = copy.entrySet().iterator(); itr.hasNext();) {
-								Entry<String, Session> ent = itr.next();
-								Session s = ent.getValue();
-								if (!s.testIsActive()) {
-									itr.remove();
-									if (cLog.isInfoEnabled()) {
-										cLog.info("Session " + s.token + " expired.");
-									}
-								}
-							}
-							sessions = copy;
+                            for (Iterator<Entry<String, DomainSessionsMapHolder>> itr = domainSessions.entrySet().iterator(); itr.hasNext();) {
+                                Entry<String, DomainSessionsMapHolder> ent = itr.next();
+                                DomainSessionsMapHolder holder = ent.getValue();
+                                Map<String, Session> copy = copySessionContainer(ent.getKey());
+                                
+                                for (Iterator<Entry<String, Session>> sItr = copy.entrySet().iterator(); itr.hasNext();) {
+                                    Entry<String, Session> sEnt = sItr.next();
+                                    Session s = sEnt.getValue();
+                                    
+                                    if (!s.testIsActive()) {
+                                        itr.remove();
+                                        if (cLog.isInfoEnabled()) {
+                                            cLog.info("Session " + s.token + " in domain '" + ent.getKey() + "' expired.");
+                                        }
+                                    }
+                                }
+                                holder.sessions = copy;
+                            }						    
 						}
 						Thread.sleep(10000);
 					}
@@ -91,51 +111,147 @@ public class SessionManager {
 		return sessionInactivityTimeoutMillis;
 	}
 
-	/**
-	 * Starts a new session and returns a token representing that session.
-	 * 
-	 * @param usr
-	 * @return
-	 */
-	public synchronized String generateSessionToken(String usr) {
-		Map<String, Session> copy = copySessionContainer();
-		Session s = new Session(this, usr);
-		copy.put(s.token, s);
-		sessions = copy;
-		return s.token;
-	}
+    /**
+     * Starts a new session in the specified domain and returns a token 
+     * representing that session.
+     * 
+     * @param usr
+     * @return
+     */
+    public synchronized String generateSessionToken(String usr, String host) {
+        String ckDomain = getCookieDomainForHost(host);
+        Map<String, Session> copy = copySessionContainer(ckDomain);
+        Session s = new Session(this, usr);
+        copy.put(s.token, s);
+        domainSessions.get(ckDomain).sessions = copy;
+        return s.token;
+    }
+
+    /**
+     * Starts a new session in the master cookie domain for backwards compatibility.
+     * Use generateSessionToken(user, domain) instead.
+     * 
+     * @deprecated
+     * @param usr
+     * @return
+     */
+    public synchronized String generateSessionToken(String usr) {
+        Map<String, Session> copy = copySessionContainer(getMasterCookieDomain());
+        Session s = new Session(this, usr);
+        copy.put(s.token, s);
+        domainSessions.get(getMasterCookieDomain()).sessions = copy;
+        return s.token;
+    }
 
 	/**
-	 * Returns true if the passed-in token matches an unexpired session.
+	 * For the given host returns the cookie domain in which that host resides
+	 * or which it matches exactly or throws an IllegalArgumentException.
 	 * 
-	 * @param token
+	 * @param host
 	 * @return
+	 * @throws IllegalArgumentException if a host is specifed that does not match
+	 * or reside within a configured cookie domain. 
+	 * 
 	 */
-	public boolean isValidToken(String token) {
-		if (token == null) {
-			return false;
-		}
-		Session s = sessions.get(token);
-		return s != null && s.testIsActive();
-	}
+	public String getCookieDomainForHost(String host) {
+        for(String domain:cookieDomains) {
+            if (domain.startsWith(".")) {
+                if (host.endsWith(domain)) {
+                    return domain;
+                }
+            }
+            else if (host.equals(domain)) {
+                return domain;
+            }
+        }
+        throw new IllegalArgumentException("No cookie domain is configured for host '" + host + "'");
+    }
+
+    /**
+     * Returns true if the passed-in token matches an unexpired session.
+     * 
+     * @param token
+     * @return
+     */
+    public boolean isValidToken(String token, String host) {
+        if (token == null) {
+            return false;
+        }
+        try {
+            String domain = getCookieDomainForHost(host);
+            Session s = domainSessions.get(domain).sessions.get(token);
+            return s != null && s.testIsActive();
+        }
+        catch (IllegalArgumentException a) {
+            // can't find cookie domain for specified host
+            return false;
+        }
+    }
+
+    /**
+     * Returns true if the passed-in token matches an unexpired session in the
+     * master cookie domain for backwards compatibility. Use 
+     * isValidToken(token, host) instead.
+     * 
+     * @deprecated
+     * @param token
+     * @return
+     */
+    public boolean isValidToken(String token) {
+        if (token == null) {
+            return false;
+        }
+        for(String domain : cookieDomains) {
+            Session s = domainSessions.get(domain).sessions.get(token);
+            return s != null && s.testIsActive();
+        }
+        return false;
+    }
+
+    /**
+     * Updates a session marking it as having been active and hence resetting
+     * its inactivity timeout counter. Not completely thread safe in terms of
+     * sessions expiring but we don't care for app wrap.
+     * 
+     * @param token
+     */
+    public void markSessionAsActive(String token, String host) {
+        try {
+            String domain = getCookieDomainForHost(host);
+            markSessionAsActiveInDomain(token, domain);
+        } catch (IllegalArgumentException a) {
+            cLog.info("Unable to mark session active since can't find configured "
+                + "cookie domain for host '" + host + "'");
+        }
+    }
+
+    /**
+     * Updates a session marking it as having been active and hence resetting
+     * its inactivity timeout counter. Not completely thread safe in terms of
+     * sessions expiring but we don't care for app wrap.
+     * 
+     * @param token
+     */
+    public void markSessionAsActiveInDomain(String token, String cookieDomain) {
+        Map<String, Session> sessions = domainSessions.get(cookieDomain).sessions;
+        if (sessions == null) {
+            cLog.info("Unable to mark session active since cookie domain '" 
+                    + cookieDomain + "' is not defined.");
+        }
+        Session s = domainSessions.get(cookieDomain).sessions.get(token);
+        if (s != null) {
+            s.markAsActive();
+        }
+    }
 
 	/**
-	 * Updates a session marking it as having been active and hence resetting
-	 * its inactivity timeout counter. Not completely thread safe in terms of
-	 * sessions expiring but we don't care for app wrap.
+	 * Makes a deep copy of the domainSessions object.
 	 * 
-	 * @param token
+	 * @return
 	 */
-	public void markSessionAsActive(String token) {
-		Session s = sessions.get(token);
-		if (s != null) {
-			s.markAsActive();
-		}
-	}
-	
-	Map<String, Session> copySessionContainer() {
-		Map<String, Session> copy = new TreeMap<String,Session>();
-		copy.putAll(sessions);
+	Map<String, Session> copySessionContainer(String cookieDomain) {
+		Map<String, Session> copy = new TreeMap<String, Session>();
+		copy.putAll(domainSessions.get(cookieDomain).sessions);
 		return copy;
 	}
 
@@ -144,10 +260,10 @@ public class SessionManager {
 	 * 
 	 * @param token
 	 */
-	public synchronized void terminateSession(String token) {
-		Map<String, Session> copy = copySessionContainer();
+	public synchronized void terminateSession(String token, String cookieDomain) {
+		Map<String, Session> copy = copySessionContainer(cookieDomain);
 		copy.remove(token);
-		sessions = copy;
+		domainSessions.get(cookieDomain).sessions = copy;
 	}
 
 	/**
@@ -155,11 +271,88 @@ public class SessionManager {
 	 * avoid concurrent modification exceptions.
 	 */
 	public void terminateAllSessions() {
-		sessions = new TreeMap<String, Session>();
+	    for(DomainSessionsMapHolder holder : domainSessions.values()) {
+	        holder.sessions = new TreeMap<String, Session>();
+	    }
 	}
 
-	public Collection<Session> getSessions() {
-		return Collections.unmodifiableCollection(sessions.values());
+	/**
+	 * Returns a collection of active sessions for the given cookie domain.
+	 *  
+	 * @param cookieDomain
+	 * @return
+	 */
+	public Collection<Session> getSessions(String cookieDomain) {
+	    DomainSessionsMapHolder holder = domainSessions.get(cookieDomain);
+		return Collections.unmodifiableCollection(holder.sessions.values());
+	}
+	
+	public Collection<String> getCookieDomains() {
+	    return Collections.unmodifiableList(cookieDomains);
 	}
 
+	/**
+	 * Holder of a session map to prevent concurrent modification exceptions
+	 * when creating new new sessions.
+	 * 
+	 * @author BoydMR
+	 *
+	 */
+	public class DomainSessionsMapHolder {
+	    public Map<String, Session> sessions = null;
+	}
+
+	/**
+	 * Used during parsing of configuration file to add a cookie domain as 
+	 * declared via sso-cookie directives.
+	 * 
+	 * @param cookieName
+	 * @param cookieDomain
+	 */
+	public void addCookieDomain(String cookieDomain) {
+	    if (domainSessions.containsKey(cookieDomain)) {
+	        throw new IllegalArgumentException("Adding cookie domain '" 
+	                + cookieDomain + "' that was already added.");
+	    }
+	    cookieDomains.add(cookieDomain);
+	    TreeMap<String, Session> map = new TreeMap<String, Session>();
+	    DomainSessionsMapHolder holder = new DomainSessionsMapHolder();
+	    holder.sessions = map;
+	    domainSessions.put(cookieDomain, holder);
+	}
+
+	/**
+	 * Sets the cookie domain that is considered the domain in which the single
+	 * authentication authority sign-in page will be exposed and to which all
+	 * other cross domain single sign-on configured domains will redirect.
+	 * 
+	 * @param domain
+	 */
+    public void setMasterCookieDomain(String domain) {
+        masterCookieDomain = domain;
+        
+    }
+
+    /**
+     * Gets the cookie domain of the configured master cookie domain.
+     * 
+     * @return
+     */
+    public String getMasterCookieDomain() {
+        return masterCookieDomain;
+        
+    }
+
+    public void addSessionViaCdsso(String tokenForCdsso,
+            String host) {
+        String master = getMasterCookieDomain();
+        DomainSessionsMapHolder holder = domainSessions.get(master);
+        Session masterSession = holder.sessions.get(tokenForCdsso);
+        Session s = masterSession.copy();
+
+        String ckDomain = getCookieDomainForHost(host);
+        Map<String, Session> copy = copySessionContainer(ckDomain);
+        copy.put(s.token, s);
+        domainSessions.get(ckDomain).sessions = copy;
+    }
 }

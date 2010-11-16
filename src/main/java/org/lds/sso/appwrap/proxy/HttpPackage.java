@@ -55,4 +55,10 @@ public class HttpPackage {
      * Holds start line before stripping signin/out query param if included.
      */
     public RequestLine origRequestList;
+    
+    /**
+     * Used to convey the token for cdsso from within the response generation
+     * method to its calling code.
+     */
+    public String tokenForCdsso;
 }

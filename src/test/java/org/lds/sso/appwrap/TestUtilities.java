@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
@@ -24,11 +25,15 @@ public class TestUtilities {
      * @throws HttpException
      * @throws IOException
      */
-    public static String authenticateUser(String username, int simulatorAdminPort) throws HttpException, IOException {
-        String endpoint = "http://127.0.0.1:" + simulatorAdminPort + "/auth/ui/authenticate?username=" + username;
+    public static String authenticateUser(String username, int simulatorAdminPort, String host) throws HttpException, IOException {
+        String endpoint = "http://" + host + ":" + simulatorAdminPort + "/auth/ui/authenticate?username=" + username;
         
         HttpClient client = new HttpClient();
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", Config.getInstance().getConsolePort());
+        client.setHostConfiguration(hcfg);
         HttpMethod method = new GetMethod(endpoint);
+        method.addRequestHeader("host", host);
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
         

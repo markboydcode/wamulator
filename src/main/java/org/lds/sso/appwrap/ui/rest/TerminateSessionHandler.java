@@ -6,9 +6,10 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.SessionManager;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
-import org.mortbay.jetty.Request;
 
 /**
  * Handles request to start a session for a user by setting a suitable
@@ -19,6 +20,7 @@ import org.mortbay.jetty.Request;
  *
  */
 public class TerminateSessionHandler extends RestHandlerBase {
+    private static final Logger cLog = Logger.getLogger(TerminateSessionHandler.class);
 
 	public TerminateSessionHandler(String pathPrefix) {
 		super(pathPrefix);
@@ -41,17 +43,28 @@ public class TerminateSessionHandler extends RestHandlerBase {
 		        String currToken = ck.getValue();
                 if (currToken.equals(token)) {
                     // deleting current session so clear out cookie
-                    Cookie c = new Cookie(cfg.getCookieName(), token);
-                    c.setPath("/");
-                    c.setDomain(cfg.getCookieDomain());
-                    c.setMaxAge(0); // clears the cookie
-                    c.setVersion(1);
-                    response.addCookie(c);
+                    SessionManager smgr = cfg.getSessionManager();
+                    String cookieDomain = null;
+                    try {
+                        cookieDomain = smgr.getCookieDomainForHost(request.getServerName());
+                    }
+                    catch( IllegalArgumentException e) {
+                        cLog.info("Unable to clear cookie since can't find configured "
+                            + "cookie domain for host '" + request.getServerName() + "'");
+                    }
+                    if (cookieDomain != null) {
+                        cfg.getSessionManager().terminateSession(token, cookieDomain);
+                        Cookie c = new Cookie(cfg.getCookieName(), token);
+                        c.setPath("/");
+                        c.setDomain(cookieDomain);
+                        c.setMaxAge(0); // clears the cookie
+                        c.setVersion(1);
+                        response.addCookie(c);
+                    }
                 }
                 break;
 		    }
 		}
-		cfg.getSessionManager().terminateSession(token);
 		String referer = request.getHeader("referer");
 		if (referer == null || referer.equals("")) {
 		    referer = cfg.getLoginPage();

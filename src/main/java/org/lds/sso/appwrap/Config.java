@@ -47,7 +47,9 @@ public class Config {
      * is being used for the console port.
      */
     public static final String CONSOLE_PORT_ALIAS = "console-port";
+    public static final String PROXY_PORT_ALIAS = "proxy-port";
     public static final String CONSOLE_PORT_MACRO = "{{" + CONSOLE_PORT_ALIAS + "}}";
+    public static final String PROXY_PORT_MACRO = "{{" + PROXY_PORT_ALIAS + "}}";
 
     /**
 	 * Allows some classes to get at the config instance without any means of
@@ -82,9 +84,9 @@ public class Config {
         headers.put(GlobalHeaderNames.SIGNOUT, GlobalHeaderNames.SIGNOUT_VALUE);
 	}
 	/**
-	 * The domain of the cookie set by the simulator
+	 * The default domain of the cookie set by the simulator
 	 */
-	private String cookieDomain = ".lds.org";
+	public static final String DEFAULT_COOKIE_DOMAIN = ".lds.org";
 	
 	// set up custom syntax map and engine
 	private LogicalSyntaxEvaluationEngine sEngine = new LogicalSyntaxEvaluationEngine();
@@ -413,15 +415,6 @@ public class Config {
         getTrafficManager().consolePortChanged(port);
 	}
 
-	public String getCookieDomain() {
-		return cookieDomain;
-	}
-
-	public void setCookieDomain(String cookieDomain) {
-		this.cookieDomain = cookieDomain;
-		this.signinRequiresCheck = true;
-	}
-
     public TrafficManager getTrafficManager() {
         return appMgr;
     }
@@ -491,49 +484,39 @@ public class Config {
 	 */
 	public String getLoginPage() {
 	    if (loginPageUrl == null) {
-	        if (appMgr.matchers.size() > 0) {
-	            SiteMatcher site = getTrafficManager().matchers.get(0);
-	            if (site.getHost().endsWith(getCookieDomain())) {
-	                loginPageUrl = DEFAULT_SIGNIN_PAGE_TMPLT.replace("{{HOST}}", site.getHost());
-	                signinRequiresResolution = true;
-	            }
-	            else {
-	                throw new IllegalArgumentException(""
-	                        + "Default sign-in page will not be able to set the "
-	                        + "cookie since it is being accessed at host '"
-	                        + site.getHost() + "' of the first by-site element "
-	                        + "but the cookie domain is set to '"
-	                        + getCookieDomain() + "'.");
-	            }
-	        }
-	        else {
-	            throw new IllegalStateException(""
-	                    + "No signin-page has been specified in configuration AND " 
-	                    + "default could not be determined since there are no <by-site> "
-	                    + "declarations. Defaulting requires at least one site "
-	                    + "be defined so that its host can be used in the default "
-	                    + "sign-in page URL to allow for the cookie set by the page "
-	                    + "to be accepted by the browser.");
-	        }
+	        // set up default sign-in page since none specified.
+            SiteMatcher site = getTrafficManager().getMasterSite();
+            loginPageUrl = DEFAULT_SIGNIN_PAGE_TMPLT.replace("{{HOST}}", site.getHost());
+            signinRequiresResolution = true;
 	    }
 	    if (signinRequiresResolution) {
 	        String url = this.loginPageUrl;
-	        if (url.contains(CONSOLE_PORT_MACRO)) {
-	            url = url.replace(CONSOLE_PORT_MACRO, ("" + this.getConsolePort()));
-	            loginPageUrl = url;
-	            signinRequiresResolution = false;
-	        }
+            if (url.contains(CONSOLE_PORT_MACRO)) {
+                url = url.replace(CONSOLE_PORT_MACRO, ("" + this.getConsolePort()));
+                loginPageUrl = url;
+                signinRequiresResolution = false;
+            }
+            if (url.contains(PROXY_PORT_MACRO)) {
+                url = url.replace(PROXY_PORT_MACRO, ("" + this.getProxyPort()));
+                loginPageUrl = url;
+                signinRequiresResolution = false;
+            }
 	    }
         if (signinRequiresCheck) {
             signinRequiresCheck = false;
             String minusScheme = loginPageUrl.replaceFirst("^http://", "");
             String minusPath = minusScheme.replaceFirst("/.*$", "");
             String host = minusPath.replaceFirst(":.*$", "");
-            if (! host.endsWith(getCookieDomain()) ) {
+            SiteMatcher authSite = getTrafficManager().getMasterSite();
+            String authCkDomain = getSessionManager().getMasterCookieDomain();
+            boolean isDomainWide = authCkDomain.startsWith(".");
+            
+            if ((isDomainWide && ! host.endsWith(authCkDomain))
+                    || (!isDomainWide && ! host.equals(authSite.getHost()))) {
                 throw new IllegalArgumentException(""
                         + "Sign-in page has a host of '"
                         + host + "' but cookie domain is set to '"
-                        + getCookieDomain() + "'. Cookie will not be "
+                        + authCkDomain + "'. Cookie will not be "
                         + "accepted by browser.");
             }
         }

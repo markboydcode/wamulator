@@ -70,6 +70,9 @@ src/main/java/org/lds/sso/appwrap/exception/ServerFailureException.java -text
 src/main/java/org/lds/sso/appwrap/exception/ServerStartFailureException.java -text
 src/main/java/org/lds/sso/appwrap/exception/ServerStopFailureException.java -text
 src/main/java/org/lds/sso/appwrap/exception/ServerTimeoutFailureException.java -text
+src/main/java/org/lds/sso/appwrap/exception/UnableToListenOnProxyPortException.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/exception/UnableToStartJettyServerException.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/exception/UnableToStopJettyServerException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/Header.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HeaderBuffer.java -text svneol=unset#text/plain
@@ -103,6 +106,7 @@ src/main/java/org/lds/sso/appwrap/ui/rest/JettyWebappUrlAdjustingHandler.java -t
 src/main/java/org/lds/sso/appwrap/ui/rest/LogFileHandler.java -text
 src/main/java/org/lds/sso/appwrap/ui/rest/SelectSessionHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/SelectUserHandler.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ui/rest/SignInPageCdssoHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSessionHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/TerminateSimulatorHandler.java -text
 src/main/java/org/lds/sso/appwrap/ui/rest/TrafficRecordingHandler.java -text svneol=unset#text/plain
@@ -131,9 +135,11 @@ src/main/resources/webapp/listUsers.jsp -text
 src/main/resources/webapp/pointer.png -text
 src/main/resources/webapp/rest-traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/selectUser.jsp -text svneol=unset#text/plain
+src/main/resources/webapp/signmeout.png -text
 src/main/resources/webapp/simpleSelectUser.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/unlock.gif -text
+src/main/resources/webapp/wam-logout.gif -text
 src/main/versioning/about.txt -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppEndPointTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/AppManagerTest.java -text svneol=unset#text/plain
@@ -170,16 +176,17 @@ src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/ORTest.java -text 
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/StringWriterAppender.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/TestBaseClass.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/CookiePathAndRedirectRewriteTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/CrossDomainSignMeInOutTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderBufferTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderDefTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/LocalHostTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/PolicyServiceUrlTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerIntegrationTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/SignMeInOutTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StripEmptyHeadersTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/rest/TestAuthZHandler.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/oes/v1/RestHttpTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/JspUtilsTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParserTest.java -text svneol=unset#text/plain

@@ -15,6 +15,55 @@ public class XmlConfigLoaderTest {
     
     @SuppressWarnings("unchecked")
     @Test
+    public void test_LackOfSiteInMasterDomain () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-cookie name='lds-policy' domain='.lds.org'/>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='josephsmith.net' port='45'/>"
+            + "  <by-site scheme='http' host='mormon.org' port='45'/>"
+            + "  <by-site scheme='http' host='ldschurch.org' port='45'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        try {
+            XmlConfigLoader2.load(xml);
+        }
+        catch(Exception e) {
+            Throwable t = e.getCause();
+            if (!(t instanceof IllegalStateException)) {
+                Assert.fail("Threw " + t.getClass().getName() + " but expected IllegalStateException");
+            }
+            return;
+        }
+        Assert.fail("IllegalStateException should have been thrown since no by-site was defined in the master cookie domain.");
+    }
+    
+    @Test
+    public void test_localhost_Domain () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-cookie name='lds-policy' domain='localhost'/>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='localhost' port='45'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        try {
+            XmlConfigLoader2.load(xml);
+        }
+        catch(Exception e) {
+            Throwable t = e.getCause();
+            Assert.fail("Shouldn't have thrown an exception", t);
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
     public void testEmbeddedConditions () throws Exception {
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
@@ -94,41 +143,23 @@ public class XmlConfigLoaderTest {
     
     
     @Test
-    public void test_default_signin_page_ex_if_no_bysite () throws Exception {
+    public void test_ex_if_no_bysite () throws Exception {
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='88' proxy-port='45'>"
             + "</config>";
         Config cfg = new Config();
-        XmlConfigLoader2.load(xml);
         try {
-            cfg.getLoginPage();
+            XmlConfigLoader2.load(xml);
         }
-        catch(IllegalStateException e) {
+        catch(Exception e) {
+            Throwable t = e.getCause();
+            if (!(t instanceof IllegalStateException)) {
+                Assert.fail("Threw " + t.getClass().getName() + " but expected IllegalStateException");
+            }
             return;
         }
-        Assert.fail("IllegalStateException should have been thrown when defauling sign-in page with no by-site declaration");
-    }
-
-    @Test
-    public void test_default_signin_page_ex_w_wrong_cookie_domain() throws Exception {
-        String xml = 
-            "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<config console-port='88' proxy-port='45'>"
-            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
-            + "  <sso-traffic>"
-            + "   <by-site scheme='http' host='host.lds.org' port='45'/>"
-            + "  </sso-traffic>"
-            + "</config>";
-        Config cfg = new Config();
-        XmlConfigLoader2.load(xml);
-        try {
-            cfg.getLoginPage();
-        }
-        catch(IllegalArgumentException e) {
-            return;
-        }
-        Assert.fail("Should have thrown IllegalArgumentException since default sign-in page uses first by-site declaration and its domain differs from cookie domain preventing browser from accepting cookie.");
+        Assert.fail("IllegalStateException should have been thrown since no by-site was defined.");
     }
 
     @Test
@@ -138,6 +169,9 @@ public class XmlConfigLoaderTest {
             + "<config console-port='88' proxy-port='45'>"
             + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
             + "  <sso-sign-in-url value='http://my.site.com/auth/ui/sign-in'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.host.net' port='45'/>"
+            + "  </sso-traffic>"
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
@@ -145,9 +179,9 @@ public class XmlConfigLoaderTest {
             cfg.getLoginPage();
         }
         catch(IllegalArgumentException e) {
-            return;
+            return; // should throw it
         }
-        Assert.fail("Should have thrown IllegalArgumentException since sign-in page domain differs from cookie domain preventing browser from accepting cookie.");
+        Assert.fail("Should have thrown IllegalArgumentException since cookie domain was set to '.host.net' but no by-site was configured in that domain.");
     }
 
     @Test
@@ -156,6 +190,10 @@ public class XmlConfigLoaderTest {
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias site=labs-local.lds.org?>"
             + "<config console-port='88' proxy-port='45'>"
+            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.host.net' port='45'/>"
+            + "  </sso-traffic>"
             + "  <users>"
             + "    <user name='nnn' pwd='pwd'>"
             + "      <sso-header name='header-a' value='aaa'/>" 
@@ -228,7 +266,13 @@ public class XmlConfigLoaderTest {
 	public void testConfigAlias() throws Exception {
 		String xml = "<?xml version='1.0' encoding='UTF-8'?>"
 			+ "<?alias rest-port=81?>"
-			+ "<config console-port='{{rest-port}}' proxy-port='45'/>";
+			+ "<config console-port='{{rest-port}}' proxy-port='45'>"
+            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.host.net' port='45'/>"
+            + "  </sso-traffic>"
+            + "</config>"
+			;
 		Config cfg = new Config();
 		cfg.setConsolePort(0);
 		XmlConfigLoader2.load(xml);
@@ -244,12 +288,15 @@ public class XmlConfigLoaderTest {
 			+ "<config console-port='88' proxy-port='45'>"
 		    + "  <sso-cookie name='lds-policy' domain='.lds.org'/>"
 			+ "  <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.lds.org' port='45'/>"
+            + "  </sso-traffic>"
 		    + "</config>";
 		Config cfg = new Config();
 		XmlConfigLoader2.load(xml);
 		Assert.assertEquals(cfg.getProxyPort(), 45);
 		Assert.assertEquals(cfg.getCookieName(), "lds-policy");
-		Assert.assertEquals(cfg.getCookieDomain(), ".lds.org");
+		Assert.assertEquals(cfg.getSessionManager().getMasterCookieDomain(), ".lds.org");
 		Assert.assertEquals(cfg.getLoginPage(), "http://labs-local.lds.org/auth/ui/sign-in");
 	}
 
@@ -259,7 +306,10 @@ public class XmlConfigLoaderTest {
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias site=classpath:XmlConfigLoaderTest.txt?>"
             + "<config console-port='88' proxy-port='45'>"
-            + "  <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
+            + " <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
+            + " <sso-traffic>"
+            + "  <by-site host='{{site}}' port='80'/>"
+            + " </sso-traffic>"
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
@@ -272,8 +322,11 @@ public class XmlConfigLoaderTest {
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias site=system:some-path-property?>"
             + "<config console-port='88' proxy-port='45'>"
-            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
-            + "  <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
+            + " <sso-cookie name='lds-policy' domain='.host.net'/>"
+            + " <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
+            + " <sso-traffic>"
+            + "  <by-site host='{{site}}' port='80'/>"
+            + " </sso-traffic>"
             + "</config>";
         System.setProperty("some-path-property", "some.host.net");
         Config cfg = new Config();
@@ -684,7 +737,12 @@ public class XmlConfigLoaderTest {
             + "<?alias    nameWSP   =nameWSP?>"
             + "<?alias valueWSP=    valueWSP    ?>"
             + "<?alias vembedded=v embedded?>"
-            + "<config proxy-port='80' console-port='81'/>";
+            + "<config proxy-port='80' console-port='81'>"
+            + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.host.net' port='45'/>"
+            + "  </sso-traffic>"
+            + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
         Map<String,String>vals = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get().get(XmlConfigLoader2.PARSING_SYNTAXES);

@@ -167,6 +167,7 @@ public class StripEmptyHeadersTest {
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
+            + " <sso-cookie name='lds-policy' domain='.lds.org' />"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>"
             + "   <cctx-mapping cctx='/test/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/test/*'/>"
@@ -192,7 +193,7 @@ public class StripEmptyHeadersTest {
         cfg.setStripEmptyHeaders(false);
 
         // get the user cookie
-        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort());
+        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
 
         // ------------ TEST TWO: empty headers get injected
 

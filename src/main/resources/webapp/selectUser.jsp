@@ -31,11 +31,17 @@
 <div style="font-style: italic; color: green; padding: 12px 3px 3px 3px">Select a session to hijack and return to that user's session</div>
 <div style="font-size: medium; font-weight: bold; padding: 3px">Active Sessions:</div>
 <table>
-<c:forEach items="${requestScope.config.sessionManager.sessions}" var="session">
+<c:forEach items="${requestScope.config.sessionManager.cookieDomains}" var="domain">
+<tr><td>&nbsp;</td>
+<td>Domain:</td>
+<td> <strong>${domain}</strong></td>
+</tr>
+<c:forEach items="${jsputils.domainSessions[domain]}" var="session">
 <tr><td><c:if test="${session.token == requestScope.currentToken}"><IMG src="pointer.png"/></c:if></td>
 <td><a href="/admin/action/set-session/${session.token}">${session.token}</a></td>
 <td>${session.remainingSeconds}</td>
 </tr>
+</c:forEach>
 </c:forEach>
 </table>
 </div>

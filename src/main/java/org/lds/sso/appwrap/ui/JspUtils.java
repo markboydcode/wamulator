@@ -1,12 +1,13 @@
 package org.lds.sso.appwrap.ui;
 
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.Session;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,8 +22,8 @@ import java.util.regex.Pattern;
  */
 public class JspUtils {
 	
-	private BaseMapImpl<String> decoder = null;
-	private BaseMapImpl<Boolean> isUnenforced = null;
+    private BaseMapImpl<String> decoder = null;
+    private BaseMapImpl<Collection<Session>> domainSessions = null;
 	private BaseMapImpl<String> encoder = null;
     private BaseMapImpl<String> crlfToBr;
     private Pattern crlfPattern = null;
@@ -122,4 +123,22 @@ public class JspUtils {
         return isSsoDefinedHdr; 
     }
     
+    /**
+     * Returns a Map implementation whose get takes the passed-in
+     * url and returns it URL decoded for use in jsp pages.
+     *  
+     * @return
+     */
+    public BaseMapImpl<Collection<Session>> getDomainSessions() {
+        if (domainSessions == null) {
+            domainSessions = new BaseMapImpl<Collection<Session>>() {
+                @Override
+                public Collection<Session> get(Object obj) {
+                    String cookieDomain = (String) obj;
+                    return Config.getInstance().getSessionManager().getSessions(cookieDomain);
+                }
+            };
+        }
+        return domainSessions; 
+    }
 }

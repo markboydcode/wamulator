@@ -3,6 +3,7 @@ package org.lds.sso.appwrap;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -15,6 +16,9 @@ import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.bootstrap.Command;
+import org.lds.sso.appwrap.exception.UnableToListenOnProxyPortException;
+import org.lds.sso.appwrap.exception.UnableToStartJettyServerException;
+import org.lds.sso.appwrap.exception.UnableToStopJettyServerException;
 import org.lds.sso.appwrap.proxy.ProxyListener;
 import org.lds.sso.appwrap.rest.AuthNHandler;
 import org.lds.sso.appwrap.rest.AuthZHandler;
@@ -31,6 +35,7 @@ import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
 import org.lds.sso.appwrap.ui.rest.LogFileHandler;
 import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
 import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
+import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSimulatorHandler;
 import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
@@ -166,8 +171,10 @@ public class Service {
 		final String warUrlString = warUrl.toExternalForm();
 		WebAppContext wac = new WebAppContext(warUrlString, CONTEXTPATH);
 		JettyWebappUrlAdjustingHandler adj = new JettyWebappUrlAdjustingHandler(CONTEXTPATH, WEBAPPDIR, wac);
+		SignInPageCdssoHandler cdsso = new SignInPageCdssoHandler(new String[] {"selectUser.jsp", "simpleSelectUser.jsp", "codaUserSelect.jsp"}, adj);
 		ConfigInjectingHandlerList cfgInjector = new ConfigInjectingHandlerList();
-		cfgInjector.addHandler(adj);
+        cfgInjector.addHandler(cdsso);
+        //cfgInjector.addHandler(adj);
 
 		HandlerCollection handlers = new HandlerCollection();
 		if (cfg.getRestVersion() == null) {
@@ -179,7 +186,7 @@ public class Service {
         String base = rv.getRestUrlBase();
 		switch(rv) {
 		case OPENSSO :
-            System.out.println("Configuring single " + rv.getVersionId() + " rest service at: " + base);
+            System.out.println("Configuring single " + rv.getVersionId() + " rest service at: " + cfg.getConsolePort() + base);
             cfg.getTrafficRecorder().addRestInst(base, base, base + "getCookieNameForToken", "n/a");
 			handlers.addHandler(new GetCookieName(base + "getCookieNameForToken"));
 			handlers.addHandler(new AuthNHandler(base + "authenticate"));
@@ -215,7 +222,7 @@ public class Service {
 	                String serviceBase = baseResolved + site.getHost() + "/";
 	                if( ! hosts.contains(site.getHost())) {
 	                    hosts.add(site.getHost());
-	                    System.out.println("Configuring " + rv.getVersionId() + " rest service for site " + site.getHost() + " at: " + serviceBase);
+	                    System.out.println("Configuring " + rv.getVersionId() + " rest service for site " + site.getHost() + ":" + site.getPort() + " at: " + serviceBase);
 	                    cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + site.getHost() + "/getCookieName", site.getHost());
 	                    handlers.addHandler(new GetOesV1CookieName(serviceBase + "getCookieName"));
 	                    handlers.addHandler(new AreTokensValid(serviceBase + "areTokensValid"));
@@ -302,26 +309,41 @@ public class Service {
 
 	/**
 	 * Starts the embedded jetty server and http proxy.
+	 * @throws InterruptedException 
+	 * @throws UnableToStartJettyServerException 
+	 * @throws UnableToListenOnProxyPortException 
 	 *
 	 * @throws Exception
 	 */
-	public void start() throws Exception {
+	public void start() throws InterruptedException, UnableToStartJettyServerException, 
+	    UnableToListenOnProxyPortException  {
 		Config cfg = Config.getInstance();
 		cfg.setShimStateCookieId(cfgSource);
 
-		server.start();
+		try {
+	        server.start();
+		}
+		catch(Exception e) {
+		    throw new UnableToStartJettyServerException(e);
+		}
 
 		Connector[] connectors = server.getConnectors();
 		cfg.setConsolePort(connectors[0].getLocalPort());
 
-		ProxyListener proxy = new ProxyListener(cfg);
+		ProxyListener proxy = null;
+		try {
+		    proxy = new ProxyListener(cfg);
+		}
+		catch(IOException ioe) {
+		    throw new UnableToListenOnProxyPortException(ioe);
+		}
 		proxyRunner = new Thread(proxy);
 		proxyRunner.setDaemon(true);
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
 
 		while (server.isStarted() == false && proxy.isRunning() == false) {
-            Thread.sleep(1000);
+		        Thread.sleep(1000);
 		}
 		StringBuffer line = new StringBuffer(cfg.getServerName().length());
 		for (int i=0; i<cfg.getServerName().length(); i++) {
@@ -361,12 +383,18 @@ public class Service {
 
 	/**
 	 * Stops the embedded jetty web server and http proxy.
+	 * @throws UnableToStopJettyServerException 
 	 *
 	 * @throws Exception
 	 */
-	public void stop() throws Exception {
+	public void stop() throws UnableToStopJettyServerException {
 		if (server.isStarted()) {
-			server.stop();
+		    try {
+		        server.stop();
+		    }
+		    catch (Exception e) {
+		        throw new UnableToStopJettyServerException(e);
+		    }
 		}
 		if ( proxyRunner != null ) {
 			proxyRunner.interrupt();
