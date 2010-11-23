@@ -405,11 +405,11 @@ public class Service {
 	}
 
 	public boolean isStarted() {
-		return server.isStarted() && proxyRunner.isAlive();
+		return server != null && server.isStarted() && proxyRunner != null && proxyRunner.isAlive();
 	}
 
 	public boolean isStopped() {
-		return server.isStopped() && !proxyRunner.isAlive();
+		return server != null && server.isStopped() && proxyRunner != null && !proxyRunner.isAlive();
 	}
 
 	/**
