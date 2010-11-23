@@ -82,10 +82,11 @@ public abstract class Command {
 		return cfgPath;
 	}
 
-	public void execute() throws ServerFailureException {
+	public final void execute() throws ServerFailureException {
 		System.out.println("Preparing to run [" + getCommandName() + "] command...");
 		Service service = Service.getService(cfgPath);
 		Config cfg = Config.getInstance();
+		
 		System.out.println("Running [" + getCommandName() + "] command...");
 		doExecute(service, cfg);
 

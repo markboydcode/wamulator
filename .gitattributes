@@ -43,6 +43,7 @@ src/main/java/org/lds/sso/appwrap/bootstrap/Command.java -text
 src/main/java/org/lds/sso/appwrap/bootstrap/RemoteStartServiceCommand.java -text
 src/main/java/org/lds/sso/appwrap/bootstrap/RemoteStopServiceCommand.java -text
 src/main/java/org/lds/sso/appwrap/bootstrap/StartingServiceCommand.java -text
+src/main/java/org/lds/sso/appwrap/bootstrap/StoppingServiceCommand.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContext.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/GlobalHeaderNames.java -text svneol=unset#text/plain
@@ -73,6 +74,8 @@ src/main/java/org/lds/sso/appwrap/exception/ServerTimeoutFailureException.java -
 src/main/java/org/lds/sso/appwrap/exception/UnableToListenOnProxyPortException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/exception/UnableToStartJettyServerException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/exception/UnableToStopJettyServerException.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/io/ChainingOutputStream.java -text
+src/main/java/org/lds/sso/appwrap/io/LoggingOutputStream.java -text
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/Header.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HeaderBuffer.java -text svneol=unset#text/plain

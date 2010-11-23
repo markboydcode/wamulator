@@ -60,6 +60,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.text.DecimalFormat;
 
 	public class ProxyListener implements Runnable
@@ -153,14 +154,19 @@ import java.text.DecimalFormat;
 					t.setDaemon(true);
 					t.start();
 				}
-			}  catch (Exception e)  {
+			} catch ( SocketException e ) {
 				String msg = "Proxy Listener error: " + e;
 				e.printStackTrace();
 				System.out.println(msg);
-				cLog.error("Proxy Listener error: ", e);
+				cLog.error("Proxy Listener error: ", e); 
+			} catch ( IOException e ) {
+				String msg = "Proxy Listener error: " + e;
+				e.printStackTrace();
+				System.out.println(msg);
+				cLog.error("Proxy Listener error: ", e); 				
+			} finally {
+				started = false;
 			}
-			started = false;
-			closeSocket();
 		}
 		
 	}

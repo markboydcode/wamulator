@@ -63,6 +63,7 @@ public class Service {
 
 	//protected ProxyListener proxy = null;
 	protected Thread proxyRunner = null;
+	protected ProxyListener proxy;
 	protected Server server = null;
 	private String cfgSource;
 	private final String cfgPath;
@@ -120,9 +121,9 @@ public class Service {
 	}
 
 	public static final Service getService(String cfgPath) {
-		if ( instances.get(cfgPath) == null ) {
+		if ( instances.get(cfgPath) == null || instances.get(cfgPath).isStopped() ) {
 			synchronized(Service.class) {
-				if ( instances.get(cfgPath) == null ) {
+				if ( instances.get(cfgPath) == null || instances.get(cfgPath).isStopped() ) {
 					try {
 						instances.put(cfgPath, new Service(cfgPath));
 					} catch ( Exception e ) {
@@ -245,6 +246,7 @@ public class Service {
 		// under same root context '/admin'.
 		handlers.addHandler(cfgInjector);
 		server.setHandler(handlers);
+		server.setGracefulShutdown(1000);
 	}
 
 	/**
@@ -330,7 +332,7 @@ public class Service {
 		Connector[] connectors = server.getConnectors();
 		cfg.setConsolePort(connectors[0].getLocalPort());
 
-		ProxyListener proxy = null;
+		//ProxyListener proxy = null;
 		try {
 		    proxy = new ProxyListener(cfg);
 		}
@@ -360,7 +362,7 @@ public class Service {
 
 	public void startAndBlock() throws Exception {
 		start();
-
+		
 		while (true) {
 			try {
 				Thread.sleep(10000);
@@ -396,9 +398,10 @@ public class Service {
 		        throw new UnableToStopJettyServerException(e);
 		    }
 		}
-		if ( proxyRunner != null ) {
-			proxyRunner.interrupt();
+		if ( proxy != null ) {//Runner != null ) {
+			proxy.closeSocket(); //proxyRunner.interrupt();
 		}
+		new Config(); // eww... TODO:  Refactor Config to use a standard singleton pattern so we don't have to do stuff like this.
 	}
 
 	public boolean isStarted() {

@@ -36,6 +36,8 @@ import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.io.ChainingOutputStream;
+import org.lds.sso.appwrap.io.LoggingOutputStream;
 import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 
 public class RequestHandler implements Runnable {
@@ -138,7 +140,7 @@ public class RequestHandler implements Runnable {
 
             if (cLog.isDebugEnabled()) {
                 fos = new FileOutputStream(connId + ".log");
-                log = new PrintStream(fos);
+                log = new PrintStream(new ChainingOutputStream(System.out, fos));
             }
 
             if(reqPkg.socketTimeout) {
