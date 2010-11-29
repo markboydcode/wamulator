@@ -16,6 +16,8 @@ public class RemoteStartServiceCommand extends Command {
 	private static final Logger cLog = Logger.getLogger(RemoteStartServiceCommand.class);
 	public static final String JAVA_OPTS_ENVIRONMENT_VARIABLE = "WAM_OPTS";
 	
+	private Process process;
+	
 	public RemoteStartServiceCommand(String cfgPath, Integer timeout) {
 		super(cfgPath, timeout);
 	}
@@ -56,7 +58,7 @@ public class RemoteStartServiceCommand extends Command {
 	private void executeProcess(ProcessBuilder builder, boolean wait) throws IOException {
 		builder.redirectErrorStream(true);
 
-		Process process = builder.start();
+		process = builder.start();
 		
 		byte[] buffer = new byte[512];
 		int read = 0;
@@ -71,5 +73,9 @@ public class RemoteStartServiceCommand extends Command {
 	@Override
 	String getCommandName() {
 		return "Remote Start Service";
+	}
+	
+	protected void onTimeout() {
+		process.destroy();
 	}
 }

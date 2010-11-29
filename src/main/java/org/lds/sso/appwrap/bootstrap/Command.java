@@ -2,7 +2,6 @@ package org.lds.sso.appwrap.bootstrap;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -119,6 +118,7 @@ public abstract class Command {
 		} while ( responseCode != getTargetResponseCode() && System.currentTimeMillis() - startTime < timeout );
 
 		if ( responseCode != getTargetResponseCode() ) {
+			onTimeout();
 			throw new ServerTimeoutFailureException("Server failed to perform the operation in time");
 		}
 	}
@@ -143,4 +143,6 @@ public abstract class Command {
 	abstract int getTargetResponseCode();
 	abstract void doExecute(Service service, Config cfg);
 	abstract String getCommandName();
+	
+	protected void onTimeout() {}
 }
