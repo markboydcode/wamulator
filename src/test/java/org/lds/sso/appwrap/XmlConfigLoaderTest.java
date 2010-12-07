@@ -321,6 +321,7 @@ public class XmlConfigLoaderTest {
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?system-alias site=some-path-property?>"
             + "<?system-alias other-site=some-other-path-property default=someother.host.net?>"
+            + "<?system-alias other-other-site=some-other-other-path-property default={{other-site}}?>"
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-cookie name='lds-policy' domain='.host.net'/>"
             + " <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
@@ -333,6 +334,7 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         Assert.assertEquals(cfg.getLoginPage(), "http://some.host.net/auth/ui/sign-in");
         Assert.assertEquals(XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES).getAliasValue("other-site"), "someother.host.net");
+        Assert.assertEquals(XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES).getAliasValue("other-other-site"), "someother.host.net");
     }
 
     @Test

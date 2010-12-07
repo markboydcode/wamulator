@@ -34,10 +34,10 @@ public class Alias {
 	private static final Pattern propertyPattern = Pattern.compile("(((\\w\\s\\w)|([\\w\\-_]))*)\\s*=\\s*\"?(system:|classpath:|file:)?([\\w\\-_\\s\\./\\*]*)\"?\\s*");
 	
 	// regex for typed aliases
-	private static final Pattern typedPropertyPattern = Pattern.compile("([\\w\\-_]*)\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*]*))");
+	private static final Pattern typedPropertyPattern = Pattern.compile("([\\w\\-_]*)\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*\\<\\>]*))");
 	
 	// regex for default property in typed aliases
-	private static final Pattern defaultValuePattern = Pattern.compile("default\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*]*))");
+	private static final Pattern defaultValuePattern = Pattern.compile("default\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*\\<\\>\\{\\}\\']*))");
 	
 	public Alias(String name, String value) {
 		this.name = name;
@@ -67,7 +67,7 @@ public class Alias {
 			if ( defaultValue == null ) {
 				throw new ConfigParserException("Problematic alias has no default value", e);
 			} else {
-				retVal = defaultValue;
+				retVal = resolveAliases(defaultValue);
 			}
 		}
 		return retVal;
