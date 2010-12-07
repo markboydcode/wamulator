@@ -2,12 +2,12 @@ package org.lds.sso.appwrap;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler; 
+import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.xml.Alias;
+import org.lds.sso.appwrap.xml.AliasHolder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -94,11 +94,11 @@ public class XmlConfigLoaderTest {
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        Map<String, String> aliases = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get().get(XmlConfigLoader2.PARSING_ALIASES);
-        Assert.assertTrue(aliases.containsKey("o'hare prj"), "should have alias key of o'hare");
+        AliasHolder aliases = XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES);
+        Assert.assertTrue(aliases.containsAlias("o'hare prj"), "should have alias key of o'hare");
         // note that white space is preserved in syntax.
         // also note that carriage returns are normalized to line feeds
-        Assert.assertEquals(aliases.get("o'hare prj"), "    <OR site='labs-local.lds.org'>\n\t\n     <HasLdsApplication value='o&apos;hare prj'></HasLdsApplication>     <HasLdsApplication value='o&quot;hare prj'></HasLdsApplication>    </OR>   ");
+        Assert.assertEquals(aliases.getAliasValue("o'hare prj"), "    <OR site='labs-local.lds.org'>\n\t\n     <HasLdsApplication value='o&apos;hare prj'></HasLdsApplication>     <HasLdsApplication value='o&quot;hare prj'></HasLdsApplication>    </OR>   ");
         SiteMatcher site = cfg.getTrafficManager().getSite("local.lds.org", 45);
         OrderedUri uri = site.getUriMatcher("http", "local.lds.org", 45, "/conditional/test", null);
         Assert.assertTrue(uri instanceof AllowedUri, "URI should have been instance of AllowedUri but was " + uri.getClass().getSimpleName());
@@ -217,31 +217,30 @@ public class XmlConfigLoaderTest {
 	@Test
 	public void testResolveAliases() {
 		CfgContentHandler hndlr = new CfgContentHandler();
-        Map<String,String> aliases 
-            = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get()
-                .get(XmlConfigLoader2.PARSING_ALIASES);
+        AliasHolder aliases 
+            = XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES);
 
-		aliases.put("aaa1", "vvv1");
-		aliases.put("bbb", "www");
-		aliases.put("ccc", "xxx");
-		Assert.assertEquals(XmlConfigLoader2.resolveAliases("{{aaa1}}"), "vvv1");
-		Assert.assertEquals(XmlConfigLoader2.resolveAliases("{{aaa1}}-"), "vvv1-");
-		Assert.assertEquals(XmlConfigLoader2.resolveAliases("-{{aaa1}}"), "-vvv1");
-		Assert.assertEquals(XmlConfigLoader2.resolveAliases("{{aaa1}}{{aaa1}}"), "vvv1vvv1");
-		Assert.assertEquals(XmlConfigLoader2.resolveAliases("this {{aaa1}} that"), "this vvv1 that");
-		Assert.assertEquals(XmlConfigLoader2.resolveAliases("this {{ccc}}{{aaa1}} that{{bbb}}"), "this xxxvvv1 thatwww");
+		aliases.addAlias(new Alias("aaa1", "vvv1"));
+		aliases.addAlias(new Alias("bbb", "www"));
+		aliases.addAlias(new Alias("ccc", "xxx"));
+		Assert.assertEquals(Alias.resolveAliases("{{aaa1}}"), "vvv1");
+		Assert.assertEquals(Alias.resolveAliases("{{aaa1}}-"), "vvv1-");
+		Assert.assertEquals(Alias.resolveAliases("-{{aaa1}}"), "-vvv1");
+		Assert.assertEquals(Alias.resolveAliases("{{aaa1}}{{aaa1}}"), "vvv1vvv1");
+		Assert.assertEquals(Alias.resolveAliases("this {{aaa1}} that"), "this vvv1 that");
+		Assert.assertEquals(Alias.resolveAliases("this {{ccc}}{{aaa1}} that{{bbb}}"), "this xxxvvv1 thatwww");
 	}
 	
 	@Test(expectedExceptions = {IllegalArgumentException.class})
 	public void testUnmatchedAlias() {
 		CfgContentHandler hndlr = new CfgContentHandler();
-		XmlConfigLoader2.resolveAliases("---{{---");
+		Alias.resolveAliases("---{{---");
 	}
 
 	@Test(expectedExceptions = {IllegalArgumentException.class})
 	public void testMissingAlias() {
 		CfgContentHandler hndlr = new CfgContentHandler();
-		XmlConfigLoader2.resolveAliases("---{{jjj}}---");
+		Alias.resolveAliases("---{{jjj}}---");
 	}
 	
 	@Test 
@@ -304,7 +303,7 @@ public class XmlConfigLoaderTest {
     public void testLoadTextAliasFromClasspath() throws Exception {
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<?alias site=classpath:XmlConfigLoaderTest.txt?>"
+            + "<?classpath-alias site=XmlConfigLoaderTest.txt?>"
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
             + " <sso-traffic>"
@@ -320,7 +319,8 @@ public class XmlConfigLoaderTest {
     public void testLoadTextAliasFromSystem() throws Exception {
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<?alias site=system:some-path-property?>"
+            + "<?system-alias site=some-path-property?>"
+            + "<?system-alias other-site=some-other-path-property default=someother.host.net?>"
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-cookie name='lds-policy' domain='.host.net'/>"
             + " <sso-sign-in-url value='http://{{site}}/auth/ui/sign-in'/>"
@@ -332,6 +332,7 @@ public class XmlConfigLoaderTest {
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
         Assert.assertEquals(cfg.getLoginPage(), "http://some.host.net/auth/ui/sign-in");
+        Assert.assertEquals(XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES).getAliasValue("other-site"), "someother.host.net");
     }
 
     @Test
@@ -708,7 +709,7 @@ public class XmlConfigLoaderTest {
         
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
-            + "<?alias has-lds-app-1234=file:file-has-lds-app-1234-test.xml?>"
+            + "<?file-alias has-lds-app-1234=file-has-lds-app-1234-test.xml?>"
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-traffic>"
             + "  <by-site host='labs-local.lds.org' port='45' scheme='http'>"
@@ -745,11 +746,11 @@ public class XmlConfigLoaderTest {
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        Map<String,String>vals = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor.get().get(XmlConfigLoader2.PARSING_SYNTAXES);
-        Assert.assertEquals(vals.get("embedded wsp"), "embedded");
-        Assert.assertEquals(vals.get("nameWSP"), "nameWSP");
-        Assert.assertEquals(vals.get("valueWSP"), "valueWSP");
-        Assert.assertEquals(vals.get("vembedded"), "v embedded");
+        AliasHolder vals = XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES);
+        Assert.assertEquals(vals.getAliasValue("embedded wsp"), "embedded");
+        Assert.assertEquals(vals.getAliasValue("nameWSP"), "nameWSP");
+        Assert.assertEquals(vals.getAliasValue("valueWSP"), "valueWSP");
+        Assert.assertEquals(vals.getAliasValue("vembedded"), "v embedded");
     }
 
     @Test
@@ -823,15 +824,10 @@ public class XmlConfigLoaderTest {
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        Map<String, String> conSyntaxes = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor
-                .get().get(XmlConfigLoader2.PARSING_ALIASES);
-        Assert.assertNotNull(conSyntaxes.get("somealias"));
-        Assert.assertEquals(conSyntaxes.get("somealias"), "<HasLdsApplication value='123'/>");
-        Map<String, String> aliasValues = (Map<String, String>) XmlConfigLoader2.parsingContextAccessor
-                .get().get(XmlConfigLoader2.PARSING_SYNTAXES);
-        Assert.assertNotNull(aliasValues.get("somealias"));
-        Assert.assertEquals(aliasValues.get("somealias"), "system:condition-syntax");
-        
+        AliasHolder conSyntaxes = XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES);
+        Assert.assertNotNull(conSyntaxes.getAliasValue("somealias"));
+        Assert.assertEquals(conSyntaxes.getAliasValue("somealias"), "<HasLdsApplication value='123'/>");
+        Assert.assertEquals(conSyntaxes.getAlias("somealias").toString(), "system:condition-syntax");        
     }
 
     @Test(expectedExceptions=Exception.class)

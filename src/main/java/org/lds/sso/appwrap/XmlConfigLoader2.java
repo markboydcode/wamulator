@@ -1,12 +1,6 @@
 package org.lds.sso.appwrap;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -24,7 +18,9 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.rest.RestVersion;
-import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
+import org.lds.sso.appwrap.xml.Alias;
+import org.lds.sso.appwrap.xml.AliasHolder;
+import org.lds.sso.appwrap.xml.PlaintextAlias;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -44,7 +40,6 @@ public class XmlConfigLoader2 {
     public static final String SRC_FILE = "file:";
     public static final String SRC_STRING = "string:";
 
-    public static final String PARSING_ALIASES = "aliases";
     public static final String PARSING_SYNTAXES = "alias-syntaxes";
     public static final String PARSING_CONFIG = "config-instance";
     public static final String PARSING_PATH = "path";
@@ -53,6 +48,19 @@ public class XmlConfigLoader2 {
     public static final String PARSING_CONDITION_CONTENT = "condition-content";
     public static final String PARSING_CONDITION_ALIAS = "condition-alias";
 
+    public static final String PROP_DEFAULT = "property";
+    
+    public static final class ConfigProperty<T> {
+    	public final String name;
+    	
+    	public ConfigProperty(String name) {
+    		this.name = name;
+    	}
+    }
+    
+    // here is a way to type properties in order to ease the parsingContextAccessor.get().get(...) madness.  See the get() and put() methods.
+    public static final ConfigProperty<AliasHolder> PARSING_ALIASES = new ConfigProperty<AliasHolder>("aliases");
+    
     /**
      * Threadlocal that creates a thread specific map used during parsing of the
      * xml configuration file.
@@ -65,7 +73,29 @@ public class XmlConfigLoader2 {
             return new HashMap<String, Object>();
         }
     };
-
+    
+    /**
+     * Get a value from the parsingContextAccessor
+     * 
+     * @param <T>
+     * @param key - The ConfigProperty that keys this value in the parsingContextAccessor
+     * @return - The value keyed by the ConfigProperty passed
+     */
+    public static <T> T get(ConfigProperty<T> key) {
+    	return (T)parsingContextAccessor.get().get(key.name);
+    }
+    
+    /**
+     * Put a value into the parsingContextAccessor
+     * 
+     * @param <T>
+     * @param key - The ConfigProperty to key this value by in the parsingContextAccessor
+     * @param value - The value to key
+     */
+    public static <T> void put(ConfigProperty<T> key, T value) {
+    	parsingContextAccessor.get().put(key.name, value);
+    }
+    
     /**
      * Loads configuration from a String.
      * 
@@ -103,10 +133,7 @@ public class XmlConfigLoader2 {
         String content = getContentAsString(reader);
         parsingContextAccessor.get().put(PARSING_CONFIG,
                 Config.getInstance());
-        parsingContextAccessor.get().put(PARSING_ALIASES,
-                new HashMap<String, String>());
-        parsingContextAccessor.get().put(PARSING_SYNTAXES,
-                new HashMap<String, String>());
+        put(PARSING_ALIASES, new AliasHolder());
         
         // now run alias and embedded condition parser
         parsingContextAccessor.get().put(PARSING_PATH, new Path());
@@ -272,53 +299,7 @@ public class XmlConfigLoader2 {
         public String path = null;
         public String query = null;
     }
-
-    /**
-     * User during config file parsing to resolve references to {{token}} to
-     * values stored in the aliases map by "token" key. If not found then an
-     * illegal argument exception is thrown.
-     * 
-     * @param val
-     * @return
-     */
-    static String resolveAliases(String val) {
-        int curIdx = 0;
-        int leftCurlys = val.indexOf("{{");
-        StringBuffer resolved = new StringBuffer();
-        boolean foundEnd = false;
-        Map<String, String> aliases = (Map<String, String>) parsingContextAccessor
-                .get().get(PARSING_ALIASES);
-
-        while (leftCurlys != -1) {
-            String text = val.substring(curIdx, leftCurlys);
-            resolved.append(text);
-            int rightCurlys = val.indexOf("}}", leftCurlys + 2);
-            if (rightCurlys == -1) {
-                throw new IllegalArgumentException(
-                        "Unmatched '}}' for alias in " + val);
-            }
-            String alias = val.substring(leftCurlys + 2, rightCurlys);
-            String value = aliases.get(alias);
-            if (value == null) {
-                throw new IllegalArgumentException("Can't resolve alias '"
-                        + alias + "' in " + val);
-            }
-            resolved.append(value);
-            curIdx = rightCurlys + 2;
-            if (curIdx >= val.length()) {
-                foundEnd = true;
-                break;
-            } else {
-                leftCurlys = val.indexOf("{{", curIdx);
-            }
-        }
-        if (!foundEnd) {
-            resolved.append(val.substring(curIdx));
-        }
-
-        return resolved.toString();
-    }
-
+    
     /**
      * Used during parsing to validate condition attributes are a single macro
      * for a defined alias and returns the alias name.
@@ -330,8 +311,6 @@ public class XmlConfigLoader2 {
      */
     static String getCondition(Path pathToElement, Attributes atts,
             boolean verifySyntax) throws EvaluationException {
-        Map<String, String> aliases = (Map<String, String>) parsingContextAccessor
-                .get().get(PARSING_ALIASES);
         String con = atts.getValue("condition");
         if (con == null || "".equals(con)) {
             return null;
@@ -345,25 +324,20 @@ public class XmlConfigLoader2 {
         con = con.substring(MACRO_PREFIX.length(), con.length()
                 - MACRO_SUFFIX.length());
         if (con.contains(MACRO_PREFIX) || con.contains(MACRO_SUFFIX)
-                || aliases.get(con) == null) {
+                || get(PARSING_ALIASES).getAliasValue(con) == null) {
             throw new IllegalArgumentException(
                     "Attribute 'condition' for "
                             + pathToElement
                             + " must be a single macro for a defined alias. ex: '{{alias-name}}'.");
         }
-        String content = aliases.get(con);
+        String content = get(PARSING_ALIASES).getAliasValue(con);
         if (content == null) {
             throw new IllegalArgumentException(
                     "Macro in 'condition' attribute for " + pathToElement
                             + " does not match any declared alias.");
         }
-        Map<String, String> aliasSyntaxes = (Map<String, String>) parsingContextAccessor
-                .get().get(PARSING_SYNTAXES);
-        String aliasSyntax = aliasSyntaxes.get(con);
-        if (aliasSyntax != null && !aliasSyntax.startsWith(SRC_CLASSPATH)
-                && !aliasSyntax.startsWith(SRC_FILE)
-                && !aliasSyntax.startsWith(SRC_SYSTEM)
-                && !aliasSyntax.startsWith(SRC_EMBEDDED)) {
+        Alias alias = get(PARSING_ALIASES).getAlias(con);
+        if ( alias instanceof PlaintextAlias ) {
             throw new IllegalArgumentException(
                     "Attribute 'condition' for "
                             + pathToElement
@@ -416,7 +390,7 @@ public class XmlConfigLoader2 {
                 return -1;
             }
         }
-        val = resolveAliases(val);
+        val = Alias.resolveAliases(val);
         try {
             return Integer.parseInt(val);
         } catch (NumberFormatException n) {
@@ -427,7 +401,7 @@ public class XmlConfigLoader2 {
 
     static URI getUriAtt(String attName, Path pathToElement, Attributes atts) {
         String val = getStringAtt(attName, pathToElement, atts);
-        val = resolveAliases(val);
+        val = Alias.resolveAliases(val);
         URI u = null;
         try {
             u = new URI(val);
@@ -453,7 +427,7 @@ public class XmlConfigLoader2 {
     static CPathParts getRelUriAtt(String attName, Path pathToElement,
             Attributes atts) {
         String val = getStringAtt(attName, pathToElement, atts);
-        val = resolveAliases(val);
+        val = Alias.resolveAliases(val);
         CPathParts parts = new CPathParts();
         parts.rawValue = val;
         // parts.path will hold path portion or null if not found
@@ -507,7 +481,7 @@ public class XmlConfigLoader2 {
                 return null;
             }
         }
-        return resolveAliases(val);
+        return Alias.resolveAliases(val);
     }
 
     /**
@@ -533,23 +507,6 @@ public class XmlConfigLoader2 {
         }
     }
 
-    /**
-     * Accepts the name, contextual value, and raw value (example: may
-     * include a 'classpath:' prefix) and adds them to the appropriate
-     * caches for later consumption.
-     * 
-     * @param name
-     * @param value
-     * @param rawValue
-     */
-    private static void addAlias(String name, String value, String rawValue) {
-        String val = resolveAliases(value);
-        Map<String, String> aliases = (Map<String, String>) parsingContextAccessor.get().get(PARSING_ALIASES);
-        aliases.put(name, val);
-        Map<String, String> aliasSyntax = (Map<String, String>) parsingContextAccessor.get().get(PARSING_SYNTAXES);
-        aliasSyntax.put(name, rawValue);
-    }
-
     public static class CfgContentHandler implements ContentHandler {
 
         public CfgContentHandler() {
@@ -562,8 +519,6 @@ public class XmlConfigLoader2 {
 
         public void startElement(String uri, String localName, String name,
                 Attributes atts) throws SAXException {
-            Map<String, String> aliases = (Map<String, String>) parsingContextAccessor
-                    .get().get(PARSING_ALIASES);
             Config cfg = (Config) parsingContextAccessor.get().get(
                     PARSING_CONFIG);
             Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
@@ -642,12 +597,12 @@ public class XmlConfigLoader2 {
                      (
                       signin.contains(Config.CONSOLE_PORT_MACRO) && 
                       cfg.getConsolePort() == 0 && // auto binding
-                      !aliases.containsKey(Config.CONSOLE_PORT_ALIAS)
+                      !get(PARSING_ALIASES).containsAlias(Config.CONSOLE_PORT_ALIAS)
                      ) || 
                      (
                       signin.contains(Config.PROXY_PORT_MACRO) && 
                       cfg.getProxyPort() == 0 && // auto binding
-                      !aliases.containsKey(Config.PROXY_PORT_ALIAS)
+                      !get(PARSING_ALIASES).containsAlias(Config.PROXY_PORT_ALIAS)
                      )
                     )
                    ) {
@@ -808,7 +763,7 @@ public class XmlConfigLoader2 {
                 } catch (EvaluationException ee) {
                     throw new SAXException(ee);
                 }
-                String syntax = aliases.get(cond);
+                String syntax = get(PARSING_ALIASES).getAliasValue(cond);
 
                 TrafficManager trafficMgr = cfg.getTrafficManager();
                 SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
@@ -836,14 +791,14 @@ public class XmlConfigLoader2 {
                 } catch (EvaluationException ee) {
                     throw new SAXException(ee);
                 }
-                String syntax = aliases.get(cond);
+                String syntax = get(PARSING_ALIASES).getAliasValue(cond);
 
                 String urn = null;
                 String policyDomain = (String) parsingContextAccessor.get()
                         .get(PARSING_CURR_SITE);
 
                 urn = getStringAtt("urn", path, atts);
-                urn = resolveAliases(urn);
+                urn = Alias.resolveAliases(urn);
                 if (!urn.startsWith("/")) {
                     throw new IllegalArgumentException(
                             "Attribute 'urn' with value "
@@ -1013,108 +968,15 @@ public class XmlConfigLoader2 {
         public void processingInstruction(String target, String data)
                 throws SAXException {
             if (target.equals("alias")) {
-                int eqIdx = data.indexOf('=');
-                if (eqIdx >= 0) {
-                    String name = data.substring(0, eqIdx).trim();
-                    String val = data.substring(eqIdx + 1).trim();
-                    String rawVal = val;
-                    // String srcPrefix = SRC_STRING;
-
-                    // alias handling for "classpath:..."
-                    if (val.toLowerCase().startsWith(SRC_CLASSPATH)) {
-                        String resrc = val.substring(SRC_CLASSPATH.length());
-                        ClassLoader cldr = this.getClass().getClassLoader();
-                        InputStream src = cldr.getResourceAsStream(resrc);
-
-                        if (src == null) {
-                            throw new IllegalArgumentException(
-                                    "Classpath alias resource '" + resrc
-                                            + "' not found.");
-                        } else {
-                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
-                            byte[] bytes = new byte[1024];
-
-                            int read;
-                            try {
-                                while ((read = src.read(bytes)) != -1) {
-                                    bfr.write(bytes, 0, read);
-                                }
-                                bfr.flush();
-                            } catch (IOException e) {
-                                throw new SAXException(
-                                        "Unable to load content for alias '"
-                                                + name
-                                                + "' from classpath resource '"
-                                                + resrc + "'.", e);
-                            }
-                            val = bfr.toString().trim();
-                        }
-                    }
-                    // alias handling for "system:..."
-                    else if (val.toLowerCase().startsWith(SRC_SYSTEM)) {
-                        String resrc = val.substring(SRC_SYSTEM.length());
-                        val = System.getProperty(resrc);
-
-                        if (val == null) {
-                            throw new IllegalArgumentException(
-                                    "System alias resource '"
-                                            + resrc
-                                            + "' not found in java.lang.System.");
-                        }
-                    }
-                    // alias handling for "file:..."
-                    else if (val.toLowerCase().startsWith(SRC_FILE)) {
-                        String resrc = val.substring(SRC_FILE.length());
-                        File file = new File(resrc);
-
-                        if (!file.exists()) {
-                            throw new IllegalArgumentException(
-                                    "File alias resource '" + resrc
-                                            + "' not found at '"
-                                            + file.getAbsolutePath() + "'.");
-                        } else {
-                            InputStream src;
-                            try {
-                                src = new FileInputStream(file);
-                            } catch (FileNotFoundException e) {
-                                throw new SAXException(
-                                        "Unable to load content for alias '"
-                                                + name
-                                                + "' from file resource '"
-                                                + file.getAbsolutePath() + "'.",
-                                        e);
-                            }
-                            ByteArrayOutputStream bfr = new ByteArrayOutputStream();
-                            byte[] bytes = new byte[1024];
-
-                            int read;
-                            try {
-                                while ((read = src.read(bytes)) != -1) {
-                                    bfr.write(bytes, 0, read);
-                                }
-                                bfr.flush();
-                            } catch (IOException e) {
-                                throw new SAXException(
-                                        "Unable to load content for alias '"
-                                                + name
-                                                + "' from file resource '"
-                                                + file.getAbsolutePath() + "'.",
-                                        e);
-                            }
-                            val = bfr.toString().trim();
-                        }
-                    } else {
-                        // alias handling for "literal-text" use 'val' as-is
-                    }
-                    addAlias(name, val, rawVal);
-                }
+            	Alias alias = Alias.fromString(null, data);
+            	get(PARSING_ALIASES).addAlias(alias);
+            } else if ( target.endsWith("alias") ) {
+            	get(PARSING_ALIASES).addAlias(Alias.fromString(target, data));
             }
         }
 
         public void startElement(String uri, String localName, String name,
                 Attributes atts) throws SAXException {
-            Map<String, String> aliases = (Map<String, String>) parsingContextAccessor
-                    .get().get(PARSING_ALIASES);
             Config cfg = (Config) parsingContextAccessor.get().get(
                     PARSING_CONFIG);
             Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
@@ -1158,7 +1020,7 @@ public class XmlConfigLoader2 {
                 String alias = (String) parsingContextAccessor.get().get(
                         PARSING_CONDITION_ALIAS);
                 String content = chars.toString();
-                addAlias(alias, content, SRC_EMBEDDED + content);
+                get(PARSING_ALIASES).addAlias(new Alias(alias, content));
                 LogicalSyntaxEvaluationEngine engine = LogicalSyntaxEvaluationEngine.getSyntaxEvalutionInstance();
                 try {
                     engine.getEvaluator(alias, content);

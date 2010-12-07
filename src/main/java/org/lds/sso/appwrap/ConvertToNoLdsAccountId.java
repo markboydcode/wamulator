@@ -1,17 +1,7 @@
 package org.lds.sso.appwrap;
 
-import java.io.ByteArrayOutputStream; 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,24 +11,20 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
 
-import javax.xml.parsers.SAXParserFactory;
-
 import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Service.SourceAndReader;
 import org.lds.sso.appwrap.XmlConfigLoader2.CPathParts;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
-import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsAccountId;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.LdsAccount;
-import org.lds.sso.appwrap.rest.RestVersion;
+import org.lds.sso.appwrap.xml.Alias;
+import org.lds.sso.appwrap.xml.AliasHolder;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 
 public class ConvertToNoLdsAccountId {
     private static final Logger cLog = Logger.getLogger(ConvertToNoLdsAccountId.class);
@@ -78,17 +64,13 @@ public class ConvertToNoLdsAccountId {
 	 * @author BOYDMR
 	 *
 	 */
-	public static class Condition {
-	    public String aliasname = null;
-	    public String syntax = null;
-	    public List<Use> uses = null;
-        public String aliasvalue = null;
-        public Map<String, Set<String>> groupings = new TreeMap<String, Set<String>>();
+	private static class Condition {
+	    public final Alias alias;
+	    public final List<Use> uses;
+        public final Map<String, Set<String>> groupings = new TreeMap<String, Set<String>>();
 	    
-	    public Condition(String aliasname, String aliasvalue, String syntax) {
-	        this.aliasname = aliasname;
-	        this.aliasvalue = aliasvalue;
-	        this.syntax = syntax;
+	    public Condition(Alias syntax) {
+	        this.alias = syntax;
 	        this.uses = new ArrayList<Use>();
 	    }
 	}
@@ -109,8 +91,8 @@ public class ConvertToNoLdsAccountId {
         }
 
         public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
-            Map<String,String> aliases = (Map<String, String>) pca.get().get(XmlConfigLoader2.PARSING_ALIASES);
-            Map<String,String> aliasValues = (Map<String, String>) pca.get().get(XmlConfigLoader2.PARSING_SYNTAXES);
+            AliasHolder aliases = XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES);
+            //Map<String,String> aliasValues = (Map<String, String>) pca.get().get(XmlConfigLoader2.PARSING_SYNTAXES);
             Map<String, Condition>conditions = (Map<String, Condition>) pca.get().get(CONDITIONS);
             Config cfg = (Config) pca.get().get(XmlConfigLoader2.PARSING_CONFIG);
             Path path = (Path) pca.get().get(XmlConfigLoader2.PARSING_PATH);
@@ -130,13 +112,12 @@ public class ConvertToNoLdsAccountId {
                 } catch (EvaluationException e) {
                     // won't happen since we don't validate
                 }
-                String condSyntax = aliases.get(aliasName);
-                String aliasRawValue = aliasValues.get(aliasName);
+                Alias alias = aliases.getAlias(aliasName);
                 Condition c = conditions.get(aliasName);
                 
                 if (c == null) {
                     System.out.println("Identified alias " + aliasName + " as a condition.");
-                    c = new Condition(aliasName, aliasRawValue, condSyntax);
+                    c = new Condition(alias);
                     conditions.put(aliasName, c);
                 }
                 c.uses.add(Use.allow(path.toString(), cp.rawValue));
@@ -149,13 +130,12 @@ public class ConvertToNoLdsAccountId {
                 } catch (EvaluationException e) {
                     // won't happen since we don't validate
                 }
-                String syntax = aliases.get(aliasName);
-                String aliasRawValue = aliasValues.get(aliasName);
+                Alias alias = aliases.getAlias(aliasName);
                 Condition c = conditions.get(aliasName);
                 
                 if (c == null) {
                     System.out.println("Identified alias " + aliasName + " as a condition.");
-                    c = new Condition(aliasName, aliasRawValue, syntax);
+                    c = new Condition(alias);
                     conditions.put(aliasName, c);
                 }
                 c.uses.add(Use.entitlement(path.toString(), urn));
@@ -259,10 +239,10 @@ public class ConvertToNoLdsAccountId {
                 Set<String> ldsAccountIds = (HashSet<String>) pca.get().get(LDS_ACCT_GROUPING);
 
                 if (ldsAccountIds.size() > 0) {
-                    System.out.println("Creating grouping " + condition.aliasname 
+                    System.out.println("Creating grouping " + condition.alias.name 
                             + " for lds account id cluster in " 
-                            + condition.aliasvalue + " at " + path.toString());
-                    condition.groupings.put(condition.aliasname, ldsAccountIds);
+                            + condition.alias + " at " + path.toString());
+                    condition.groupings.put(condition.alias.name, ldsAccountIds);
                 }
             }
             else if (! name.equals(HasLdsAccountId.class.getSimpleName()) &&
@@ -272,10 +252,10 @@ public class ConvertToNoLdsAccountId {
                 Set<String> ldsAccountIds = (HashSet<String>) pca.get().get(LDS_ACCT_GROUPING);
 
                 if (ldsAccountIds.size() > 0) {
-                    String grpName = condition.aliasname + "-" + (++groupingsCount);
+                    String grpName = condition.alias.name + "-" + (++groupingsCount);
                     System.out.println("Creating grouping " + grpName 
                             + " for lds account id cluster in " 
-                            + condition.aliasvalue + " at " + path.toString());
+                            + condition.alias + " at " + path.toString());
                     condition.groupings.put(grpName, ldsAccountIds);
                 }
                 // now restore ldsaccountid container of parent in case it has
@@ -361,16 +341,16 @@ public class ConvertToNoLdsAccountId {
         
         for(String aliasname : conditions.keySet()) {
             Condition c = conditions.get(aliasname);
-            XmlConfigLoader2.load(new StringReader(c.syntax), "conditionAlias:" + aliasname, new ConditionContentHandler(c));
+            XmlConfigLoader2.load(new StringReader(c.alias.value), "conditionAlias:" + aliasname, new ConditionContentHandler(c));
             
             
             if (c.groupings.size() == 0) {
-                System.out.println("No use of HasLdsAccountId in Condition '" + c.aliasname + "'.");
+                System.out.println("No use of HasLdsAccountId in Condition '" + c.alias.name + "'.");
             }
             else {
                 for(String grpNm : c.groupings.keySet()) {
                     Grouping dir = new Grouping(grpNm, "--->>> For grouping '" 
-                            + grpNm + "' found in '" + c.aliasvalue 
+                            + grpNm + "' found in '" + c.alias 
                             + "' replace all <HasLdsAccountId/> elements with a single <HasLdsApplication value='" 
                             + grpNm + "'/> element.");
                     directives.put(grpNm, dir);
