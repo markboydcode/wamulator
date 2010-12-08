@@ -113,7 +113,10 @@ public class Alias {
 			String defaultValue = null;
 			Matcher defaultValueMatcher = defaultValuePattern.matcher(value);
 			if ( defaultValueMatcher.find() ) {
-				defaultValue = defaultValueMatcher.group(1);
+				defaultValue = defaultValueMatcher.group(3);
+				if ( StringUtils.isBlank(defaultValue) ) {
+					defaultValue = defaultValueMatcher.group(1);
+				}
 			}
 			
 			if ( XmlConfigLoader2.SRC_CLASSPATH.equals(type) || ClasspathAlias.TAG_NAME.equals(type)) {  // legacy.  It'd be nice not to have both of these

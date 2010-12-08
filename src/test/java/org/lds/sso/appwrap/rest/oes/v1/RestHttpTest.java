@@ -1,15 +1,12 @@
 package org.lds.sso.appwrap.rest.oes.v1;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.StringReader;
-import java.net.ServerSocket;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.StatusLine;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.lds.sso.appwrap.Config;
@@ -50,7 +47,8 @@ public class RestHttpTest {
 
         StringBuffer config = new StringBuffer("string:")
         .append("<?xml version='1.0' encoding='UTF-8'?>")
-        .append("<?alias is-cdol=system:is-cdol-syntax?>")
+        .append("<?system-alias is-cdol-syntax=\"is-cdol-syntax\"?>")
+        .append("<?system-alias is-cdol=\"is-cdol\" default=\"{{is-cdol-syntax}}\"?>")
         .append("<config console-port='auto' proxy-port='auto' ")
         .append(" rest-version='CD-OESv1'>")
         .append(" <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='false'/>")
