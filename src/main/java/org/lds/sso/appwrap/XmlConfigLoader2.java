@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.log4j.Logger;
@@ -26,7 +27,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class XmlConfigLoader2 {
     private static final Logger cLog = Logger.getLogger(XmlConfigLoader2.class);
@@ -156,13 +159,18 @@ public class XmlConfigLoader2 {
             ContentHandler hndlr) throws Exception {
         XMLReader rdr;
         try {
-            rdr = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+        	SAXParserFactory factory = SAXParserFactory.newInstance();
+        	factory.setValidating(true);
+        	factory.setNamespaceAware(true);
+        	SAXParser parser = factory.newSAXParser();
+            rdr = parser.getXMLReader();
         } catch (Exception e) {
             throw new Exception(
                     "Unable to create parser for loading configuration '"
                             + sourceInfo + "'.", e);
         }
         rdr.setContentHandler(hndlr);
+        rdr.setErrorHandler(new ConfigErrorHandler());
         InputSource src = new InputSource(reader);
         try {
             rdr.parse(src);
@@ -1075,5 +1083,22 @@ public class XmlConfigLoader2 {
         public void startPrefixMapping(String prefix, String uri)
                 throws SAXException {
         }
+    }
+    
+    private static class ConfigErrorHandler extends DefaultHandler {
+        public void warning(SAXParseException e) throws SAXException { 
+            printInfo(e);
+         }
+         public void error(SAXParseException e) throws SAXException { 
+            printInfo(e);
+         }
+         public void fatalError(SAXParseException e) throws SAXException { 
+            printInfo(e);
+         }
+         private void printInfo(SAXParseException e) {
+         	 cLog.info("   Line number: "+e.getLineNumber());
+         	 cLog.info("   Column number: "+e.getColumnNumber());
+         	 cLog.info("   Message: "+e.getMessage());
+         }
     }
 }

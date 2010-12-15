@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.33</version>
+    <version>5.34</version>
 
     <name>SSO Environment Simulator</name>
 
@@ -91,6 +91,24 @@
                     <target>1.5</target>
                 </configuration>
             </plugin>
+            <plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>wagon-maven-plugin</artifactId>
+				<version>1.0-beta-2</version>
+				<executions>
+					<execution>
+						<id>upload-xsd</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>upload-single</goal>
+						</goals>
+						<configuration>
+							<fromFile>${project.build.outputDirectory}/org/lds/sso/appwrap/wamulator-5.0.xsd</fromFile>
+							<url>scp://ocweb//opt/LDSDev/html/schema/wamulator</url>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
         </plugins>
     </build>
 
