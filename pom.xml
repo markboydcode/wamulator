@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.34</version>
+    <version>5.35</version>
 
     <name>SSO Environment Simulator</name>
 
@@ -150,14 +150,7 @@
             <version>3.1</version>
         </dependency>
 
-		
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.12</version>
-        </dependency>
-
-        <dependency>
+		<dependency>
             <groupId>org.mortbay.jetty</groupId>
             <artifactId>jetty</artifactId>
             <version>6.1.7</version>

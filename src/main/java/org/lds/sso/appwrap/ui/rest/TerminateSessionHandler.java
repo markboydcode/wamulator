@@ -1,14 +1,15 @@
 package org.lds.sso.appwrap.ui.rest;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.SessionManager;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
@@ -20,7 +21,7 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  *
  */
 public class TerminateSessionHandler extends RestHandlerBase {
-    private static final Logger cLog = Logger.getLogger(TerminateSessionHandler.class);
+    private static final Logger cLog = Logger.getLogger(TerminateSessionHandler.class.getName());
 
 	public TerminateSessionHandler(String pathPrefix) {
 		super(pathPrefix);
@@ -49,8 +50,8 @@ public class TerminateSessionHandler extends RestHandlerBase {
                         cookieDomain = smgr.getCookieDomainForHost(request.getServerName());
                     }
                     catch( IllegalArgumentException e) {
-                        cLog.info("Unable to clear cookie since can't find configured "
-                            + "cookie domain for host '" + request.getServerName() + "'");
+                        LogUtils.info(cLog, "Unable to clear cookie since can't find configured cookie domain for host '{0}'", 
+                        	request.getServerName());
                     }
                     if (cookieDomain != null) {
                         cfg.getSessionManager().terminateSession(token, cookieDomain);

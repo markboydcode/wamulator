@@ -1,27 +1,24 @@
 package org.lds.sso.appwrap.ui.rest;
 
-import java.io.IOException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.rest.RestHandlerBase;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.proxy.Header;
 import org.lds.sso.appwrap.proxy.HeaderDef;
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.HttpPackageType;
 import org.lds.sso.appwrap.proxy.StartLine;
+import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
  * Handles request for logs
@@ -32,7 +29,6 @@ import org.lds.sso.appwrap.proxy.StartLine;
  */
 public class LogFileHandler extends RestHandlerBase {
 
-    private static final Logger log = Logger.getLogger(RestHandlerBase.class);
     public static final String CRLF = "" + ((char) 13) + ((char) 10); // "\r\n";
     public static final char SP = ' ';
     public static final char HT = ((char) ((int) 9));

@@ -53,19 +53,20 @@ package org.lds.sso.appwrap.proxy;
 	 * Julian Robichaux -- http://www.nsftools.com
 	 */
 
-import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.Config;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.text.DecimalFormat;
+import java.util.logging.Logger;
+
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.io.LogUtils;
 
 	public class ProxyListener implements Runnable
 	{
-		private static final Logger cLog = Logger.getLogger(ProxyListener.class);
+		private static final Logger cLog = Logger.getLogger(ProxyListener.class.getName());
 		
 		private ServerSocket server = null;
 		private boolean started = false;
@@ -117,7 +118,7 @@ import java.text.DecimalFormat;
 				os.close();
 				s.close();*/
 			}  catch(Exception e)  { 
-					cLog.error("Error occurred closing listener socket.", e);
+				LogUtils.severe(cLog, "Error occurred closing listener socket.", e);
 			}
 			
 			server = null;
@@ -158,12 +159,12 @@ import java.text.DecimalFormat;
 				String msg = "Proxy Listener error: " + e;
 				e.printStackTrace();
 				System.out.println(msg);
-				cLog.error("Proxy Listener error: ", e); 
+				LogUtils.severe(cLog, "Proxy Listener error: ", e); 
 			} catch ( IOException e ) {
 				String msg = "Proxy Listener error: " + e;
 				e.printStackTrace();
 				System.out.println(msg);
-				cLog.error("Proxy Listener error: ", e); 				
+				LogUtils.severe(cLog, "Proxy Listener error: ", e); 				
 			} finally {
 				started = false;
 			}

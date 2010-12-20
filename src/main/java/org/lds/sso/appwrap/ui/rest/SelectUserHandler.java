@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -17,11 +18,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.SessionManager;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.UserManager;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
@@ -35,7 +36,7 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  */
 public class SelectUserHandler extends RestHandlerBase {
 
-    private static final Logger cLog = Logger.getLogger(SelectUserHandler.class);
+    private static final Logger cLog = Logger.getLogger(SelectUserHandler.class.getName());
 
     public SelectUserHandler(String pathPrefix) {
         super(pathPrefix);
@@ -150,8 +151,7 @@ public class SelectUserHandler extends RestHandlerBase {
                 content = method.getResponseBodyAsString();
 
                 if (status != 200) {
-                    cLog.error("Non 200 response code recieved from " + uri
-                            + ", content returned: " + content);
+                    LogUtils.severe(cLog, "Non 200 response code recieved from {0}, content returned: {1}", uri, content);
                     returnWithError("error-accessing-ext-source", minusQp, parms, response);
                     return;
                 }

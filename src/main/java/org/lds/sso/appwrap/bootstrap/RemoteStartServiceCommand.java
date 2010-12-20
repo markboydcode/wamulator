@@ -6,14 +6,15 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.exception.ServerFailureException;
+import org.lds.sso.appwrap.io.LogUtils;
 
 public class RemoteStartServiceCommand extends Command {
-	private static final Logger cLog = Logger.getLogger(RemoteStartServiceCommand.class);
+	private static final Logger cLog = Logger.getLogger(RemoteStartServiceCommand.class.getName());
 	public static final String JAVA_OPTS_ENVIRONMENT_VARIABLE = "WAM_OPTS";
 	
 	private Process process;
@@ -67,7 +68,7 @@ public class RemoteStartServiceCommand extends Command {
 		while (is.available() > 0 && (read = is.read(buffer)) != -1) {
 			baos.write(buffer, 0, read);
 		}
-		System.out.println(baos.toString());		
+		LogUtils.fine(cLog, "Returned from spawned wamulator: {0}", baos.toString());
 	}
 	
 	@Override

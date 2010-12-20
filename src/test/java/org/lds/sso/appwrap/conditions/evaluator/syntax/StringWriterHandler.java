@@ -2,19 +2,14 @@ package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.logging.Filter;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
-import org.apache.log4j.Appender;
-import org.apache.log4j.Layout;
-import org.apache.log4j.spi.ErrorHandler;
-import org.apache.log4j.spi.Filter;
-import org.apache.log4j.spi.LoggingEvent;
-
-public class StringWriterAppender implements Appender {
+public class StringWriterHandler extends Handler {
     private StringWriter sw = new StringWriter();
     private PrintWriter pw = new PrintWriter(sw);
     private String name;
-    private Layout layout;
-    private ErrorHandler eh;
     private Filter filter;
     
     public void clearBuffer() {
@@ -36,20 +31,16 @@ public class StringWriterAppender implements Appender {
     public void close() {
     }
 
-    public void doAppend(LoggingEvent le) {
+    public void publish(LogRecord le) {
         pw.print(le.getMessage());
     }
 
-    public ErrorHandler getErrorHandler() {
-        return eh;
+    public void flush() {
+    	pw.flush();
     }
-
+    
     public Filter getFilter() {
         return filter;
-    }
-
-    public Layout getLayout() {
-        return layout;
     }
 
     public String getName() {
@@ -58,14 +49,6 @@ public class StringWriterAppender implements Appender {
 
     public boolean requiresLayout() {
         return false;
-    }
-
-    public void setErrorHandler(ErrorHandler eh) {
-        this.eh = eh;
-    }
-
-    public void setLayout(Layout layout) {
-        this.layout = layout;
     }
 
     public void setName(String name) {

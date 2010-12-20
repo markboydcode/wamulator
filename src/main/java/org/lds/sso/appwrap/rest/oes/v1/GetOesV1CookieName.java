@@ -3,11 +3,11 @@ package org.lds.sso.appwrap.rest.oes.v1;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
@@ -20,7 +20,7 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  *
  */
 public class GetOesV1CookieName extends RestHandlerBase {
-	private static final Logger cLog = Logger.getLogger(GetOesV1CookieName.class);
+	private static final Logger cLog = Logger.getLogger(GetOesV1CookieName.class.getName());
 
 	public GetOesV1CookieName(String pathPrefix) {
 		super(pathPrefix);

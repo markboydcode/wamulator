@@ -76,6 +76,7 @@ src/main/java/org/lds/sso/appwrap/exception/UnableToListenOnProxyPortException.j
 src/main/java/org/lds/sso/appwrap/exception/UnableToStartJettyServerException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/exception/UnableToStopJettyServerException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/io/ChainingOutputStream.java -text
+src/main/java/org/lds/sso/appwrap/io/LogUtils.java -text
 src/main/java/org/lds/sso/appwrap/io/LoggingOutputStream.java -text
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/Header.java -text svneol=unset#text/plain
@@ -134,7 +135,7 @@ src/main/resources/config-samples/ses_login_sample.xml -text
 src/main/resources/config-samples/ses_login_sample_condition_test.xml -text
 src/main/resources/config-samples/ses_login_sample_non_site_coda.xml -text svneol=unset#text/plain
 src/main/resources/local-config2.xml -text svneol=unset#text/plain
-src/main/resources/log4j.properties -text svneol=unset#text/plain
+src/main/resources/logging.properties -text
 src/main/resources/org/lds/sso/appwrap/wamulator-5.0.xsd -text
 src/main/resources/webapp/add.gif -text
 src/main/resources/webapp/apps.jsp -text svneol=unset#text/plain
@@ -184,7 +185,7 @@ src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/IsMemberTest.java 
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/MemberOfUnitTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/NOTTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/ORTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/StringWriterAppender.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/StringWriterHandler.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/TestBaseClass.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/CookiePathAndRedirectRewriteTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/CrossDomainSignMeInOutTest.java -text svneol=unset#text/plain

@@ -1,21 +1,22 @@
 package org.lds.sso.appwrap;
 
 import java.util.ArrayList;
-import java.util.HashMap; 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.io.LogUtils;
 
 public class SiteMatcher {
-	private static final Logger cLog = Logger.getLogger(SiteMatcher.class);
+	private static final Logger cLog = Logger.getLogger(SiteMatcher.class.getName());
 	private String host;
 	private int port;
 	protected Set<OrderedUri> urls = new TreeSet<OrderedUri>();
@@ -73,9 +74,7 @@ public class SiteMatcher {
                             evaluator = cEngine.getEvaluator(condId, syntax);
                         }
                         catch (EvaluationException e) {
-                            cLog.error("Disallowing access to " 
-                                    + au + " since unable to obtain evaluator for condition alias "
-                                    + condId + " with syntax " + syntax + ". ", e);
+                            LogUtils.severe(cLog, "Disallowing access to {0} since unable to obtain evaluator for condition alias {1} with syntax {2}.", e, au, condId, syntax); 
                             return false;
                         }
                         EvaluationContext ctx = new EvaluationContext(user, new HashMap<String,String>());
@@ -83,8 +82,7 @@ public class SiteMatcher {
                             return evaluator.isConditionSatisfied(ctx);
                         }
                         catch (EvaluationException e) {
-                            cLog.error("Error occurred for " + au + " for user " + user.getUsername()
-                                    + " denying access.", e);
+                            LogUtils.severe(cLog, "Error occurred for {0} for user {1} denying access.", e, au, user.getUsername());
                         }
                         return false;
                     }

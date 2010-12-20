@@ -8,11 +8,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.SyntaxBase;
+import org.lds.sso.appwrap.io.LogUtils;
 
 /**
  * Context passed to evaluators during evaluation of their condition for a given
@@ -89,7 +90,7 @@ public class EvaluationContext {
 		parentLogUtils = new ArrayList<LogHolder>();
 		Logger ossoLog = Logger.getLogger(DEBUG_LOG_NAME);
 		debugOriginalLevel = ossoLog.getLevel();
-		ossoLog.setLevel(Level.DEBUG);
+		ossoLog.setLevel(Level.FINE);
 		this.debugTrigger = ev; // so we know when to turn it back off
 	}
 	
@@ -200,7 +201,7 @@ public class EvaluationContext {
 			}
 			logUtils.log.println("---------------");
 			logUtils.log.flush();
-			ossoLog.debug(logUtils.buffer.toString());
+			LogUtils.fine(ossoLog, logUtils.buffer.toString());
 			ossoLog.setLevel(debugOriginalLevel);
 			logUtils = null;
 			debugTrigger = null;

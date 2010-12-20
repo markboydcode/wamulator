@@ -1,14 +1,15 @@
 package org.lds.sso.appwrap.ui.rest;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.SessionManager;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
@@ -20,7 +21,7 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  *
  */
 public class SelectSessionHandler extends RestHandlerBase {
-    private static final Logger cLog = Logger.getLogger(SelectSessionHandler.class);
+    private static final Logger cLog = Logger.getLogger(SelectSessionHandler.class.getName());
 
 	public SelectSessionHandler(String pathPrefix) {
 		super(pathPrefix);
@@ -45,8 +46,8 @@ public class SelectSessionHandler extends RestHandlerBase {
 		    cookieDomain = smgr.getCookieDomainForHost(request.getServerName());
 		}
 		catch( IllegalArgumentException e) {
-            cLog.info("Unable to select session since can't find configured "
-                + "cookie domain for host '" + request.getServerName() + "'");
+            LogUtils.info(cLog, "Unable to select session since can't find configured cookie domain for host '{0}'",
+            		request.getServerName());
 		}
 		if (cookieDomain != null) {
 	        smgr.generateSessionToken(token, cookieDomain);

@@ -4,14 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.ConvertToNoLdsAccountId;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluatorContainer;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 
 /**
  * Evaluator that is no longer supported.
@@ -20,8 +18,6 @@ import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
  *
  */
 public class HasLdsAccountId extends SyntaxBase implements IEvaluatorContainer {
-    public static final Logger cLog = Logger.getLogger(HasLdsAccountId.class);
-    
 	private List<String> cfgIds = new ArrayList<String>();
 	private boolean cfgAny = false;
 

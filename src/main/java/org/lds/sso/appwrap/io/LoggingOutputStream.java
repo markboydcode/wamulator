@@ -3,10 +3,8 @@ package org.lds.sso.appwrap.io;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class LoggingOutputStream extends OutputStream {
 	/** Initial buffer size. */
@@ -100,7 +98,7 @@ public class LoggingOutputStream extends OutputStream {
         super.close();
     }
 
-    public Priority getMessageLevel() {
+    public Level getMessageLevel() {
         return level;
     }
 

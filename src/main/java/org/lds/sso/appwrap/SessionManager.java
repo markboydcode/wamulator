@@ -6,13 +6,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
+import org.lds.sso.appwrap.io.LogUtils;
 
 public class SessionManager {
-	private static final Logger cLog = Logger.getLogger(SessionManager.class);
+	private static final Logger cLog = Logger.getLogger(SessionManager.class.getName());
 
 	/**
 	 * Map of domain specific session maps.
@@ -63,9 +64,7 @@ public class SessionManager {
                                     
                                     if (!s.testIsActive()) {
                                         itr.remove();
-                                        if (cLog.isInfoEnabled()) {
-                                            cLog.info("Session " + s.token + " in domain '" + ent.getKey() + "' expired.");
-                                        }
+                                        LogUtils.info(cLog, "Session {0} in domain '{1}' expired.", s.token, ent.getKey());
                                     }
                                 }
                                 holder.sessions = copy;

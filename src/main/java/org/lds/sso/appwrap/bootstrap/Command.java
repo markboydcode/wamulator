@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.exception.ServerFailureException;
 import org.lds.sso.appwrap.exception.ServerTimeoutFailureException;
+import org.lds.sso.appwrap.io.LogUtils;
 
 /**
  * Abstract class for runtime start/stop actions and dictates the pattern of 
@@ -21,7 +22,7 @@ import org.lds.sso.appwrap.exception.ServerTimeoutFailureException;
  *
  */
 public abstract class Command {
-	private static final Logger cLog = Logger.getLogger(Service.class);
+	private static final Logger cLog = Logger.getLogger(Service.class.getName());
 
 	protected Integer timeout = 40000;
 	protected final String cfgPath;
@@ -102,7 +103,7 @@ public abstract class Command {
 		long startTime = System.currentTimeMillis();
 		int responseCode = getTargetResponseCode();
 		do {
-			cLog.info("Trying to hit: " + getCheckUrl(cfg.getConsolePort()));
+			LogUtils.info(cLog, "Trying to hit: {0}", getCheckUrl(cfg.getConsolePort()));
 			try {
 				URLConnection connection = openConnection(getCheckUrl(cfg.getConsolePort()));
 				responseCode = ((HttpURLConnection)connection).getResponseCode();
@@ -114,7 +115,7 @@ public abstract class Command {
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
-			cLog.info("Responded with: " + responseCode);
+			LogUtils.info(cLog, "Responded with: {0}", responseCode);
 		} while ( responseCode != getTargetResponseCode() && System.currentTimeMillis() - startTime < timeout );
 
 		if ( responseCode != getTargetResponseCode() ) {

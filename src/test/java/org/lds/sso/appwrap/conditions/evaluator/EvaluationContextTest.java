@@ -3,9 +3,8 @@ package org.lds.sso.appwrap.conditions.evaluator;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
+import java.util.logging.Level;
 
-import org.apache.log4j.Level;
 import org.easymock.classextension.EasyMock;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.SyntaxBase;
@@ -25,7 +24,7 @@ TODO:
 	@Test
     public void testShouldLogByDebugUserResult() throws Exception {
         Level old = LogicalSyntaxEvaluationEngine.cLog.getLevel();
-        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.DEBUG);
+        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.FINE);
         try {
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
@@ -60,7 +59,7 @@ TODO:
     @Test
     public void testShouldLogByDebugResult() throws Exception {
         Level old = LogicalSyntaxEvaluationEngine.cLog.getLevel();
-        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.DEBUG);
+        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.FINE);
         try {
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
@@ -79,7 +78,7 @@ TODO:
     @Test
     public void testShouldNotLogResult() throws Exception {
         Level old = LogicalSyntaxEvaluationEngine.cLog.getLevel();
-        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.DEBUG);
+        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.FINE);
         try {
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();

@@ -1,21 +1,14 @@
 package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.StringReader;
-import java.security.Principal;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.easymock.classextension.EasyMock;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
-import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.testng.Assert;
 import org.testng.annotations.Test;

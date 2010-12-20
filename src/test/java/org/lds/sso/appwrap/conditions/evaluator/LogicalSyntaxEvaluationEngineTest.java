@@ -1,16 +1,13 @@
 package org.lds.sso.appwrap.conditions.evaluator;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.logging.Level;
 
-import org.apache.log4j.Level;
 import org.easymock.classextension.EasyMock;
 import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.AND;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.HasAssignment;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsAccountId;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.HasPosition;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.IsEmployee;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.IsMember;
@@ -25,7 +22,7 @@ public class LogicalSyntaxEvaluationEngineTest {
     @Test
     public void testXmlBaseCaching() throws EvaluationException {
         Level old = LogicalSyntaxEvaluationEngine.cLog.getLevel();
-        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.DEBUG);
+        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.FINE);
         try {
             String xmlBase = "/ml-pap/group/labs-general.xml";
             String policy = "" 
@@ -75,7 +72,7 @@ public class LogicalSyntaxEvaluationEngineTest {
 	@Test
 	public void testUnusedEvaluatorGarbageCollector() throws Exception {
         Level old = LogicalSyntaxEvaluationEngine.cLog.getLevel();
-        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.DEBUG);
+        LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.FINE);
         try {
 		long oldVal = LogicalSyntaxEvaluationEngine.UNUSED_EVALUATOR_MAX_LIFE_MILLIS;
 		

@@ -1,15 +1,13 @@
 package org.lds.sso.appwrap.ui.rest;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.mortbay.jetty.handler.HandlerWrapper;
 import org.mortbay.jetty.webapp.WebAppContext;
 import org.mortbay.resource.Resource;
@@ -29,7 +27,7 @@ import org.mortbay.resource.Resource;
  *
  */
 public class JettyWebappUrlAdjustingHandler extends HandlerWrapper {
-	private static final Logger cLog = Logger.getLogger(JettyWebappUrlAdjustingHandler.class);
+	private static final Logger cLog = Logger.getLogger(JettyWebappUrlAdjustingHandler.class.getName());
 	
 	/**
 	 * The jetty object representing our webapp.
@@ -72,9 +70,7 @@ public class JettyWebappUrlAdjustingHandler extends HandlerWrapper {
 		if (target.startsWith(ctxPath)) {
 			// see if we have already determined if adjustment is needed
 			if (! initialized) {
-				if (cLog.isDebugEnabled()) {
-					cLog.debug("Identifying Target Adjustment Hack Requirement");
-				}
+				LogUtils.fine(cLog, "Identifying Target Adjustment Hack Requirement");
 				String relTarget = target.substring(ctxPath.length());
 				Resource res = wac.getResource(relTarget);
 				boolean foundRes = res.exists();
@@ -90,15 +86,11 @@ public class JettyWebappUrlAdjustingHandler extends HandlerWrapper {
 					this.adjustTargets = false;
 				}
 				initialized = true;
-				if (cLog.isDebugEnabled()) {
-					cLog.debug("webapp bound target = " + target);
-					cLog.debug((foundRes ? "" : "NOT ") + "found " + relTarget + " @ " + res);
-					cLog.debug((foundAdj ? "" : "NOT ") + "found " + adjTarget + " @ " + adj);
-				}
-				cLog.info("Determined Target Adjustment is " 
-						+ (adjustTargets ? "" : "NOT ")
-						+ "REQUIRED. Webapp Targets will " 
-						+ (adjustTargets ? "" : "NOT ") + "be adjusted.");
+				LogUtils.fine(cLog, "webapp bound target = {0}", target);
+				LogUtils.fine(cLog, "{0}found {1} @ {2}", (foundRes ? "" : "NOT "), relTarget, res);
+				LogUtils.fine(cLog, "{0}found {1} @ {2}", (foundAdj ? "" : "NOT "), adjTarget, adj);
+				LogUtils.info(cLog, "Determined Target Adjustment is {0}REQUIRED. Webapp Targets will {1}be adjusted.",
+						(adjustTargets ? "" : "NOT "), (adjustTargets ? "" : "NOT "));
 			}
 			if (adjustTargets) {
 				String relTarget = target.substring(ctxPath.length());

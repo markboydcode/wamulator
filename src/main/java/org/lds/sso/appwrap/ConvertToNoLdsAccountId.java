@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Service.SourceAndReader;
 import org.lds.sso.appwrap.XmlConfigLoader2.CPathParts;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
@@ -26,9 +25,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
-public class ConvertToNoLdsAccountId {
-    private static final Logger cLog = Logger.getLogger(ConvertToNoLdsAccountId.class);
-    
+public class ConvertToNoLdsAccountId {    
     public static final String CURR_USER = "current-user";
     public static final String CONDITIONS = "conditions";
     private static final String USER_BY_LDSACCT = "username-by-ldsacc";

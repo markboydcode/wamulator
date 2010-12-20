@@ -9,8 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.TrafficType;
 
 /**
@@ -22,7 +23,7 @@ import org.lds.sso.appwrap.proxy.TrafficType;
  */
 public class TrafficRecorder {
 
-    private static final Logger cLog = Logger.getLogger(TrafficRecorder.class);
+    private static final Logger cLog = Logger.getLogger(TrafficRecorder.class.getName());
     private SortedSet<Hit> hits = new TreeSet<Hit>();
     private boolean recordTraffic = false;
     private int rHitCount = 0;
@@ -87,18 +88,16 @@ public class TrafficRecorder {
         return restInstances;
     }
     public synchronized void recordHit(long time, String connId, String username, int respCode, String respMsg, boolean isProxyRes, TrafficType trafficType, String method, String hostHdr, String uri) {
-        if (cLog.isInfoEnabled()) {
-            cLog.info(
-                    connId
-                    + " " + username
-                    + " " + (isProxyRes ? 'P' : '-')
-                    + " " + trafficType.getTypeCharForLogEntries()
-                    + " " + respCode
-                    + " " + respMsg
-                    + " " + method
-                    + " " + hostHdr
-                    + " " + uri);
-        }
+        LogUtils.info(cLog, "{0} {1} {2} {3} {4} {5} {6} {7} {8}", 
+                connId,
+                username,
+                (isProxyRes ? 'P' : '-'),
+                trafficType.getTypeCharForLogEntries(),
+                respCode,
+                respMsg,
+                method,
+                hostHdr,
+                uri);
         if (recordTraffic) {
             Hit hit = new Hit(time, connId, username, respCode, respMsg, method, hostHdr, uri, isProxyRes, trafficType.getTypeCharForLogEntries());
             /*
@@ -118,12 +117,7 @@ public class TrafficRecorder {
 
     public synchronized void recordRestHit(String path, int code, String response, Map<String, String> props) {
         rHitCount++;
-        if (cLog.isInfoEnabled()) {
-            cLog.info(
-                    path
-                    + " " + response
-                    + " " + props);
-        }
+        LogUtils.info(cLog, "{0} {1} {2}", path, response, props);
         if (recordRestTraffic) {
             RestHit rhit = new RestHit(rHitCount, path, code, response, props);
             /*

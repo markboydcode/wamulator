@@ -3,16 +3,16 @@ package org.lds.sso.appwrap.rest.oes.v1;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.User;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
@@ -26,7 +26,7 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  *
  */
 public class ArePermitted extends RestHandlerBase {
-	static final Logger cLog = Logger.getLogger(ArePermitted.class);
+	static final Logger cLog = Logger.getLogger(ArePermitted.class.getName());
 
     private static final String HTTP_SCHEME         = "http://";
     private static final String HTTPS_SCHEME         = "https://";
@@ -156,7 +156,7 @@ public class ArePermitted extends RestHandlerBase {
                        + " the REST service itself is bound to"
                        + " a specific policy domain for storing"
                        + " its policies.";
-           cLog.error(msg);
+           LogUtils.severe(cLog, msg);
            System.out.println(msg);
        }
         return res;

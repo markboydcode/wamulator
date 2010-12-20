@@ -1,16 +1,18 @@
 package org.lds.sso.appwrap.rest;
 
-import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.User;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.User;
+import org.lds.sso.appwrap.io.LogUtils;
 
 /**
  * Handler that can answer if a user is granted a specific action on a specific
@@ -21,7 +23,7 @@ import java.util.Map;
  *
  */
 public class AuthZHandler extends RestHandlerBase {
-	private static final Logger cLog = Logger.getLogger(AuthZHandler.class);
+	private static final Logger cLog = Logger.getLogger(AuthZHandler.class.getName());
 
 	public AuthZHandler(String pathPrefix) {
 		super(pathPrefix);
@@ -53,9 +55,7 @@ public class AuthZHandler extends RestHandlerBase {
         try { 
             isUnenforced = cfg.getTrafficManager().isUnenforced(uri);
         } catch (URISyntaxException e) {
-        	cLog.error("Unable to parse uri " + uri 
-        		+ " to determine if it is in the unenforced list." 
-        		+ " Treating as an enforced URI.", e);
+        	LogUtils.severe(cLog, "Unable to parse uri {0} to determine if it is in the unenforced list.  Treating as an enforced URI.", e, uri);
         }
 
         if (isUnenforced) {
@@ -140,9 +140,7 @@ public class AuthZHandler extends RestHandlerBase {
         try {
             allowed = cfg.getTrafficManager().isPermitted(action, uri, user);
         } catch (URISyntaxException e) {
-        	cLog.error("Unable to parse uri " + uri 
-            		+ " to determine if access is allowed." 
-            		+ " Denying access.", e);
+        	LogUtils.severe(cLog, "Unable to parse uri {0} to determine if access is allowed.  Denying access.", e, uri);
         }
         
 		if (cfg.getTrafficRecorder().isRecordingRest()) {

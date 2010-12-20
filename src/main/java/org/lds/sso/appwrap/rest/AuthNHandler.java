@@ -3,11 +3,11 @@ package org.lds.sso.appwrap.rest;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 
 /**
@@ -23,7 +23,7 @@ import org.lds.sso.appwrap.Config;
  *
  */
 public class AuthNHandler extends RestHandlerBase {
-	private static final Logger cLog = Logger.getLogger(AuthNHandler.class);
+	private static final Logger cLog = Logger.getLogger(AuthNHandler.class.getName());
 
 	public AuthNHandler(String pathPrefix) {
 		super(pathPrefix);

@@ -10,14 +10,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
@@ -32,7 +33,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class XmlConfigLoader2 {
-    private static final Logger cLog = Logger.getLogger(XmlConfigLoader2.class);
+    private static final Logger cLog = Logger.getLogger(XmlConfigLoader2.class.getName());
 
     public static final String MACRO_PREFIX = "{{";
     public static final String MACRO_SUFFIX = "}}";
@@ -863,10 +864,7 @@ public class XmlConfigLoader2 {
                                 + "remains unchanged. Please apply these changes and restart.");
             } else {
                 if (parsingContextAccessor.get().get(PARSING_IS_IN_CONDITION) != Boolean.TRUE) {
-                    String msg = "Unsupported element at " + path
-                            + " ignoring.";
-                    System.out.println(msg);
-                    cLog.error(msg);
+                    LogUtils.severe(cLog, "Unsupported element at {0} ignoring.", path);
                 }
             }
         }
@@ -1096,9 +1094,9 @@ public class XmlConfigLoader2 {
             printInfo(e);
          }
          private void printInfo(SAXParseException e) {
-         	 cLog.info("   Line number: "+e.getLineNumber());
-         	 cLog.info("   Column number: "+e.getColumnNumber());
-         	 cLog.info("   Message: "+e.getMessage());
+         	 LogUtils.info(cLog, "Line number: {0}", e.getLineNumber());
+         	 LogUtils.info(cLog, "Column number: {0}", e.getColumnNumber());
+         	 LogUtils.info(cLog, "Message: {0}", e.getMessage());
          }
     }
 }

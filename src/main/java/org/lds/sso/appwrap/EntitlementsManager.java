@@ -1,15 +1,14 @@
 package org.lds.sso.appwrap;
 
-import java.util.HashMap; 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.io.LogUtils;
 
 /**
  * Manager of entitlements.
@@ -18,7 +17,7 @@ import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
  *
  */
 public class EntitlementsManager {
-    private static final Logger cLog = Logger.getLogger(EntitlementsManager.class);
+    private static final Logger cLog = Logger.getLogger(EntitlementsManager.class.getName());
     private LogicalSyntaxEvaluationEngine cEngine = null;
     protected Map<String, Entitlement> entitlements = new HashMap<String, Entitlement>();
 
@@ -103,12 +102,7 @@ public class EntitlementsManager {
                     try {
                         evaluator = cEngine.getEvaluator(ent.getConditionId(), ent.conditionSyntax);
                     } catch (EvaluationException e1) {
-                        cLog.error("Unable to evaluate condition for entitlement "
-                                + ent.getUrn()
-                                + ". Unable to obtain evaluator for condition alias "
-                                + ent.getConditionId() + " with syntax "
-                                + ent.getConditionSyntax() 
-                                + ". ", e1);
+                        LogUtils.severe(cLog, "Unable to evaluate condition for entitlement {0}. Unable to obtain evaluator for condition alias with syntax. ", e1, ent.getUrn(), ent.getConditionId(), ent.getConditionSyntax());                        
                         continue; // go to next level
                     }
                     EvaluationContext evaluationContext = new EvaluationContext(user, ctx);
@@ -117,10 +111,7 @@ public class EntitlementsManager {
                             return true;
                         }
                     } catch (EvaluationException e) {
-                        cLog.error("Error occurred for entitlement " + ent.getUrn()
-                                + " for condition alias " + ent.getConditionId()
-                                + " when evaluating for user " + user.getUsername()
-                                + ".", e);
+                    	LogUtils.severe(cLog, "Error occurred for entitlement {0} for condition alias {1} when evaluating for user.", e, ent.getUrn(), ent.getConditionId(), user.getUsername());
                     }
                 }
             }

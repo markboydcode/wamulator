@@ -1,15 +1,41 @@
 package org.lds.sso.appwrap.conditions.evaluator;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.*;
-import org.xml.sax.*;
-
-import javax.xml.parsers.SAXParserFactory;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.xml.parsers.SAXParserFactory;
+
+import org.lds.sso.appwrap.conditions.evaluator.syntax.AND;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.Assignment;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.CtxMatches;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasAssignment;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsAccountId;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsApplication;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasPosition;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.IsEmployee;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.IsMember;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.LdsAccount;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.MemberOfUnit;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.NOT;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.OR;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.Position;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.Unit;
+import org.lds.sso.appwrap.io.LogUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 /**
  * Engine for loading syntax and constructing processing object graph
@@ -30,7 +56,7 @@ import java.util.*;
  */
 public class LogicalSyntaxEvaluationEngine {
     public static final Logger cLog = Logger
-            .getLogger(LogicalSyntaxEvaluationEngine.class);
+            .getLogger(LogicalSyntaxEvaluationEngine.class.getName());
 
     /**
      * The map of syntax implementation classes.
@@ -70,7 +96,7 @@ public class LogicalSyntaxEvaluationEngine {
                 boolean pwLineWrapped = false;
                 while (true) {
                     try {
-                        if (cLog.isDebugEnabled()) {
+                        if (cLog.isLoggable(Level.FINE)) {
                             if (pw != null) {
                                 if (!pwLineWrapped) {
                                     // means no evaluator log entries were written
@@ -82,7 +108,7 @@ public class LogicalSyntaxEvaluationEngine {
                                             + " milliseconds.");
                                 }
                                 pw.flush();
-                                cLog.debug(sw.toString());
+                                LogUtils.fine(cLog, sw.toString());
                             }
                             // start new ones
                             sw = new StringWriter();
@@ -131,12 +157,10 @@ public class LogicalSyntaxEvaluationEngine {
                         }
                     } catch (Exception e) {
                         if (e instanceof InterruptedException) {
-                            cLog.error(Thread.currentThread().getName()
-                                    + " interrupted. Exiting.", e);
+                            LogUtils.severe(cLog, "{0} interrupted. Exiting.", e, Thread.currentThread().getName());
                             return;
                         }
-                        cLog.error(Thread.currentThread().getName()
-                                + " incurred problem while scanning.", e);
+                        LogUtils.severe(cLog, "{0} incurred problem while scanning.", e, Thread.currentThread().getName());
                     }
                 }
             }
@@ -367,11 +391,10 @@ public class LogicalSyntaxEvaluationEngine {
 
             Class cls = DICTIONARY.get(name);
             if (cls == null) {
-                String msg = "Unsupported Syntax '" + name
-                        + "' in custom syntax evaluation.";
-                cLog.setLevel(Level.DEBUG);
-                cLog.error(msg);
-                cLog.error(contentBeingParsed);
+                String msg = "Unsupported Syntax '{0}' in custom syntax evaluation.";
+                //cLog.setLevel(Level.DEBUG);  ?why would we have needed this?
+                LogUtils.severe(cLog, msg, name);
+                LogUtils.severe(cLog, contentBeingParsed);
                 throw new SAXException(msg);
             }
             try {

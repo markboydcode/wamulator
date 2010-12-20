@@ -7,20 +7,19 @@ import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.Header;
 import org.lds.sso.appwrap.proxy.HeaderBuffer;
-import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
 
 public class Config {
-	private static final Logger cLog = Logger.getLogger(Config.class);
+	private static final Logger cLog = Logger.getLogger(Config.class.getName());
 
 	/**
 	 * The default port on which appwrap will listen for requests to SSO
@@ -598,9 +597,7 @@ public class Config {
 				int initialSize = requestOccurrence.size();
 				if (initialSize < 0) {
 					initialSize = 5;
-					if (cLog.isDebugEnabled()) {
-						cLog.debug("RequestOccurrences size was -1 which shouldn't be possible from map.size(). Setting to 5.");
-					}
+					LogUtils.fine(cLog, "RequestOccurrences size was -1 which shouldn't be possible from map.size(). Setting to 5.");
 				}
 				Map<RepeatRecord, AllowedUri> records = new HashMap<RepeatRecord, AllowedUri>(initialSize);
 				for( Map.Entry<AllowedUri, RepeatRecord> ent : requestOccurrence.entrySet() ) {

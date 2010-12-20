@@ -2,18 +2,15 @@ package org.lds.sso.appwrap.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.handler.AbstractHandler;
-import org.omg.CORBA.portable.ResponseHandler;
 
 /**
  * The abstract base handler for all rest handlers providing the path mapping 

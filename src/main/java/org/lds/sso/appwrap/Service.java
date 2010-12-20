@@ -13,12 +13,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.bootstrap.Command;
 import org.lds.sso.appwrap.exception.UnableToListenOnProxyPortException;
 import org.lds.sso.appwrap.exception.UnableToStartJettyServerException;
 import org.lds.sso.appwrap.exception.UnableToStopJettyServerException;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.ProxyListener;
 import org.lds.sso.appwrap.rest.AuthNHandler;
 import org.lds.sso.appwrap.rest.AuthZHandler;
@@ -56,7 +57,7 @@ import org.mortbay.jetty.webapp.WebAppContext;
  *
  */
 public class Service {
-	private static final Logger cLog = Logger.getLogger(Service.class);
+	private static final Logger logger = Logger.getLogger(Service.class.getName());
 
 	public static final String CLASSPATH_PREFIX = "classpath:";
 	private static final String STRING_PREFIX = "string:";
@@ -102,7 +103,7 @@ public class Service {
 	            	try {
 	            		entry.getValue().stop();
 	            	} catch ( Exception e ) {
-	            		cLog.error("Shutdown failed for service with cfgPath: " + entry.getKey(), e);
+	            		LogUtils.throwing(logger, "Shutdown failed for service with cfgPath: {0}", e, entry.getKey());
 	            	}
             	}
             }
@@ -380,7 +381,7 @@ public class Service {
 	 */
 	private void dualLog(String msg) {
         System.out.println(msg);
-        cLog.info(msg);
+        LogUtils.info(logger, msg);
 	}
 
 	/**

@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 
 /**
@@ -19,7 +19,7 @@ import org.lds.sso.appwrap.Config;
  *
  */
 public class LogoutHandler extends RestHandlerBase {
-	private static final Logger cLog = Logger.getLogger(LogoutHandler.class);
+	private static final Logger cLog = Logger.getLogger(LogoutHandler.class.getName());
 
 	public LogoutHandler(String pathPrefix) {
 		super(pathPrefix);

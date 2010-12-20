@@ -22,9 +22,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.EndPoint;
@@ -36,12 +36,12 @@ import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
-import org.lds.sso.appwrap.io.ChainingOutputStream;
-import org.lds.sso.appwrap.io.LoggingOutputStream;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 
 public class RequestHandler implements Runnable {
-    private static final Logger cLog = Logger.getLogger(RequestHandler.class);
+    private static final Logger cLog = Logger.getLogger(RequestHandler.class.getName());
+    
     /**
      * Formatter for creating a Date headers conformant to rfc2616.
      */
@@ -94,7 +94,7 @@ public class RequestHandler implements Runnable {
         this.connId = connId;
 
                 if(cfg.isDebugLoggingEnabled()) {
-                    cLog.setLevel(Level.DEBUG);
+                    cLog.setLevel(Level.FINE);
                 }
     }
 
@@ -138,9 +138,9 @@ public class RequestHandler implements Runnable {
 
             reqPkg = getHttpPackage(clientIn, excludeHeaders, false, log);
 
-            if (cLog.isDebugEnabled()) {
+            if (cLog.isLoggable(Level.FINE)) {
                 fos = new FileOutputStream(connId + ".log");
-                log = new PrintStream(new ChainingOutputStream(System.out, fos));
+                log = new PrintStream(fos);
             }
 
             if(reqPkg.socketTimeout) {
@@ -359,9 +359,7 @@ public class RequestHandler implements Runnable {
 
                 try {
                     endpointMsg = "Connecting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort();
-                    if (cLog.isDebugEnabled()) {
-                        cLog.debug(endpointMsg);
-                    }
+                    LogUtils.fine(cLog, endpointMsg);
                     server = new Socket(appEndpoint.getHost(), appEndpoint.getEndpointPort());
                 }
                 catch (Exception e) {
@@ -372,20 +370,14 @@ public class RequestHandler implements Runnable {
                     return;
                 }
 
-                if (cLog.isDebugEnabled()) {
-                    cLog.debug("Opening I/O to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
-                }
+                LogUtils.fine(cLog, "Opening I/O to: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
                 server.setSoTimeout(cfg.getProxyOutboundSoTimeout());
                 BufferedInputStream serverIn = new BufferedInputStream(server.getInputStream());
                 BufferedOutputStream serverOut = new BufferedOutputStream(server.getOutputStream());
-                if (cLog.isDebugEnabled()) {
-                    cLog.debug("getting server input/output streams...");
-                }
+                LogUtils.fine(cLog, "getting server input/output streams...");
 
                 // send the request out
-                if (cLog.isDebugEnabled()) {
-                    cLog.debug("Transmitting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort() + " " + appReqLn);
-                }
+                LogUtils.fine(cLog, "Transmitting to: {0}:{1} {2}", appEndpoint.getHost(), appEndpoint.getEndpointPort(), appReqLn);
                 serverOut.write(request, 0, request.length);
                 serverOut.flush();
 
@@ -395,9 +387,7 @@ public class RequestHandler implements Runnable {
                 // because some servers (like Google) don't always set the
                 // Content-Length header field, so we have to listen until
                 // they decide to disconnect (or the connection times out).
-                if (cLog.isDebugEnabled()) {
-                    cLog.debug("Awaiting data from: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
-                }
+                LogUtils.fine(cLog, "Awaiting data from: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
                 resPkg = getHttpPackage(serverIn, excludeHeaders, true, log);
 
                 if (resPkg.socketTimeout) {
@@ -413,9 +403,7 @@ public class RequestHandler implements Runnable {
                             log, true);
                     return;
                 }
-                if (cLog.isDebugEnabled()) {
-                    cLog.debug("Processing data from: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
-                }
+                LogUtils.fine(cLog, "Processing data from: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
 
                 if (resPkg.type == HttpPackageType.EMPTY_RESPONSE) {
                     byte[] bytes = getResponse("502", "Bad Gateway Response from Server", 
@@ -441,9 +429,7 @@ public class RequestHandler implements Runnable {
                     return;
                 }
 
-                if (cLog.isDebugEnabled()) {
-                    cLog.debug("Closing I/O to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort());
-                }
+                LogUtils.fine(cLog, "Closing I/O to: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
                 serverIn.close();
                 serverOut.close();
             }
@@ -482,9 +468,7 @@ public class RequestHandler implements Runnable {
             int responseLength = Array.getLength(response);
 
             // send the response back to the client
-            if (cLog.isDebugEnabled()) {
-                cLog.debug("Returning response for: "  + appReqLn);
-            }
+            LogUtils.fine(cLog, "Returning response for: {0}", appReqLn);
             
             clientOut.write(response, 0, response.length);
             clientOut.flush();
@@ -493,9 +477,7 @@ public class RequestHandler implements Runnable {
             cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()),
                     resPkg.responseCode, resPkg.responseLine.getMsg(), false, reqPkg.trafficType, reqPkg.requestLine.getMethod(), reqPkg.hostHdr, reqPkg.requestLine.getUri());
             logTraffic(log, reqPkg.requestLine, request, response, startTime, endpointMsg, reqPkg);
-            if (cLog.isDebugEnabled()) {
-                cLog.debug("Closing I/O to client");
-            }
+            LogUtils.fine(cLog, "Closing I/O to client");
             shutdown(clientIn, clientOut, log, fos);
         }
         catch (Exception e) {
@@ -512,8 +494,8 @@ public class RequestHandler implements Runnable {
                         reqPkg, clientIn, clientOut, user, startTime, log, true);
             } catch (IOException e2) {
                 // things are looking bad for our hero
-                cLog.error("Exception occurred in RequestHandler and response could not be generated. Original Exception:", e);
-                cLog.error("Exception incurred while generating exception response:", e2);
+            	LogUtils.severe(cLog, "Exception occurred in RequestHandler and response could not be generated. Original Exception:", e);
+            	LogUtils.severe(cLog, "Exception incurred while generating exception response:", e2);
             }
         }
     }
@@ -1024,7 +1006,7 @@ public class RequestHandler implements Runnable {
                 log.println("\nError getting HTTP startline or header data: " + e);
                 e.printStackTrace(log);
             }
-            cLog.error("Error getting HTTP startline or header data: " + e);
+            LogUtils.severe(cLog, "Error getting HTTP startline or header data:", e);
             if (e instanceof SocketTimeoutException) {
                 pkg.socketTimeout = true;
             }
@@ -1113,12 +1095,10 @@ public class RequestHandler implements Runnable {
             waitForDisconnect = false;
         }
         else {
-            if (cLog.isDebugEnabled()) {
-                cLog.debug("content length = 0 for '" 
-                        + (pkg.requestLine != null ? pkg.requestLine :
-                            (pkg.responseLine != null ? pkg.responseLine :
-                                "???")) + "', will wait for disconnect or tcp timeout to terminate body content.");
-            }
+            LogUtils.fine(cLog, "content length = 0 for '{0}', will wait for disconnect or tcp timeout to terminate body content.",
+            	(pkg.requestLine != null ? pkg.requestLine :
+            		(pkg.responseLine != null ? pkg.responseLine :
+                    	"???")));
         }
         int byteCount = 0;
 
@@ -1137,9 +1117,7 @@ public class RequestHandler implements Runnable {
                 }
             }
         }
-        if (cLog.isDebugEnabled()) {
-            cLog.debug("done with body content.");
-        }
+        LogUtils.fine(cLog, "done with body content.");
     }
 
     /**
@@ -1256,10 +1234,7 @@ public class RequestHandler implements Runnable {
                 String rewrite = mgr.rewriteRedirect(redirect); 
                 if (rewrite != null) {
                     // rewrite matched, replace
-                    if (cLog.isDebugEnabled()) {
-                        cLog.debug("rewriting redirect from: " + redirect + " to: "
-                                + rewrite);
-                    }
+                    LogUtils.fine(cLog, "rewriting redirect from: {0} to: {1}", redirect, rewrite);
                     pkg.headerBfr.append(new Header(HeaderDef.Location.getName() + "-WAS",
                             redirect));
                     header = new Header(HeaderDef.Location, rewrite);
@@ -1278,10 +1253,7 @@ public class RequestHandler implements Runnable {
                     // rewrite matched, replace and indicate in headers
                     pkg.headerBfr.append(new Header(HeaderDef.SetCookie.getName() + "-WAS",
                             rawCookie));
-                    if (cLog.isDebugEnabled()) {
-                        cLog.debug("rewriting cookie from: " + rawCookie + " to: "
-                                + rewrite);
-                    }
+                    LogUtils.fine(cLog, "rewriting cookie from: {0} to: {1}", rawCookie, rewrite);
                 }
                 header = new Header(HeaderDef.SetCookie, rewrite);
             }

@@ -1,18 +1,13 @@
 package org.lds.sso.appwrap.rest.oes.v1;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.proxy.RequestHandler;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 import org.mortbay.jetty.Request;
 
@@ -25,7 +20,7 @@ import org.mortbay.jetty.Request;
  *
  */
 public class HandlerHitLogger extends RestHandlerBase {
-	private static final Logger cLog = Logger.getLogger(HandlerHitLogger.class);
+	private static final Logger cLog = Logger.getLogger(HandlerHitLogger.class.getName());
     private RestHandlerBase wrapped;
     private String logMessage;
 
@@ -44,7 +39,7 @@ public class HandlerHitLogger extends RestHandlerBase {
             throws IOException, ServletException {
         if (!((Request) request).isHandled()
                 && target.toLowerCase().startsWith(wrapped.getPathPrefix())) {
-            cLog.error(logMessage);
+            LogUtils.severe(cLog, logMessage);
             wrapped.handle(target, request, response, dispatch);
         }
     }

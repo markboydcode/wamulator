@@ -7,7 +7,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.SessionManager;
 import org.lds.sso.appwrap.SiteMatcher;
@@ -26,7 +25,6 @@ import org.mortbay.jetty.handler.HandlerWrapper;
  *
  */
 public class SignInPageCdssoHandler extends HandlerWrapper {
-    private static final Logger cLog = Logger.getLogger(SignInPageCdssoHandler.class);
     private String[] pagePatterns;
     
     public static final String CDSSO_PARAM_NAME = "cdsso-token";

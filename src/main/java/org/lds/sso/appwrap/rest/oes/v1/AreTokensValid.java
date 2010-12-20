@@ -5,11 +5,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
@@ -23,7 +23,7 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
  *
  */
 public class AreTokensValid extends RestHandlerBase {
-	private static final Logger cLog = Logger.getLogger(AreTokensValid.class);
+	private static final Logger cLog = Logger.getLogger(AreTokensValid.class.getName());
 
 	public AreTokensValid(String pathPrefix) {
 		super(pathPrefix);
