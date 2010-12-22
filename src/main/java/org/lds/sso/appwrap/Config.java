@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.IOUtils;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.io.LogUtils;
@@ -231,16 +232,13 @@ public class Config {
                     version = "SSO Simulator v" + content;
                 }
             } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                LogUtils.severe(cLog, "Can't find version indication", e);
+            } finally {
+                IOUtils.closeQuietly(is);
             }
 		}
 		else {
-		    System.out.println("Can't find version indicating file: " + resource);
+		    LogUtils.warning(cLog, "Can't find version indicating file: {0}", resource);
 		}
 		return version;
 	}

@@ -10,13 +10,16 @@ public final class LogUtils {
 	}
 
 	public static void info(Logger logger, String msg, Object... args) {
-		log(logger, Level.FINE, msg, null, args);
+		log(logger, Level.INFO, msg, null, args);
 	}
 	
 	public static void fine(Logger logger, String msg, Object... args) {
 		log(logger, Level.FINE, msg, null, args);
 	}
 	
+	public static void warning(Logger logger, String msg, Object... args) {
+		log(logger, Level.WARNING, msg, null, args);
+	}
 
 	public static void severe(Logger logger, String msg, Object... params) {
 		log(logger, Level.SEVERE, msg, null, params);
@@ -138,5 +141,7 @@ public final class LogUtils {
     		return sourceMethodName;
     	}
     }
+
+
 
 }

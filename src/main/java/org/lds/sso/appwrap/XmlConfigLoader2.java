@@ -1,6 +1,7 @@
 package org.lds.sso.appwrap;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -14,11 +15,17 @@ import java.util.logging.Logger;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.io.LogUtils;
+import org.lds.sso.appwrap.io.LoggerErrorHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
@@ -28,9 +35,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class XmlConfigLoader2 {
     private static final Logger cLog = Logger.getLogger(XmlConfigLoader2.class.getName());
@@ -54,6 +59,32 @@ public class XmlConfigLoader2 {
 
     public static final String PROP_DEFAULT = "property";
     
+    private static final String XSD_LOCATION = "org/lds/sso/appwrap/wamulator-5.0.xsd";
+    
+    private static final Validator validator;
+    
+    static {
+    	SchemaFactory fact = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+		InputStream schemaLocation = ClassLoader.getSystemResourceAsStream(XSD_LOCATION);
+		Schema schema = newSchema(fact, new StreamSource(schemaLocation));
+    	if ( schema != null ) {
+    		validator = schema.newValidator();
+    	} else {
+    		validator = new NullValidator();
+    	}
+    	validator.setErrorHandler(new LoggerErrorHandler(cLog));
+    }
+    
+	private static final Schema newSchema(SchemaFactory fact, Source source) {
+		Schema schema = null;
+		try {
+			schema = fact.newSchema(source);
+		} catch ( SAXException e ) {
+			LogUtils.throwing(cLog, "Couldn't find validation schema... start up state may be unpredictable.", e);
+		}
+		return schema;
+	}
+	
     public static final class ConfigProperty<T> {
     	public final String name;
     	
@@ -139,6 +170,8 @@ public class XmlConfigLoader2 {
                 Config.getInstance());
         put(PARSING_ALIASES, new AliasHolder());
         
+        validator.validate(new StreamSource(new StringReader(content)));
+        
         // now run alias and embedded condition parser
         parsingContextAccessor.get().put(PARSING_PATH, new Path());
         _rawload(new StringReader(content), sourceInfo, new CfgAliasesHandler());
@@ -161,8 +194,6 @@ public class XmlConfigLoader2 {
         XMLReader rdr;
         try {
         	SAXParserFactory factory = SAXParserFactory.newInstance();
-        	factory.setValidating(true);
-        	factory.setNamespaceAware(true);
         	SAXParser parser = factory.newSAXParser();
             rdr = parser.getXMLReader();
         } catch (Exception e) {
@@ -171,7 +202,6 @@ public class XmlConfigLoader2 {
                             + sourceInfo + "'.", e);
         }
         rdr.setContentHandler(hndlr);
-        rdr.setErrorHandler(new ConfigErrorHandler());
         InputSource src = new InputSource(reader);
         try {
             rdr.parse(src);
@@ -634,8 +664,7 @@ public class XmlConfigLoader2 {
                 cfg.setStripEmptyHeaders(Boolean.parseBoolean(getStringAtt(
                         "strip-empty-headers", path, atts, false)));
                 if (cfg.getStripEmptyHeaders()) {
-                    System.out
-                            .println("Proxy is configured to strip empty headers.");
+                    LogUtils.info(cLog, "Proxy is configured to strip empty headers.");
                 }
             } else if (path.matches("/config/sso-traffic/by-site")) {
                 String scheme = atts.getValue("scheme");
@@ -1081,22 +1110,5 @@ public class XmlConfigLoader2 {
         public void startPrefixMapping(String prefix, String uri)
                 throws SAXException {
         }
-    }
-    
-    private static class ConfigErrorHandler extends DefaultHandler {
-        public void warning(SAXParseException e) throws SAXException { 
-            printInfo(e);
-         }
-         public void error(SAXParseException e) throws SAXException { 
-            printInfo(e);
-         }
-         public void fatalError(SAXParseException e) throws SAXException { 
-            printInfo(e);
-         }
-         private void printInfo(SAXParseException e) {
-         	 LogUtils.info(cLog, "Line number: {0}", e.getLineNumber());
-         	 LogUtils.info(cLog, "Column number: {0}", e.getColumnNumber());
-         	 LogUtils.info(cLog, "Message: {0}", e.getMessage());
-         }
     }
 }

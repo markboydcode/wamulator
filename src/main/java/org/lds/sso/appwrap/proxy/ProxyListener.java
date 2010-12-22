@@ -156,14 +156,8 @@ import org.lds.sso.appwrap.io.LogUtils;
 					t.start();
 				}
 			} catch ( SocketException e ) {
-				String msg = "Proxy Listener error: " + e;
-				e.printStackTrace();
-				System.out.println(msg);
 				LogUtils.severe(cLog, "Proxy Listener error: ", e); 
 			} catch ( IOException e ) {
-				String msg = "Proxy Listener error: " + e;
-				e.printStackTrace();
-				System.out.println(msg);
 				LogUtils.severe(cLog, "Proxy Listener error: ", e); 				
 			} finally {
 				started = false;

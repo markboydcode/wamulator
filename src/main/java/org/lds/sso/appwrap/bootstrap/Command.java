@@ -83,11 +83,11 @@ public abstract class Command {
 	}
 
 	public final void execute() throws ServerFailureException {
-		System.out.println("Preparing to run [" + getCommandName() + "] command...");
+		LogUtils.info(cLog, "Preparing to run [{0}] command...", getCommandName());
 		Service service = Service.getService(cfgPath);
 		Config cfg = Config.getInstance();
 		
-		System.out.println("Running [" + getCommandName() + "] command...");
+		LogUtils.info(cLog, "Running [{0}] command...", getCommandName());
 		doExecute(service, cfg);
 
 		try {
@@ -96,7 +96,7 @@ public abstract class Command {
 			throw new ServerFailureException(e);
 		}
 		
-		System.out.println("Sucessfully ran [" + getCommandName() + "] command...");
+		LogUtils.info(cLog, "Sucessfully ran [{0}] command...", getCommandName());
 	}
 
 	void waitFor(Config cfg) throws IOException, ServerTimeoutFailureException {

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.lds.sso.appwrap.Service.SourceAndReader;
 import org.lds.sso.appwrap.XmlConfigLoader2.CPathParts;
@@ -18,6 +19,7 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsAccountId;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.LdsAccount;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
 import org.xml.sax.Attributes;
@@ -25,7 +27,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
-public class ConvertToNoLdsAccountId {    
+public class ConvertToNoLdsAccountId {
+	private static final Logger cLog = Logger.getLogger(ConvertToNoLdsAccountId.class.getName());
+	
     public static final String CURR_USER = "current-user";
     public static final String CONDITIONS = "conditions";
     private static final String USER_BY_LDSACCT = "username-by-ldsacc";
@@ -113,7 +117,7 @@ public class ConvertToNoLdsAccountId {
                 Condition c = conditions.get(aliasName);
                 
                 if (c == null) {
-                    System.out.println("Identified alias " + aliasName + " as a condition.");
+                    LogUtils.fine(cLog, "Identified alias {0} as a condition.", aliasName);
                     c = new Condition(alias);
                     conditions.put(aliasName, c);
                 }
@@ -131,7 +135,7 @@ public class ConvertToNoLdsAccountId {
                 Condition c = conditions.get(aliasName);
                 
                 if (c == null) {
-                    System.out.println("Identified alias " + aliasName + " as a condition.");
+                	LogUtils.fine(cLog, "Identified alias {0} as a condition.", aliasName);
                     c = new Condition(alias);
                     conditions.put(aliasName, c);
                 }
@@ -236,9 +240,7 @@ public class ConvertToNoLdsAccountId {
                 Set<String> ldsAccountIds = (HashSet<String>) pca.get().get(LDS_ACCT_GROUPING);
 
                 if (ldsAccountIds.size() > 0) {
-                    System.out.println("Creating grouping " + condition.alias.name 
-                            + " for lds account id cluster in " 
-                            + condition.alias + " at " + path.toString());
+                    LogUtils.fine(cLog, "Creating grouping {0} for lds account id cluster in {1} at {2}", condition.alias.name, condition.alias, path.toString());
                     condition.groupings.put(condition.alias.name, ldsAccountIds);
                 }
             }
@@ -250,9 +252,7 @@ public class ConvertToNoLdsAccountId {
 
                 if (ldsAccountIds.size() > 0) {
                     String grpName = condition.alias.name + "-" + (++groupingsCount);
-                    System.out.println("Creating grouping " + grpName 
-                            + " for lds account id cluster in " 
-                            + condition.alias + " at " + path.toString());
+                    LogUtils.fine(cLog, "Creating grouping {0} for lds account id cluster in {1} at {2}", grpName, condition.alias, path.toString());
                     condition.groupings.put(grpName, ldsAccountIds);
                 }
                 // now restore ldsaccountid container of parent in case it has
@@ -342,7 +342,7 @@ public class ConvertToNoLdsAccountId {
             
             
             if (c.groupings.size() == 0) {
-                System.out.println("No use of HasLdsAccountId in Condition '" + c.alias.name + "'.");
+                LogUtils.warning(cLog, "No use of HasLdsAccountId in Condition '{0}'.", c.alias.name);
             }
             else {
                 for(String grpNm : c.groupings.keySet()) {

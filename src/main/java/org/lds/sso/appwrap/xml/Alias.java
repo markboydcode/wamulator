@@ -31,7 +31,7 @@ public class Alias {
 	public final String original;  // the original alias value
 	
 	// regex for old-style aliases
-	private static final Pattern propertyPattern = Pattern.compile("(((\\w\\s\\w)|([\\w\\-_]))*)\\s*=\\s*\"?(system:|classpath:|file:)?([\\w\\-_\\s\\./\\*]*)\"?\\s*");
+	private static final Pattern propertyPattern = Pattern.compile("(((\\w\\s\\w)|([\\w\\-_]))*)\\s*=\\s*\"?(system:|classpath:|file:)?([\\{\\}\\w\\-_\\s\\./\\*]*)\"?\\s*");
 	
 	// regex for typed aliases
 	private static final Pattern typedPropertyPattern = Pattern.compile("([\\w\\-_]*)\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*\\<\\>]*))");

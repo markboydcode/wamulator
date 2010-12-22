@@ -157,7 +157,6 @@ public class ArePermitted extends RestHandlerBase {
                        + " a specific policy domain for storing"
                        + " its policies.";
            LogUtils.severe(cLog, msg);
-           System.out.println(msg);
        }
         return res;
     }

@@ -188,7 +188,7 @@ public class Service {
         String base = rv.getRestUrlBase();
 		switch(rv) {
 		case OPENSSO :
-            System.out.println("Configuring single " + rv.getVersionId() + " rest service at: " + cfg.getConsolePort() + base);
+            LogUtils.info(logger, "Configuring single {0} rest service at: {1}{2}", rv.getVersionId(), cfg.getConsolePort(), base);
             cfg.getTrafficRecorder().addRestInst(base, base, base + "getCookieNameForToken", "n/a");
 			handlers.addHandler(new GetCookieName(base + "getCookieNameForToken"));
 			handlers.addHandler(new AuthNHandler(base + "authenticate"));
@@ -207,7 +207,7 @@ public class Service {
 		     * startup files.
 		     */
 		    if (tmgr.getSites().size() == 0) {
-		        System.out.println("Configuring single " + rv.getVersionId() + " rest service at: " + base);
+		        LogUtils.info(logger, "Configuring single {0} rest service at: {1}", rv.getVersionId(), base);
 		        String baseResolved = base.replace("{version}", "1.0");
 	            cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + "getCookieName", "''");
                 handlers.addHandler(new GetOesV1CookieName(baseResolved + "getCookieName"));
@@ -224,7 +224,7 @@ public class Service {
 	                String serviceBase = baseResolved + site.getHost() + "/";
 	                if( ! hosts.contains(site.getHost())) {
 	                    hosts.add(site.getHost());
-	                    System.out.println("Configuring " + rv.getVersionId() + " rest service for site " + site.getHost() + ":" + site.getPort() + " at: " + serviceBase);
+	                    LogUtils.info(logger, "Configuring {0} rest service for site {1}:{2} at: {3}", rv.getVersionId(), site.getHost(), site.getPort(), serviceBase);
 	                    cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + site.getHost() + "/getCookieName", site.getHost());
 	                    handlers.addHandler(new GetOesV1CookieName(serviceBase + "getCookieName"));
 	                    handlers.addHandler(new AreTokensValid(serviceBase + "areTokensValid"));
@@ -352,13 +352,14 @@ public class Service {
 		for (int i=0; i<cfg.getServerName().length(); i++) {
 		    line.append('-');
 		}
-        dualLog("---------------------" + line.toString());
-        dualLog("simulator version  : " + cfg.getServerName());
-        dualLog("console-rest port  : " + cfg.getConsolePort());
-        dualLog("http proxy port    : " + cfg.getProxyPort());
-        dualLog("Rest Interface     : " + cfg.getRestVersion().getVersionId());
-        dualLog("---------------------" + line.toString());
-        dualLog("Simulator Console and Proxy are ready");
+        dualLog("---------------------{0}\n" +
+        "simulator version  : {1}\n" + 
+        "console-rest port  : {2}\n" +
+        "http proxy port    : {3}\n" + 
+        "Rest Interface     : {4}\n" +
+        "---------------------{5}\n" +
+        "Simulator Console and Proxy are ready",
+        line.toString(),cfg.getServerName(),cfg.getConsolePort(),cfg.getProxyPort(),cfg.getRestVersion().getVersionId(),line.toString());
 	}
 
 	public void startAndBlock() throws Exception {
@@ -379,9 +380,8 @@ public class Service {
 	 *
 	 * @param msg
 	 */
-	private void dualLog(String msg) {
-        System.out.println(msg);
-        LogUtils.info(logger, msg);
+	private void dualLog(String msg, Object... params) {
+        LogUtils.info(logger, msg, params);
 	}
 
 	/**

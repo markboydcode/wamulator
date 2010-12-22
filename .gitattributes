@@ -22,6 +22,7 @@ src/main/java/org/lds/sso/appwrap/EndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Entitlement.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/EntitlementsManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/LocalFileEndPoint.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/NullValidator.java -text
 src/main/java/org/lds/sso/appwrap/NvPair.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/OrderedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/PermittedUri.java -text svneol=unset#text/plain
@@ -77,6 +78,7 @@ src/main/java/org/lds/sso/appwrap/exception/UnableToStartJettyServerException.ja
 src/main/java/org/lds/sso/appwrap/exception/UnableToStopJettyServerException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/io/ChainingOutputStream.java -text
 src/main/java/org/lds/sso/appwrap/io/LogUtils.java -text
+src/main/java/org/lds/sso/appwrap/io/LoggerErrorHandler.java -text
 src/main/java/org/lds/sso/appwrap/io/LoggingOutputStream.java -text
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/Header.java -text svneol=unset#text/plain
