@@ -278,6 +278,55 @@ public class XmlConfigLoaderTest {
 		Assert.assertEquals(cfg.getConsolePort(), 81, "console port should have been changed to 81.");
 		Assert.assertEquals(cfg.getProxyPort(), 45, "proxy port should have been changed to 45.");
 	}
+
+	@Test
+	public void testSchemaDefault() throws Exception {
+		String xml = "<?xml version='1.0' encoding='UTF-8'?>"
+			+ "<config console-port='81' proxy-port='45' "
+			+ "xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' "
+			+ "xmlns='http://code.lds.org/schema/wamulator' "
+			+ "xsi:schemaLocation='http://code.lds.org/schema/wamulator http://code.lds.org/schema/wamulator/wamulator-5.0.xsd'>"
+            + "  <sso-cookie domain='.host.net'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.host.net' port='45'/>"
+            + "  </sso-traffic>"
+            + "</config>"
+			;
+		Config cfg = new Config();
+		XmlConfigLoader2.load(xml);
+		Assert.assertEquals(cfg.getCookieName(), "obssoCookie", "Cookie name should match the default in the wamulator-5.0.xsd");
+	}
+	
+	@Test(expectedExceptions=Exception.class)
+	public void testCookieNameMissingNoSchemaFail() throws Exception {
+		String xml = "<?xml version='1.0' encoding='UTF-8'?>"
+			+ "<config console-port='81' proxy-port='45'>"
+            + "  <sso-cookie domain='.host.net'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.host.net' port='45'/>"
+            + "  </sso-traffic>"
+            + "</config>"
+			;
+		Config cfg = new Config();
+		XmlConfigLoader2.load(xml);
+	}
+
+	@Test(expectedExceptions=Exception.class)
+	public void testSchemaValidation() throws Exception {
+		String xml = "<?xml version='1.0' encoding='UTF-8'?>"
+			+ "<config console-port='81' proxy-port='45' unknownAttr='dude' "
+			+ "xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' "
+			+ "xmlns='http://code.lds.org/schema/wamulator' "
+			+ "xsi:schemaLocation='http://code.lds.org/schema/wamulator http://code.lds.org/schema/wamulator/wamulator-5.0.xsd'>"
+            + "  <sso-cookie name='cookieName' domain='.host.net'/>"
+            + "  <sso-traffic>"
+            + "   <by-site host='local.host.net' port='45'/>"
+            + "  </sso-traffic>"
+            + "</config>"
+			;
+		Config cfg = new Config();
+		XmlConfigLoader2.load(xml);
+	}
 	
 	@Test
 	public void testConfigAgent() throws Exception {

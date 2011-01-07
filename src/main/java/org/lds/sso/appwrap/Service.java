@@ -359,7 +359,7 @@ public class Service {
         "Rest Interface     : {4}\n" +
         "---------------------{5}\n" +
         "Simulator Console and Proxy are ready",
-        line.toString(),cfg.getServerName(),cfg.getConsolePort(),cfg.getProxyPort(),cfg.getRestVersion().getVersionId(),line.toString());
+        line.toString(),cfg.getServerName(),String.valueOf(cfg.getConsolePort()),String.valueOf(cfg.getProxyPort()),cfg.getRestVersion().getVersionId(),line.toString());
 	}
 
 	public void startAndBlock() throws Exception {
