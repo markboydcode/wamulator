@@ -19,13 +19,12 @@ import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.io.LogUtils;
-import org.lds.sso.appwrap.io.LoggerErrorHandler;
+import org.lds.sso.appwrap.io.SimpleErrorHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
@@ -35,10 +34,13 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
 public class XmlConfigLoader2 {
-    private static final Logger cLog = Logger.getLogger(XmlConfigLoader2.class.getName());
+    public static final String WAMULATOR_SCHEMA_NAMESPACE_URI = "http://code.lds.org/schema/wamulator";
+
+	private static final Logger cLog = Logger.getLogger(XmlConfigLoader2.class.getName());
 
     public static final String MACRO_PREFIX = "{{";
     public static final String MACRO_SUFFIX = "}}";
@@ -61,18 +63,12 @@ public class XmlConfigLoader2 {
     
     private static final String XSD_LOCATION = "org/lds/sso/appwrap/wamulator-5.0.xsd";
     
-    private static final Validator validator;
+    private static final Schema schema;
     
     static {
     	SchemaFactory fact = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-		InputStream schemaLocation = ClassLoader.getSystemResourceAsStream(XSD_LOCATION);
-		Schema schema = newSchema(fact, new StreamSource(schemaLocation));
-    	if ( schema != null ) {
-    		validator = schema.newValidator();
-    	} else {
-    		validator = new NullValidator();
-    	}
-    	validator.setErrorHandler(new LoggerErrorHandler(cLog));
+		InputStream schemaLocation = XmlConfigLoader2.class.getClassLoader().getResourceAsStream(XSD_LOCATION);
+		schema = newSchema(fact, new StreamSource(schemaLocation));
     }
     
 	private static final Schema newSchema(SchemaFactory fact, Source source) {
@@ -170,15 +166,14 @@ public class XmlConfigLoader2 {
                 Config.getInstance());
         put(PARSING_ALIASES, new AliasHolder());
         
-        validator.validate(new StreamSource(new StringReader(content)));
-        
+        boolean validate = content.contains(WAMULATOR_SCHEMA_NAMESPACE_URI);
         // now run alias and embedded condition parser
         parsingContextAccessor.get().put(PARSING_PATH, new Path());
-        _rawload(new StringReader(content), sourceInfo, new CfgAliasesHandler());
+        _rawload(new StringReader(content), sourceInfo, new CfgAliasesHandler(), validate);
         
         // now parse non alias/condition directives
         parsingContextAccessor.get().put(PARSING_PATH, new Path());
-        _rawload(new StringReader(content), sourceInfo, hndlr);
+        _rawload(new StringReader(content), sourceInfo, hndlr, validate);
     }
 
     /**
@@ -190,10 +185,14 @@ public class XmlConfigLoader2 {
      * @throws Exception
      */
     private static void _rawload(Reader reader, String sourceInfo,
-            ContentHandler hndlr) throws Exception {
+            ContentHandler hndlr, boolean validate) throws Exception {
         XMLReader rdr;
         try {
         	SAXParserFactory factory = SAXParserFactory.newInstance();
+        	if(validate) {
+        		factory.setNamespaceAware(true);
+        		factory.setSchema(schema);
+        	}
         	SAXParser parser = factory.newSAXParser();
             rdr = parser.getXMLReader();
         } catch (Exception e) {
@@ -204,8 +203,14 @@ public class XmlConfigLoader2 {
         rdr.setContentHandler(hndlr);
         InputSource src = new InputSource(reader);
         try {
+        	rdr.setErrorHandler(new SimpleErrorHandler(cLog));
             rdr.parse(src);
         } catch (Exception e) {
+        	if(e instanceof SAXParseException) {
+        		SAXParseException parseException = (SAXParseException)e;
+                throw new Exception("Unable to parse configuration '" + sourceInfo
+                        + "'.  "+parseException.getMessage()+" Line:"+parseException.getLineNumber()+", Column:"+parseException.getColumnNumber());
+        	}
             throw new Exception("Unable to parse configuration '" + sourceInfo
                     + "'.", e);
         }
@@ -999,7 +1004,6 @@ public class XmlConfigLoader2 {
          * having to create such files. In particular, this enables condition
          * syntax to be used in unit tests.
          */
-        @SuppressWarnings("unchecked")
         public void processingInstruction(String target, String data)
                 throws SAXException {
             if (target.equals("alias")) {
