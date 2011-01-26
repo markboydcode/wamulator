@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.37-SNAPSHOT</version>
+    <version>5.37</version>
 
     <name>SSO Environment Simulator</name>
 
