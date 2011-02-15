@@ -225,7 +225,7 @@ public class RequestHandler implements Runnable {
             // for non-ignored traffic perform the enforcements and translations
             RequestLine appReqLn = reqPkg.requestLine; // default to request line as-is
             // default to no translation 
-            EndPoint endpoint = new AppEndPoint(null, null, null, reqPkg.host, reqPkg.port, true, null, null); 
+            EndPoint endpoint = new AppEndPoint(null, null, null, reqPkg.host, reqPkg.port, true, null, null);
             byte[] response = null;
             byte[] request = null;
 
@@ -288,6 +288,7 @@ public class RequestHandler implements Runnable {
 
                 if (!appMgr.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
                     // so it requires enforcement
+					cLog.fine("@@$$ The path: " + reqPkg.path + " requires authentication.");
 
                     // missing session cookie or invalid session? redirect to
                     // login
@@ -298,8 +299,6 @@ public class RequestHandler implements Runnable {
                     }
 
                     // is user authorized to view?
-                    String path = reqPkg.requestLine.getUri();
-                    String query = null;
 
                     if (!appMgr.isPermitted(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
                             reqPkg.path, reqPkg.query, user)) {
@@ -343,7 +342,7 @@ public class RequestHandler implements Runnable {
             
             if  (endpoint instanceof AppEndPoint) {
 //  
-//    ###    ########  ########        ######## ########  
+//     ###    ########  ########        ######## ########  
 //    ## ##   ##     ## ##     ##       ##       ##     ## 
 //   ##   ##  ##     ## ##     ##       ##       ##     ## 
 //  ##     ## ########  ########        ######   ########  

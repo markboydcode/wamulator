@@ -1,6 +1,10 @@
 package org.lds.sso.appwrap;
 
+import java.util.logging.Logger;
+
 public class OrderedUri implements Comparable<OrderedUri>{
+	private static Logger logger = Logger.getLogger(OrderedUri.class.getName());
+
     private Integer declarationOrder = 0;
     protected boolean queryIsRequired = false;
     protected boolean usePathPrefixMatching = false;
@@ -84,43 +88,56 @@ public class OrderedUri implements Comparable<OrderedUri>{
     }
     
     public boolean matches(String scheme, String host, int port, String path, String query) {
-        if ((this.scheme != null && ! this.scheme.equals(scheme)) || 
-                (this.host != null && ! this.host.equals(host)) || 
-                this.port != port) {
-            return false;
-        }
-        
-        if (queryIsRequired) {
-            if (query == null) {
-                return false;
-            }
-            if (useQueryPrefixMatching) {
-                if (! query.startsWith(queryPrefix)) {
-                    return false;
-                }
-            }
-            else {
-                if (! query.equals(queryMatch)) {
-                    return false;
-                }
-            }
-        }
-        else if (query != null) {
-            return false; 
-        }
-        
-        if (usePathPrefixMatching) {
-            if (path.startsWith(pathPrefix)) {
-                return true;
-            }
-        }
-        else {
-            if (path.equals(pathMatch)) {
-                return true;
-            }
-        }
-        return false;
+		logger.fine("@@ Testing cpath=" + pathMatch + ", scheme=" + this.scheme + ", host=" + this.host +
+					", port=" + this.port + ", query=" + queryMatch + ", queryIsRequired=" + queryIsRequired +
+					", queryPrefix=" + queryPrefix + ", useQueryPrefixMatching=" + useQueryPrefixMatching);
+		logger.fine("@@ For a match with requested path=" + path + ", scheme=" + scheme + ", host=" + host +
+					", port=" + port + ", query=" + query);
+		boolean match = _matches(scheme, host, port, path, query);
+		String message = match ? "SUCCESS: The cpath: " + pathMatch + " matches the requested path: " + path :
+						 		 "FAILED: The cpath: " + pathMatch + " doesn't match the requested path: " + path;
+		logger.fine(message);
+		return match;
     }
+
+	public boolean _matches(String scheme, String host, int port, String path, String query) {
+		if ((this.scheme != null && ! this.scheme.equals(scheme)) ||
+				(this.host != null && ! this.host.equals(host)) ||
+				this.port != port) {
+			return false;
+		}
+
+		if (queryIsRequired) {
+			if (query == null) {
+				return false;
+			}
+			if (useQueryPrefixMatching) {
+				if (! query.startsWith(queryPrefix)) {
+					return false;
+				}
+			}
+			else {
+				if (! query.equals(queryMatch)) {
+					return false;
+				}
+			}
+		}
+		else if (query != null) {
+			return false;
+		}
+
+		if (usePathPrefixMatching) {
+			if (path.toLowerCase().startsWith(pathPrefix.toLowerCase())) {
+				return true;
+			}
+		}
+		else {
+			if (path.equalsIgnoreCase(pathMatch)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
     public String toString() {
         return id;

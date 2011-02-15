@@ -1,8 +1,12 @@
 package org.lds.sso.appwrap;
 
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.RequestLine;
 import org.lds.sso.appwrap.proxy.StartLine;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Represents the mapping from canonical space URLs to application space URLs
@@ -14,6 +18,8 @@ import org.lds.sso.appwrap.proxy.StartLine;
  * 
  */
 public class AppEndPoint implements EndPoint {
+	private static final Logger cLog = Logger.getLogger(AppEndPoint.class.getName());
+
 	private String canonicalContextRoot = null;
 
 	private String applicationContextRoot = null;
@@ -189,9 +195,11 @@ public class AppEndPoint implements EndPoint {
 		if (canonicalContextRoot == null) { // no translation available
 			return reqPkg.requestLine;
 		}
-		if (!reqPkg.requestLine.getUri().startsWith(canonicalContextRoot)) {
+		if (!reqPkg.requestLine.getUri().toLowerCase().startsWith(canonicalContextRoot.toLowerCase())) {
 			return null;
 		}
+		cLog.fine("REWRITE: Re-writing request URL, replacing canonical context root: " + canonicalContextRoot +
+					" with application context root: " + applicationContextRoot);
 
 		StartLine appReqLn = new StartLine(reqPkg.requestLine.getMethod(), applicationContextRoot
 				+ reqPkg.requestLine.getUri().substring(canonicalContextRoot.length()), reqPkg.requestLine

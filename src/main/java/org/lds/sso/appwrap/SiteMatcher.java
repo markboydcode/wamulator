@@ -103,10 +103,13 @@ public class SiteMatcher {
 		for(EndPoint ep : mappedEndPoints) {
 			// TODO: will have to delegate into endpoint to evaluate when we
 			// add support for backward references and env macros for fileendpoints.
-			if (canUrl.startsWith(ep.getCanonicalContextRoot())) {
+			cLog.fine("@@ getEndpointForCanonicalUrl: comparing: " + ep.getCanonicalContextRoot() + " and: " + canUrl);
+			if (canUrl.toLowerCase().startsWith(ep.getCanonicalContextRoot().toLowerCase())) {
+				cLog.fine("SUCCESS: we found a tpath endpoint: " + ep.getCanonicalContextRoot());
 				return ep;
 			}
 		}
+		cLog.fine("FAILURE: we didn't find a tpath endpoint that matches.");
 		return null;
 	}
 
@@ -114,9 +117,12 @@ public class SiteMatcher {
 	 * Returns true if this site matches on the host, port, and uri.
 	 */
 	public boolean matches(String host, int port) {
+		cLog.fine("Comparing site: host = " + this.host + " to passed-in host = " + host);
 		if (!this.host.equals(host) || this.port != port) {
+			cLog.fine("FAILED: The site doesn't match: " + this);
 			return false;
 		}
+		cLog.fine("SUCCESS: The site matches, use this site: " + this);
 		return true; 
 	}
 	
@@ -130,7 +136,7 @@ public class SiteMatcher {
      * SiteMatcher ports when using "auto" port binding for the proxy port and
      * the by-site port attribute specifies use of the proxy-port alias.
      *  
-     * @param consolePort
+     * @param proxyPort
      */
 	public void proxyPortChanged(int proxyPort) {
 	    if (this.port == 0) {
@@ -200,7 +206,11 @@ public class SiteMatcher {
      * one.
      * @param query 
      * 
-     * @param uri
+     * @param scheme
+	 * @param host
+	 * @param port
+	 * @param path
+	 * @param query
      * @return
      */
     public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
@@ -239,7 +249,6 @@ public class SiteMatcher {
      * @param port
      * @param path
      * @param query
-     * @param cls
      * @return
      */
     public OrderedUri getManagerOfUri(String scheme, String host, int port, String path, String query) {

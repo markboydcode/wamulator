@@ -57,10 +57,10 @@ import org.mortbay.jetty.webapp.WebAppContext;
  *
  */
 public class Service {
-	private static final Logger logger = Logger.getLogger(Service.class.getName());
+	public static final Logger logger = Logger.getLogger(Service.class.getName());
 
 	public static final String CLASSPATH_PREFIX = "classpath:";
-	private static final String STRING_PREFIX = "string:";
+	public static final String STRING_PREFIX = "string:";
 
 	//protected ProxyListener proxy = null;
 	protected Thread proxyRunner = null;
@@ -152,6 +152,9 @@ public class Service {
 		XmlConfigLoader2.load(cfgrd, "from " + cfgPath);
 
 		Config cfg = Config.getInstance();
+
+		// Close down our reader so that the config file can be updated externally.
+		cfgrd.close();
 
 		// assumes that this directory contains .html and .jsp files
 		// This is just a directory within your source tree, and can be exported as part of your normal .jar
@@ -362,17 +365,28 @@ public class Service {
         line.toString(),cfg.getServerName(),String.valueOf(cfg.getConsolePort()),String.valueOf(cfg.getProxyPort()),cfg.getRestVersion().getVersionId(),line.toString());
 	}
 
+	private Thread runThread;
+	private ConfigFileMonitor fileMonitor = null;
+
 	public void startAndBlock() throws Exception {
+		if (null == fileMonitor) {
+			fileMonitor = new ConfigFileMonitor(command, this);
+		}
 		start();
-		
+
+		runThread = new Thread();
 		while (true) {
 			try {
-				Thread.sleep(10000);
+				runThread.sleep(10000);
 			}
 			catch(Exception e) {
 				throw new RuntimeException("Service incurred exception. Exiting.", e);
 			}
 		}
+	}
+
+	public Thread getRunThread() {
+		return runThread;
 	}
 
 	/**
@@ -413,6 +427,7 @@ public class Service {
 		return server != null && server.isStopped() && proxyRunner != null && !proxyRunner.isAlive();
 	}
 
+	private static Command command;
 	/**
 	 * Java application entry point.
 	 *
@@ -422,7 +437,7 @@ public class Service {
 	public static void main(String[] args) throws Exception {
 	    verifyArgs(args);
 
-	    Command command = Command.parseCommand(args);
+	    command = Command.parseCommand(args);
 	    command.execute();
 	}
 
@@ -434,5 +449,55 @@ public class Service {
         if (args.length < 1) {
             throw new IllegalStateException("An xml configuration file path must be specified when starting.");
         }
+	}
+}
+
+class ConfigFileMonitor implements Runnable {
+	protected String cfgPath;
+	protected File file;
+	protected Service svc;
+	protected long lastUpdateTime;
+	protected Thread t;
+	ConfigFileMonitor(Command command, Service svc) {
+		this.svc = svc;
+		cfgPath = command.getCfgPath();
+		if (!cfgPath.toLowerCase().startsWith(Service.STRING_PREFIX) &&
+			!cfgPath.toLowerCase().startsWith(Service.CLASSPATH_PREFIX)) {
+			file = new File(cfgPath);
+			lastUpdateTime = file.lastModified();
+			// only watch the file-based config for changes
+			LogUtils.info(Service.logger, "Starting up config file update monitor.  Monitoring config file: " + cfgPath);
+			t = new Thread(this);
+			t.setDaemon(true);
+			t.start();
+		}
+		else {
+			LogUtils.info(Service.logger, "Not monitoring config for updates because it isn't file-based.");
+		}
+	}
+
+	public void run() {
+		while (true) {
+			try {
+				Thread.sleep(5000);			// check file update every 5 seconds
+				if (file.lastModified() != lastUpdateTime) {
+					LogUtils.info(Service.logger, "@@ Config file has been updated, restarting server.");
+					lastUpdateTime = file.lastModified();
+					// The configuration file has changed, restart the service.
+					svc.stop();
+					svc.getRunThread().interrupt();
+					svc.startAndBlock();
+				}
+			}
+			catch (InterruptedException e) {
+				// just eat it
+			}
+			catch (UnableToStopJettyServerException e) {
+				LogUtils.warning(Service.logger, "Exception trying to shut down the server: " + e);
+			}
+			catch (Exception e) {
+				LogUtils.warning(Service.logger, "Exception in file monitor: " + e);
+			}
+		}
 	}
 }
