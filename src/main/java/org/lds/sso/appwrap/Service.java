@@ -1,50 +1,30 @@
 package org.lds.sso.appwrap;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Logger;
-
 import org.lds.sso.appwrap.bootstrap.Command;
 import org.lds.sso.appwrap.exception.UnableToListenOnProxyPortException;
 import org.lds.sso.appwrap.exception.UnableToStartJettyServerException;
 import org.lds.sso.appwrap.exception.UnableToStopJettyServerException;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.ProxyListener;
-import org.lds.sso.appwrap.rest.AuthNHandler;
-import org.lds.sso.appwrap.rest.AuthZHandler;
-import org.lds.sso.appwrap.rest.GetCookieName;
-import org.lds.sso.appwrap.rest.IsTokenValidHandler;
-import org.lds.sso.appwrap.rest.LogoutHandler;
-import org.lds.sso.appwrap.rest.RestVersion;
+import org.lds.sso.appwrap.rest.*;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
-import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
-import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
-import org.lds.sso.appwrap.ui.rest.LogFileHandler;
-import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
-import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
-import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
-import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
-import org.lds.sso.appwrap.ui.rest.TerminateSimulatorHandler;
-import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
+import org.lds.sso.appwrap.ui.rest.*;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.handler.HandlerCollection;
 import org.mortbay.jetty.webapp.WebAppContext;
+
+import java.io.*;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.logging.Logger;
 
 /**
  * The entry point for starting up the shim. Supports both application execution
@@ -459,20 +439,22 @@ class ConfigFileMonitor implements Runnable {
 	protected long lastUpdateTime;
 	protected Thread t;
 	ConfigFileMonitor(Command command, Service svc) {
-		this.svc = svc;
-		cfgPath = command.getCfgPath();
-		if (!cfgPath.toLowerCase().startsWith(Service.STRING_PREFIX) &&
-			!cfgPath.toLowerCase().startsWith(Service.CLASSPATH_PREFIX)) {
-			file = new File(cfgPath);
-			lastUpdateTime = file.lastModified();
-			// only watch the file-based config for changes
-			LogUtils.info(Service.logger, "Starting up config file update monitor.  Monitoring config file: " + cfgPath);
-			t = new Thread(this);
-			t.setDaemon(true);
-			t.start();
-		}
-		else {
-			LogUtils.info(Service.logger, "Not monitoring config for updates because it isn't file-based.");
+		if (null != command && null != svc) {
+			this.svc = svc;
+			cfgPath = command.getCfgPath();
+			if (!cfgPath.toLowerCase().startsWith(Service.STRING_PREFIX) &&
+				!cfgPath.toLowerCase().startsWith(Service.CLASSPATH_PREFIX)) {
+				file = new File(cfgPath);
+				lastUpdateTime = file.lastModified();
+				// only watch the file-based config for changes
+				LogUtils.info(Service.logger, "Starting up config file update monitor.  Monitoring config file: " + cfgPath);
+				t = new Thread(this);
+				t.setDaemon(true);
+				t.start();
+			}
+			else {
+				LogUtils.info(Service.logger, "Not monitoring config for updates because it isn't file-based.");
+			}
 		}
 	}
 
