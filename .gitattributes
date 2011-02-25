@@ -54,6 +54,7 @@ src/main/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEn
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/UserHeaderNames.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/AND.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Assignment.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Attribute.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/CtxMatches.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasAssignment.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasLdsAccountId.java -text svneol=unset#text/plain
@@ -177,6 +178,7 @@ src/test/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContextTest.jav
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/GlobalHeaderNamesTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEngineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/ANDTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/AttributeTest.java -text
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/ComplexSyntaxTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/CtxMatchesTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/HasAssignmentTest.java -text svneol=unset#text/plain
