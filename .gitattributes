@@ -172,6 +172,7 @@ src/test/java/org/lds/sso/appwrap/TestJettyJspApproach.java -text svneol=unset#t
 src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestUtilities.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/UserManagerTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/UserTest.java -text
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/bootstrap/RemoteStartStopTest.java -text
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContextTest.java -text svneol=unset#text/plain

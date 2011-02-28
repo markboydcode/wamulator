@@ -17,14 +17,27 @@ public class NvPairTest {
         set.add(new NvPair("abc", "def"));
         set.add(new NvPair("abb", "def"));
         set.add(new NvPair("acc", "def"));
+        set.add(new NvPair(null, null));
+        set.add(new NvPair(null, "deg"));
+        set.add(new NvPair(null, "dee"));
         
-        Assert.assertEquals(set.size(), 5);
+        Assert.assertEquals(set.size(), 8);
         set.add(new NvPair("acc", "def")); // should replace previous one
-        Assert.assertEquals(set.size(), 5);
+        Assert.assertEquals(set.size(), 8);
         
         Iterator<NvPair> itr = set.iterator();
         NvPair n = itr.next();
+        Assert.assertEquals(n.getName(), null);
+        Assert.assertEquals(n.getValue(), null);
+        n=itr.next();
+        Assert.assertEquals(n.getName(), null);
+        Assert.assertEquals(n.getValue(), "dee");
+        n=itr.next();
+        Assert.assertEquals(n.getName(), null);
+        Assert.assertEquals(n.getValue(), "deg");
+        n=itr.next();
         Assert.assertEquals(n.getName(), "abb");
+        Assert.assertEquals(n.getValue(), "def");
         n=itr.next();
         Assert.assertEquals(n.getName(), "abc");
         Assert.assertEquals(n.getValue(), "dee");

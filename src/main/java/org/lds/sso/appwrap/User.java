@@ -2,18 +2,16 @@ package org.lds.sso.appwrap;
 
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Map.Entry;
 
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.proxy.Header;
 import org.lds.sso.appwrap.proxy.HeaderBuffer;
-import org.lds.sso.appwrap.proxy.RequestHandler;
 
 public class User {
 	public static final String LDSAPPS_ATT = "ldsApplications";
@@ -92,6 +90,39 @@ public class User {
 
     public boolean hasAttributeValue(String name, String value) {
         return atts.contains(new NvPair(name, value));
+    }
+
+    /**
+     * Returns true if an attribute exists with this name.
+     * 
+     * @param name
+     * @return
+     */
+    public boolean hasAttribute(String name) {
+        for(NvPair pair : atts) {
+            if ((name == null && pair.getName() == null) ||
+                    (name != null && name.equals(pair.getName()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns an array of NvPairs all having the same name.
+     * 
+     * @return
+     */
+    public NvPair[] getAttribute(String name) {
+        List<NvPair> pairs = new ArrayList<NvPair>();
+        for(NvPair pair : atts) {
+            if ((name == null && pair.getName() == null) ||
+                    (name != null && name.equals(pair.getName()))) {
+                pairs.add(pair);
+            }
+        }
+            
+        return pairs.toArray(new NvPair[] {});
     }
 
     public void addAttribute(String name, String value) {
