@@ -1,30 +1,50 @@
 package org.lds.sso.appwrap;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.logging.Logger;
+
 import org.lds.sso.appwrap.bootstrap.Command;
 import org.lds.sso.appwrap.exception.UnableToListenOnProxyPortException;
 import org.lds.sso.appwrap.exception.UnableToStartJettyServerException;
 import org.lds.sso.appwrap.exception.UnableToStopJettyServerException;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.ProxyListener;
-import org.lds.sso.appwrap.rest.*;
+import org.lds.sso.appwrap.rest.AuthNHandler;
+import org.lds.sso.appwrap.rest.AuthZHandler;
+import org.lds.sso.appwrap.rest.GetCookieName;
+import org.lds.sso.appwrap.rest.IsTokenValidHandler;
+import org.lds.sso.appwrap.rest.LogoutHandler;
+import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
-import org.lds.sso.appwrap.ui.rest.*;
+import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
+import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
+import org.lds.sso.appwrap.ui.rest.LogFileHandler;
+import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
+import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
+import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
+import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
+import org.lds.sso.appwrap.ui.rest.TerminateSimulatorHandler;
+import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.handler.HandlerCollection;
 import org.mortbay.jetty.webapp.WebAppContext;
-
-import java.io.*;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Logger;
 
 /**
  * The entry point for starting up the shim. Supports both application execution
@@ -97,6 +117,7 @@ public class Service {
     }
 
 	public static final Service invoke(Command command) {
+		Service.command = command;
 		command.execute();
 		return getService(command.getCfgPath());
 	}
@@ -171,7 +192,7 @@ public class Service {
         String base = rv.getRestUrlBase();
 		switch(rv) {
 		case OPENSSO :
-            LogUtils.info(logger, "Configuring single {0} rest service at: {1}{2}", rv.getVersionId(), cfg.getConsolePort(), base);
+            LogUtils.info(logger, "Configuring single {0} rest service at: {1}{2}", rv.getVersionId(), String.valueOf(cfg.getConsolePort()), base);
             cfg.getTrafficRecorder().addRestInst(base, base, base + "getCookieNameForToken", "n/a");
 			handlers.addHandler(new GetCookieName(base + "getCookieNameForToken"));
 			handlers.addHandler(new AuthNHandler(base + "authenticate"));
@@ -258,14 +279,18 @@ public class Service {
     	}
     	else if (path.toLowerCase().startsWith(CLASSPATH_PREFIX)) {
     		path = path.substring(CLASSPATH_PREFIX.length());
-    		ClassLoader cldr = Service.class.getClassLoader();
-    		InputStream source = cldr.getResourceAsStream(path);
+    		URL source = findConfigFileOnClasspath(Thread.currentThread().getContextClassLoader(), path);
 
     		if (source == null) {
         		throw new IllegalArgumentException("Unable to find resource '"
         			+ path + "' on classpath.");
     		}
-    		reader = new InputStreamReader(source);
+    		try {
+    			reader = new InputStreamReader(source.openStream());
+    		} catch (IOException e) { // should never happen
+        		throw new IllegalArgumentException("Unable to load file '"
+            			+ source + "'.");
+			}
             return new SourceAndReader("Cp" + path.hashCode(), reader);
     	}
     	else {
@@ -289,19 +314,43 @@ public class Service {
     	}
 	}
 
+	/**
+	 * Find the config file in the ClassLoader that is closest to the top.  Opposite of normal ClassLoader.getResource() logic.
+	 * This model is necessary to effectively support classpath based reloading.
+	 * @param classLoader
+	 * @param path
+	 * @return
+	 */
+	public static URL findConfigFileOnClasspath(ClassLoader classLoader, String path) {
+		Enumeration<URL> results = null;
+		try {
+			results = classLoader.getResources(path);
+		} catch(IOException e) {
+			return null;
+		}
+		if(results == null) {
+			return null;
+		}
+		URL lastURL = null;
+		while(results.hasMoreElements()) {
+			lastURL = results.nextElement();
+		}
+		return lastURL;
+	}
+
 	public String getCfgPath() {
 		return cfgPath;
 	}
 
 	/**
 	 * Starts the embedded jetty server and http proxy.
-	 * @throws InterruptedException 
-	 * @throws UnableToStartJettyServerException 
-	 * @throws UnableToListenOnProxyPortException 
+	 * @throws InterruptedException
+	 * @throws UnableToStartJettyServerException
+	 * @throws UnableToListenOnProxyPortException
 	 *
 	 * @throws Exception
 	 */
-	public void start() throws InterruptedException, UnableToStartJettyServerException, 
+	public void start() throws InterruptedException, UnableToStartJettyServerException,
 	    UnableToListenOnProxyPortException  {
 		Config cfg = Config.getInstance();
 		cfg.setShimStateCookieId(cfgSource);
@@ -336,16 +385,16 @@ public class Service {
 		    line.append('-');
 		}
         dualLog("---------------------{0}\n" +
-        "simulator version  : {1}\n" + 
+        "simulator version  : {1}\n" +
         "console-rest port  : {2}\n" +
-        "http proxy port    : {3}\n" + 
+        "http proxy port    : {3}\n" +
         "Rest Interface     : {4}\n" +
         "---------------------{5}\n" +
         "Simulator Console and Proxy are ready",
         line.toString(),cfg.getServerName(),String.valueOf(cfg.getConsolePort()),String.valueOf(cfg.getProxyPort()),cfg.getRestVersion().getVersionId(),line.toString());
 	}
 
-	private Thread runThread;
+	private volatile boolean stop = false;
 	private ConfigFileMonitor fileMonitor = null;
 
 	public void startAndBlock() throws Exception {
@@ -354,19 +403,19 @@ public class Service {
 		}
 		start();
 
-		runThread = new Thread();
-		while (true) {
+		while (!stop) {
 			try {
-				runThread.sleep(10000);
+				Thread.sleep(10000);
 			}
 			catch(Exception e) {
 				throw new RuntimeException("Service incurred exception. Exiting.", e);
 			}
 		}
+		stop = false;
 	}
 
-	public Thread getRunThread() {
-		return runThread;
+	public void stopBlocking() {
+		stop = true;
 	}
 
 	/**
@@ -380,7 +429,7 @@ public class Service {
 
 	/**
 	 * Stops the embedded jetty web server and http proxy.
-	 * @throws UnableToStopJettyServerException 
+	 * @throws UnableToStopJettyServerException
 	 *
 	 * @throws Exception
 	 */
@@ -394,7 +443,11 @@ public class Service {
 		    }
 		}
 		if ( proxy != null ) {//Runner != null ) {
-			proxy.closeSocket(); //proxyRunner.interrupt();
+			try {
+				proxy.closeSocket(); //proxyRunner.interrupt();
+			} catch(Exception e) {
+				/* do Nothing */
+			}
 		}
 		new Config(); // eww... TODO:  Refactor Config to use a standard singleton pattern so we don't have to do stuff like this.
 	}
@@ -442,12 +495,22 @@ class ConfigFileMonitor implements Runnable {
 		if (null != command && null != svc) {
 			this.svc = svc;
 			cfgPath = command.getCfgPath();
-			if (!cfgPath.toLowerCase().startsWith(Service.STRING_PREFIX) &&
-				!cfgPath.toLowerCase().startsWith(Service.CLASSPATH_PREFIX)) {
-				file = new File(cfgPath);
+			if (!cfgPath.toLowerCase().startsWith(Service.STRING_PREFIX)) {
+				if(cfgPath.toLowerCase().startsWith(Service.CLASSPATH_PREFIX)) {
+					URL cfgFile = Service.findConfigFileOnClasspath(Thread.currentThread().getContextClassLoader(), cfgPath.replace(Service.CLASSPATH_PREFIX, ""));
+					if(cfgFile != null) {
+						file = new File(cfgFile.getFile());
+					}
+				} else {
+					file = new File(cfgPath);
+				}
+				if(file == null || !file.exists()) {
+					LogUtils.info(Service.logger, "Not monitoring config for updates because it isn't file-based.");
+					return;
+				}
 				lastUpdateTime = file.lastModified();
 				// only watch the file-based config for changes
-				LogUtils.info(Service.logger, "Starting up config file update monitor.  Monitoring config file: " + cfgPath);
+				LogUtils.info(Service.logger, "Starting up config file update monitor.  Monitoring config file: " + file.getAbsolutePath());
 				t = new Thread(this);
 				t.setDaemon(true);
 				t.start();
@@ -467,7 +530,7 @@ class ConfigFileMonitor implements Runnable {
 					lastUpdateTime = file.lastModified();
 					// The configuration file has changed, restart the service.
 					svc.stop();
-					svc.getRunThread().interrupt();
+					svc.stopBlocking();
 					svc.startAndBlock();
 				}
 			}

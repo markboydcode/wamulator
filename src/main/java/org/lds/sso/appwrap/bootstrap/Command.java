@@ -13,11 +13,11 @@ import org.lds.sso.appwrap.exception.ServerTimeoutFailureException;
 import org.lds.sso.appwrap.io.LogUtils;
 
 /**
- * Abstract class for runtime start/stop actions and dictates the pattern of 
+ * Abstract class for runtime start/stop actions and dictates the pattern of
  * parameters used at runtime.
- * 
+ *
  * <cfg-file> [timeout] [command]
- *  
+ *
  * @author joshcummings
  *
  */
@@ -39,18 +39,18 @@ public abstract class Command {
 
 	/**
 	 * Dictates the pattern of command line parameters passed specified when
-	 * running the {@link org.lds.sso.appwrap.Service}. At a minimum a 
-	 * configuration file must be specified. Therefore, it will always be the 
-	 * last parameter. Optionally, a command can be specified. If not 
+	 * running the {@link org.lds.sso.appwrap.Service}. At a minimum a
+	 * configuration file must be specified. Therefore, it will always be the
+	 * last parameter. Optionally, a command can be specified. If not
 	 * specified it defaults to "start". If specified the command is the first
-	 * parameter and would be followed by the configuartion file. For all 
+	 * parameter and would be followed by the configuartion file. For all
 	 * commands an optional milliseconds timeout can be specified. If included
-	 * it must follow the command and precede the configuration file. It  
+	 * it must follow the command and precede the configuration file. It
 	 * represents the milliseconds allowed for the specified command to execute
 	 * before a {@link org.lds.sso.exception.ServerTimeoutFailureException} is
 	 * thrown indicating that the command could not be executed in the allotted
 	 * time.
-	 * 
+	 *
 	 * @param args
 	 * @return
 	 */
@@ -86,7 +86,7 @@ public abstract class Command {
 		LogUtils.info(cLog, "Preparing to run [{0}] command...", getCommandName());
 		Service service = Service.getService(cfgPath);
 		Config cfg = Config.getInstance();
-		
+
 		LogUtils.info(cLog, "Running [{0}] command...", getCommandName());
 		doExecute(service, cfg);
 
@@ -95,15 +95,15 @@ public abstract class Command {
 		} catch ( IOException e ) {
 			throw new ServerFailureException(e);
 		}
-		
+
 		LogUtils.info(cLog, "Sucessfully ran [{0}] command...", getCommandName());
 	}
 
 	void waitFor(Config cfg) throws IOException, ServerTimeoutFailureException {
 		long startTime = System.currentTimeMillis();
 		int responseCode = getTargetResponseCode();
+		LogUtils.info(cLog, "Trying to hit: {0}", getCheckUrl(cfg.getConsolePort()));
 		do {
-			LogUtils.info(cLog, "Trying to hit: {0}", getCheckUrl(cfg.getConsolePort()));
 			try {
 				URLConnection connection = openConnection(getCheckUrl(cfg.getConsolePort()));
 				responseCode = ((HttpURLConnection)connection).getResponseCode();
@@ -115,9 +115,9 @@ public abstract class Command {
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
-			LogUtils.info(cLog, "Responded with: {0}", responseCode);
+			System.out.print("#");
 		} while ( responseCode != getTargetResponseCode() && System.currentTimeMillis() - startTime < timeout );
-
+		System.out.print("\n");
 		if ( responseCode != getTargetResponseCode() ) {
 			onTimeout();
 			throw new ServerTimeoutFailureException("Server failed to perform the operation in time");
@@ -144,6 +144,6 @@ public abstract class Command {
 	abstract int getTargetResponseCode();
 	abstract void doExecute(Service service, Config cfg);
 	abstract String getCommandName();
-	
+
 	protected void onTimeout() {}
 }

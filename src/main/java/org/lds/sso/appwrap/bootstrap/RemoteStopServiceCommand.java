@@ -21,7 +21,7 @@ public class RemoteStopServiceCommand extends Command {
 	void doExecute(Service service, Config cfg) {
 		try {
 			URLConnection connection = openConnection(getShutdownURL(cfg.getConsolePort()));
-			int responseCode = ((HttpURLConnection)connection).getResponseCode();
+			((HttpURLConnection)connection).getResponseCode();
 		} catch ( IOException e ) {
 			// ignore... it just means we've stopped
 		}
@@ -35,7 +35,7 @@ public class RemoteStopServiceCommand extends Command {
 	int getTargetResponseCode() {
 		return 404;
 	}
-	
+
 	@Override
 	String getCommandName() {
 		return "Remote Stop Service";

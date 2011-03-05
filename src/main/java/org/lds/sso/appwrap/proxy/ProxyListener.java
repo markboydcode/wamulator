@@ -5,15 +5,15 @@ package org.lds.sso.appwrap.proxy;
 	 * This is a simple multi-threaded Java proxy server
 	 * for HTTP requests (HTTPS doesn't seem to work, because
 	 * the CONNECT requests aren't always handled properly).
-	 * I implemented the class as a thread so you can call it 
-	 * from other programs and kill it, if necessary (by using 
+	 * I implemented the class as a thread so you can call it
+	 * from other programs and kill it, if necessary (by using
 	 * the closeSocket() method).
 	 *
-	 * We'll call this the 1.1 version of this class. All I 
+	 * We'll call this the 1.1 version of this class. All I
 	 * changed was to separate the HTTP header elements with
 	 * \r\n instead of just \n, to comply with the official
 	 * HTTP specification.
-	 *  
+	 *
 	 * This can be used either as a direct proxy to other
 	 * servers, or as a forwarding proxy to another proxy
 	 * server. This makes it useful if you want to monitor
@@ -23,7 +23,7 @@ package org.lds.sso.appwrap.proxy;
 	 * tell your browser to use "localhost" as the proxy, and
 	 * you can watch the browser traffic going in and out).
 	 *
-	 * One limitation of this implementation is that it doesn't 
+	 * One limitation of this implementation is that it doesn't
 	 * close the RequestHandler socket if the client disconnects
 	 * or the server never responds, so you could end up with
 	 * a bunch of loose threads running amuck and waiting for
@@ -44,9 +44,9 @@ package org.lds.sso.appwrap.proxy;
 	 * by itself and you don't need the debug output, it will
 	 * run a bit faster if you pipe the std output to 'nul'.
 	 *
-	 * You may use this code as you wish, just don't pretend 
-	 * that you wrote it yourself, and don't hold me liable for 
-	 * anything that it does or doesn't do. If you're feeling 
+	 * You may use this code as you wish, just don't pretend
+	 * that you wrote it yourself, and don't hold me liable for
+	 * anything that it does or doesn't do. If you're feeling
 	 * especially honest, please include a link to nsftools.com
 	 * along with the code. Thanks, and good luck.
 	 *
@@ -67,12 +67,12 @@ import org.lds.sso.appwrap.io.LogUtils;
 	public class ProxyListener implements Runnable
 	{
 		private static final Logger cLog = Logger.getLogger(ProxyListener.class.getName());
-		
+
 		private ServerSocket server = null;
 		private boolean started = false;
 		private volatile int count = 0;
 		private Config cfg = null;
-		
+
 		/* the proxy server just listens for connections and creates
 		 * a new thread for each connection attempt (the RequestHandler
 		 * class really does all the work)
@@ -90,7 +90,7 @@ import org.lds.sso.appwrap.io.LogUtils;
                 server = new ServerSocket(cfg.getProxyPort());
             }
 		}
-		
+
 		/* return whether or not the socket is currently open
 		 */
 		public boolean isRunning ()
@@ -100,8 +100,8 @@ import org.lds.sso.appwrap.io.LogUtils;
 			else
 				return true;
 		}
-		 
-		
+
+
 		/* closeSocket will close the open ServerSocket; use this
 		 * to halt a running jProxy thread
 		 */
@@ -117,22 +117,22 @@ import org.lds.sso.appwrap.io.LogUtils;
 				os.write((byte)0);
 				os.close();
 				s.close();*/
-			}  catch(Exception e)  { 
+			}  catch(Exception e)  {
 				LogUtils.severe(cLog, "Error occurred closing listener socket.", e);
 			}
-			
+
 			server = null;
 		}
-		
-		
+
+
 		public void run()
 		{
 			try {
 				// loop forever listening for client connections
-				
+
 				for (File f : new File(".").listFiles()) {
 					String nm = f.getName();
-					
+
 					if (f.isFile() && (nm.equals("Requests.log")
 							|| (nm.startsWith("C-") && nm.endsWith(".log")))) {
 						f.delete();
@@ -140,14 +140,14 @@ import org.lds.sso.appwrap.io.LogUtils;
 				}
 				DecimalFormat fmt = new DecimalFormat("0000");
 				started = true;
-				
+
 				while (true)
 				{
 					count++;
 					if (count > cfg.getMaxEntries()) {
 						count = 1;
 					}
-					String connId = "C-" + fmt.format(count); 
+					String connId = "C-" + fmt.format(count);
 					Socket client = server.accept();
 					client.setSoTimeout(cfg.getProxyInboundSoTimeout());
 					RequestHandler h = new RequestHandler(client, cfg, connId);
@@ -156,14 +156,16 @@ import org.lds.sso.appwrap.io.LogUtils;
 					t.start();
 				}
 			} catch ( SocketException e ) {
-				LogUtils.severe(cLog, "Proxy Listener error: ", e); 
+				if(!e.getMessage().contains("socket closed")) {
+					LogUtils.severe(cLog, "Proxy Listener error: ", e);
+				}
 			} catch ( IOException e ) {
-				LogUtils.severe(cLog, "Proxy Listener error: ", e); 				
+				LogUtils.severe(cLog, "Proxy Listener error: ", e);
 			} finally {
 				started = false;
 			}
 		}
-		
+
 	}
 
 
