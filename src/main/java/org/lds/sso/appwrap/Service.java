@@ -291,6 +291,7 @@ public class Service {
         		throw new IllegalArgumentException("Unable to load file '"
             			+ source + "'.");
 			}
+    		logger.info("Use config file located: "+source);
             return new SourceAndReader("Cp" + path.hashCode(), reader);
     	}
     	else {
@@ -303,6 +304,7 @@ public class Service {
     		if (file.isDirectory()) {
     			throw new IllegalArgumentException("File '" + file.getAbsolutePath() + "' is a directory.");
     		}
+    		logger.info("Use config file located: "+file.getAbsolutePath());
     		try {
 				reader = new FileReader(file);
 	            return new SourceAndReader("File" + path.hashCode(), reader);
