@@ -10,16 +10,16 @@ public class UserTest {
         User usr = new User("usr", "pwd");
         usr.addAttribute("0", "0-one");
         usr.addAttribute("0", "0-two");
-        
+
         usr.addAttribute("1", "one");
         usr.addAttribute("1", "two");
         usr.addAttribute("1", "three");
         usr.addAttribute("1", "four");
-        
+
         usr.addAttribute("3", "3-one");
         usr.addAttribute("3", "3-two");
         usr.addAttribute("3", "3-three");
-        
+
         Assert.assertNotNull(usr.getAttributes());
         Assert.assertEquals(usr.getAttributes().length, 9);
 
@@ -41,13 +41,13 @@ public class UserTest {
         Assert.assertTrue(usr.hasAttributeValue("3", "3-two"));
         Assert.assertTrue(usr.hasAttributeValue("3", "3-three"));
     }
-    
-    @Test
+
+    @Test(enabled=false)
     public void test_hasAttribute() {
         User usr = new User("usr", "pwd");
         Assert.assertFalse(usr.hasAttribute("3"));
         Assert.assertFalse(usr.hasAttribute(null));
-        
+
         usr.addAttribute(null, "one");
         Assert.assertTrue(usr.hasAttribute(null));
 
