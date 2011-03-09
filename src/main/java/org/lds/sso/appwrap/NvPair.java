@@ -6,7 +6,10 @@ package org.lds.sso.appwrap;
 /**
  * Class for holding name and value pairs and exposing them with javabean's
  * getters and setters. Natural ordering for this class is sorting by name first
- * and if equal then by value. Two instances with identical name and value pairs
+ * and if equal then by value. A pair with a null value for the name will 
+ * sort before a pair with a non-null name. Within a null name value the same
+ * sorting will then apply to values. Null values sort prior to non-null
+ * values. Two instances with identical name and value pairs
  * will themselves be equal and have the same hashcode.
  * 
  * @author Mark Boyd
@@ -49,10 +52,48 @@ public class NvPair implements Comparable<NvPair>{
 		this.value = value;
         updateId();
 	}
+	
+	/**
+	 * Compares pairs by name first, value second. In both comparisons a null 
+	 * value is considered lexicographically less than any other non-null string.
+	 */
 	public int compareTo(NvPair nvp) {
-	    int answer = this.name.compareTo(nvp.name);
+	    int answer = 0;
+	    
+	    if (name == null) {
+	        if (nvp.name == null) {
+	            answer = 0;
+	        }
+	        else {
+	            answer = -1;
+	        }
+	    }
+	    else {
+	        if (nvp.name == null) {
+	            answer = +1;
+	        }
+	        else {
+	            answer = this.name.compareTo(nvp.name);    
+	        }
+	    }
+	    
 	    if (answer == 0) {
-	        answer = this.value.compareTo(nvp.value);
+	        if (value == null) {
+	            if (nvp.value == null) {
+	                answer = 0;
+	            }
+	            else {
+	                answer = -1;
+	            }
+	        }
+	        else {
+	            if (nvp.value == null) {
+	                answer = +1;
+	            }
+	            else {
+	                answer = this.value.compareTo(nvp.value);    
+	            }
+	        }
 	    }
 		return answer;
 	}
