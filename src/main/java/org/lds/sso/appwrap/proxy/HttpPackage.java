@@ -1,8 +1,6 @@
 package org.lds.sso.appwrap.proxy;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Map;
-import java.util.TreeMap;
 
 import org.lds.sso.appwrap.SiteMatcher;
 
@@ -22,7 +20,7 @@ public class HttpPackage {
 	public HeaderBuffer headerBfr = new HeaderBuffer();
 	public ByteArrayOutputStream bodyStream = new ByteArrayOutputStream();
 	public int responseCode = 200;
-	public int contentLength = 0;
+	public int contentLength = -1; // minus one conveys content-length hdr not read yet or not found
 	public ResponseLine responseLine = null;
 	public RequestLine requestLine = null;
 	public boolean isResponse = false;

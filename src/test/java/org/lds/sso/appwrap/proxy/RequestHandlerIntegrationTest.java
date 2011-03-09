@@ -1,13 +1,11 @@
 package org.lds.sso.appwrap.proxy;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLEncoder;
@@ -21,13 +19,13 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class RequestHandlerIntegrationTest {
+    protected static final String MSG4_404_TEST = "don't request this resource. it isn't there.";
     private Service service = null;
     private Thread server = null;
     private int sitePort;
@@ -152,6 +150,47 @@ public class RequestHandlerIntegrationTest {
                             output = "GET /bad/gateway/message/ HTTP/1.1" + RequestHandler.CRLF + RequestHandler.CRLF;
                             req = "bad-gateway-message";
                         }
+                        else if (input.contains("/404/test-wcl")) {
+                            // test to verify that html content for 404 and 500 level
+                            // response codes makes it through to the browser.
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            String html = "<html><head>\r\n" 
+                                + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n" 
+                                + "<title>Error 404 NOT_FOUND</title>\r\n" 
+                                + "</head>\r\n" 
+                                + "<body><h2>HTTP ERROR: 404</h2><pre>NOT_FOUND</pre>\r\n" 
+                                + "<p>" + MSG4_404_TEST + " </p>\r\n" 
+                                + "<p><i><small>we really mean it.</small></i></p>\r\n" 
+                                + "<br/></body></html>";
+                            baos.write(html.getBytes());
+                            output = "HTTP/1.1 404 Not Found" + RequestHandler.CRLF
+                                + "Content-Type: text/html; charset=iso-8859-1" + RequestHandler.CRLF
+                                + "Server: test-harness" + RequestHandler.CRLF
+                                + "Content-Length: " + baos.size()
+                                + RequestHandler.CRLF + RequestHandler.CRLF
+                                + new String(baos.toByteArray());
+                        }
+                        else if (input.contains("/404/test-ncl")) {
+                            // test to verify that html content for 404 and 500 level
+                            // response codes makes it through to the browser
+                            // even when no content-length response header is
+                            // included.
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            String html = "<html><head>\r\n" 
+                                + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n" 
+                                + "<title>Error 404 NOT_FOUND</title>\r\n" 
+                                + "</head>\r\n" 
+                                + "<body><h2>HTTP ERROR: 404</h2><pre>NOT_FOUND</pre>\r\n" 
+                                + "<p>" + MSG4_404_TEST + " </p>\r\n" 
+                                + "<p><i><small>we really mean it.</small></i></p>\r\n" 
+                                + "<br/></body></html>";
+                            baos.write(html.getBytes());
+                            output = "HTTP/1.1 404 Not Found" + RequestHandler.CRLF
+                                + "Content-Type: text/html; charset=iso-8859-1" + RequestHandler.CRLF
+                                + "Server: test-harness"
+                                + RequestHandler.CRLF + RequestHandler.CRLF
+                                + new String(baos.toByteArray());
+                        }
                         else if (input.contains("/bad/gateway/empty/msg")) {
                             output = RequestHandler.CRLF + RequestHandler.CRLF + RequestHandler.CRLF;
                             req = "bad-gateway-empty-message";
@@ -232,6 +271,8 @@ public class RequestHandlerIntegrationTest {
             + "   <cctx-mapping cctx='/bad/gateway/empty/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/bad/gateway/empty/*'/>"
             + "   <cctx-mapping cctx='/bad/gateway/message*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/bad/gateway/message*'/>"
             + "   <unenforced cpath='/bad/gateway/*'/>"
+            + "   <cctx-mapping cctx='/404/test-*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/404/test-*'/>"
+            + "   <unenforced cpath='/404/test-*'/>"
             + "   <cctx-file cctx='/file/cp/relative/*' file='classpath:*' content-type='text/html'/>"
             + "   <cctx-file cctx='/file/cp/fixed/*' file='classpath:RequestHandlerIntegrationTestFile1.txt' content-type='text/html'/>"
             + "   <cctx-file cctx='/file/local/relative/*' file='*' content-type='text/plain'/>"
@@ -257,6 +298,54 @@ public class RequestHandlerIntegrationTest {
     public void tearDownSimulator() throws Exception {
         service.stop();
         server.interrupt();
+    }
+
+    @Test
+    public void test_404_payload_with_content_length_is_passed_through() throws HttpException, IOException {
+        Config cfg = Config.getInstance();
+        System.out.println("----> test_404_payload_is_passed_through");
+        String uri = "http://local.lds.org:" + sitePort + "/404/test-wcl/req";
+        HttpClient client = new HttpClient();
+
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", sitePort);
+        client.setHostConfiguration(hcfg);
+
+        HttpMethod method = new GetMethod(uri);
+        method.setFollowRedirects(false);
+        int status = client.executeMethod(method);
+        String resp = method.getResponseBodyAsString();
+        if (resp != null) {
+            System.out.println(resp);
+        }
+        Assert.assertEquals(status, 404, "should have returned http 404 not found");
+        Assert.assertNotNull(resp, "404 response payload should have been passed-through.");
+        Assert.assertTrue(resp.contains(MSG4_404_TEST), "page content should have contained: " + MSG4_404_TEST);
+        method.releaseConnection();
+    }
+
+    @Test
+    public void test_404_payload_without_content_length_is_passed_through() throws HttpException, IOException {
+        Config cfg = Config.getInstance();
+        System.out.println("----> test_404_payload_is_passed_through");
+        String uri = "http://local.lds.org:" + sitePort + "/404/test-ncl/req";
+        HttpClient client = new HttpClient();
+
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", sitePort);
+        client.setHostConfiguration(hcfg);
+
+        HttpMethod method = new GetMethod(uri);
+        method.setFollowRedirects(false);
+        int status = client.executeMethod(method);
+        String resp = method.getResponseBodyAsString();
+        if (resp != null) {
+            System.out.println(resp);
+        }
+        Assert.assertEquals(status, 404, "should have returned http 404 not found");
+        Assert.assertNotNull(resp, "404 response payload should have been passed-through.");
+        Assert.assertTrue(resp.contains(MSG4_404_TEST), "page content should have contained: " + MSG4_404_TEST);
+        method.releaseConnection();
     }
 
     @Test
