@@ -109,7 +109,9 @@ import org.lds.sso.appwrap.io.LogUtils;
 		{
 			try {
 				// close the open server socket
-				server.close();
+				if(server != null) {
+					server.close();
+				}
 				// send it a message to make it stop waiting immediately
 				// (not really necessary)
 				/*Socket s = new Socket("localhost", thisPort);
@@ -118,7 +120,8 @@ import org.lds.sso.appwrap.io.LogUtils;
 				os.close();
 				s.close();*/
 			}  catch(Exception e)  {
-				LogUtils.severe(cLog, "Error occurred closing listener socket.", e);
+				LogUtils.warning(cLog, "An error occurred closing listener socket.  Ignoring.");
+				LogUtils.fine(cLog, "Error occurred closing listener socket.", e);
 			}
 
 			server = null;
