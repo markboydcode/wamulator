@@ -11,7 +11,6 @@ public class NvPairTest {
 
     @Test(enabled=true)
     public void testCompare() {
-        try {
         Set<NvPair> set = new TreeSet<NvPair>();
         set.add(new NvPair("abc", "deg"));
         set.add(new NvPair("abc", "dee"));
@@ -50,12 +49,6 @@ public class NvPairTest {
         Assert.assertEquals(n.getValue(), "deg");
         n=itr.next();
         Assert.assertEquals(n.getName(), "acc");
-    }
-    catch(Exception e) {
-        System.out.println("--------- BOYDMR -----v");
-        e.printStackTrace();
-        System.out.println("--------- BOYDMR -----^");
-    }
     }
 
     @Test

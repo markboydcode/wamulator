@@ -42,9 +42,8 @@ public class UserTest {
         Assert.assertTrue(usr.hasAttributeValue("3", "3-three"));
     }
 
-    @Test(enabled=true)
+    @Test
     public void test_hasAttribute() {
-        try {
         User usr = new User("usr", "pwd");
         Assert.assertFalse(usr.hasAttribute("3"));
         Assert.assertFalse(usr.hasAttribute(null));
@@ -54,11 +53,5 @@ public class UserTest {
 
         usr.addAttribute("3", null);
         Assert.assertTrue(usr.hasAttribute("3"));
-        }
-        catch(Exception e) {
-            System.out.println("--------- BOYDMR -----v");
-            e.printStackTrace();
-            System.out.println("--------- BOYDMR -----^");
-        }
     }
 }
