@@ -106,23 +106,12 @@ import org.lds.sso.appwrap.io.LogUtils;
 		 */
 		public void closeSocket ()
 		{
-			try {
-				// close the open server socket
-				if(server != null) {
+			// close the open server socket
+			if(server != null) {
+				try {
 					server.close();
-				}
-				// send it a message to make it stop waiting immediately
-				// (not really necessary)
-				/*Socket s = new Socket("localhost", thisPort);
-				OutputStream os = s.getOutputStream();
-				os.write((byte)0);
-				os.close();
-				s.close();*/
-			}  catch(Exception e)  {
-				LogUtils.warning(cLog, "An error occurred closing listener socket.  Ignoring.");
-				LogUtils.fine(cLog, "Error occurred closing listener socket.", e);
+				} catch(IOException e) { /* Do Nothing */ }
 			}
-
 			server = null;
 		}
 
@@ -161,8 +150,15 @@ import org.lds.sso.appwrap.io.LogUtils;
 				if(!e.getMessage().contains("socket closed")) {
 					LogUtils.warning(cLog, "Proxy Listener error.  Increase logging level to see full error.  If you're seeing this message during shutdown you can probably ignore it.");
 					LogUtils.fine(cLog, "Proxy Listener error: ", e);
+				} else {
+					LogUtils.severe(cLog, "Unexpected error:", e);
 				}
 			} finally {
+				try {
+					if(server != null) {
+						server.close();
+					}
+				} catch(Exception e) { /* Do nothing */ }
 				started = false;
 			}
 		}
