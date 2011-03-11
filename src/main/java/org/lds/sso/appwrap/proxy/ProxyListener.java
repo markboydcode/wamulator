@@ -159,7 +159,7 @@ import org.lds.sso.appwrap.io.LogUtils;
 				}
 			} catch ( IOException e ) {
 				if(!e.getMessage().contains("socket closed")) {
-					LogUtils.severe(cLog, "Proxy Listener error.  Increase logging level to see full error.");
+					LogUtils.warning(cLog, "Proxy Listener error.  Increase logging level to see full error.  If you're seeing this message during shutdown you can probably ignore it.");
 					LogUtils.fine(cLog, "Proxy Listener error: ", e);
 				}
 			} finally {
