@@ -68,7 +68,7 @@ import org.lds.sso.appwrap.io.LogUtils;
 		private static final Logger cLog = Logger.getLogger(ProxyListener.class.getName());
 
 		private ServerSocket server = null;
-		private boolean started = false;
+		private volatile boolean started = false;
 		private volatile int count = 0;
 		private Config cfg = null;
 
@@ -104,15 +104,9 @@ import org.lds.sso.appwrap.io.LogUtils;
 		/* closeSocket will close the open ServerSocket; use this
 		 * to halt a running jProxy thread
 		 */
-		public void closeSocket ()
+		public void stop ()
 		{
-			// close the open server socket
-			if(server != null) {
-				try {
-					server.close();
-				} catch(IOException e) { /* Do Nothing */ }
-			}
-			server = null;
+			started = false;
 		}
 
 
@@ -132,13 +126,14 @@ import org.lds.sso.appwrap.io.LogUtils;
 				DecimalFormat fmt = new DecimalFormat("0000");
 				started = true;
 
-				while (true)
+				while (started)
 				{
 					count++;
 					if (count > cfg.getMaxEntries()) {
 						count = 1;
 					}
 					String connId = "C-" + fmt.format(count);
+
 					Socket client = server.accept();
 					client.setSoTimeout(cfg.getProxyInboundSoTimeout());
 					RequestHandler h = new RequestHandler(client, cfg, connId);

@@ -8,6 +8,7 @@ import java.net.URLConnection;
 
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
+import org.lds.sso.appwrap.exception.ServerFailureException;
 
 public class RemoteStopServiceCommand extends Command {
 	public RemoteStopServiceCommand(String cfgPath) {
@@ -25,15 +26,16 @@ public class RemoteStopServiceCommand extends Command {
 		} catch ( IOException e ) {
 			// ignore... it just means we've stopped
 		}
+		try {
+			waitForPortsToBecomeAvailable(cfg);
+		} catch ( IOException e ) {
+			throw new ServerFailureException(e);
+		}
+
 	}
 
 	protected URL getShutdownURL(int port) throws MalformedURLException {
 		return new URL("http://localhost:" + port + "/admin/shutdown");
-	}
-
-	@Override
-	int getTargetResponseCode() {
-		return 404;
 	}
 
 	@Override

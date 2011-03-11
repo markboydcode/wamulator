@@ -21,6 +21,7 @@ public class RemoteStartServiceCommand extends Command {
 	public static final String JAVA_OPTS_ENVIRONMENT_VARIABLE = "WAM_OPTS";
 
 	private Process process;
+	private volatile StringBuilder remoteOutput = new StringBuilder();
 
 	public RemoteStartServiceCommand(String cfgPath, Integer timeout) {
 		super(cfgPath, timeout);
@@ -44,6 +45,20 @@ public class RemoteStartServiceCommand extends Command {
 		} catch ( IOException e ) {
 			throw new ServerFailureException(e);
 		}
+		try {
+			waitForAppToStart(cfg);
+		} catch(Throwable e) {
+			if(process != null) {
+				process.destroy();
+			}
+			if(e instanceof RuntimeException) {
+				throw (RuntimeException)e;
+			}
+			throw new ServerFailureException(e);
+		} finally {
+			cLog.info("==========Begin Remote process Output===========\n"+remoteOutput.toString());
+			cLog.info("==========End Remote process Output===========");
+		}
 	}
 
 	protected void executeJavaCommand(String[] args) throws IOException {
@@ -55,26 +70,19 @@ public class RemoteStartServiceCommand extends Command {
 		executeProcess(builder, true);
 	}
 
-	@Override
-	int getTargetResponseCode() {
-		return 200;
-	}
-
 	private void executeProcess(ProcessBuilder builder, boolean wait) throws IOException {
 		builder.redirectErrorStream(true);
 		process = builder.start();
 
 		final InputStream is = process.getInputStream();
-		new Thread() {
+		Thread console = new Thread() {
 			@Override
 			public void run() {
 				BufferedReader reader = null;
 				try {
-					String result = null;
-					while(result != null) {
+					while(true) {
 						reader = new BufferedReader(new InputStreamReader(is));
-						result = reader.readLine();
-						System.out.println("Process: "+result);
+						remoteOutput.append(reader.readLine());
 					}
 				} catch(IOException e) {
 					cLog.log(Level.FINE, "Error reading remote process. Terminating Stream.", e);
@@ -87,15 +95,13 @@ public class RemoteStartServiceCommand extends Command {
 					}
 				}
 			}
-		}.start();
+		};
+		console.setDaemon(true);
+		console.start();
 	}
 
 	@Override
 	String getCommandName() {
 		return "Remote Start Service";
-	}
-
-	protected void onTimeout() {
-		process.destroy();
 	}
 }

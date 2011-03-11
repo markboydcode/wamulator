@@ -1,7 +1,9 @@
 package org.lds.sso.appwrap.bootstrap;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.HttpURLConnection;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.logging.Logger;
@@ -90,25 +92,44 @@ public abstract class Command {
 		LogUtils.info(cLog, "Running [{0}] command...", getCommandName());
 		doExecute(service, cfg);
 
-		try {
-			waitFor(cfg);
-		} catch ( IOException e ) {
-			throw new ServerFailureException(e);
-		}
-
 		LogUtils.info(cLog, "Sucessfully ran [{0}] command...", getCommandName());
 	}
 
-	void waitFor(Config cfg) throws IOException, ServerTimeoutFailureException {
+	protected void waitForPortsToBecomeAvailable(Config cfg) throws IOException, ServerTimeoutFailureException {
 		long startTime = System.currentTimeMillis();
-		int responseCode = getTargetResponseCode();
+		LogUtils.info(cLog, "Waiting for port {0} and {1} to become available.", String.valueOf(cfg.getConsolePort()), String.valueOf(cfg.getProxyPort()));
+		while(!available(cfg.getConsolePort()) && System.currentTimeMillis() - startTime < timeout) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+			System.out.print("#");
+		}
+		while(!available(cfg.getProxyPort()) && System.currentTimeMillis() - startTime < timeout) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+			System.out.print("#");
+		}
+		System.out.print("\n");
+		if (!available(cfg.getConsolePort()) || !available(cfg.getProxyPort())) {
+			throw new ServerTimeoutFailureException("Failed to stop existing Server.  Required ports "+cfg.getConsolePort()+" and "+cfg.getProxyPort()+" Not available.");
+		}
+	}
+
+	protected void waitForAppToStart(Config cfg) throws IOException, ServerTimeoutFailureException {
+		long startTime = System.currentTimeMillis();
+		int responseCode = HttpURLConnection.HTTP_NOT_FOUND;
 		LogUtils.info(cLog, "Trying to hit: {0}", getCheckUrl(cfg.getConsolePort()));
 		do {
 			try {
 				URLConnection connection = openConnection(getCheckUrl(cfg.getConsolePort()));
 				responseCode = ((HttpURLConnection)connection).getResponseCode();
-			} catch ( IOException e ) {
-				responseCode = 404;
+			} catch(IOException e) {
+				responseCode = HttpURLConnection.HTTP_NOT_FOUND;
 			}
 			try {
 				Thread.sleep(1000);
@@ -116,17 +137,50 @@ public abstract class Command {
 				throw new RuntimeException(e);
 			}
 			System.out.print("#");
-		} while ( responseCode != getTargetResponseCode() && System.currentTimeMillis() - startTime < timeout );
+		} while ( responseCode != HttpURLConnection.HTTP_OK && System.currentTimeMillis() - startTime < timeout );
 		System.out.print("\n");
-		if ( responseCode != getTargetResponseCode() ) {
-			onTimeout();
-			throw new ServerTimeoutFailureException("Server failed to perform the operation in time");
+		if ( responseCode != HttpURLConnection.HTTP_OK ) {
+			throw new ServerTimeoutFailureException("Failed to start server within timeout.  Url "+getCheckUrl(cfg.getConsolePort())+" is not working.");
 		}
+	}
+
+	/**
+	 * Checks to see if a specific port is available.
+	 *
+	 * @param port the port to check for availability
+	 */
+	public static boolean available(int port) {
+	    ServerSocket ss = null;
+	    DatagramSocket ds = null;
+	    try {
+	        ss = new ServerSocket(port);
+	        ss.setReuseAddress(true);
+	        ds = new DatagramSocket(port);
+	        ds.setReuseAddress(true);
+	        return true;
+	    } catch (IOException e) {
+	    } finally {
+	        if (ds != null) {
+	            ds.close();
+	        }
+
+	        if (ss != null) {
+	            try {
+	                ss.close();
+	            } catch (IOException e) {
+	                /* should not be thrown */
+	            }
+	        }
+	    }
+
+	    return false;
 	}
 
 	protected URLConnection openConnection(URL url) throws IOException {
 		try {
 			URLConnection connection = url.openConnection();
+			connection.setReadTimeout(30000);
+			connection.setConnectTimeout(30000);
 			connection.connect();
 			return connection;
 		} catch ( IOException inTheTowel ) {
@@ -141,9 +195,6 @@ public abstract class Command {
 			throw inTheTowel;
 		}
 	}
-	abstract int getTargetResponseCode();
 	abstract void doExecute(Service service, Config cfg);
 	abstract String getCommandName();
-
-	protected void onTimeout() {}
 }

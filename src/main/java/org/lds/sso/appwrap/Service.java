@@ -228,7 +228,7 @@ public class Service {
 	                String serviceBase = baseResolved + site.getHost() + "/";
 	                if( ! hosts.contains(site.getHost())) {
 	                    hosts.add(site.getHost());
-	                    LogUtils.info(logger, "Configuring {0} rest service for site {1}:{2} at: {3}", rv.getVersionId(), site.getHost(), site.getPort(), serviceBase);
+	                    LogUtils.info(logger, "Configuring {0} rest service for site {1}:{2} at: {3}", rv.getVersionId(), String.valueOf(site.getHost()), String.valueOf(site.getPort()), serviceBase);
 	                    cfg.getTrafficRecorder().addRestInst(base, baseResolved, baseResolved + site.getHost() + "/getCookieName", site.getHost());
 	                    handlers.addHandler(new GetOesV1CookieName(serviceBase + "getCookieName"));
 	                    handlers.addHandler(new AreTokensValid(serviceBase + "areTokensValid"));
@@ -375,7 +375,6 @@ public class Service {
 		    throw new UnableToListenOnProxyPortException(ioe);
 		}
 		proxyRunner = new Thread(proxy);
-		proxyRunner.setDaemon(true);
 		proxyRunner.setName("Proxy Listener");
 		proxyRunner.start();
 
@@ -446,7 +445,7 @@ public class Service {
 		}
 		if ( proxy != null ) {//Runner != null ) {
 			try {
-				proxy.closeSocket(); //proxyRunner.interrupt();
+				proxy.stop(); //proxyRunner.interrupt();
 			} catch(Exception e) {
 				/* do Nothing */
 			}

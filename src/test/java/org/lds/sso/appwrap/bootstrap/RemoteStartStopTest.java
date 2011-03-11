@@ -60,8 +60,6 @@ public class RemoteStartStopTest {
 		EasyMock.expectLastCall();
 		slowStart.executeJavaCommand((String[])EasyMock.anyObject());
 		EasyMock.expectLastCall();
-		slowStart.onTimeout();
-		EasyMock.expectLastCall();
 		EasyMock.replay(start, slowStart, connection);
 
 		Service.invoke(start);
