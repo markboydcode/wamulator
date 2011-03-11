@@ -57,7 +57,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.text.DecimalFormat;
 import java.util.logging.Logger;
 
@@ -158,12 +157,11 @@ import org.lds.sso.appwrap.io.LogUtils;
 					t.setDaemon(true);
 					t.start();
 				}
-			} catch ( SocketException e ) {
-				if(!e.getMessage().contains("socket closed")) {
-					LogUtils.severe(cLog, "Proxy Listener error: ", e);
-				}
 			} catch ( IOException e ) {
-				LogUtils.severe(cLog, "Proxy Listener error: ", e);
+				if(!e.getMessage().contains("socket closed")) {
+					LogUtils.severe(cLog, "Proxy Listener error.  Increase logging level to see full error.");
+					LogUtils.fine(cLog, "Proxy Listener error: ", e);
+				}
 			} finally {
 				started = false;
 			}
