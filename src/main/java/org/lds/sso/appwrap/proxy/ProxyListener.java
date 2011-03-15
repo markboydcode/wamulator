@@ -57,6 +57,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.text.DecimalFormat;
 import java.util.logging.Logger;
 
@@ -88,6 +89,7 @@ import org.lds.sso.appwrap.io.LogUtils;
             else {
                 server = new ServerSocket(cfg.getProxyPort());
             }
+            server.setSoTimeout(1000);
 		}
 
 		/* return whether or not the socket is currently open
@@ -128,18 +130,21 @@ import org.lds.sso.appwrap.io.LogUtils;
 
 				while (started)
 				{
-					count++;
-					if (count > cfg.getMaxEntries()) {
-						count = 1;
+					try {
+						Socket client = server.accept();
+						client.setSoTimeout(cfg.getProxyInboundSoTimeout());
+						count++;
+						if (count > cfg.getMaxEntries()) {
+							count = 1;
+						}
+						String connId = "C-" + fmt.format(count);
+						RequestHandler h = new RequestHandler(client, cfg, connId);
+						Thread t = new Thread(h, "RequestHandler " + connId);
+						t.setDaemon(true);
+						t.start();
+					} catch(SocketTimeoutException e) {
+						cLog.finest("Accept timedout.  let's try again.");
 					}
-					String connId = "C-" + fmt.format(count);
-
-					Socket client = server.accept();
-					client.setSoTimeout(cfg.getProxyInboundSoTimeout());
-					RequestHandler h = new RequestHandler(client, cfg, connId);
-					Thread t = new Thread(h, "RequestHandler " + connId);
-					t.setDaemon(true);
-					t.start();
 				}
 			} catch ( IOException e ) {
 				if(!e.getMessage().contains("socket closed")) {
