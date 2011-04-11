@@ -109,6 +109,14 @@ import org.lds.sso.appwrap.io.LogUtils;
 		public void stop ()
 		{
 			started = false;
+			if(server != null) {
+				while(!server.isClosed()) {
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) { /* Do Nothing */ }
+				}
+				
+			}
 		}
 
 
