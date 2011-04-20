@@ -141,6 +141,8 @@ src/main/resources/ctx-request-processing-logging.properties -text
 src/main/resources/local-config2.xml -text svneol=unset#text/plain
 src/main/resources/logging.properties -text
 src/main/resources/org/lds/sso/appwrap/wamulator-5.0.xsd -text
+src/main/resources/webapp/WEB-INF/console-servlet.xml -text
+src/main/resources/webapp/WEB-INF/web.xml -text
 src/main/resources/webapp/add.gif -text
 src/main/resources/webapp/apps.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/cancel.gif -text

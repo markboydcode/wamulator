@@ -1,5 +1,10 @@
 package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.easymock.classextension.EasyMock;
 import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.User;
@@ -8,11 +13,6 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,8 +24,23 @@ import java.util.TreeMap;
 public class AttributeTest extends TestBaseClass {
 
     @Test
-	public void testAttributeOperationEquals() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
+    public void testAttributeNotFoundInUser() throws Exception {
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
+
+        User usr = EasyMock.createMock(User.class);
+        EasyMock.expect(usr.getAttribute("test")).andReturn(null);
+        EasyMock.replay(usr);
+
+        Map<String,String> env = new TreeMap<String,String>();
+
+        EvaluationContext ctx = new EvaluationContext(usr, env);
+        Assert.assertFalse(ev.isConditionSatisfied(ctx), "should be false since user doesn't have attribute called test");
+
+    }
+
+    @Test
+    public void testAttributeOperationEquals() throws Exception {
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "test")});
@@ -34,9 +49,9 @@ public class AttributeTest extends TestBaseClass {
         Map<String,String> env = new TreeMap<String,String>();
 
         EvaluationContext ctx = new EvaluationContext(usr, env);
-		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test with value test");
+        Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test with value test");
 
-	}
+    }
 
     @Test
 	public void testAttributeOperationEqualsWithWildcardTrue() throws Exception {

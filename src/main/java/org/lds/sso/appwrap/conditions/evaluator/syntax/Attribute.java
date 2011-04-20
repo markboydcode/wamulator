@@ -1,11 +1,11 @@
 package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
+import java.util.Map;
+
 import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
-
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -57,16 +57,23 @@ public class Attribute extends SyntaxBase {
     public boolean isConditionSatisfied(EvaluationContext evaluationCtx) throws EvaluationException {
         User user = evaluationCtx.user;
 
-        boolean satisfied;
+        boolean satisfied = false;
         switch (operation) {
             case EQUALS:
                 NvPair[] attribute = user.getAttribute(attributeName);
-                satisfied = wildCardMatch(attribute[0].getValue(), attributeValue);
+                if (attribute != null) {
+                    satisfied = wildCardMatch(attribute[0].getValue(), attributeValue);
+                }
                 if(satisfied){
                     debug(evaluationCtx, satisfied, String.format("user has attribute that matches value, actual: %s", attribute[0].getValue()));
                 }
                 else{
-                    debug(evaluationCtx, satisfied, String.format("user does not have attribute that matches value, actual: %s", attribute[0].getValue()));
+                    if (attribute != null) {
+                        debug(evaluationCtx, satisfied, String.format("user does not have attribute that matches value, actual: %s", attribute[0].getValue()));
+                    }
+                    else {
+                        debug(evaluationCtx, satisfied, "user does not have attribute");
+                    }
                 }
 
                 break;
