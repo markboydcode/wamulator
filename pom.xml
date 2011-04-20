@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.43-SNAPSHOT</version>
+    <version>5.43</version>
 
     <name>SSO Environment Simulator</name>
 
@@ -136,6 +136,12 @@
     </distributionManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk16</artifactId>
+            <version>1.45</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-servlet_2.4_spec</artifactId>
