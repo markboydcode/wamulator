@@ -62,7 +62,12 @@ public class Attribute extends SyntaxBase {
             case EQUALS:
                 NvPair[] attribute = user.getAttribute(attributeName);
                 if (attribute != null) {
-                    satisfied = wildCardMatch(attribute[0].getValue(), attributeValue);
+                    for(NvPair p : attribute) {
+                        if (wildCardMatch(p.getValue(), attributeValue)) {
+                            satisfied = true;
+                            break;
+                        }
+                    }
                 }
                 if(satisfied){
                     debug(evaluationCtx, satisfied, String.format("user has attribute that matches value, actual: %s", attribute[0].getValue()));

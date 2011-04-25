@@ -54,6 +54,21 @@ public class AttributeTest extends TestBaseClass {
     }
 
     @Test
+    public void testAttributeOperationEqualsMultiValued() throws Exception {
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
+
+        User usr = EasyMock.createMock(User.class);
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "testAAA"), new NvPair("test", "test"), new NvPair("test", "testBBB")});
+        EasyMock.replay(usr);
+
+        Map<String,String> env = new TreeMap<String,String>();
+
+        EvaluationContext ctx = new EvaluationContext(usr, env);
+        Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test with value test");
+
+    }
+
+    @Test
 	public void testAttributeOperationEqualsWithWildcardTrue() throws Exception {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this * test' debug='true'/>");
 
