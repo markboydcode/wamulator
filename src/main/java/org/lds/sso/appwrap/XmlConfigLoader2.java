@@ -879,6 +879,11 @@ public class XmlConfigLoader2 {
                 String vl = getStringAtt("value", path, atts);
                 cfg.getUserManager().addAttributeForLastUserAdded(
                         User.LDSAPPS_ATT, vl);
+            } else if (path.matches("/config/users/user/att")) {
+                String nl = getStringAtt("name", path, atts);
+                String vl = getStringAtt("value", path, atts);
+                cfg.getUserManager().addAttributeForLastUserAdded(
+                        nl, vl);
             } else if (path.matches("/config/sso-traffic/rewrite-redirect")) {
                 String from = getStringAtt("from", path, atts);
                 String to = getStringAtt("to", path, atts);
