@@ -513,7 +513,7 @@
 											]]></xsd:documentation>
 										</xsd:annotation>
 									</xsd:attribute>
-									<xsd:attribute name="pwd" use="required" type="aliasableToken">
+									<xsd:attribute name="pwd" use="optional" type="aliasableToken">
 										<xsd:annotation>
 											<xsd:documentation><![CDATA[
 												The password of the user if necessary at all. Can be left blank.

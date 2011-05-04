@@ -868,7 +868,7 @@ public class XmlConfigLoader2 {
                 }
             } else if (path.matches("/config/users/user")) {
                 String usrNm = getStringAtt("name", path, atts);
-                String usrPwd = getStringAtt("pwd", path, atts);
+                String usrPwd = getStringAtt("pwd", path, atts, false);
                 UserManager mgr = cfg.getUserManager();
                 mgr.setUser(usrNm, usrPwd);
             } else if (path.matches("/config/users/user/sso-header")) {
