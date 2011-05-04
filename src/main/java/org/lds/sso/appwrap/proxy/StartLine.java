@@ -14,10 +14,12 @@ public class StartLine implements RequestLine, ResponseLine{
 	public String token1 = null;
 	public String token2 = null;
 	public String token3 = null;
+	public String rawLine = null;
 	public String proxy_scheme = null;
 	public String proxy_host = null;
 	public int proxy_port = -1;
 	public boolean isProxied = false;
+	public boolean isBadLine = false;
 	
 	/**
 	 * Constructor that parses the start line into its three tokens.
@@ -29,6 +31,15 @@ public class StartLine implements RequestLine, ResponseLine{
 		String cleanLn = line.trim();
 		int sIdx = cleanLn.indexOf(RequestHandler.SP);
 		int eIdx = cleanLn.indexOf(RequestHandler.SP, sIdx+1);
+
+		if (sIdx == -1 || eIdx == -1) {
+		    rawLine = line;
+		    token1 = line;
+		    token2 = line;
+		    token3 = line;
+		    isBadLine = true;
+		    return;
+        }
 		token1 = cleanLn.substring(0, sIdx);
 		token2 = cleanLn.substring(sIdx + 1, eIdx);
 		token3 = cleanLn.substring(eIdx + 1);
@@ -50,6 +61,9 @@ public class StartLine implements RequestLine, ResponseLine{
 	}
 	
 	public String toString() {
+	    if (isBadLine) {
+	        return rawLine;
+	    }
 		return token1 + RequestHandler.SP + token2 + RequestHandler.SP + token3;
 	}
 

@@ -55,7 +55,7 @@ public class RequestHandlerIntegrationTest {
         sss.bind(null);
         serverPort = sss.getLocalPort();
 
-        // now start server to spool back a redirect
+        // now start server to spool back responses to various requests
         server = new Thread() {
             @Override
             public void run() {
@@ -149,6 +149,11 @@ public class RequestHandlerIntegrationTest {
                             // of reqs and resps uses the same getHttpPackage method.
                             output = "GET /bad/gateway/message/ HTTP/1.1" + RequestHandler.CRLF + RequestHandler.CRLF;
                             req = "bad-gateway-message";
+                        }
+                        else if (input.contains("/bad/response/startline")) {
+                            // simulates a wacked out message with no space in the response's start line
+                            output = "HTTP/1.1404NotFound" + RequestHandler.CRLF + RequestHandler.CRLF;
+                            req = "bad-startline-message";
                         }
                         else if (input.contains("/404/test-wcl")) {
                             // test to verify that html content for 404 and 500 level
@@ -271,6 +276,8 @@ public class RequestHandlerIntegrationTest {
             + "   <cctx-mapping cctx='/bad/gateway/empty/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/bad/gateway/empty/*'/>"
             + "   <cctx-mapping cctx='/bad/gateway/message*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/bad/gateway/message*'/>"
             + "   <unenforced cpath='/bad/gateway/*'/>"
+            + "   <cctx-mapping cctx='/bad/response/startline*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/bad/startline*'/>"
+            + "   <unenforced cpath='/bad/response/startline*'/>"
             + "   <cctx-mapping cctx='/404/test-*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/404/test-*'/>"
             + "   <unenforced cpath='/404/test-*'/>"
             + "   <cctx-file cctx='/file/cp/relative/*' file='classpath:*' content-type='text/html'/>"
@@ -667,6 +674,53 @@ public class RequestHandlerIntegrationTest {
         }
         Assert.assertEquals(status, 501, "should have returned http 501");
         method.releaseConnection();
+    }
+
+    @Test
+    public void test_bad_response_startline_no_space() throws HttpException, IOException {
+        Config cfg = Config.getInstance();
+        System.out.println("----> test_bad_response_startline_no_space");
+        String uri = "http://local.lds.org:" + sitePort + "/bad/response/startline/test";
+        HttpClient client = new HttpClient();
+
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", sitePort);
+        client.setHostConfiguration(hcfg);
+
+        HttpMethod method = new GetMethod(uri);
+        method.setFollowRedirects(false);
+        int status = client.executeMethod(method);
+        String resp = method.getResponseBodyAsString();
+        if (status != 502 && resp != null) {
+            System.out.println(resp);
+        }
+        Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
+        method.releaseConnection();
+    }
+
+    @Test
+    public void test_bad_request_startline_no_space() throws HttpException, IOException {
+        Config cfg = Config.getInstance();
+        System.out.println("----> test_bad_request_startline_no_space");
+        // note: we don't need to include this in the simulator config in
+        // setUpSimulator() since this bad request fails during parsing and
+        // won't make it to the enforcement point in RequestHandler.java.
+        String uri = "http://local.lds.org:" + sitePort + "/bad/request/startline/test";
+        Socket sock = new Socket("127.0.0.1", sitePort);
+        sock.setSoTimeout(400000); // make sure we have a long timeout
+        OutputStream out = sock.getOutputStream();
+        out.write(("GET/some/unexistent/pathHttp/1.1" 
+                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
+        out.flush();
+        InputStream in = sock.getInputStream();
+        byte[] bytes = new byte[4096];
+        int read = in.read(bytes);
+        out.close();
+        in.close();
+        sock.close();
+        
+        String http = new String(bytes, 0, "http/1.1 ".length());
+        Assert.assertEquals(http.toLowerCase(), "http/1.1 ");
     }
 
     @Test

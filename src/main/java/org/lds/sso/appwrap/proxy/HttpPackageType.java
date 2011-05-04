@@ -10,5 +10,6 @@ package org.lds.sso.appwrap.proxy;
 public enum HttpPackageType {
 	RESPONSE,
 	REQUEST,
-	EMPTY_RESPONSE;
+	EMPTY,
+	BAD_STARTLINE;
 }

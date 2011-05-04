@@ -136,7 +136,7 @@ public class RequestHandler implements Runnable {
             clientIn = new BufferedInputStream(pSocket.getInputStream());
             clientOut = new BufferedOutputStream(pSocket.getOutputStream());
 
-            reqPkg = getHttpPackage(clientIn, excludeHeaders, false, log);
+            reqPkg = getHttpPackage(true, clientIn, excludeHeaders, false, log);
 
             if (cLog.isLoggable(Level.FINE)) {
                 fos = new FileOutputStream(connId + ".log");
@@ -155,7 +155,7 @@ public class RequestHandler implements Runnable {
                 return;
             }
 
-            if(reqPkg.type == HttpPackageType.EMPTY_RESPONSE) {
+            if(reqPkg.type == HttpPackageType.EMPTY) {
                 byte[] bytes = getResponse("404", "Bad Request",
                         "404 Bad Request",
                         "The request sent by the client was empty." + CRLF
@@ -164,6 +164,23 @@ public class RequestHandler implements Runnable {
                 sendProxyResponse(404, "Bad Request", bytes, reqPkg, clientIn, clientOut, user, startTime, log, true); //don't log these
                 return;
             }
+            
+            if (reqPkg.type == HttpPackageType.BAD_STARTLINE) {
+                byte[] bytes = getResponse("400", "Bad Request Line",
+                        "400 Bad Request Line",
+                        "An invalid request line '" + reqPkg.responseLine + 
+                        "' was received from the client.",
+                        null, reqPkg);
+                log.println("---- Bad Request line from server ---");
+                log.write(serializePackage((StartLine) reqPkg.responseLine, reqPkg));
+                log.println("---- End Bad Request line from server ---");
+                log.println();
+                sendProxyResponse(400, "Bad Request Line",bytes, reqPkg, clientIn, clientOut, user, startTime,
+                        log, true);
+                return;
+            }
+
+
 
             if (((StartLine) reqPkg.requestLine).isProxied) {
                 reqPkg.scheme = ((StartLine) reqPkg.requestLine).proxy_scheme;
@@ -387,7 +404,7 @@ public class RequestHandler implements Runnable {
                 // Content-Length header field, so we have to listen until
                 // they decide to disconnect (or the connection times out).
                 LogUtils.fine(cLog, "Awaiting data from: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
-                resPkg = getHttpPackage(serverIn, excludeHeaders, true, log);
+                resPkg = getHttpPackage(false, serverIn, excludeHeaders, true, log);
 
                 if (resPkg.socketTimeout) {
                     byte[] bytes = getResponse("504", "Gateway Timeout",
@@ -404,7 +421,7 @@ public class RequestHandler implements Runnable {
                 }
                 LogUtils.fine(cLog, "Processing data from: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
 
-                if (resPkg.type == HttpPackageType.EMPTY_RESPONSE) {
+                if (resPkg.type == HttpPackageType.EMPTY) {
                     byte[] bytes = getResponse("502", "Bad Gateway Response from Server",
                             "502 Bad Gateway response received from server",
                             "No bytes were found in the stream from the server.",
@@ -422,6 +439,21 @@ public class RequestHandler implements Runnable {
                     log.println("---- Bad Response from server ---");
                     log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
                     log.println("---- End Bad Response from server ---");
+                    log.println();
+                    sendProxyResponse(502, "Bad Gateway",bytes, reqPkg, clientIn, clientOut, user, startTime,
+                            log, true);
+                    return;
+                }
+
+                if (resPkg.type == HttpPackageType.BAD_STARTLINE) {
+                    byte[] bytes = getResponse("502", "Bad Gateway",
+                            "502 Bad Gateway",
+                            "An invalid response line '" + resPkg.responseLine + 
+                            "' was received from the server.",
+                            null, reqPkg);
+                    log.println("---- Bad Response line from server ---");
+                    log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
+                    log.println("---- End Bad Response line from server ---");
                     log.println();
                     sendProxyResponse(502, "Bad Gateway",bytes, reqPkg, clientIn, clientOut, user, startTime,
                             log, true);
@@ -1018,14 +1050,17 @@ public class RequestHandler implements Runnable {
      * Creates an HttpPackage object filled with the data representing the
      * stream of characters and bytes for the http request of response.
      */
-    private HttpPackage getHttpPackage(InputStream in, String[] excludeHeaders, boolean waitForDisconnect,
+    private HttpPackage getHttpPackage(boolean isForRequest, InputStream in, String[] excludeHeaders, boolean waitForDisconnect,
             PrintStream log) {
         HttpPackage pkg = new HttpPackage();
 
         try {
-            determinePackageType(pkg, in, log);
+            determinePackageType(pkg, isForRequest, in, log);
+            if (pkg.type == HttpPackageType.BAD_STARTLINE) {
+                return pkg;
+            }
             captureHeaders(pkg, in, excludeHeaders, log);
-            if (pkg.type == HttpPackageType.EMPTY_RESPONSE
+            if (pkg.type == HttpPackageType.EMPTY
                     || (pkg.type == HttpPackageType.RESPONSE && pkg.responseCode != 200 && pkg.contentLength == 0)) {
                 return pkg;
             }
@@ -1170,7 +1205,7 @@ public class RequestHandler implements Runnable {
      * @throws IOException
      */
     private void captureHeaders(HttpPackage pkg, InputStream in, String[] excludeHeaders, PrintStream log) throws IOException {
-        if (pkg.type == HttpPackageType.EMPTY_RESPONSE) {
+        if (pkg.type == HttpPackageType.EMPTY) {
             return;
         }
         String data = "";
@@ -1299,16 +1334,26 @@ public class RequestHandler implements Runnable {
         }
     }
 
-    private void determinePackageType(HttpPackage pkg, InputStream in, PrintStream log) throws IOException {
+    private void determinePackageType(HttpPackage pkg, boolean isForRequest, InputStream in, PrintStream log) throws IOException {
         // get the first line of the message, get the response code if a
         // response.
         String line = readLine(in, log);
         if (line == null || line.equals("")) {
-            pkg.type = HttpPackageType.EMPTY_RESPONSE;
+            pkg.type = HttpPackageType.EMPTY;
             return;
         }
         else {
             StartLine startLn = new StartLine(line);
+            if (startLn.isBadLine) {
+                if (isForRequest) {
+                    pkg.requestLine = startLn;
+                }
+                else {
+                    pkg.responseLine = startLn;
+                }
+                pkg.type = HttpPackageType.BAD_STARTLINE;
+                return;
+            }
             /*
              * Distinguish between parsing of an http request versus http
              * response. Ie: first line looks like:
