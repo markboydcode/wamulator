@@ -90,7 +90,7 @@ public class RepeatRequestCacheTest {
 				super.startRepeatRequestRecordSweeper();
 			}
 		};
-		RequestHandler handler = new RequestHandler(null, c, "id");
+		RequestHandler handler = new RequestHandler(null, c, "id", false);
 
 		HttpPackage pkg = new HttpPackage();
 		StartLine sl = new StartLine("GET", "path", "HTTP1.1");

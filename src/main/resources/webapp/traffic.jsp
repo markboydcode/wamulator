@@ -51,11 +51,18 @@
 <c:when test="${hit.code >= 500 || hit.code == 404}"><span title='${hit.httpMsg}' style="color: red; cursor: default;">${hit.code}</span></c:when>
 </c:choose></span></td>
 <td title="http method" style='cursor: default;'>${hit.method}</td>
+<c:choose>
+    <c:when test="${hit.clientSecure}"><td><IMG title="https in"  src="lock.png"/></td></c:when>
+    <c:otherwise><td><IMG title="http in" src="bullet_white.png"/></td></c:otherwise>
+</c:choose>
 <td title="host header" style='cursor: default;'>${hit.hostHdr}</td>
+<c:choose>
+    <c:when test="${hit.serverSecure}"><td><IMG title="https in"  src="lock_go.png"/></td></c:when>
+    <c:otherwise><td><IMG title="http in" src="bullet_white.png"/></td></c:otherwise>
+</c:choose>
 <c:choose>
     <c:when test="${requestScope.config.debugLoggingEnabled}"><td><span style="color: blue"><a href="logs/${hit.connId}.log" target='?newtab?'>${hit.uri}</a></span></td></c:when>
     <c:otherwise><td><span style="color: blue">${hit.uri}</span></td></c:otherwise>
-
 </c:choose>
 </tr>
 </c:forEach>

@@ -1,12 +1,10 @@
 package org.lds.sso.appwrap;
 
-import org.lds.sso.appwrap.io.LogUtils;
+import java.util.logging.Logger;
+
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.RequestLine;
 import org.lds.sso.appwrap.proxy.StartLine;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Represents the mapping from canonical space URLs to application space URLs
@@ -19,6 +17,16 @@ import java.util.logging.Logger;
  */
 public class AppEndPoint implements EndPoint {
 	private static final Logger cLog = Logger.getLogger(AppEndPoint.class.getName());
+
+	/**
+	 * Represents the http scheme over tcp.
+	 */
+    public static final String HTTP_SCHEME = "http";
+    
+    /**
+     * Represents the http scheme over tls over tcp.
+     */
+    public static final String HTTPS_SCHEME = "https";
 
 	private String canonicalContextRoot = null;
 
@@ -57,26 +65,48 @@ public class AppEndPoint implements EndPoint {
 
     private String policyServiceGateway;
 
-	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, String host, int port, 
+    private String scheme;
+
+	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, 
+	        String host, int port, 
 	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
-		this.endpointPort = port;
-        this.canonicalHost = canonicalHost;
-        this.canonicalContextRoot = canonicalCtx;
-		this.applicationContextRoot = appCtx;
-		this.host = host;
-		this.preserveHostHeader = preserveHost;
-		this.hostHdr = hostHdr;
-		
-		if (hostHdr != null && ! "".equals(hostHdr)) {
-		    this.preserveHostHeader = false;
-		}
-		this.policyServiceGateway = policyServiceGateway;
-		updateId();
+	    this(canonicalHost, canonicalCtx, appCtx, host, port, 
+	            HTTP_SCHEME, // default to http scheme for backward compatibility 
+	            preserveHost, hostHdr, policyServiceGateway);
 	}
 	
-	private void updateId() {
+	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, 
+	        String host, int port, String scheme, 
+	        boolean preserveHost, String hostHdr,
+            String policyServiceGateway) {
+        this.endpointPort = port;
+        this.canonicalHost = canonicalHost;
+        this.canonicalContextRoot = canonicalCtx;
+        this.applicationContextRoot = appCtx;
+        this.host = host;
+        if (scheme != null && scheme.toLowerCase().equals(AppEndPoint.HTTPS_SCHEME)) {
+            this.scheme = AppEndPoint.HTTPS_SCHEME;
+        }
+        else { // the default
+            this.scheme = AppEndPoint.HTTP_SCHEME;
+        }
+        this.preserveHostHeader = preserveHost;
+        this.hostHdr = hostHdr;
+        
+        if (hostHdr != null && ! "".equals(hostHdr)) {
+            this.preserveHostHeader = false;
+        }
+        this.policyServiceGateway = policyServiceGateway;
+        updateId();
+    }
+
+    private void updateId() {
         this.id = this.canonicalHost + this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
 	}
+    
+    public boolean useHttpsScheme() {
+        return this.scheme.equals(HTTPS_SCHEME);
+    }
 
     public String getCanonicalHost() {
         return this.canonicalHost;

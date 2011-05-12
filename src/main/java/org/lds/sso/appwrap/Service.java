@@ -16,11 +16,14 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import org.lds.sso.appwrap.bootstrap.Command;
+import org.lds.sso.appwrap.exception.UnableToListenOnHttpsProxyPortException;
 import org.lds.sso.appwrap.exception.UnableToListenOnProxyPortException;
 import org.lds.sso.appwrap.exception.UnableToStartJettyServerException;
 import org.lds.sso.appwrap.exception.UnableToStopJettyServerException;
 import org.lds.sso.appwrap.io.LogUtils;
+import org.lds.sso.appwrap.proxy.ListenerCoordinator;
 import org.lds.sso.appwrap.proxy.ProxyListener;
+import org.lds.sso.appwrap.proxy.tls.HttpsProxyListener;
 import org.lds.sso.appwrap.rest.AuthNHandler;
 import org.lds.sso.appwrap.rest.AuthZHandler;
 import org.lds.sso.appwrap.rest.GetCookieName;
@@ -64,7 +67,9 @@ public class Service {
 
 	//protected ProxyListener proxy = null;
 	protected Thread proxyRunner = null;
-	protected ProxyListener proxy;
+    protected ProxyListener proxy;
+    protected Thread tlsProxyRunner = null;
+    protected HttpsProxyListener tlsProxy;
 	protected Server server = null;
 	private String cfgSource;
 	private final String cfgPath;
@@ -349,11 +354,12 @@ public class Service {
 	 * @throws InterruptedException
 	 * @throws UnableToStartJettyServerException
 	 * @throws UnableToListenOnProxyPortException
+	 * @throws UnableToListenOnHttpsProxyPortException 
 	 *
 	 * @throws Exception
 	 */
 	public void start() throws InterruptedException, UnableToStartJettyServerException,
-	    UnableToListenOnProxyPortException  {
+	    UnableToListenOnProxyPortException, UnableToListenOnHttpsProxyPortException  {
 		Config cfg = Config.getInstance();
 		cfg.setShimStateCookieId(cfgSource);
 
@@ -366,19 +372,34 @@ public class Service {
 
 		Connector[] connectors = server.getConnectors();
 		cfg.setConsolePort(connectors[0].getLocalPort());
+		ListenerCoordinator coordinator = new ListenerCoordinator(cfg);
 
-		//ProxyListener proxy = null;
-		try {
-		    proxy = new ProxyListener(cfg);
-		}
-		catch(IOException ioe) {
-		    throw new UnableToListenOnProxyPortException(ioe);
-		}
-		proxyRunner = new Thread(proxy);
-		proxyRunner.setName("Proxy Listener");
-		proxyRunner.start();
+        try {
+            proxy = new ProxyListener(cfg, coordinator);
+        }
+        catch(IOException ioe) {
+            throw new UnableToListenOnProxyPortException(ioe);
+        }
+        proxyRunner = new Thread(proxy);
+        proxyRunner.setName("Http Proxy Listener");
+        proxyRunner.start();
+        
+        // start https proxy if configured to do so
+        boolean tlsEnabled = cfg.getProxyHttpsEnabled();
+        if (tlsEnabled) {
+            try {
+                tlsProxy = new HttpsProxyListener(cfg, coordinator);
+            }
+            catch(IOException ioe) {
+                throw new UnableToListenOnHttpsProxyPortException(ioe);
+            }
+        }
+        tlsProxyRunner = new Thread(tlsProxy);
+        tlsProxyRunner.setName("HttpS Proxy Listener");
+        tlsProxyRunner.start();
 
-		while (server.isStarted() == false && proxy.isRunning() == false) {
+		while (server.isStarted() == false || proxy.isRunning() == false 
+		        || (tlsProxy != null && tlsProxy.isRunning() == false)) {
 		        Thread.sleep(1000);
 		}
 		StringBuffer line = new StringBuffer(cfg.getServerName().length());
@@ -389,10 +410,18 @@ public class Service {
         "simulator version  : {1}\n" +
         "console-rest port  : {2}\n" +
         "http proxy port    : {3}\n" +
-        "Rest Interface     : {4}\n" +
-        "---------------------{5}\n" +
+        (tlsEnabled ? 
+        "httpS proxy port   : {4}\n" : "" ) +
+        "Rest Interface     : {5}\n" +
+        "---------------------{6}\n" +
         "Simulator Console and Proxy are ready",
-        line.toString(),cfg.getServerName(),String.valueOf(cfg.getConsolePort()),String.valueOf(cfg.getProxyPort()),cfg.getRestVersion().getVersionId(),line.toString());
+        line.toString(),
+        cfg.getServerName(),
+        String.valueOf(cfg.getConsolePort()),
+        String.valueOf(cfg.getProxyPort()),
+        String.valueOf(cfg.getProxyHttpsPort()),
+        cfg.getRestVersion().getVersionId(),
+        line.toString());
 	}
 
 	private volatile boolean stop = false;
@@ -443,22 +472,33 @@ public class Service {
 		        throw new UnableToStopJettyServerException(e);
 		    }
 		}
-		if ( proxy != null ) {//Runner != null ) {
-			try {
-				proxy.stop(); //proxyRunner.interrupt();
-			} catch(Exception e) {
-				/* do Nothing */
-			}
-		}
+        if ( proxy != null ) {//Runner != null ) {
+            try {
+                proxy.stop(); //proxyRunner.interrupt();
+            } catch(Exception e) {
+                /* do Nothing */
+            }
+        }
+        if ( tlsProxy != null ) {//Runner != null ) {
+            try {
+                tlsProxy.stop(); //proxyRunner.interrupt();
+            } catch(Exception e) {
+                /* do Nothing */
+            }
+        }
 		new Config(); // eww... TODO:  Refactor Config to use a standard singleton pattern so we don't have to do stuff like this.
 	}
 
 	public boolean isStarted() {
-		return server != null && server.isStarted() && proxyRunner != null && proxyRunner.isAlive();
+		return server != null && server.isStarted() 
+		&& proxyRunner != null && proxyRunner.isAlive()
+		&& tlsProxyRunner != null && tlsProxyRunner.isAlive();
 	}
 
 	public boolean isStopped() {
-		return server != null && server.isStopped() && proxyRunner != null && !proxyRunner.isAlive();
+		return server != null && server.isStopped() 
+		&& proxyRunner != null && !proxyRunner.isAlive()
+		&& tlsProxyRunner != null && !tlsProxyRunner.isAlive();
 	}
 
 	private static Command command;

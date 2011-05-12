@@ -90,7 +90,7 @@ public class LogFileHandler extends RestHandlerBase {
         InputStream is = null;
 
         try {
-            File file = new File(filePath);
+            File file = new File(Config.LOG_FILES_LOCATION + filePath);
             if (file.exists() && file.isFile()) {
                 is = new FileInputStream(file);
             }

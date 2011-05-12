@@ -22,11 +22,49 @@ import org.lds.sso.appwrap.rest.RestVersion;
 public class Config {
 	private static final Logger cLog = Logger.getLogger(Config.class.getName());
 
-	/**
-	 * The default port on which appwrap will listen for requests to SSO
-	 * protected applications sitting behind appwrap.
-	 */
-	public static final int DEFAULT_APP_PORT = 8080;
+    /**
+     * The location of log files relative to the current directory. If not found
+     * it will be created.
+     */
+    public static final String LOG_FILES_LOCATION = "./logs/";
+
+    /**
+     * The prefix attached to a connection identifier to create the name of the
+     * log file to contain the conversation details for that connection.
+     */
+    public static final String LOG_FILES_PREFIX = "C-";
+
+    /**
+     * The suffix or extension attached to a connection identifier to create the
+     * name of the log file to contain the conversation details for that
+     * connection.
+     */
+    public static final String LOG_FILES_SUFFIX = ".log";
+
+    /**
+     * The default port on which appwrap will listen for requests to SSO
+     * protected applications sitting behind appwrap.
+     */
+    public static final int DEFAULT_APP_PORT = 8080;
+
+    /**
+     * The default port on which appwrap will listen for requests to SSO
+     * protected applications sitting behind appwrap.
+     */
+    public static final int DEFAULT_APP_HTTPS_PORT = 8443;
+
+    /**
+     * The default host used in the certificate generated to identify the
+     * site if using HTTP over TLS.
+     */
+    public static final String DEFAULT_APP_HTTPS_CERT_HOST = "*.lds.org";
+
+    /**
+     * The OU value for the DN of the CA certificate and site generated 
+     * certificates. Doesn't have to be a constant but ties all cert related
+     * stuff together nicely.
+     */
+    public static final String CERT_ORG_UNIT = "WAMulator-dev";
 
 	/**
 	 * The default port on which appwrap will listen for admin UI and sso policy
@@ -57,12 +95,30 @@ public class Config {
 	 */
 	private static Config instance;
 
-	/**
-	 * The port on which the simulator will listen for requests to SSO protected
-	 * applications sitting behind it.
-	 */
-	private int proxyPort = DEFAULT_APP_PORT;
+    /**
+     * The port on which the simulator will listen for requests to SSO protected
+     * applications sitting behind it.
+     */
+    private int proxyPort = DEFAULT_APP_PORT;
 
+    /**
+     * The port on which the simulator will listen for HTTP over TLS requests to 
+     * SSO protected applications sitting behind it.
+     */
+    private int proxyHttpsPort = DEFAULT_APP_HTTPS_PORT;
+
+    /**
+     * The host name potentially including an asterisk as per RFC 2818 section
+     * 3.1 which will be set as the CN of the certificate generated to 
+     * identify the site. Examples are, "localhost.lds.org" and "*.lds.org".
+     */
+    private String proxyHttpsCertHost = "*.lds.org";
+
+    /**
+     * Indicates if TLS/SSL proxy should be started. Defaults to off.
+     */
+    private boolean proxyHttpsEnabled = false;
+    
 	/**
 	 * The port on which the simulator provides its console pages and its
 	 * rest interface endpoints.
@@ -398,10 +454,40 @@ public class Config {
 		return this.proxyPort;
 	}
 
-	public void setProxyPort(int port) {
-		this.proxyPort = port;
-	    getTrafficManager().proxyPortChanged(port);
-	}
+    public void setProxyPort(int port) {
+        this.proxyPort = port;
+        getTrafficManager().proxyPortChanged(port);
+    }
+
+    public void setProxyHttpsPort(int port) {
+        this.proxyHttpsPort = port;
+    }
+
+    public int getProxyHttpsPort() {
+        return this.proxyHttpsPort;
+    }
+
+    public void setProxyHttpsCertHost(String host) {
+        this.proxyHttpsCertHost = host;
+    }
+
+    public String getProxyHttpsCertHost() {
+        return this.proxyHttpsCertHost;
+    }
+    
+    /**
+     * Determines if TLS/SSL proxy should-be used. Defaults to off.
+     */
+    public void setProxyHttpsEnabled(boolean b) {
+        this.proxyHttpsEnabled = b;
+    }
+    
+    /**
+     * Indicates if TLS/SSL proxy is/should-be in use. Defaults to off.
+     */
+    public boolean getProxyHttpsEnabled() {
+        return this.proxyHttpsEnabled;
+    }
 
 	public int getConsolePort() {
 		return this.consolePort;
@@ -551,6 +637,9 @@ public class Config {
 	}
 
     /**
+     * The maximum number of log file entries that should be created before
+     * rolling the count back over to zero.
+     * 
      * @return the getMaxEntries
      */
     public int getMaxEntries() {
@@ -558,6 +647,9 @@ public class Config {
     }
 
     /**
+     * Sets the max number of log files that will be created by the wamulator
+     * before rolling back over to zero.
+     * 
      * @param getMaxEntries the getMaxEntries to set
      */
     public void setMaxEntries(int maxEntries) {

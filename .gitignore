@@ -1,7 +1,11 @@
+/*.pem
 /.classpath
 /.project
 /.settings
 /C-*.log
+/ca-pkcs8-key.pem
+/ca-x509-cert.pem
+/logs
 /nbactions.xml
 /saw.log
 /saw.log.*

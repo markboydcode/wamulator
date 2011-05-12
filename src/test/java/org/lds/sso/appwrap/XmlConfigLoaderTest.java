@@ -141,6 +141,21 @@ public class XmlConfigLoaderTest {
                 + cfg.getConsolePort() + "/admin/selectUser.jsp");
     }
     
+    @Test
+    public void test_proxy_tls_loaded () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <proxy-tls https-port='444' cert-host='*.my.host'/>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='local.lds.org' port='45'/>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Assert.assertEquals(cfg.getProxyHttpsPort(), 444);
+        Assert.assertEquals(cfg.getProxyHttpsCertHost(), "*.my.host");
+    }
     
     @Test
     public void test_ex_if_no_bysite () throws Exception {

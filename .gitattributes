@@ -1,5 +1,6 @@
 * text=auto !eol
 /AllUnitTests.xml -text svneol=unset#text/plain
+/ca-cert-gen-readme.txt -text
 /commandline.sh.example -text
 /cp.txt -text svneol=unset#text/plain
 /file-has-lds-account-1234-test.xml -text svneol=unset#text/plain
@@ -74,6 +75,7 @@ src/main/java/org/lds/sso/appwrap/exception/ServerFailureException.java -text
 src/main/java/org/lds/sso/appwrap/exception/ServerStartFailureException.java -text
 src/main/java/org/lds/sso/appwrap/exception/ServerStopFailureException.java -text
 src/main/java/org/lds/sso/appwrap/exception/ServerTimeoutFailureException.java -text
+src/main/java/org/lds/sso/appwrap/exception/UnableToListenOnHttpsProxyPortException.java -text
 src/main/java/org/lds/sso/appwrap/exception/UnableToListenOnProxyPortException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/exception/UnableToStartJettyServerException.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/exception/UnableToStopJettyServerException.java -text svneol=unset#text/plain
@@ -87,12 +89,16 @@ src/main/java/org/lds/sso/appwrap/proxy/HeaderBuffer.java -text svneol=unset#tex
 src/main/java/org/lds/sso/appwrap/proxy/HeaderDef.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackage.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackageType.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/ListenerCoordinator.java -text
 src/main/java/org/lds/sso/appwrap/proxy/ProxyListener.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/RequestHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/RequestLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/ResponseLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/StartLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/TrafficType.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/tls/FixedTypeKeyManager.java -text
+src/main/java/org/lds/sso/appwrap/proxy/tls/HttpsProxyListener.java -text
+src/main/java/org/lds/sso/appwrap/proxy/tls/TrustAllManager.java -text
 src/main/java/org/lds/sso/appwrap/rest/AuthNHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/AuthZHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/GetCookieName.java -text svneol=unset#text/plain
@@ -124,6 +130,8 @@ src/main/java/org/lds/sso/appwrap/xml/ClasspathAlias.java -text
 src/main/java/org/lds/sso/appwrap/xml/FileAlias.java -text
 src/main/java/org/lds/sso/appwrap/xml/PlaintextAlias.java -text
 src/main/java/org/lds/sso/appwrap/xml/SystemAlias.java -text
+src/main/resources/ca-cert.pem -text
+src/main/resources/ca-private-key.pem -text
 src/main/resources/config-samples/console-only-lds-policy-cookie.xml -text svneol=unset#text/plain
 src/main/resources/config-samples/console-only.xml -text
 src/main/resources/config-samples/ldsorg.xml -text svneol=unset#text/plain
@@ -137,6 +145,7 @@ src/main/resources/config-samples/ses_file_serving_sample.xml -text svneol=unset
 src/main/resources/config-samples/ses_login_sample.xml -text
 src/main/resources/config-samples/ses_login_sample_condition_test.xml -text
 src/main/resources/config-samples/ses_login_sample_non_site_coda.xml -text svneol=unset#text/plain
+src/main/resources/config-samples/tls_dual_debug_site_sample.xml -text
 src/main/resources/ctx-request-processing-logging.properties -text
 src/main/resources/local-config2.xml -text svneol=unset#text/plain
 src/main/resources/logging.properties -text
@@ -145,11 +154,14 @@ src/main/resources/webapp/WEB-INF/console-servlet.xml -text
 src/main/resources/webapp/WEB-INF/web.xml -text
 src/main/resources/webapp/add.gif -text
 src/main/resources/webapp/apps.jsp -text svneol=unset#text/plain
+src/main/resources/webapp/bullet_white.png -text
 src/main/resources/webapp/cancel.gif -text
 src/main/resources/webapp/codaUserSelect.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/debug.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/delete.gif -text
 src/main/resources/webapp/listUsers.jsp -text
+src/main/resources/webapp/lock.png -text
+src/main/resources/webapp/lock_go.png -text
 src/main/resources/webapp/pointer.png -text
 src/main/resources/webapp/rest-traffic.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/selectUser.jsp -text svneol=unset#text/plain
@@ -177,6 +189,7 @@ src/test/java/org/lds/sso/appwrap/UserManagerTest.java -text svneol=unset#text/p
 src/test/java/org/lds/sso/appwrap/UserTest.java -text
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/bootstrap/RemoteStartStopTest.java -text
+src/test/java/org/lds/sso/appwrap/certs/CaCertificateGenerator.java -text
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/EvaluationContextTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/GlobalHeaderNamesTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEngineTest.java -text svneol=unset#text/plain
@@ -200,6 +213,7 @@ src/test/java/org/lds/sso/appwrap/proxy/CrossDomainSignMeInOutTest.java -text sv
 src/test/java/org/lds/sso/appwrap/proxy/HeaderBufferTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderDefTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/HeaderTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/ListenerCoordinatorTest.java -text
 src/test/java/org/lds/sso/appwrap/proxy/LocalHostTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/PolicyServiceUrlTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerIntegrationTest.java -text svneol=unset#text/plain

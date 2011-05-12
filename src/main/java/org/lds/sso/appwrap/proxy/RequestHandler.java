@@ -17,6 +17,8 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,6 +26,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 
 import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
@@ -37,6 +43,7 @@ import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.io.LogUtils;
+import org.lds.sso.appwrap.proxy.tls.TrustAllManager;
 import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 
 public class RequestHandler implements Runnable {
@@ -81,21 +88,31 @@ public class RequestHandler implements Runnable {
     private Map<String, String> templates = new HashMap<String, String>();
 
     /**
+     * Indicates whether or not the client side connection came over TLS/SSL.
+     */
+    private boolean isSecure;
+
+    private SSLContext tlsContext;
+
+    /**
      * Constructs a new thread for reading incoming request, sending it on to
      * the target server, reading the response, returning it to the client, and
      * closing the connection to enforce a single request/response cycle is
      * handled per thread.
-     * @param s
-     * @param connId2
+     * @param s the Socket of the incoming connection
+     * @param cfg the Config instance
+     * @param connId2 the id of the connection being handled
+     * @param isSecure whether or not the connection came over TLS/SSL
      */
-    public RequestHandler(Socket s, Config cfg, String connId) {
+    public RequestHandler(Socket s, Config cfg, String connId, boolean isSecure) {
         pSocket = s;
         this.cfg = cfg;
         this.connId = connId;
+        this.isSecure = isSecure;
 
-                if(cfg.isDebugLoggingEnabled()) {
-                    cLog.setLevel(Level.FINE);
-                }
+        if(cfg.isDebugLoggingEnabled()) {
+            cLog.setLevel(Level.FINE);
+        }
     }
 
     /**
@@ -139,7 +156,8 @@ public class RequestHandler implements Runnable {
             reqPkg = getHttpPackage(true, clientIn, excludeHeaders, false, log);
 
             if (cLog.isLoggable(Level.FINE)) {
-                fos = new FileOutputStream(connId + ".log");
+                fos = new FileOutputStream(Config.LOG_FILES_LOCATION + connId 
+                        + Config.LOG_FILES_SUFFIX);
                 log = new PrintStream(fos);
             }
 
@@ -180,16 +198,27 @@ public class RequestHandler implements Runnable {
                 return;
             }
 
+            // HACK!!! to rewrite embedded host references during webdav tests
+            //rewriteEnbeddedDomainPattern(reqPkg, "--->", "localhost.lds.org", "mail.ldschurch.org");
 
-
-            if (((StartLine) reqPkg.requestLine).isProxied) {
-                reqPkg.scheme = ((StartLine) reqPkg.requestLine).proxy_scheme;
+            // indicate over which scheme the client request was received 
+            if (isSecure) {
+                reqPkg.headerBfr.append(new Header("X-Forwarded-Scheme", "https"));
+                reqPkg.scheme = "https";
             }
             else {
-                // if we ever add support for https we will need to pass the
-                // appropriate scheme in here. hard code for now.
+                reqPkg.headerBfr.append(new Header("X-Forwarded-Scheme", "http"));
                 reqPkg.scheme = "http";
             }
+
+//            if (((StartLine) reqPkg.requestLine).isProxied) {
+//                reqPkg.scheme = ((StartLine) reqPkg.requestLine).proxy_scheme;
+//            }
+//            else {
+//                // if we ever add support for https we will need to pass the
+//                // appropriate scheme in here. hard code for now.
+//                reqPkg.scheme = "http";
+//            }
             determineTrafficType(reqPkg);
             // see if we are being redirected for cross domain single sign-in
             if (reqPkg.query != null && reqPkg.query.contains(SignInPageCdssoHandler.CDSSO_PARAM_NAME + "=")) {
@@ -303,7 +332,8 @@ public class RequestHandler implements Runnable {
                 // header
                 reqPkg.headerBfr.append(new Header("cctx", endpoint.getCanonicalContextRoot()));
 
-                if (!appMgr.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
+                // policies only set for http but cover both http and https for now
+                if (!appMgr.isUnenforced("http", reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
                     // so it requires enforcement
 					cLog.fine("@@$$ The path: " + reqPkg.path + " requires authentication.");
 
@@ -317,7 +347,8 @@ public class RequestHandler implements Runnable {
 
                     // is user authorized to view?
 
-                    if (!appMgr.isPermitted(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
+                    // policies only set for http but cover both http and https for now
+                    if (!appMgr.isPermitted("http", reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
                             reqPkg.path, reqPkg.query, user)) {
                         byte[] bytes = getResponse("403", "Forbidden",
                                 "403 Forbidden",
@@ -369,14 +400,26 @@ public class RequestHandler implements Runnable {
 //
                 AppEndPoint appEndpoint = (AppEndPoint) endpoint;
                 appReqLn = appEndpoint.getAppRequestUri(reqPkg);
+                reqPkg.headerBfr.removeExtensionHeader("X-Forwarded-Host"); //TODO: REMOVE THIS BOYDMR!!!  
                 request = serializePackage((StartLine) appReqLn, reqPkg);
 
                 Socket server = null; // socket to remote server
-
+                String serverScheme = "http";
+                
                 try {
-                    endpointMsg = "Connecting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort();
-                    LogUtils.fine(cLog, endpointMsg);
-                    server = new Socket(appEndpoint.getHost(), appEndpoint.getEndpointPort());
+                    if (appEndpoint.useHttpsScheme()) {
+                        endpointMsg = "Connecting via TLS to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort();
+                        LogUtils.fine(cLog, endpointMsg);
+                        SocketFactory fact = getTlsSocketFactory();
+                        server = fact.createSocket(appEndpoint.getHost(), 
+                                appEndpoint.getEndpointPort());
+                        serverScheme = "https";
+                    }
+                    else {
+                        endpointMsg = "Connecting to: " + appEndpoint.getHost() + ":" + appEndpoint.getEndpointPort();
+                        LogUtils.fine(cLog, endpointMsg);
+                        server = new Socket(appEndpoint.getHost(), appEndpoint.getEndpointPort());
+                    }
                 }
                 catch (Exception e) {
                     // tell the client there was an error
@@ -405,6 +448,7 @@ public class RequestHandler implements Runnable {
                 // they decide to disconnect (or the connection times out).
                 LogUtils.fine(cLog, "Awaiting data from: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
                 resPkg = getHttpPackage(false, serverIn, excludeHeaders, true, log);
+                resPkg.scheme = serverScheme;
 
                 if (resPkg.socketTimeout) {
                     byte[] bytes = getResponse("504", "Gateway Timeout",
@@ -459,7 +503,14 @@ public class RequestHandler implements Runnable {
                             log, true);
                     return;
                 }
-
+                /////// HACK to rewrite embedded host references during webdav tests
+                //rewriteEnbeddedDomainPattern(resPkg, "<---", "mail.ldschurch.org", "localhost.lds.org");
+//                List<Header> removed = resPkg.headerBfr.removeHeader(HeaderDef.TransferEncoding); 
+//                if(removed.size() > 0) {
+//                    for(Header h : removed) {
+//                        System.out.println("<--- removed header: " + h);
+//                    }
+//                }
                 LogUtils.fine(cLog, "Closing I/O to: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
                 serverIn.close();
                 serverOut.close();
@@ -506,7 +557,12 @@ public class RequestHandler implements Runnable {
 
             // record all traffic regardless of whether forward or reverse (sso) proxy traffic
             cfg.getTrafficRecorder().recordHit(startTime, connId, (user == null ? "???" : user.getUsername()),
-                    resPkg.responseCode, resPkg.responseLine.getMsg(), false, reqPkg.trafficType, reqPkg.requestLine.getMethod(), reqPkg.hostHdr, reqPkg.requestLine.getUri());
+                    resPkg.responseCode, 
+                    (resPkg.responseLine == null ? "null response line" : resPkg.responseLine.getMsg()), 
+                    false, reqPkg.trafficType, 
+                    reqPkg.requestLine.getMethod(), reqPkg.hostHdr, reqPkg.requestLine.getUri(), 
+                    (reqPkg.scheme != null && reqPkg.scheme.equals("https")),
+                    (resPkg.scheme != null && resPkg.scheme.equals("https")));
             logTraffic(log, reqPkg.requestLine, request, response, startTime, endpointMsg, reqPkg);
         }
         catch (Exception e) {
@@ -532,9 +588,70 @@ public class RequestHandler implements Runnable {
         }
     }
 
+    /**
+     * Hack for scanning body content in both directions for a domain and 
+     * replacing it with another during testing of webdav proxying. Kept here 
+     * for future reference but not currently used. Needs more work if we want
+     * to enable a general content rewriter mechanism and support it via config
+     * directives.
+     * 
+     * @param pkg
+     * @param msgPrfx
+     * @param oldPtrn
+     * @param newPtrn
+     * @throws IOException
+     */
+    private void rewriteEnbeddedDomainPattern(HttpPackage pkg, String msgPrfx, String oldPtrn, String newPtrn) throws IOException {
+        Header hdr = pkg.headerBfr.getHeader(HeaderDef.ContentType);
+        if (hdr != null && hdr.getValue().contains("text/xml")
+                && pkg.bodyStream != null
+                && pkg.bodyStream.size() > oldPtrn.length()) {
+            System.out.println(msgPrfx + " Scanning HTML to replace host.");
+            byte[] bytes = pkg.bodyStream.toByteArray();
+            int end = bytes.length - oldPtrn.length();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] repl = newPtrn.getBytes();
+
+            for (int i = 0; i < end; i++) {
+                String chunk = new String(bytes, i,
+                        oldPtrn.length());
+                if (chunk.equals(oldPtrn)) {
+                    System.out.println(msgPrfx + " replaced ref at " + i);
+                    baos.write(repl);
+                    i = i + oldPtrn.length() - 1;
+                } else {
+                    baos.write(bytes[i]);
+                }
+            }
+            baos.write(bytes, end, oldPtrn.length());
+            pkg.bodyStream = baos;
+            pkg.headerBfr.getHeader(HeaderDef.ContentLength);
+            pkg.headerBfr.removeHeader(HeaderDef.ContentLength);
+            pkg.headerBfr.append(new Header(HeaderDef.ContentLength, "" + baos.size()));
+            System.out.println(msgPrfx + " rewrote from: " + new String(bytes));
+            System.out.println(msgPrfx + " rewrote   to: " + new String(baos.toByteArray()));
+        }
+    }
+
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Sets up our SSLContext if not in place already and gets a corresponding
+     * SocketFactory. 
+     * @throws NoSuchAlgorithmException 
+     * @throws KeyManagementException 
+     */
+    private SocketFactory getTlsSocketFactory()
+            throws NoSuchAlgorithmException, KeyManagementException {
+        if (this.tlsContext == null) {
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(null, new TrustManager[] { new TrustAllManager() }, null);
+            this.tlsContext = ctx;
+        }
+        return tlsContext.getSocketFactory();
+    }
 
     /**
      * Injects the policy-service-url pointing to the one for the by-site element
@@ -707,7 +824,9 @@ public class RequestHandler implements Runnable {
 								reqPkg.hostHdr,
 								(reqPkg.signMeInDetected
 										|| reqPkg.signMeOutDetected ? reqPkg.origRequestList
-										.getUri() : uri));
+										.getUri() : uri),
+								(reqPkg.scheme != null && reqPkg.scheme.equals("https")),
+								false);
 			}
 			out.write(response, 0, response.length);
 			out.flush();

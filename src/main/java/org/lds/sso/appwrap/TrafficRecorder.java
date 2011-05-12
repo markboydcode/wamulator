@@ -87,8 +87,13 @@ public class TrafficRecorder {
     public List<RestInstanceInfo> getRestInstances() {
         return restInstances;
     }
-    public synchronized void recordHit(long time, String connId, String username, int respCode, String respMsg, boolean isProxyRes, TrafficType trafficType, String method, String hostHdr, String uri) {
-        LogUtils.info(cLog, "{0} {1} {2} {3} {4} {5} {6} {7} {8}", 
+    public synchronized void recordHit(long time, String connId, String username, 
+            int respCode, String respMsg, boolean isProxyRes, TrafficType trafficType, 
+            String method, String hostHdr, String uri, 
+            boolean clientOverTls, boolean serverOverTls) {
+        Hit hit = new Hit(time, connId, username, respCode, respMsg, method, hostHdr, uri, isProxyRes, trafficType.getTypeCharForLogEntries(), clientOverTls, serverOverTls);        
+        LogUtils.info(cLog, "{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}",
+                hit.getTimestamp(),
                 connId,
                 username,
                 (isProxyRes ? 'P' : '-'),
@@ -96,10 +101,11 @@ public class TrafficRecorder {
                 respCode,
                 respMsg,
                 method,
+                (clientOverTls ? "S" : "-" ),
                 hostHdr,
+                (serverOverTls ? "S" : "-" ),
                 uri);
         if (recordTraffic) {
-            Hit hit = new Hit(time, connId, username, respCode, respMsg, method, hostHdr, uri, isProxyRes, trafficType.getTypeCharForLogEntries());
             /*
              * The following two lines are subtle but needed. Hits implement
              * comparable and base equality on the connection id. In the event
@@ -181,10 +187,15 @@ public class TrafficRecorder {
         private char trafficType;
         private String httpMsg;
         private String hostHdr;
+        private boolean clientSecure;
+        private boolean serverSecure;
         private static final SimpleDateFormat fmtr = new SimpleDateFormat("HH:mm:ss.SSS");
         private static final SimpleDateFormat longfmtr = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
-        public Hit(long time, String connId, String username, int code, String httpMsg, String method, String hostHdr, String uri, boolean proxyResponse, char trafficType) {
+        public Hit(long time, String connId, String username, int code, 
+                String httpMsg, String method, String hostHdr, String uri,
+                boolean proxyResponse, char trafficType,
+                boolean clientSecure, boolean serverSecure) {
             this.username = username;
             this.time = time;
             this.connId = connId;
@@ -202,6 +213,28 @@ public class TrafficRecorder {
             this.uri = uri.replace("&", "&amp;"); 
             this.isProxyCode = proxyResponse;
             this.trafficType = trafficType;
+            this.clientSecure = clientSecure;
+            this.serverSecure = serverSecure;
+        }
+
+        /**
+         * Indicates if the incoming request from the client was over ssl/tls
+         * or not.
+         * 
+         * @return
+         */
+        public boolean isClientSecure() {
+            return clientSecure;
+        }
+
+        /**
+         * Indicates if the outbound request to the server was over ssl/tls
+         * or not.
+         * 
+         * @return
+         */
+        public boolean isServerSecure() {
+            return serverSecure;
         }
 
         public char getTrafficType() {

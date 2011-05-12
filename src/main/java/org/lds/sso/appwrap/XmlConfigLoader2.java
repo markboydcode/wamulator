@@ -208,8 +208,11 @@ public class XmlConfigLoader2 {
         } catch (Exception e) {
         	if(e instanceof SAXParseException) {
         		SAXParseException parseException = (SAXParseException)e;
-                throw new Exception("Unable to parse configuration '" + sourceInfo
-                        + "'.  "+parseException.getMessage()+" Line:"+parseException.getLineNumber()+", Column:"+parseException.getColumnNumber());
+                throw new Exception("Parse Error, Line: " 
+                        + parseException.getLineNumber() + ", Column: " 
+                        + parseException.getColumnNumber() + ", Message: "
+                        + parseException.getMessage() + " in source '" + sourceInfo
+                        + "'.");
         	}
             throw new Exception("Unable to parse configuration '" + sourceInfo
                     + "'.", e);
@@ -615,6 +618,10 @@ public class XmlConfigLoader2 {
                 cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
             } else if (path.matches("/config/sso-cookie/cdsso")) {
                 cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
+            } else if (path.matches("/config/proxy-tls")) {
+                cfg.setProxyHttpsPort(getIntegerAtt("https-port", path, atts));
+                cfg.setProxyHttpsCertHost(getStringAtt("cert-host", path, atts));
+                cfg.setProxyHttpsEnabled(true);
             } else if (path.matches("/config/console-recording")) {
                 boolean sso = Boolean.parseBoolean(getStringAtt("sso", path,
                         atts));
@@ -739,6 +746,8 @@ public class XmlConfigLoader2 {
                 String thost = getStringAtt("thost", path, atts);
                 String policyServiceGateway = getStringAtt("policy-service-url-gateway", path, atts, false);
                 String hostHdr = getStringAtt("host-header", path, atts, false);
+                String scheme = getStringAtt("scheme", path, atts,
+                        false);
                 String preserveHost = getStringAtt("preserve-host", path, atts,
                         false);
                 boolean preserve = (preserveHost == null ? true : Boolean
@@ -785,7 +794,7 @@ public class XmlConfigLoader2 {
                                     + "*' which precedes it in document order and hence "
                                     + "will never receive any requests.");
                 }
-                ep = new AppEndPoint(sm.getHost(), cctx, tpath, thost, tport, preserve, hostHdr, policyServiceGateway);
+                ep = new AppEndPoint(sm.getHost(), cctx, tpath, thost, tport, scheme, preserve, hostHdr, policyServiceGateway);
                 sm.addMapping(ep);
             } else if (path.matches("/config/sso-traffic/by-site/unenforced")) {
                 TrafficManager trafficMgr = cfg.getTrafficManager();

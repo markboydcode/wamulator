@@ -73,7 +73,7 @@ public class Attribute extends SyntaxBase {
                     debug(evaluationCtx, satisfied, String.format("user has attribute that matches value, actual: %s", attribute[0].getValue()));
                 }
                 else{
-                    if (attribute != null) {
+                    if (attribute != null && attribute.length != 0) {
                         debug(evaluationCtx, satisfied, String.format("user does not have attribute that matches value, actual: %s", attribute[0].getValue()));
                     }
                     else {

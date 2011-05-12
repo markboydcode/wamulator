@@ -2,11 +2,7 @@ package org.lds.sso.appwrap.proxy;
 
 import java.net.MalformedURLException;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.Service;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -90,7 +86,7 @@ public class RequestHandlerTest {
     @Test
     public void test_ininiteRedirectLoopDetectDirect_ChangingQueryPrevents() throws MalformedURLException {
         Config cfg = new Config(); // clean out impact of other tests
-        RequestHandler req = new RequestHandler(null, Config.getInstance(), "test-conn");
+        RequestHandler req = new RequestHandler(null, Config.getInstance(), "test-conn", false);
 
         for (int i=0; i<=cfg.getMaxRepeatCount()+1; i++) {
             boolean exceeded = req.responseThreasholdExceeded(getPathAndQueryReq("" + i));

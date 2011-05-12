@@ -53,32 +53,34 @@ package org.lds.sso.appwrap.proxy;
 	 * Julian Robichaux -- http://www.nsftools.com
 	 */
 
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.text.DecimalFormat;
 import java.util.logging.Logger;
 
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.io.LogUtils;
 
+/**
+ * Listens for HTTP connections and routes them according to configuration using
+ * the a RequestHandler.
+ * 
+ * @author BoydMR
+ *
+ */
 	public class ProxyListener implements Runnable
 	{
 		private static final Logger cLog = Logger.getLogger(ProxyListener.class.getName());
 
-		private ServerSocket server = null;
+		private ServerSocket server;
 		private volatile boolean started = false;
-		private volatile int count = 0;
-		private Config cfg = null;
+		private Config cfg;
+        private ListenerCoordinator coordinator;
 
-		/* the proxy server just listens for connections and creates
-		 * a new thread for each connection attempt (the RequestHandler
-		 * class really does all the work)
-		 */
-		public ProxyListener (Config cfg) throws IOException
+		public ProxyListener (Config cfg, ListenerCoordinator coord) throws IOException
 		{
+		    this.coordinator = coord;
 			this.cfg  = cfg;
             if (cfg.getProxyPort() == 0) {
                 server = new ServerSocket();
@@ -123,41 +125,30 @@ import org.lds.sso.appwrap.io.LogUtils;
 		public void run()
 		{
 			try {
-				// loop forever listening for client connections
-
-				for (File f : new File(".").listFiles()) {
-					String nm = f.getName();
-
-					if (f.isFile() && (nm.equals("Requests.log")
-							|| (nm.startsWith("C-") && nm.endsWith(".log")))) {
-						f.delete();
-					}
-				}
-				DecimalFormat fmt = new DecimalFormat("0000");
+			    // wait for coordinator to clean out old files
+			    coordinator.waitForFileCleanout();
 				started = true;
+
+                // loop forever listening for client connections
 
 				while (started)
 				{
 					try {
 						Socket client = server.accept();
 						client.setSoTimeout(cfg.getProxyInboundSoTimeout());
-						count++;
-						if (count > cfg.getMaxEntries()) {
-							count = 1;
-						}
-						String connId = "C-" + fmt.format(count);
-						RequestHandler h = new RequestHandler(client, cfg, connId);
+						String connId = coordinator.getConnectionId();
+						RequestHandler h = new RequestHandler(client, cfg, connId, false);
 						Thread t = new Thread(h, "RequestHandler " + connId);
 						t.setDaemon(true);
 						t.start();
 					} catch(SocketTimeoutException e) {
-						cLog.finest("Accept timedout.  let's try again.");
+						cLog.finest("Accept timed out.  let's try again.");
 					}
 				}
 			} catch ( IOException e ) {
 				if(!e.getMessage().contains("socket closed")) {
-					LogUtils.warning(cLog, "Proxy Listener error.  Increase logging level to see full error.  If you're seeing this message during shutdown you can probably ignore it.");
-					LogUtils.fine(cLog, "Proxy Listener error: ", e);
+					LogUtils.warning(cLog, "Http Proxy Listener error.  Increase logging level to see full error.  If you're seeing this message during shutdown you can probably ignore it.");
+					LogUtils.fine(cLog, "Http Proxy Listener error: ", e);
 				} else {
 					LogUtils.severe(cLog, "Unexpected error:", e);
 				}
