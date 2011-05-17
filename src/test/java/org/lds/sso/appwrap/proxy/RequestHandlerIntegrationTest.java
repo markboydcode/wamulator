@@ -19,6 +19,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
+import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -76,11 +77,11 @@ public class RequestHandlerIntegrationTest {
                         String req = null;
                         String output = null;
                         String answer = null;
-                        String hostHdrLC = HttpPackage.HOST_HDR.toLowerCase();
+                        String hostHdrLC = HeaderDef.Host.getNameWithColon().toLowerCase();
 
                         if (input.contains("/preserve/host/test/")) {
-                            answer = HttpPackage.HOST_HDR + " ???";
-                            String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
+                            answer = HeaderDef.Host.getNameWithColon() + " ???";
+                            String hstHdrKey = RequestHandler.CRLF + HeaderDef.Host.getLcNameWithColon();
                             int idx = inputLC.indexOf(hstHdrKey);
 
                             if (idx != -1) {
@@ -93,13 +94,13 @@ public class RequestHandlerIntegrationTest {
                                 else {
                                     val = input.substring(idx+hstHdrKey.length(), cr).trim();
                                 }
-                                answer = HttpPackage.HOST_HDR + " " + val;
+                                answer = HeaderDef.Host.getNameWithColon() + " " + val;
                             }
                             req = "preserve-host-test";
                         }
                         else if (input.contains("/no-preserve/host/test/")) {
-                            answer = HttpPackage.HOST_HDR + " ???";
-                            String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
+                            answer = HeaderDef.Host.getNameWithColon() + " ???";
+                            String hstHdrKey = RequestHandler.CRLF + HeaderDef.Host.getLcNameWithColon();
                             int idx = inputLC.indexOf(hstHdrKey);
 
                             if (idx != -1) {
@@ -112,13 +113,13 @@ public class RequestHandlerIntegrationTest {
                                 else {
                                     val = input.substring(idx+hstHdrKey.length(), cr).trim();
                                 }
-                                answer = HttpPackage.HOST_HDR + " " + val;
+                                answer = HeaderDef.Host.getNameWithColon() + " " + val;
                             }
                             req = "no-preserve-host-test";
                         }
                         else if (input.contains("/host-header/test/")) {
-                            answer = HttpPackage.HOST_HDR + " ???";
-                            String hstHdrKey = RequestHandler.CRLF + HttpPackage.HOST_HDR;
+                            answer = HeaderDef.Host.getNameWithColon() + " ???";
+                            String hstHdrKey = RequestHandler.CRLF + HeaderDef.Host.getLcNameWithColon();
                             int idx = inputLC.indexOf(hstHdrKey);
 
                             if (idx != -1) {
@@ -131,7 +132,7 @@ public class RequestHandlerIntegrationTest {
                                 else {
                                     val = input.substring(idx+hstHdrKey.length(), cr).trim();
                                 }
-                                answer = HttpPackage.HOST_HDR + " " + val;
+                                answer = HeaderDef.Host.getNameWithColon() + " " + val;
                             }
                             req = "host-header-test";
                         }
@@ -523,7 +524,7 @@ public class RequestHandlerIntegrationTest {
         int status = client.executeMethod(method);
         String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
-        Assert.assertEquals(response, HttpPackage.HOST_HDR + " local.lds.org:" + sitePort);
+        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " local.lds.org:" + sitePort);
         method.releaseConnection();
     }
 
@@ -543,7 +544,7 @@ public class RequestHandlerIntegrationTest {
         int status = client.executeMethod(method);
         String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
-        Assert.assertEquals(response, HttpPackage.HOST_HDR + " 127.0.0.1:" + serverPort);
+        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " 127.0.0.1:" + serverPort);
         method.releaseConnection();
     }
 
@@ -563,7 +564,7 @@ public class RequestHandlerIntegrationTest {
         int status = client.executeMethod(method);
         String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
-        Assert.assertEquals(response, HttpPackage.HOST_HDR + " host.lds.org:2445");
+        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " host.lds.org:2445");
         method.releaseConnection();
     }
 

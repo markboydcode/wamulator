@@ -1,5 +1,7 @@
-package org.lds.sso.appwrap.proxy;
+package org.lds.sso.appwrap.proxy.header;
 
+import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

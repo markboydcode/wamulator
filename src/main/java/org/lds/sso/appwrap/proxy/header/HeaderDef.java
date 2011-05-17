@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap.proxy;
+package org.lds.sso.appwrap.proxy.header;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,11 +71,17 @@ public enum HeaderDef implements Comparable<HeaderDef>{
     Extension("");
     
     private String name;
+    private String lcName;
+    private String cName;
+    private String lcCName;
     private static Map<String, HeaderDef> map;
 
     private HeaderDef(String name) {
         this.name = name;
-        addToMap(name.toLowerCase(), this);
+        this.lcName = name.toLowerCase();
+        this.cName = name + ":";
+        this.lcCName = lcName + ":";
+        addToMap(lcName, this);
     }
     
     private void addToMap(String key, HeaderDef def) {
@@ -135,4 +141,30 @@ public enum HeaderDef implements Comparable<HeaderDef>{
         return name;
     }
     
+    /**
+     * Returns the lowercase header name as defined in RFC2616.
+     *  
+     * @return
+     */
+    public String getLcName() {
+        return lcName;
+    }
+    
+    /**
+     * Returns the header name with termination colon as defined in RFC2616.
+     *  
+     * @return
+     */
+    public String getNameWithColon() {
+        return cName;
+    }
+    
+    /**
+     * Returns the lower case header name with termination colon.
+     *  
+     * @return
+     */
+    public String getLcNameWithColon() {
+        return lcCName;
+    }
 }

@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap.proxy;
+package org.lds.sso.appwrap.proxy.header;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,6 +8,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.lds.sso.appwrap.proxy.RequestHandler;
+import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

@@ -15,8 +15,8 @@ import org.apache.commons.io.IOUtils;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.io.LogUtils;
-import org.lds.sso.appwrap.proxy.Header;
-import org.lds.sso.appwrap.proxy.HeaderBuffer;
+import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
 import org.lds.sso.appwrap.rest.RestVersion;
 
 public class Config {

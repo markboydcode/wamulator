@@ -43,6 +43,11 @@ import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.io.LogUtils;
+import org.lds.sso.appwrap.proxy.header.HandlerSet;
+import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderDef;
+import org.lds.sso.appwrap.proxy.header.HeaderHandler;
+import org.lds.sso.appwrap.proxy.header.SecondPhaseAction;
 import org.lds.sso.appwrap.proxy.tls.TrustAllManager;
 import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 
@@ -266,7 +271,7 @@ public class RequestHandler implements Runnable {
             reqPkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
 
             // add header for prevention of infinite loops directly back to the proxy
-            reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED, "handled"));
+            reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
 
             // for non-ignored traffic perform the enforcements and translations
             RequestLine appReqLn = reqPkg.requestLine; // default to request line as-is
@@ -289,7 +294,7 @@ public class RequestHandler implements Runnable {
                 cfg.injectGlobalHeaders(reqPkg.headerBfr);
                 // include our connId in request headers to coordinate app logs
                 // with proxy logs if needed when troubleshooting app issues
-                reqPkg.headerBfr.append(new Header(HttpPackage.CONN_ID, this.connId));
+                reqPkg.headerBfr.append(new Header(HttpPackage.CONN_ID_NM, this.connId));
 
                 TrafficManager appMgr = cfg.getTrafficManager();
                 String token = cfg.getTokenFromCookie(reqPkg.cookiesHdr);
@@ -544,7 +549,7 @@ public class RequestHandler implements Runnable {
 
             // include our connId in response headers to coordinate responses
             // with proxy logs if needed when troubleshooting app issues
-            resPkg.headerBfr.append(new Header(HttpPackage.CONN_ID, this.connId));
+            resPkg.headerBfr.append(new Header(HttpPackage.CONN_ID_NM, this.connId));
 
             response = serializePackage((StartLine) resPkg.responseLine, resPkg);
             int responseLength = Array.getLength(response);
@@ -707,7 +712,7 @@ public class RequestHandler implements Runnable {
     private void stripEmptyHeadersAsNeeded(HttpPackage reqPkg) {
         if (cfg.getStripEmptyHeaders()) {
             StringBuffer removed = new StringBuffer();
-            for(Iterator<Header> itr = reqPkg.headerBfr.getIterator(); itr.hasNext();) {
+            for(Iterator<Header> itr = reqPkg.headerBfr.iterator(); itr.hasNext();) {
                 Header hdr = itr.next();
                 if ("".equals(hdr.getValue())) {
                     removed.append(",").append(hdr.getName());
@@ -857,8 +862,8 @@ public class RequestHandler implements Runnable {
         appRespBfr.write(startLineContent.getBytes());
         appRespBfr.write(CRLF.getBytes());
 
-        for (Iterator<Header> itr = pkg.headerBfr.getIterator(); itr.hasNext();) {
-            itr.next().writeTo(appRespBfr);
+        for (Header hdr : pkg.headerBfr) {
+            hdr.writeTo(appRespBfr);
         }
         appRespBfr.write(CRLF.getBytes());
         appRespBfr.write(pkg.bodyStream.toByteArray());
@@ -1178,7 +1183,7 @@ public class RequestHandler implements Runnable {
             if (pkg.type == HttpPackageType.BAD_STARTLINE) {
                 return pkg;
             }
-            captureHeaders(pkg, in, excludeHeaders, log);
+            captureHeaders(pkg, in, log);
             if (pkg.type == HttpPackageType.EMPTY
                     || (pkg.type == HttpPackageType.RESPONSE && pkg.responseCode != 200 && pkg.contentLength == 0)) {
                 return pkg;
@@ -1323,13 +1328,16 @@ public class RequestHandler implements Runnable {
      * @param log
      * @throws IOException
      */
-    private void captureHeaders(HttpPackage pkg, InputStream in, String[] excludeHeaders, PrintStream log) throws IOException {
+    private void captureHeaders(HttpPackage pkg, InputStream in, 
+            PrintStream log) throws IOException {
         if (pkg.type == HttpPackageType.EMPTY) {
             return;
         }
         String data = "";
         String dataLC = "";
         int pos = -1;
+        // create handler set for processing headers for this package
+        HandlerSet hSet = HandlerSet.newInstance();
 
         // get header info
         while ((data = readLine(in, log)) != null) {
@@ -1338,118 +1346,30 @@ public class RequestHandler implements Runnable {
                 break;
             }
 
-            // filter the headers indicated via exclusion list so that they
-            // don't
-            // make it through the proxy
-            if (excludeHeaders != null && excludeHeaders.length > 0) {
-                boolean exlude = false;
-                for (String xhdr : excludeHeaders) {
-                    int colon = data.indexOf(':');
-                    String hdrName = data.substring(0, colon).trim();
-                    if (hdrName.toLowerCase().equals(xhdr)) {
-                        exlude = true;
-                        break;
-                    }
-                }
-                if (exlude) {
-                    continue;
-                }
-            }
-
-            dataLC = data.toLowerCase();
+            boolean headerHandled = false;
+            int colon = data.indexOf(':');
+            String hdrName = data.substring(0, colon).trim().toLowerCase();
+            String hdrVal = data.substring(colon+1).trim();
+            
             Header header = null;
-
-            if (pkg.type == HttpPackageType.REQUEST) {
-                // check for the Cookie header
-                /*
-                 * need to be careful here. If more than one cookie is submitted
-                 * I need to ensure that the header held by the pkg is the one
-                 * for the simulator session.
-                */
-
-                pos = dataLC.indexOf(HttpPackage.COOKIE_HDR);
-                if (pos >= 0) {
-                    String cookieVal = data.substring(pos + HttpPackage.COOKIE_HDR.length()).trim();
-                    // if multiple cookies passed make sure we get the one for our sessions
-                    if (!pkg.cookieFound && cookieVal.contains(cfg.getCookieName()+ "=")) {
-                        pkg.cookiesHdr = cookieVal;
-                        pkg.cookieFound = true;
-                    }
-                    header = new Header(HeaderDef.Cookie, cookieVal);
-                }
-                // check for header from this proxy exposing an infinite
-                // redirect through the simulator. ie: the simulator sees a call
-                // directly from itself via inclusion of the X-shim header
-                pos = dataLC.indexOf(HttpPackage.SHIM_HANDLED_HDR.toLowerCase());
-                if (pos >= 0) {
-                    pkg.redirectLoopDetected = true;
-                }
-                // check for host header
-                pos = dataLC.indexOf(HttpPackage.HOST_HDR);
-                 if (pos == 0) {
-                    pkg.hostHdr = data.substring(HttpPackage.HOST_HDR.length()).trim();
-                    header = new Header(HeaderDef.Host, pkg.hostHdr);
-                    int colon = pkg.hostHdr.indexOf(':');
-                    String host = null;
-
-                    if (colon == -1) {
-                        pkg.host = pkg.hostHdr; // no port so is internet dflt:
-                                                // 80
-                    }
-                    else {
-                        pkg.host = pkg.hostHdr.substring(0, colon);
-                        String sPort = pkg.hostHdr.substring(colon + 1);
-                        pkg.port = Integer.parseInt(sPort);
-                        pkg.hasNonDefaultPort = true;
-                    }
+            for (HeaderHandler xhdr : hSet.handlers) {
+                if (xhdr.appliesTo(hdrName, pkg.type)) {
+                    headerHandled = true;
+                    header = xhdr.handle(hdrName, hdrVal, pkg, cfg);
+                    break;
                 }
             }
-
-            // check for response header special handling
-            pos = dataLC.indexOf(HttpPackage.CONTENT_LNG);
-            if (pos >= 0) {
-                String len = data.substring(pos + HttpPackage.CONTENT_LNG.length()).trim();
-                pkg.contentLength = Integer.parseInt(len);
-                header = new Header(HeaderDef.ContentLength, len);
-            }
-            pos = dataLC.indexOf(HttpPackage.LOCATION_HDR);
-            if (pos >= 0) {
-                String redirect = data.substring(pos + HttpPackage.LOCATION_HDR.length()).trim();
-                TrafficManager mgr = cfg.getTrafficManager();
-                String rewrite = mgr.rewriteRedirect(redirect);
-                if (rewrite != null) {
-                    // rewrite matched, replace
-                    LogUtils.fine(cLog, "rewriting redirect from: {0} to: {1}", redirect, rewrite);
-                    pkg.headerBfr.append(new Header(HeaderDef.Location.getName() + "-WAS",
-                            redirect));
-                    header = new Header(HeaderDef.Location, rewrite);
-                }
-                else {
-                    header = new Header(HeaderDef.Location, redirect);
-                }
-            }
-            pos = dataLC.indexOf(HttpPackage.SET_COOKIE_HDR);
-            if (pos >= 0) {
-                String rawCookie = data.substring(pos + HttpPackage.SET_COOKIE_HDR.length()).trim();
-                TrafficManager mgr = cfg.getTrafficManager();
-                String rewrite = mgr.rewriteCookiePath(rawCookie);
-
-                if (!rewrite.equals(rawCookie)) {
-                    // rewrite matched, replace and indicate in headers
-                    pkg.headerBfr.append(new Header(HeaderDef.SetCookie.getName() + "-WAS",
-                            rawCookie));
-                    LogUtils.fine(cLog, "rewriting cookie from: {0} to: {1}", rawCookie, rewrite);
-                }
-                header = new Header(HeaderDef.SetCookie, rewrite);
-            }
-            if (header == null) {
-                int colon = data.indexOf(':');
-                String hdrName = data.substring(0, colon).trim();
-                String hdrVal = data.substring(colon+1).trim();
+            // if no special handling occurred then pass the header onward for now
+            if (headerHandled == false) {
                 header = new Header(hdrName, hdrVal);
             }
             // write the header to the buffer
             pkg.headerBfr.append(header);
+        }
+        
+        // now apply contingent handling if any which could remove headers
+        for (SecondPhaseAction action : hSet.secondPhaseActions) {
+            action.apply();
         }
     }
 
@@ -1481,6 +1401,9 @@ public class RequestHandler implements Runnable {
              * versus: "HTTP/1.1 200 OK"
              */
             if (startLn.token1.toLowerCase().startsWith("http")) {
+                if (startLn.token1.substring("http/".length()).equals("1.0")) {
+                    pkg.httpVer = 0;
+                }
                 pkg.responseLine = startLn;
                 pkg.type = HttpPackageType.RESPONSE;
 
@@ -1494,6 +1417,9 @@ public class RequestHandler implements Runnable {
                 }
             }
             else {
+                if (startLn.token3.substring("http/".length()).equals("1.0")) {
+                    pkg.httpVer = 0;
+                }
                 pkg.requestLine = startLn;
                 pkg.origRequestList = startLn;
                 pkg.signMeInDetected = GlobalHeaderNames.detectedAndStrippedSignMeIn(pkg);

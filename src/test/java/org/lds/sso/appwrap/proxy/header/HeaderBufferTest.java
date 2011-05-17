@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap.proxy;
+package org.lds.sso.appwrap.proxy.header;
 
 import java.util.Iterator;
 import java.util.List;
@@ -129,7 +129,7 @@ public class HeaderBufferTest {
         		"Connection: 444\r\n" + 
         		"]");
 
-        Iterator<Header> itr = buf.getIterator();
+        Iterator<Header> itr = buf.iterator();
         
         Assert.assertSame(itr.next(), hb1);
         Assert.assertSame(itr.next(), hb2);

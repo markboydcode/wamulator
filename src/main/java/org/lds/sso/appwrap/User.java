@@ -10,8 +10,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
-import org.lds.sso.appwrap.proxy.Header;
-import org.lds.sso.appwrap.proxy.HeaderBuffer;
+import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
 
 public class User {
 	public static final String LDSAPPS_ATT = "ldsApplications";

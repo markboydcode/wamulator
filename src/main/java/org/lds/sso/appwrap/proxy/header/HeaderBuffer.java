@@ -1,12 +1,12 @@
-package org.lds.sso.appwrap.proxy;
+package org.lds.sso.appwrap.proxy.header;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+
+import org.lds.sso.appwrap.proxy.RequestHandler;
 
 /**
  * Buffer to hold a list of {@link Header}s in the order added generally and provide 
@@ -16,7 +16,7 @@ import java.util.TreeMap;
  * @author BOYDMR
  *
  */
-public class HeaderBuffer {
+public class HeaderBuffer implements Iterable<Header>{
 
     private List<Header> headers = new ArrayList<Header>();
     
@@ -140,10 +140,6 @@ public class HeaderBuffer {
         return hdrs;
     }
     
-    public Iterator<Header> getIterator() {
-        return headers.iterator();
-    }
-    
     public String toString() {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -189,5 +185,9 @@ public class HeaderBuffer {
             return hdrs.get(0);
         }
         return null;
+    }
+
+    public Iterator<Header> iterator() {
+        return headers.iterator();
     }
 }

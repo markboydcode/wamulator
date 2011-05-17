@@ -3,20 +3,23 @@ package org.lds.sso.appwrap.proxy;
 import java.io.ByteArrayOutputStream;
 
 import org.lds.sso.appwrap.SiteMatcher;
+import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
 
 public class HttpPackage {
-	public static final String COOKIE_HDR = "cookie:";
-	public static final String HOST_HDR = "host:";
-	public static final String CONTENT_LNG = "content-length:";
-	public static final String CONTENT_TYPE = "Content-Type:";
-    public static final String CONN_ID = "X-connId";
-    public static final String CONN_ID_HDR = CONN_ID + ": ";
-    public static final String SHIM_HANDLED = "X-shim";
-    public static final String SHIM_HANDLED_HDR = SHIM_HANDLED + ":";
-    public static final String SHIM_STRIPPED_HEADERS = "X-stripped-empty-headers";
-	public static final String LOCATION_HDR = "location:";
-	public static final String SET_COOKIE_HDR = "set-cookie:"; // need set-cookie2?
-	
+    // some non-standard header names
+    public static final String CONN_ID_NM = "X-ConnId";
+    public static final String CONN_ID_HDR = CONN_ID_NM + ": ";
+    
+    public static final String SHIM_HANDLED_HDR_NM = "X-Wmltr";
+    public static final String SHIM_HANDLED_HDR = SHIM_HANDLED_HDR_NM + ":";
+    
+    public static final String SHIM_STRIPPED_HEADERS = "X-Stripped-Empty-Headers";
+    
+    // Erroneous proxy-connection header not part of rfc2616 but used by netscape
+    // originally and copied by microsoft and mozilla and httpclient, etc.
+    public static final String PROXY_CONNECTION_HDR_NM = "Proxy-Connection";
+    public static final String PROXY_CONNECTION_HDR = PROXY_CONNECTION_HDR_NM + ":";
+    
 	public HeaderBuffer headerBfr = new HeaderBuffer();
 	public ByteArrayOutputStream bodyStream = new ByteArrayOutputStream();
 	public int responseCode = 200;
@@ -59,4 +62,10 @@ public class HttpPackage {
      * method to its calling code.
      */
     public String tokenForCdsso;
+    
+    /**
+     * Indicates the version of http for a given package. 0 means http 1.0 while
+     * 1 means http 1.1. Defaults to 1.
+     */
+    public int httpVer = 1;
 }

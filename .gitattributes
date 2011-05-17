@@ -84,9 +84,6 @@ src/main/java/org/lds/sso/appwrap/io/LogUtils.java -text
 src/main/java/org/lds/sso/appwrap/io/LoggingOutputStream.java -text
 src/main/java/org/lds/sso/appwrap/io/SimpleErrorHandler.java -text
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/proxy/Header.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/proxy/HeaderBuffer.java -text svneol=unset#text/plain
-src/main/java/org/lds/sso/appwrap/proxy/HeaderDef.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackage.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackageType.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/ListenerCoordinator.java -text
@@ -96,6 +93,18 @@ src/main/java/org/lds/sso/appwrap/proxy/RequestLine.java -text svneol=unset#text
 src/main/java/org/lds/sso/appwrap/proxy/ResponseLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/StartLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/TrafficType.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/header/ContentLengthHandler.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/HandlerSet.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/Header.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/header/HeaderBuffer.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/header/HeaderDef.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/header/HeaderHandler.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/ReqHostHeaderHndlr.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/ReqSessionCookieHandler.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/ReqShimHeaderHndlr.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/RespCookieRewriteHndlr.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/RespLocationRewriteHndlr.java -text
+src/main/java/org/lds/sso/appwrap/proxy/header/SecondPhaseAction.java -text
 src/main/java/org/lds/sso/appwrap/proxy/tls/FixedTypeKeyManager.java -text
 src/main/java/org/lds/sso/appwrap/proxy/tls/HttpsProxyListener.java -text
 src/main/java/org/lds/sso/appwrap/proxy/tls/TrustAllManager.java -text
@@ -210,9 +219,6 @@ src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/StringWriterHandle
 src/test/java/org/lds/sso/appwrap/conditions/evaluator/syntax/TestBaseClass.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/CookiePathAndRedirectRewriteTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/CrossDomainSignMeInOutTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/proxy/HeaderBufferTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/proxy/HeaderDefTest.java -text svneol=unset#text/plain
-src/test/java/org/lds/sso/appwrap/proxy/HeaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/ListenerCoordinatorTest.java -text
 src/test/java/org/lds/sso/appwrap/proxy/LocalHostTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/PolicyServiceUrlTest.java -text svneol=unset#text/plain
@@ -221,6 +227,9 @@ src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerTest.java -text svneol=uns
 src/test/java/org/lds/sso/appwrap/proxy/SignMeInOutTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StripEmptyHeadersTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/header/HeaderBufferTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/header/HeaderDefTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/header/HeaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/rest/oes/v1/RestHttpTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/JspUtilsTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParserTest.java -text svneol=unset#text/plain

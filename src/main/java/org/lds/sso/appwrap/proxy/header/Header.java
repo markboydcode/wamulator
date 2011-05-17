@@ -1,7 +1,9 @@
-package org.lds.sso.appwrap.proxy;
+package org.lds.sso.appwrap.proxy.header;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
+import org.lds.sso.appwrap.proxy.RequestHandler;
 
 /**
  * Holder of a header value with characteristics allowing two headers though

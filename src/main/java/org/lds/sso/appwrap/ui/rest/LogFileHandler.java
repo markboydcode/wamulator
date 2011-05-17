@@ -7,17 +7,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.proxy.Header;
-import org.lds.sso.appwrap.proxy.HeaderDef;
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.HttpPackageType;
 import org.lds.sso.appwrap.proxy.StartLine;
+import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
@@ -74,8 +73,8 @@ public class LogFileHandler extends RestHandlerBase {
         }
         appRespBfr.write(startLineContent.getBytes());
         appRespBfr.write(CRLF.getBytes());
-        for(Iterator<Header> itr = pkg.headerBfr.getIterator(); itr.hasNext();) {
-            itr.next().writeTo(appRespBfr);
+        for(Header hdr : pkg.headerBfr) {
+            hdr.writeTo(appRespBfr);
         }
         appRespBfr.write(CRLF.getBytes());
         appRespBfr.write(pkg.bodyStream.toByteArray());
