@@ -18,19 +18,19 @@ import org.lds.sso.appwrap.proxy.HttpPackageType;
 public class RespCookieRewriteHndlr implements HeaderHandler {
     private static final Logger cLog = Logger.getLogger(RespCookieRewriteHndlr.class.getName());
 
-    public Header handle(String lcHeaderName, String headerValue,
-            HttpPackage pkg, Config cfg) {
+    public void handle(String lcHeaderName, String headerValue,
+            HttpPackage pkg, HandlerSet hSet, Config cfg) {
         String rawCookie = headerValue.trim();
         TrafficManager mgr = cfg.getTrafficManager();
         String rewrite = mgr.rewriteCookiePath(rawCookie);
+        pkg.headerBfr.append(new Header(HeaderDef.SetCookie, rewrite));
 
         if (!rewrite.equals(rawCookie)) {
-            // rewrite matched, replace and indicate in headers
+            // if rewritten, indicate in headers
             pkg.headerBfr.append(new Header(HeaderDef.SetCookie.getName() + "-WAS",
                     rawCookie));
             LogUtils.fine(cLog, "rewriting cookie from: {0} to: {1}", rawCookie, rewrite);
         }
-        return new Header(HeaderDef.SetCookie, rewrite);
     }
 
     /**

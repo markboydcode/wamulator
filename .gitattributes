@@ -93,6 +93,7 @@ src/main/java/org/lds/sso/appwrap/proxy/RequestLine.java -text svneol=unset#text
 src/main/java/org/lds/sso/appwrap/proxy/ResponseLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/StartLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/TrafficType.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/header/ConnectionHeaderHndlr.java -text
 src/main/java/org/lds/sso/appwrap/proxy/header/ContentLengthHandler.java -text
 src/main/java/org/lds/sso/appwrap/proxy/header/HandlerSet.java -text
 src/main/java/org/lds/sso/appwrap/proxy/header/Header.java -text svneol=unset#text/plain

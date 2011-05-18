@@ -14,10 +14,11 @@ import org.lds.sso.appwrap.proxy.HttpPackageType;
  */
 public class ReqShimHeaderHndlr implements HeaderHandler {
 
-    public Header handle(String lcHeaderName, String headerValue,
-            HttpPackage pkg, Config cfg) {
+    public void handle(String lcHeaderName, String headerValue,
+            HttpPackage pkg, HandlerSet hSet, Config cfg) {
         pkg.redirectLoopDetected = true;
-        return new Header(lcHeaderName, headerValue);
+        // inject so it will pass onward
+        pkg.headerBfr.append(new Header(lcHeaderName, headerValue));
     }
 
     public boolean appliesTo(String lcHeaderName, HttpPackageType reqType) {

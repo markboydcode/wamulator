@@ -13,10 +13,12 @@ import org.lds.sso.appwrap.proxy.HttpPackageType;
  */
 public class ContentLengthHandler implements HeaderHandler {
 
-    public Header handle(String lcHeaderName, String headerValue,
-            HttpPackage pkg, Config cfg) {
+    public void handle(String lcHeaderName, String headerValue,
+            HttpPackage pkg, HandlerSet hSet, Config cfg) {
         pkg.contentLength = Integer.parseInt(headerValue.trim());
-        return new Header(HeaderDef.ContentLength, headerValue);
+ 
+        // inject so it will pass onward
+        pkg.headerBfr.append(new Header(HeaderDef.ContentLength, headerValue));
     }
 
     /**

@@ -1334,8 +1334,6 @@ public class RequestHandler implements Runnable {
             return;
         }
         String data = "";
-        String dataLC = "";
-        int pos = -1;
         // create handler set for processing headers for this package
         HandlerSet hSet = HandlerSet.newInstance();
 
@@ -1351,20 +1349,17 @@ public class RequestHandler implements Runnable {
             String hdrName = data.substring(0, colon).trim().toLowerCase();
             String hdrVal = data.substring(colon+1).trim();
             
-            Header header = null;
             for (HeaderHandler xhdr : hSet.handlers) {
                 if (xhdr.appliesTo(hdrName, pkg.type)) {
                     headerHandled = true;
-                    header = xhdr.handle(hdrName, hdrVal, pkg, cfg);
+                    xhdr.handle(hdrName, hdrVal, pkg, hSet, cfg);
                     break;
                 }
             }
-            // if no special handling occurred then pass the header onward for now
+            // if no special handling occurred then pass the header onward
             if (headerHandled == false) {
-                header = new Header(hdrName, hdrVal);
+                pkg.headerBfr.append(new Header(hdrName, hdrVal));
             }
-            // write the header to the buffer
-            pkg.headerBfr.append(header);
         }
         
         // now apply contingent handling if any which could remove headers

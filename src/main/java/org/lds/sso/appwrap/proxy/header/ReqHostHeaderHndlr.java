@@ -13,10 +13,12 @@ import org.lds.sso.appwrap.proxy.HttpPackageType;
  */
 public class ReqHostHeaderHndlr implements HeaderHandler {
 
-    public Header handle(String lcHeaderName, String headerValue,
-            HttpPackage pkg, Config cfg) {
+    public void handle(String lcHeaderName, String headerValue,
+            HttpPackage pkg, HandlerSet hSet, Config cfg) {
         pkg.hostHdr = headerValue;
-        Header h = new Header(HeaderDef.Host, headerValue);
+
+        // inject so it will pass onward
+        pkg.headerBfr.append(new Header(HeaderDef.Host, headerValue));
         int colon = headerValue.indexOf(':');
         String host = null;
 
@@ -29,7 +31,6 @@ public class ReqHostHeaderHndlr implements HeaderHandler {
             pkg.port = Integer.parseInt(sPort);
             pkg.hasNonDefaultPort = true;
         }
-        return h;
     }
 
     public boolean appliesTo(String lcHeaderName, HttpPackageType reqType) {

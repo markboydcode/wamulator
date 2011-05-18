@@ -13,17 +13,26 @@ public interface HeaderHandler {
     /**
      * Implementation of some way of handling a specific header line during the
      * first pass over the raw headers in a request or response. Such action can
-     * consist of returning a Header object to be included in the package as it
-     * passes into the second pass scan for contingent handling of headers and
-     * if left unmolested to pass onward with the package. Or action can take
-     * the form of altering the package in some way and returning null meaning
-     * that the header will not pass back onto the wire and onward to the
-     * destination.
+     * consist of injecting a Header object into the package's HeaderBuffer so
+     * that the header or some derivative may ultimately continue onward in the
+     * http message. Or an instance of {@link SecondPhaseAction} can be injected
+     * into the {@link HandlerSet} so take action after all headers have been
+     * loaded into the package's {@link HeaderBuffer}. Or action can take the
+     * form of altering the package in some way.
      * 
-     * @param line
+     * @param lcHeaderName
+     *            lowercase header name value without terminating colon
+     * @param headerValue
+     *            the value of the header
      * @param pkg
+     *            the {@link HttpPackage} for the message
+     * @param hSet
+     *            the {@link HandlerSet} for capturing delayed actions
+     * @param cfg
+     *            the {@link Config} configuration for the simulator
      */
-    public Header handle(String lcHeaderName, String headerValue, HttpPackage pkg, Config cfg);
+    public void handle(String lcHeaderName, String headerValue, HttpPackage pkg, 
+            HandlerSet hSet, Config cfg);
     
     /**
      * Returns true if a handler is for the indicated header name and its handle

@@ -13,15 +13,16 @@ import org.lds.sso.appwrap.proxy.HttpPackageType;
  */
 public class ReqSessionCookieHandler implements HeaderHandler {
 
-    public Header handle(String lcHeaderName, String headerValue,
-            HttpPackage pkg, Config cfg) {
+    public void handle(String lcHeaderName, String headerValue,
+            HttpPackage pkg, HandlerSet hSet, Config cfg) {
         String cookieVal = headerValue.trim();
         // if multiple cookies passed make sure we get the one for our sessions
         if (!pkg.cookieFound && cookieVal.contains(cfg.getCookieName()+ "=")) {
             pkg.cookiesHdr = cookieVal;
             pkg.cookieFound = true;
         }
-        return new Header(HeaderDef.Cookie, cookieVal);
+        // inject so it will pass onward
+        pkg.headerBfr.append(new Header(HeaderDef.Cookie, cookieVal));
     }
 
     public boolean appliesTo(String lcHeaderName, HttpPackageType reqType) {

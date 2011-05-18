@@ -19,23 +19,21 @@ import org.lds.sso.appwrap.proxy.HttpPackageType;
 public class RespLocationRewriteHndlr implements HeaderHandler {
     private static final Logger cLog = Logger.getLogger(RespLocationRewriteHndlr.class.getName());
 
-    public Header handle(String lcHeaderName, String headerValue,
-            HttpPackage pkg, Config cfg) {
+    public void handle(String lcHeaderName, String headerValue,
+            HttpPackage pkg, HandlerSet hSet, Config cfg) {
         TrafficManager mgr = cfg.getTrafficManager();
         String rewrite = mgr.rewriteRedirect(headerValue);
-        Header header = null;
         
         if (rewrite != null) {
             // rewrite matched, replace
             LogUtils.fine(cLog, "rewriting redirect from: {0} to: {1}", headerValue, rewrite);
+            pkg.headerBfr.append(new Header(HeaderDef.Location, rewrite));
             pkg.headerBfr.append(new Header(HeaderDef.Location.getName() + "-WAS",
                     headerValue));
-            header = new Header(HeaderDef.Location, rewrite);
         }
         else {
-            header = new Header(HeaderDef.Location, headerValue);
+            pkg.headerBfr.append(new Header(HeaderDef.Location, headerValue));
         }
-        return header;
     }
 
     /**

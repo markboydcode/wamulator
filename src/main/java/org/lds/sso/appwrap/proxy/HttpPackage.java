@@ -19,6 +19,9 @@ public class HttpPackage {
     // originally and copied by microsoft and mozilla and httpclient, etc.
     public static final String PROXY_CONNECTION_HDR_NM = "Proxy-Connection";
     public static final String PROXY_CONNECTION_HDR = PROXY_CONNECTION_HDR_NM + ":";
+
+    public static final int HTTP_1_0 = 0;
+    public static final int HTTP_1_1 = 1;
     
 	public HeaderBuffer headerBfr = new HeaderBuffer();
 	public ByteArrayOutputStream bodyStream = new ByteArrayOutputStream();
@@ -68,4 +71,12 @@ public class HttpPackage {
      * 1 means http 1.1. Defaults to 1.
      */
     public int httpVer = 1;
+    
+    /**
+     * Indicates connection over which the http message in this package was 
+     * received should be considered persistent or not. Http 1.1 defaults to 
+     * true. Http 1.0 defaults to false. See sections 14.10 and 19.6.2 of 
+     * RFC-2616.
+     */
+    public boolean isPersistent = true;
 }
