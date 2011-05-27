@@ -32,29 +32,29 @@ public class RequestHandlerIntegrationTest {
     private int sitePort;
     private int serverPort;
     private int freePort;
-
-    @BeforeClass
-    public void setUpSimulator () throws Exception {
-        // first clear any config residue
-        Config cfg = new Config();
-
-        // find a free port on which nothing is listening
-        ServerSocket portFinder = new ServerSocket();
-        portFinder.setReuseAddress(true);
-        portFinder.bind(null);
-        freePort = portFinder.getLocalPort();
-        try {
-            portFinder.close();
+    
+    /**
+     * App entry point if we want to run the back-end server standalone for some
+     * testing.
+     * 
+     * @param args
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public static void main(String[] args) throws IOException, InterruptedException {
+        new RequestHandlerIntegrationTest().setUpTestServer();
+        while (true) {
+            Thread.sleep(3000);
         }
-        catch(Exception e) {
-            System.out.println("Exception releasing server port for use as bad gateway test " + e);
-        }
-
+    }
+    
+    private void setUpTestServer() throws IOException {
         // get socket of server emulator
         final ServerSocket sss = new ServerSocket();
         sss.setReuseAddress(true);
         sss.bind(null);
         serverPort = sss.getLocalPort();
+        System.out.println("RequestHandlerIntegrationTest server-port = " + serverPort);
 
         // now start server to spool back responses to various requests
         server = new Thread() {
@@ -78,6 +78,7 @@ public class RequestHandlerIntegrationTest {
                         String output = null;
                         String answer = null;
                         String hostHdrLC = HeaderDef.Host.getNameWithColon().toLowerCase();
+                        boolean alreadyHandled = false;
 
                         if (input.contains("/preserve/host/test/")) {
                             answer = HeaderDef.Host.getNameWithColon() + " ???";
@@ -201,35 +202,67 @@ public class RequestHandlerIntegrationTest {
                             output = RequestHandler.CRLF + RequestHandler.CRLF + RequestHandler.CRLF;
                             req = "bad-gateway-empty-message";
                         }
+                        else if (input.contains("/slow/no/content/length/")) {
+                            System.out.println();
+                            System.out.println("*** test server detected request: " + req);
+                            System.out.println("--- received ---");
+                            System.out.println(input);
+
+                            output = "HTTP/1.1 200 Not Found" + RequestHandler.CRLF
+                                + "Content-Type: text/html; charset=iso-8859-1" + RequestHandler.CRLF
+                                + "Server: test-harness" + RequestHandler.CRLF
+                                + RequestHandler.CRLF + RequestHandler.CRLF
+                                + "<html><head>\r\n" 
+                                + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n" 
+                                + "<title>Really slow content</title>\r\n" 
+                                + "</head>\r\n";
+                            out.write(output.getBytes());
+                            out.flush();
+                            System.out.println("--- returned ---");
+                            System.out.println(output);
+                            System.out.println("---> simulating slow connection by waiting 5s...");
+                            Thread.sleep(5000);
+                            output = "<body><h2>Really slow content</h2>\r\n" 
+                                + "<p>Content served with no content-length and a wait time.</p>\r\n" 
+                                + "<br/></body></html>";
+                            System.out.println(output);
+                            out.write(output.getBytes());
+                            out.flush();
+                            is.close();
+                            out.close();
+                            alreadyHandled = true;
+                        }
                         else {
                             req = "UNEXPECTED";
                             output =
                                 "HTTP/1.1 500 Internal Server Error due to unexpected request" + RequestHandler.CRLF;
                         }
 
-                        if (output == null) {
-                            output =
-                                "HTTP/1.1 200 OK" + RequestHandler.CRLF
-                                + "Content-type: text/plain" + RequestHandler.CRLF
-                                + "Content-length: " + answer.toCharArray().length + RequestHandler.CRLF
-                                + RequestHandler.CRLF
-                                + answer;
+                        if (! alreadyHandled) {
+                            if (output == null) {
+                                output =
+                                    "HTTP/1.1 200 OK" + RequestHandler.CRLF
+                                    + "Content-type: text/plain" + RequestHandler.CRLF
+                                    + "Content-length: " + answer.toCharArray().length + RequestHandler.CRLF
+                                    + RequestHandler.CRLF
+                                    + answer;
+                            }
+
+                            System.out.println();
+                            System.out.println("*** test server detected request: " + req);
+                            System.out.println("--- received ---");
+                            System.out.println(input);
+                            System.out.println("--- returned ---");
+                            System.out.println(output);
+
+                            // add header/body termination indicators.
+                            output += RequestHandler.CRLF + RequestHandler.CRLF;
+
+                            out.write(output.getBytes());
+                            out.flush();
+                            is.close();
+                            out.close();
                         }
-
-                        System.out.println();
-                        System.out.println("*** test server detected request: " + req);
-                        System.out.println("--- received ---");
-                        System.out.println(input);
-                        System.out.println("--- returned ---");
-                        System.out.println(output);
-
-                        // add header/body termination indicators.
-                        output += RequestHandler.CRLF + RequestHandler.CRLF;
-
-                        out.write(output.getBytes());
-                        out.flush();
-                        is.close();
-                        out.close();
                     }
                 } catch (Exception e) {
                     System.out.println("Server test thread incurred Exception, exiting.");
@@ -247,8 +280,29 @@ public class RequestHandlerIntegrationTest {
             }
         };
         server.start();
+    }
 
-        // now set up the shim to verify empty headers are injected
+    @BeforeClass
+    public void setUpSimulator () throws Exception {
+        // first clear any config residue
+        Config cfg = new Config();
+
+        // find a free port on which nothing is listening
+        ServerSocket portFinder = new ServerSocket();
+        portFinder.setReuseAddress(true);
+        portFinder.bind(null);
+        freePort = portFinder.getLocalPort();
+        try {
+            portFinder.close();
+        }
+        catch(Exception e) {
+            System.out.println("Exception releasing server port for use as bad gateway test " + e);
+        }
+
+        // spin up the backend test server fronted by the simulator
+        this.setUpTestServer();
+        
+        // now set up the shim to verify various handling characteristics
         service = Service.getService("string:"
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='auto' proxy-port='auto'>"
