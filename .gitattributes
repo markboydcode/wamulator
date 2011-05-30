@@ -228,6 +228,7 @@ src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerTest.java -text svneol=uns
 src/test/java/org/lds/sso/appwrap/proxy/SignMeInOutTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StripEmptyHeadersTest.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/proxy/header/ConnectionHeaderHndlrTest.java -text
 src/test/java/org/lds/sso/appwrap/proxy/header/HeaderBufferTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/header/HeaderDefTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/header/HeaderTest.java -text svneol=unset#text/plain

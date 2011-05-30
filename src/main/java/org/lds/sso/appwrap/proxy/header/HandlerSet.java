@@ -69,6 +69,7 @@ public class HandlerSet {
             
             // request AND response handlers
             l.add(new ContentLengthHandler());
+            l.add(new ConnectionHeaderHndlr());
 
             // response ONLY handlers
             l.add(new RespCookieRewriteHndlr());

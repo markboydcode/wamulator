@@ -7,7 +7,9 @@ import org.lds.sso.appwrap.proxy.HttpPackageType;
 /**
  * Implements RFC 2616 section 14.10 for proper handling of the Connection
  * header by removing all headers indicated in the Connection header save for 
- * the 'close' token which marks the connection as non-persistent.
+ * the 'close' token which marks the connection as non-persistent. Also has 
+ * support for RFC 2817 if browsers ever support it letting the Upgrade token
+ * of Connection pass through.
  * 
  * @author BoydMR
  *
@@ -21,6 +23,13 @@ public class ConnectionHeaderHndlr implements HeaderHandler {
         hSet.secondPhaseActions.add(new SecondPhaseAction() {
             @Override
             public void apply() {
+                /*
+                 * Until the wamulator supports persistent connections we force
+                 * a connection close header in both directions.
+                 */
+                pkg.headerBfr.removeHeader(HeaderDef.Connection);
+                boolean injected = false;
+                
                 for (String hdrName : tokens) {
                     if (hdrName.equals("close")) {
                         pkg.isPersistent = false;
@@ -45,7 +54,8 @@ public class ConnectionHeaderHndlr implements HeaderHandler {
                             // the buffer, we just need a Connection header to
                             // trigger its use by the recipient
                             pkg.headerBfr.append(new Header(HeaderDef.Connection, 
-                                    "Upgrade"));
+                                    "Upgrade close"));
+                            injected = true;
                         }
                         else if (def == HeaderDef.Extension) {
                             pkg.headerBfr.removeExtensionHeader(hdrName);
@@ -54,6 +64,10 @@ public class ConnectionHeaderHndlr implements HeaderHandler {
                             pkg.headerBfr.removeHeader(def);
                         }
                     }
+                }
+                if (!injected) {
+                    pkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
+                    pkg.isPersistent = false;
                 }
             }
         });
