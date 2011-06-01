@@ -10,7 +10,7 @@
 	<xsd:simpleType name="aliasable">
 		<xsd:restriction base="xsd:string">
 			<xsd:pattern value="\{\{.*\}\}"></xsd:pattern>
-		</xsd:restriction>	
+		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="aliasableBoolean">
 		<xsd:union>
@@ -45,14 +45,14 @@
 	<xsd:simpleType name="port">
 		<xsd:union>
 			<xsd:simpleType>
-				<xsd:restriction base="aliasableInteger"></xsd:restriction>	
+				<xsd:restriction base="aliasableInteger"></xsd:restriction>
 			</xsd:simpleType>
 			<xsd:simpleType>
 				<xsd:restriction base="xsd:token">
 					<xsd:enumeration value="auto"></xsd:enumeration>
-				</xsd:restriction>			
+				</xsd:restriction>
 			</xsd:simpleType>
-		</xsd:union>		
+		</xsd:union>
 	</xsd:simpleType>
 	<xsd:simpleType name="aliasableTokenEndsInStar">
 		<xsd:restriction base="aliasableToken">
@@ -303,102 +303,104 @@
 																Optional attribute in v5.23+. Specifying forces preserve-host to be "false" whether specified or not. When specified, the value of this attribute becomes the full value of the host header as a request is passed to the application.  For example, suppose in the example for preserve-host that a load balancer were sitting in front of the test server and that test.lds.org resolved to the IP address of the load balancer. In such a scenario thost must be the IP address of the serve. But apache must have the host header be "test.lds.org" or it won't accept it. Specifying thost="IP of test server" and host-header="test.lds.org" will route requests to the IP but rewrite the host header to be test.lds.org as needed.
 															]]></xsd:documentation>
 														</xsd:annotation>
-													</xsd:attribute>												
+													</xsd:attribute>
 												</xsd:complexType>
 											</xsd:element>
 										</xsd:choice>
-										<xsd:element name="allow" minOccurs="0" maxOccurs="unbounded">
-											<xsd:annotation>
-												<xsd:documentation><![CDATA[
-													Specifies enforced URLs.
-												]]></xsd:documentation>
-											</xsd:annotation>
-											<xsd:complexType>
-												<xsd:attribute name="action" use="required">
-													<xsd:annotation>
-														<xsd:documentation><![CDATA[
-															A comma separated list of http methods that should be allowed for that URL or the asterisk character, *, if it should match any method. When specifying a list of methods if the method for a request does not match those in the list then the request will not be forbidden. Methods will only match if they are in upper case.
-														]]></xsd:documentation>
-													</xsd:annotation>
-													<xsd:simpleType>
-														<xsd:restriction base="xsd:token">
-															<xsd:pattern value="((GET|POST|PUT|DELETE|HEAD|TRACE),)*(GET|POST|PUT|DELETE|HEAD|TRACE)"></xsd:pattern>
-														</xsd:restriction>
-													</xsd:simpleType>
-												</xsd:attribute>
-												<xsd:attribute name="cpath" use="required" type="xsd:token">
-													<xsd:annotation>
-														<xsd:documentation><![CDATA[
-															Identical to the cpath definition in Table 9 but indicates what portions of a site’s subpaths should be restricted to authenticated users and optionally to user meeting certain conditions. See the definition in that table.
-														]]></xsd:documentation>
-													</xsd:annotation>
-												</xsd:attribute>
-												<xsd:attribute name="condition" type="aliasable">
-													<xsd:annotation>
-														<xsd:documentation><![CDATA[
-															An optional attribute that must be a system, file, or classpath alias.
-														]]></xsd:documentation>
-													</xsd:annotation>
-												</xsd:attribute>
-											</xsd:complexType>
-										</xsd:element>
-										<xsd:element name="unenforced" minOccurs="0" maxOccurs="unbounded">
-											<xsd:annotation>
-												<xsd:documentation><![CDATA[
-													Specifies unenforced URLs for a site.
-												]]></xsd:documentation>
-											</xsd:annotation>
-											<xsd:complexType>
-												<xsd:attribute name="cpath" use="required" type="aliasableToken">
-													<xsd:annotation>
-														<xsd:documentation><![CDATA[
-															Indicates what portions of a site’s subpaths match for this element and should be unenforced. If the value does not contain an asterisk then it is an exact match without query parameters. The asterisk is greedy up to the query string and does not match on the query string when matching in the path. In other words, line 20 will not match on a url of /public/debug.jsp?some-param=some-value. To match on this URL requires a cpath having the form shown in lines 27 and 28 for the <allow> element’s cpath attribute. Line 27 matches on additional path but no query string. Line 28 matches on both additional path and a query string. Both must be present for 28 to match. If the query string is missing then line 27 will match. Line 20 on the other hand will only match on additional path.
-														]]></xsd:documentation>
-													</xsd:annotation>
-												</xsd:attribute>
-											</xsd:complexType>
-										</xsd:element>
-										<xsd:element name="entitlements" minOccurs="0">
-											<xsd:annotation>
-												<xsd:documentation><![CDATA[
-													(v4.12+) Element used for configuring rest interface CD-OESv1 entitlements
-												]]></xsd:documentation>
-											</xsd:annotation>
-											<xsd:complexType>
-												<xsd:sequence>
-													<xsd:element name="allow" maxOccurs="unbounded">
-														<xsd:complexType>
-															<xsd:attribute name="action" use="required" type="aliasableToken">
-																<xsd:annotation>
-																	<xsd:documentation><![CDATA[
-																		An action or comma separated list of actions for the resource.
-																	]]></xsd:documentation>
-																</xsd:annotation>
-															</xsd:attribute>
-															<xsd:attribute name="condition" type="aliasableToken">
-																<xsd:annotation>
-																	<xsd:documentation><![CDATA[
-																		Required attribute that must be an alias for a condition either embedded via the <condition> element or via the alias processing instruction. The contents of this attribute must be a single macro reference as defined in Aliases and Macros. The contents of the alias must conform to the condition syntax defined in SSO Simulator Condition Syntax.
-																	]]></xsd:documentation>
-																</xsd:annotation>
-															</xsd:attribute>
-															<xsd:attribute name="urn">
-																<xsd:annotation>
-																	<xsd:documentation><![CDATA[
-																		A URN of form "/x/y/z" used to protect a resource within an application like /leader/navigation/calendar-widget. These URNs will usually only be known and used by the application that defines them.	
-																	]]></xsd:documentation>
-																</xsd:annotation>
-																<xsd:simpleType>
-																	<xsd:restriction base="aliasableToken">
-																		<xsd:pattern value="/.*"/>
-																	</xsd:restriction>
-																</xsd:simpleType>
-															</xsd:attribute>
-														</xsd:complexType>
-													</xsd:element>
-												</xsd:sequence>
-											</xsd:complexType>
-										</xsd:element>
+										<xsd:choice minOccurs="0" maxOccurs="unbounded">
+											<xsd:element name="allow" minOccurs="0" maxOccurs="unbounded">
+												<xsd:annotation>
+													<xsd:documentation><![CDATA[
+														Specifies enforced URLs.
+													]]></xsd:documentation>
+												</xsd:annotation>
+												<xsd:complexType>
+													<xsd:attribute name="action" use="required">
+														<xsd:annotation>
+															<xsd:documentation><![CDATA[
+																A comma separated list of http methods that should be allowed for that URL or the asterisk character, *, if it should match any method. When specifying a list of methods if the method for a request does not match those in the list then the request will not be forbidden. Methods will only match if they are in upper case.
+															]]></xsd:documentation>
+														</xsd:annotation>
+														<xsd:simpleType>
+															<xsd:restriction base="xsd:token">
+																<xsd:pattern value="((GET|POST|PUT|DELETE|HEAD|TRACE),)*(GET|POST|PUT|DELETE|HEAD|TRACE)"></xsd:pattern>
+															</xsd:restriction>
+														</xsd:simpleType>
+													</xsd:attribute>
+													<xsd:attribute name="cpath" use="required" type="xsd:token">
+														<xsd:annotation>
+															<xsd:documentation><![CDATA[
+																Identical to the cpath definition in Table 9 but indicates what portions of a site’s subpaths should be restricted to authenticated users and optionally to user meeting certain conditions. See the definition in that table.
+															]]></xsd:documentation>
+														</xsd:annotation>
+													</xsd:attribute>
+													<xsd:attribute name="condition" type="aliasable">
+														<xsd:annotation>
+															<xsd:documentation><![CDATA[
+																An optional attribute that must be a system, file, or classpath alias.
+															]]></xsd:documentation>
+														</xsd:annotation>
+													</xsd:attribute>
+												</xsd:complexType>
+											</xsd:element>
+											<xsd:element name="unenforced" minOccurs="0" maxOccurs="unbounded">
+												<xsd:annotation>
+													<xsd:documentation><![CDATA[
+														Specifies unenforced URLs for a site.
+													]]></xsd:documentation>
+												</xsd:annotation>
+												<xsd:complexType>
+													<xsd:attribute name="cpath" use="required" type="aliasableToken">
+														<xsd:annotation>
+															<xsd:documentation><![CDATA[
+																Indicates what portions of a site’s subpaths match for this element and should be unenforced. If the value does not contain an asterisk then it is an exact match without query parameters. The asterisk is greedy up to the query string and does not match on the query string when matching in the path. In other words, line 20 will not match on a url of /public/debug.jsp?some-param=some-value. To match on this URL requires a cpath having the form shown in lines 27 and 28 for the <allow> element’s cpath attribute. Line 27 matches on additional path but no query string. Line 28 matches on both additional path and a query string. Both must be present for 28 to match. If the query string is missing then line 27 will match. Line 20 on the other hand will only match on additional path.
+															]]></xsd:documentation>
+														</xsd:annotation>
+													</xsd:attribute>
+												</xsd:complexType>
+											</xsd:element>
+											<xsd:element name="entitlements" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation><![CDATA[
+														(v4.12+) Element used for configuring rest interface CD-OESv1 entitlements
+													]]></xsd:documentation>
+												</xsd:annotation>
+												<xsd:complexType>
+													<xsd:sequence>
+														<xsd:element name="allow" maxOccurs="unbounded">
+															<xsd:complexType>
+																<xsd:attribute name="action" use="required" type="aliasableToken">
+																	<xsd:annotation>
+																		<xsd:documentation><![CDATA[
+																			An action or comma separated list of actions for the resource.
+																		]]></xsd:documentation>
+																	</xsd:annotation>
+																</xsd:attribute>
+																<xsd:attribute name="condition" type="aliasableToken">
+																	<xsd:annotation>
+																		<xsd:documentation><![CDATA[
+																			Required attribute that must be an alias for a condition either embedded via the <condition> element or via the alias processing instruction. The contents of this attribute must be a single macro reference as defined in Aliases and Macros. The contents of the alias must conform to the condition syntax defined in SSO Simulator Condition Syntax.
+																		]]></xsd:documentation>
+																	</xsd:annotation>
+																</xsd:attribute>
+																<xsd:attribute name="urn">
+																	<xsd:annotation>
+																		<xsd:documentation><![CDATA[
+																			A URN of form "/x/y/z" used to protect a resource within an application like /leader/navigation/calendar-widget. These URNs will usually only be known and used by the application that defines them.
+																		]]></xsd:documentation>
+																	</xsd:annotation>
+																	<xsd:simpleType>
+																		<xsd:restriction base="aliasableToken">
+																			<xsd:pattern value="/.*"/>
+																		</xsd:restriction>
+																	</xsd:simpleType>
+																</xsd:attribute>
+															</xsd:complexType>
+														</xsd:element>
+													</xsd:sequence>
+												</xsd:complexType>
+											</xsd:element>
+										</xsd:choice>
 									</xsd:sequence>
 									<xsd:attribute name="scheme" type="xsd:token" default="http">
 										<xsd:annotation>
@@ -443,7 +445,7 @@
 								<xsd:complexType>
 									<xsd:attribute name="from-path" use="required" type="aliasableToken"/>
 									<xsd:attribute name="to-path" use="required" type="aliasableToken"/>
-								</xsd:complexType>					
+								</xsd:complexType>
 							</xsd:element>
 						</xsd:sequence>
 						<xsd:attribute name="strip-empty-headers" type="aliasableBoolean" default="false">
