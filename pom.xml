@@ -103,8 +103,9 @@
 							<goal>upload-single</goal>
 						</goals>
 						<configuration>
+							<serverId>lds-nexus</serverId>
 							<fromFile>${project.build.outputDirectory}/org/lds/sso/appwrap/wamulator-5.0.xsd</fromFile>
-							<url>scp://ocweb//opt/LDSDev/html/schema/wamulator</url>
+							<url>https://code.lds.org/nexus/content/sites/schema/wamulator</url>
 						</configuration>
 					</execution>
 				</executions>
