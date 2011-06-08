@@ -4,6 +4,8 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.lds.sso.appwrap.Config;
 
@@ -18,16 +20,22 @@ public class ListenerCoordinator implements Runnable {
     Config cfg;
     private CountDownLatch logScrubGate;
     private DecimalFormat connIdFmtr;
+    private boolean loggingEnabled;
 
     public ListenerCoordinator(Config cfg) {
+    	Logger logger = Logger.getLogger(RequestHandler.class.getName());
         // first make sure that we have a log file directory
-        makeLogDirectory();
         this.cfg  = cfg;
         String field = getFormatFieldFor(cfg.getMaxEntries());
         connIdFmtr = new DecimalFormat(field);
 
         this.logScrubGate = new CountDownLatch(1);
-        startLogFileCleaner();
+        //Only make the directory or start the cleaner if debug logging is enabled
+    	if(cfg.isDebugLoggingEnabled() || logger.isLoggable(Level.FINE)) {
+            makeLogDirectory();
+            startLogFileCleaner();
+            loggingEnabled = true;
+    	}
     }
 
     /**
@@ -99,6 +107,9 @@ public class ListenerCoordinator implements Runnable {
      * Blocks the calling thread until cleanout of old log files has completed.
      */
     public void waitForFileCleanout() {
+    	if(!loggingEnabled) {
+    		return;
+    	}
         try {
             logScrubGate.await();
         } catch (InterruptedException e) {
