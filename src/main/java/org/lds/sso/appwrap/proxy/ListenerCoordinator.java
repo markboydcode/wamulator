@@ -23,7 +23,7 @@ public class ListenerCoordinator implements Runnable {
     private boolean loggingEnabled;
 
     public ListenerCoordinator(Config cfg) {
-    	Logger logger = Logger.getLogger(RequestHandler.class.getName());
+    	Logger requestHandlerLogger = Logger.getLogger(RequestHandler.class.getName());
         // first make sure that we have a log file directory
         this.cfg  = cfg;
         String field = getFormatFieldFor(cfg.getMaxEntries());
@@ -31,7 +31,7 @@ public class ListenerCoordinator implements Runnable {
 
         this.logScrubGate = new CountDownLatch(1);
         //Only make the directory or start the cleaner if debug logging is enabled
-    	if(cfg.isDebugLoggingEnabled() || logger.isLoggable(Level.FINE)) {
+    	if(cfg.isDebugLoggingEnabled() || requestHandlerLogger.isLoggable(Level.FINE)) {
             makeLogDirectory();
             startLogFileCleaner();
             loggingEnabled = true;
