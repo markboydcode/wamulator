@@ -14,7 +14,22 @@ import java.util.logging.Logger;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.lds.sso.appwrap.conditions.evaluator.syntax.*;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.AND;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.Assignment;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.Attribute;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.CtxMatches;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasAssignment;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsAccountId;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsApplication;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.HasPosition;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.IsEmployee;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.IsMember;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.LdsAccount;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.MemberOfUnit;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.NOT;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.OR;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.Position;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.Unit;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -68,6 +83,23 @@ public class LogicalSyntaxEvaluationEngine {
      * so they can be shared for evaluating policies.
      */
     protected final Map<String, EvaluatorUsageHolder> evaluators = new HashMap<String, EvaluatorUsageHolder>();
+    
+    private volatile boolean stopCollector = false;
+    
+    private volatile boolean collectorStopped = true;
+    
+    public void stopGarbageCollecting() {
+    	stopCollector = true;
+    	int total = 0;
+    	while(!collectorStopped && total <= 5000) {
+    		total +=100;
+    		try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				/* Do Nothing */
+			}
+    	}
+    }
 
     /**
      * Starts the garbage collector. Unit tests can subclass and override this
@@ -76,11 +108,12 @@ public class LogicalSyntaxEvaluationEngine {
     protected void startGarbageCollector() {
         Runnable collector = new Runnable() {
             public void run() {
+            	collectorStopped = false;
                 long samplingDelay = UNUSED_EVALUATOR_MAX_LIFE_MILLIS / 2;
                 StringWriter sw = null;
                 PrintWriter pw = null;
                 boolean pwLineWrapped = false;
-                while (true) {
+                while (!stopCollector) {
                     try {
                         if (cLog.isLoggable(Level.FINE)) {
                             if (pw != null) {
@@ -100,7 +133,11 @@ public class LogicalSyntaxEvaluationEngine {
                             sw = new StringWriter();
                             pw = new PrintWriter(sw);
                         }
-                        Thread.sleep(samplingDelay);
+                        int sleep = 0;
+                        while(sleep < samplingDelay && !stopCollector) {
+                        	sleep+=100;
+                        	Thread.sleep(100);
+                        }
                         if (pw != null) {
                             pw.println();
                             pw.print("SCANNING evaluators...");
@@ -149,6 +186,7 @@ public class LogicalSyntaxEvaluationEngine {
                         LogUtils.severe(cLog, "{0} incurred problem while scanning.", e, Thread.currentThread().getName());
                     }
                 }
+                collectorStopped = true;
             }
         };
         garbageCollector = new Thread(collector);

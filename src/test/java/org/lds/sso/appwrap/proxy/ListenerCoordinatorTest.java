@@ -7,18 +7,7 @@ import org.testng.annotations.Test;
 public class ListenerCoordinatorTest {
 
     private ListenerCoordinator getLC(Config cfg) {
-        return new ListenerCoordinator(cfg) {
-
-            @Override
-            protected void makeLogDirectory() {
-                // don't do in tests
-            }
-
-            @Override
-            protected void startLogFileCleaner() {
-                // don't do in tests
-            }
-        };
+        return new ListenerCoordinator(cfg);
     }
 
     @Test

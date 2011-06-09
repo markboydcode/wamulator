@@ -497,6 +497,13 @@ public class Config {
 		this.consolePort = port;
         getTrafficManager().consolePortChanged(port);
 	}
+	
+	public void stopLogicalSyntaxEvaluationThread() {
+		if(sEngine != null) {
+			sEngine.stopGarbageCollecting();
+			sEngine = null;
+		}
+	}
 
     public TrafficManager getTrafficManager() {
         return appMgr;

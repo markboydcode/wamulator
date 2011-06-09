@@ -107,6 +107,8 @@ public class Service {
             	for ( Map.Entry<String, Service> entry : instances.entrySet() ) {
 	            	try {
 	            		entry.getValue().stop();
+	            		entry.getValue().stopBlocking();
+
 	            	} catch ( Exception e ) {
 	            		LogUtils.throwing(logger, "Shutdown failed for service with cfgPath: {0}", e, entry.getKey());
 	            	}
@@ -120,7 +122,7 @@ public class Service {
         shutdownHook.setContextClassLoader( null );
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
-
+    
 	public static final Service invoke(Command command) {
 		Service.command = command;
 		command.execute();
@@ -140,6 +142,19 @@ public class Service {
 			}
 		}
 		return instances.get(cfgPath);
+	}
+	
+	public static Service restartService(Service service) {
+		try {
+			String path = service.getCfgPath();
+			service.stop();
+			instances.remove(path);
+			Service newService = Service.getService(path);
+			newService.startAndBlock();
+			return newService;
+		} catch(Exception e) {
+			throw new RuntimeException("Failed to restart Service.  Exiting emulator", e);
+		}
 	}
 
 	/**
@@ -358,7 +373,7 @@ public class Service {
 	 *
 	 * @throws Exception
 	 */
-	public void start() throws InterruptedException, UnableToStartJettyServerException,
+	public void start() throws UnableToStartJettyServerException,
 	    UnableToListenOnProxyPortException, UnableToListenOnHttpsProxyPortException  {
 		Config cfg = Config.getInstance();
 		cfg.setShimStateCookieId(cfgSource);
@@ -400,7 +415,9 @@ public class Service {
 
 		while (server.isStarted() == false || proxy.isRunning() == false 
 		        || (tlsProxy != null && tlsProxy.isRunning() == false)) {
-		        Thread.sleep(1000);
+				try {
+					Thread.sleep(1000);
+				} catch(InterruptedException e) {/* Do nothing */}
 		}
 		StringBuffer line = new StringBuffer(cfg.getServerName().length());
 		for (int i=0; i<cfg.getServerName().length(); i++) {
@@ -427,7 +444,7 @@ public class Service {
 	private volatile boolean stop = false;
 	private ConfigFileMonitor fileMonitor = null;
 
-	public void startAndBlock() throws Exception {
+	public void startAndBlock() throws UnableToStartJettyServerException, UnableToListenOnProxyPortException, UnableToListenOnHttpsProxyPortException {
 		if (null == fileMonitor) {
 			fileMonitor = new ConfigFileMonitor(command, this);
 		}
@@ -486,7 +503,8 @@ public class Service {
                 /* do Nothing */
             }
         }
-		new Config(); // eww... TODO:  Refactor Config to use a standard singleton pattern so we don't have to do stuff like this.
+        Config.getInstance().stopLogicalSyntaxEvaluationThread();
+        new Config(); // eww... TODO:  Refactor Config to use a standard singleton pattern so we don't have to do stuff like this.
 	}
 
 	public boolean isStarted() {
@@ -563,27 +581,24 @@ class ConfigFileMonitor implements Runnable {
 	}
 
 	public void run() {
-		while (true) {
+		boolean leave = false;
+		while (!leave) {
 			try {
-				Thread.sleep(5000);			// check file update every 5 seconds
+				Thread.sleep(1000);			// check file update every 1 seconds
 				if (file.lastModified() != lastUpdateTime) {
 					LogUtils.info(Service.logger, "@@ Config file has been updated, restarting server.");
 					lastUpdateTime = file.lastModified();
-					// The configuration file has changed, restart the service.
-					svc.stop();
-					svc.stopBlocking();
-					svc.startAndBlock();
+					leave = true;
 				}
 			}
 			catch (InterruptedException e) {
 				// just eat it
 			}
-			catch (UnableToStopJettyServerException e) {
-				LogUtils.warning(Service.logger, "Exception trying to shut down the server: " + e);
-			}
 			catch (Exception e) {
 				LogUtils.warning(Service.logger, "Exception in file monitor: " + e);
 			}
 		}
+		// The configuration file has changed, restart the service.
+		Service.restartService(svc);
 	}
 }
