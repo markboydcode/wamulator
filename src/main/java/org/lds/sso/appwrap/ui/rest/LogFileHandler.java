@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -116,7 +117,11 @@ public class LogFileHandler extends RestHandlerBase {
             //}
             pkg = new HttpPackage();
             pkg.type = HttpPackageType.RESPONSE;
-            pkg.responseLine = new StartLine("HTTP/1.1", "500", "Internal Server Error");
+            try {
+                pkg.responseLine = new StartLine("HTTP/1.1", "500", "Internal Server Error");
+            } catch (MalformedURLException e1) {
+                // ignore since we are creating a response start line and this won't happen
+            }
             pkg.responseCode = 500;
         }
         return pkg;

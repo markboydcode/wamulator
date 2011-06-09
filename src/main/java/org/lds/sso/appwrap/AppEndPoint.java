@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap;
 
+import java.net.MalformedURLException;
 import java.util.logging.Logger;
 
 import org.lds.sso.appwrap.proxy.HttpPackage;
@@ -220,8 +221,9 @@ public class AppEndPoint implements EndPoint {
 	 * 
 	 * @param reqPkg
 	 * @return
+	 * @throws MalformedURLException 
 	 */
-	public RequestLine getAppRequestUri(HttpPackage reqPkg) {
+	public RequestLine getAppRequestUri(HttpPackage reqPkg) throws MalformedURLException {
 		if (canonicalContextRoot == null) { // no translation available
 			return reqPkg.requestLine;
 		}
@@ -231,9 +233,11 @@ public class AppEndPoint implements EndPoint {
 		cLog.fine("REWRITE: Re-writing request URL, replacing canonical context root: " + canonicalContextRoot +
 					" with application context root: " + applicationContextRoot);
 
-		StartLine appReqLn = new StartLine(reqPkg.requestLine.getMethod(), applicationContextRoot
-				+ reqPkg.requestLine.getUri().substring(canonicalContextRoot.length()), reqPkg.requestLine
-				.getHttpDecl());
+        StartLine appReqLn = new StartLine(reqPkg.requestLine.getMethod(),
+                applicationContextRoot
+                        + reqPkg.requestLine.getUri().substring(
+                                canonicalContextRoot.length()),
+                reqPkg.requestLine.getHttpDecl());
 		return appReqLn;
 	}
 

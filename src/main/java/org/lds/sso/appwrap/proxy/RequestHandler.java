@@ -12,9 +12,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Array;
+import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
@@ -264,11 +264,6 @@ public class RequestHandler implements Runnable {
                         log, true);
                 return;
             }
-            // ensure that server will close connection after completion of
-            // sending content so that servers that don't include a content-length
-            // header don't cause the proxy to await the tcp-timeout expiration
-            // before sending the received content back to the client.
-            reqPkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
 
             // add header for prevention of infinite loops directly back to the proxy
             reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
@@ -916,14 +911,16 @@ public class RequestHandler implements Runnable {
     }
 
     /**
-     * Determine the type of site/application traffic we are dealing with.
+     * Determine the type of site/application traffic we are dealing with. That
+     * means seeing if we have a match on the targeted host and optional port
+     * with a host definition in the configuration. 
+     * 
      * @throws URISyntaxException
      */
     private void determineTrafficType(HttpPackage pkg) throws URISyntaxException {
         TrafficManager appMgr = cfg.getTrafficManager();
-        URI uri = new URI(pkg.requestLine.getUri());
-        pkg.path = uri.getPath();
-        pkg.query = uri.getQuery();
+        StartLine sl = (StartLine)pkg.requestLine;
+        
         SiteMatcher site = appMgr.getSite(pkg.host, pkg.port);
 
         if (site != null) {
@@ -1260,7 +1257,12 @@ public class RequestHandler implements Runnable {
             }
             pkg = new HttpPackage();
             pkg.type = HttpPackageType.RESPONSE;
-            pkg.responseLine = new StartLine("HTTP/1.1", "500", "Internal Server Error");
+            try {
+                pkg.responseLine = new StartLine("HTTP/1.1", "500", "Internal Server Error");
+            } catch (MalformedURLException e1) {
+                // ignore since we are creating a response line here and hence
+                // won't incur any URL parsing
+            }
             pkg.responseCode = 500;
             endpoint.servedFromMsg = "Unable to serve " + path;
         }
@@ -1378,7 +1380,7 @@ public class RequestHandler implements Runnable {
         }
         else {
             StartLine startLn = new StartLine(line);
-            if (startLn.isBadLine) {
+            if (startLn.isBadLine()) {
                 if (isForRequest) {
                     pkg.requestLine = startLn;
                 }
@@ -1395,11 +1397,11 @@ public class RequestHandler implements Runnable {
              * this: "GET /opensso/UI/Login?parmAAA=111&parmBBB=222 HTTP/1.1"
              * versus: "HTTP/1.1 200 OK"
              */
-            if (startLn.token1.toLowerCase().startsWith("http")) {
-                if (startLn.token1.substring("http/".length()).equals("1.0")) {
+            if (startLn.isResponseLine()) {
+                pkg.responseLine = startLn;
+                if (pkg.responseLine.getHttpVer().equals("1.0")) {
                     pkg.httpVer = 0;
                 }
-                pkg.responseLine = startLn;
                 pkg.type = HttpPackageType.RESPONSE;
 
                 try {
@@ -1411,15 +1413,25 @@ public class RequestHandler implements Runnable {
                     }
                 }
             }
-            else {
-                if (startLn.token3.substring("http/".length()).equals("1.0")) {
-                    pkg.httpVer = 0;
-                }
+            else { // isRequestLine
                 pkg.requestLine = startLn;
                 pkg.origRequestList = startLn;
+
+                if (pkg.requestLine.getHttpVer().equals("1.0")) {
+                    pkg.httpVer = 0;
+                }
+                // if absolute REQ-URI can set these values here, else wait for
+                // host header processing to determine
+                if (startLn.isAbsReqURI()) {
+                    pkg.host = pkg.requestLine.getAbsReqUri_host();
+                    pkg.port = pkg.requestLine.getAbsReqUri_port();
+                    pkg.hasNonDefaultPort = ! pkg.requestLine.getAbsReqUriUsesDefaultPort();
+                }
                 pkg.signMeInDetected = GlobalHeaderNames.detectedAndStrippedSignMeIn(pkg);
                 pkg.signMeOutDetected = GlobalHeaderNames.detectedAndStrippedSignMeOut(pkg);
                 pkg.type = HttpPackageType.REQUEST;
+                pkg.path = pkg.requestLine.getReqPath();
+                pkg.query = pkg.requestLine.getReqQuery();
             }
         }
     }

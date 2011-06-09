@@ -1,5 +1,7 @@
 package org.lds.sso.appwrap;
 
+import java.net.MalformedURLException;
+
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.RequestLine;
 import org.lds.sso.appwrap.proxy.StartLine;
@@ -23,7 +25,7 @@ public class AppEndPointTest {
     }
     
 	@Test
-	public void testTransformC2AnoQ() {
+	public void testTransformC2AnoQ() throws MalformedURLException {
 		AppEndPoint ep = new AppEndPoint("local.lds.org", "/mls/mbr", "/mls-membership", "", 80, true, null, null);
 		ep.setCanonicalContextRoot("/mls/mbr");
 		ep.setApplicationContextRoot("/mls-membership");
@@ -39,7 +41,7 @@ public class AppEndPointTest {
 	}
 
 	@Test
-	public void testTransformC2AwQ() {
+	public void testTransformC2AwQ() throws MalformedURLException {
 		AppEndPoint ep = new AppEndPoint("local.lds.org", "/mls/mbr", "/mls-membership", "", 80, true, null, null);
 		ep.setCanonicalContextRoot("/mls/mbr");
 		ep.setApplicationContextRoot("/mls-membership");

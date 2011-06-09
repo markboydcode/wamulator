@@ -1,5 +1,7 @@
 package org.lds.sso.appwrap;
 
+import java.net.MalformedURLException;
+
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.proxy.StartLine;
@@ -80,7 +82,7 @@ public class RepeatRequestCacheTest {
 //	}
 
 	@Test
-	public void validateSweepRemoves() throws InterruptedException {
+	public void validateSweepRemoves() throws InterruptedException, MalformedURLException {
 		Config c = new Config() {
 			@Override
 			protected void startRepeatRequestRecordSweeper() {

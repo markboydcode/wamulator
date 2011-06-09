@@ -26,7 +26,7 @@ public class GlobalHeaderNamesTest {
 
     private void assertNoSignmein(String uri, String result) throws MalformedURLException {
         HttpPackage pkg = new HttpPackage();
-        StartLine sl = new StartLine("n/a " + uri + " n/a");
+        StartLine sl = new StartLine("GET " + uri + " http/1.1");
         pkg.requestLine = sl;
         boolean a = GlobalHeaderNames.detectedAndStrippedSignMeIn(pkg);
         
@@ -36,7 +36,7 @@ public class GlobalHeaderNamesTest {
     
     private void assertSignmein(String uri, String result) throws MalformedURLException {
         HttpPackage pkg = new HttpPackage();
-        StartLine sl = new StartLine("n/a " + uri + " n/a");
+        StartLine sl = new StartLine("GET " + uri + " http/1.1");
         pkg.requestLine = sl;
         boolean a = GlobalHeaderNames.detectedAndStrippedSignMeIn(pkg);
         
@@ -62,7 +62,7 @@ public class GlobalHeaderNamesTest {
 
     private void assertNoSignmeout(String uri, String result) throws MalformedURLException {
         HttpPackage pkg = new HttpPackage();
-        StartLine sl = new StartLine("n/a " + uri + " n/a");
+        StartLine sl = new StartLine("GET " + uri + " http/1.1");
         pkg.requestLine = sl;
         boolean a = GlobalHeaderNames.detectedAndStrippedSignMeOut(pkg);
         
@@ -72,7 +72,7 @@ public class GlobalHeaderNamesTest {
     
     private void assertSignmeout(String uri, String result) throws MalformedURLException {
         HttpPackage pkg = new HttpPackage();
-        StartLine sl = new StartLine("n/a " + uri + " n/a");
+        StartLine sl = new StartLine("GET " + uri + " http/1.1");
         pkg.requestLine = sl;
         boolean a = GlobalHeaderNames.detectedAndStrippedSignMeOut(pkg);
         

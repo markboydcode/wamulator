@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap.conditions.evaluator;
 
+import java.net.MalformedURLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,8 +77,9 @@ public class GlobalHeaderNames {
      * embedded: /path?...&signmein=&...
      * 
      * @param pkg the httpPackage being checked
+     * @throws MalformedURLException 
      */
-    public static boolean detectedAndStrippedSignMeIn(HttpPackage pkg) {
+    public static boolean detectedAndStrippedSignMeIn(HttpPackage pkg) throws MalformedURLException {
         return detectedAndStrippedSignal(pkg, SIGN_IN_SET);
     }
     
@@ -86,8 +88,9 @@ public class GlobalHeaderNames {
      * 
      * @param pkg the httpPackage being checked
      * @return
+     * @throws MalformedURLException 
      */
-    public static boolean detectedAndStrippedSignMeOut(HttpPackage pkg) {
+    public static boolean detectedAndStrippedSignMeOut(HttpPackage pkg) throws MalformedURLException {
         return detectedAndStrippedSignal(pkg, SIGN_OUT_SET);
     }
 
@@ -98,8 +101,9 @@ public class GlobalHeaderNames {
      * @param pkg the httpPackage being checked
      * @param set the set of regex/replacement strings to use for evaluation
      * @return
+     * @throws MalformedURLException 
      */
-    public static boolean detectedAndStrippedSignal(HttpPackage pkg, PRP[] set) {
+    public static boolean detectedAndStrippedSignal(HttpPackage pkg, PRP[] set) throws MalformedURLException {
         if (pkg == null || pkg.requestLine == null) {
             return false;
         }

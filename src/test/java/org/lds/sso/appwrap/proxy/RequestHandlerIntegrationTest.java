@@ -80,7 +80,19 @@ public class RequestHandlerIntegrationTest {
                         String hostHdrLC = HeaderDef.Host.getNameWithColon().toLowerCase();
                         boolean alreadyHandled = false;
 
-                        if (input.contains("/preserve/host/test/")) {
+                        if (input.contains("/wamulat-35/test/")) {
+                            int idx = inputLC.indexOf("dude=joe|blah");
+
+                            if (idx == -1) {
+                                req = "wamulat_35_pipe_char_test";
+                                output =
+                                    "HTTP/1.1 500 Pipe char didn't pass through" + RequestHandler.CRLF;
+                            }
+                            else {
+                                answer = "<html><body>Pipe came through just fine.</body></html>";
+                            }
+                        }
+                        else if (input.contains("/preserve/host/test/")) {
                             answer = HeaderDef.Host.getNameWithColon() + " ???";
                             String hstHdrKey = RequestHandler.CRLF + HeaderDef.Host.getLcNameWithColon();
                             int idx = inputLC.indexOf(hstHdrKey);
@@ -316,6 +328,8 @@ public class RequestHandlerIntegrationTest {
             + " </conditions>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>"
+            + "   <cctx-mapping cctx='/wamulat-35/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/wamulat-35/*'/>"
+            + "   <unenforced cpath='/wamulat-35/*?*'/>"
             + "   <cctx-mapping cctx='/preserve/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/preserve/*' preserve-host='true'/>"
             + "   <unenforced cpath='/preserve/*'/>"
             + "   <cctx-mapping cctx='/no-preserve/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/no-preserve/*' preserve-host='false'/>"
@@ -582,6 +596,82 @@ public class RequestHandlerIntegrationTest {
         method.releaseConnection();
     }
 
+    /**
+     *  @see https://tech.lds.org/jira/browse/WAMULAT-35
+     *  
+     * @throws HttpException
+     * @throws IOException
+     */
+    @Test
+    public void test_wamulat_35_pipe_char_in_url_passes_to_app() throws HttpException, IOException {
+        System.out.println("----> test_wamulat_35_pipe_char_in_url_passes_to_app ");
+
+        Socket sock = new Socket("127.0.0.1", sitePort);
+        sock.setSoTimeout(400000); // make sure we have a long timeout
+        
+        // send request
+        // url = http://local.lds.org:<sitePort>/wamulat-35/test/?dude=joe|blah;
+        OutputStream out = sock.getOutputStream();
+        out.write(("GET /wamulat-35/test/?dude=joe|blah Http/1.1" 
+                + RequestHandler.CRLF).getBytes());
+        out.write(("Host: local.lds.org:" + sitePort 
+                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
+        out.flush();
+
+        // read response
+        InputStream in = sock.getInputStream();
+        byte[] bytes = new byte[4096];
+        int read = in.read(bytes);
+        in.close();
+        out.close();
+        sock.close();
+        
+        String http = new String(bytes, 0, read);
+        Assert.assertTrue(http.startsWith("HTTP/1.1 "), "Should start with 'HTTP/1.1 '");
+        int idx = http.indexOf(" ", "HTTP/1.1 ".length());
+        Assert.assertTrue(idx != -1, "Should contain response code followed by space");
+        String sCode = http.substring("HTTP/1.1 ".length(), idx);
+        int code = Integer.parseInt(sCode);
+        Assert.assertEquals(code, 200, "should have returned http 200 OK");
+    }
+    
+    /**
+     *  @see https://tech.lds.org/jira/browse/WAMULAT-35
+     *  
+     * @throws HttpException
+     * @throws IOException
+     */
+    @Test
+    public void test_wamulat_35_pipe_char_in_full_reqLnUrl_passes_to_app() throws HttpException, IOException {
+        System.out.println("----> test_wamulat_35_pipe_char_in_full_reqLnUrl_passes_to_app ");
+
+        Socket sock = new Socket("127.0.0.1", sitePort);
+        sock.setSoTimeout(400000); // make sure we have a long timeout
+        
+        // send request
+        // url = http://local.lds.org:<sitePort>/wamulat-35/test/?dude=joe|blah;
+        OutputStream out = sock.getOutputStream();
+        out.write(("GET http://local.lds.org:" + sitePort + "/wamulat-35/test/?dude=joe|blah Http/1.1" 
+                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
+        out.flush();
+
+        // read response
+        InputStream in = sock.getInputStream();
+        byte[] bytes = new byte[4096];
+        int read = in.read(bytes);
+        in.close();
+        out.close();
+        sock.close();
+        
+        String http = new String(bytes, 0, read);
+        Assert.assertTrue(http.startsWith("HTTP/1.1 "), "Should start with 'HTTP/1.1 '");
+        int idx = http.indexOf(" ", "HTTP/1.1 ".length());
+        Assert.assertTrue(idx != -1, "Should contain response code followed by space");
+        String sCode = http.substring("HTTP/1.1 ".length(), idx);
+        int code = Integer.parseInt(sCode);
+        Assert.assertEquals(code, 200, "should have returned http 200 OK");
+    }
+    
     @Test
     public void test_dont_preserve_host() throws HttpException, IOException {
         System.out.println("----> test_dont_preserve_host ");
