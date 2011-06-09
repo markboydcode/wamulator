@@ -264,6 +264,11 @@ public class RequestHandler implements Runnable {
                         log, true);
                 return;
             }
+            // ensure that server will close connection after completion of
+            // sending content so that servers that don't include a content-length
+            // header don't cause the proxy to await the tcp-timeout expiration
+            // before sending the received content back to the client.
+            reqPkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
 
             // add header for prevention of infinite loops directly back to the proxy
             reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
