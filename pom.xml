@@ -117,7 +117,7 @@
 						<configuration>
 							<serverId>lds-nexus</serverId>
 							<fromFile>${basedir}/target/appwrap-${version}-uber.jar</fromFile>
-							<url>https://code.lds.org/nexus/content/sites/downloads/Open_Community/sso/app-wrap-shim/${version}</url>
+							<url>https://code.lds.org/nexus/content/sites/downloads/app-wrap-shim/${version}</url>
 							<toFile>SSOSim-${version}.jar</toFile>
 						</configuration>
 					</execution>
