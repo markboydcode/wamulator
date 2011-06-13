@@ -108,6 +108,19 @@
 							<url>https://code.lds.org/nexus/content/sites/schema/wamulator</url>
 						</configuration>
 					</execution>
+					<execution>
+						<id>upload-jar</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>upload-single</goal>
+						</goals>
+						<configuration>
+							<serverId>lds-nexus</serverId>
+							<fromFile>${basedir}/target/appwrap-${version}-uber.jar</fromFile>
+							<url>https://code.lds.org/nexus/content/sites/downloads/Open_Community/sso/app-wrap-shim/${version}</url>
+							<toFile>SSOSim-${version}.jar</toFile>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
         </plugins>
