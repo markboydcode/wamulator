@@ -36,11 +36,11 @@ public class RemoteStartServiceCommand extends Command {
 		try {
 			List<String> command = new ArrayList<String>();
 			String env = System.getenv(JAVA_OPTS_ENVIRONMENT_VARIABLE);
+			command.add("java");
 			if ( env != null ) {
-				command.add("java");
 				command.addAll(Arrays.asList(env.split(" ")));
-				command.addAll(Arrays.asList("-cp", classpath, Service.class.getName(), "start", cfgPath));
 			}
+			command.addAll(Arrays.asList("-cp", classpath, Service.class.getName(), "start", cfgPath));
 			executeJavaCommand(command.toArray(new String[command.size()]));
 		} catch ( IOException e ) {
 			throw new ServerFailureException(e);
@@ -66,7 +66,10 @@ public class RemoteStartServiceCommand extends Command {
 		args[0] = javaHomeDirectory + "/bin/" + args[0];
 		ProcessBuilder builder = new ProcessBuilder(args);
 		LogUtils.info(cLog, "Launching Wam Emulator using the command {0}", StringUtils.join(args, " "));
-		builder.environment().put(JAVA_OPTS_ENVIRONMENT_VARIABLE, System.getenv(JAVA_OPTS_ENVIRONMENT_VARIABLE));
+		String env = System.getenv(JAVA_OPTS_ENVIRONMENT_VARIABLE);
+		if(env != null) {
+			builder.environment().put(JAVA_OPTS_ENVIRONMENT_VARIABLE, env);
+		}
 		executeProcess(builder, true);
 	}
 
