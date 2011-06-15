@@ -585,7 +585,7 @@ public class RequestHandler implements Runnable {
             } catch (IOException e2) {
                 // things are looking bad for our hero
             	LogUtils.severe(cLog, "Exception occurred in RequestHandler and response could not be generated. Original Exception:", e);
-            	LogUtils.severe(cLog, "Exception incurred while generating exception response:", e2);
+            	LogUtils.severe(cLog, "Exception occurred while generating exception response:", e2);
             }
         } finally {
             LogUtils.fine(cLog, "Closing I/O to client");
