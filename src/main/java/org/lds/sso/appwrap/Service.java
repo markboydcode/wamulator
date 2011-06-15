@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.lds.sso.appwrap.bootstrap.Command;
@@ -43,6 +45,8 @@ import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
 import org.lds.sso.appwrap.ui.rest.TerminateSimulatorHandler;
 import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
+import org.lds.stack.logging.ConsoleHandler;
+import org.lds.stack.logging.SingleLineFormatter;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
@@ -72,6 +76,7 @@ public class Service {
     protected HttpsProxyListener tlsProxy;
 	protected Server server = null;
 	private String cfgSource;
+	private boolean loggingConfigured = false;
 	private final String cfgPath;
 
 	private static final Map<String, Service> instances = new HashMap<String, Service>();
@@ -144,6 +149,53 @@ public class Service {
 		return instances.get(cfgPath);
 	}
 	
+	/**
+	 * Replace default ConsoleHandler with better stack ConsoleHandler
+	 */
+	public void configureLogging() {
+		if(loggingConfigured) {
+			return;
+		}
+		//Replacing any instances of the default ConsoleHandler with much better Stack ConsoleHandler. :)
+		Logger logger = Logger.getLogger("org.lds.sso.appwrap");
+		Logger rootLogger = Logger.getLogger("");
+		for(Handler handler : rootLogger.getHandlers()) {
+			if(handler instanceof java.util.logging.ConsoleHandler) {
+				ConsoleHandler consoleHandler = new ConsoleHandler();
+				consoleHandler.setLevel(handler.getLevel());
+				consoleHandler.setFormatter(new SingleLineFormatter());
+				logger.addHandler(consoleHandler);
+				logger.setUseParentHandlers(false);
+				loggingConfigured = true;
+			}
+		}
+	}
+
+	/**
+	 * To prevent memory leaking remove Stack ConsoleHandler on shutdown.
+	 */
+	public void cleanupLogging() {
+		if(!loggingConfigured) {
+			return;
+		}
+		//Replacing any instances of the default ConsoleHandler with much better Stack ConsoleHandler. :)
+/*		Logger logger = Logger.getLogger("org.lds.sso.appwrap");
+		logger.setUseParentHandlers(true);
+		for(Handler handler : logger.getHandlers()) {
+			logger.removeHandler(handler);
+		}
+*/
+		Logger logger = Logger.getLogger("org.lds.sso.appwrap");
+		LogManager.getLogManager().reset();
+		try {
+			LogManager.getLogManager().readConfiguration();
+		} catch (IOException e) {
+			System.out.println("Error attempting to re-configure WAM Logging.");
+		}
+		logger.setUseParentHandlers(true);
+		loggingConfigured = false;
+	}
+
 	public static Service restartService(Service service) {
 		try {
 			String path = service.getCfgPath();
@@ -375,6 +427,7 @@ public class Service {
 	 */
 	public void start() throws UnableToStartJettyServerException,
 	    UnableToListenOnProxyPortException, UnableToListenOnHttpsProxyPortException  {
+		configureLogging();
 		Config cfg = Config.getInstance();
 		cfg.setShimStateCookieId(cfgSource);
 
@@ -423,7 +476,7 @@ public class Service {
 		for (int i=0; i<cfg.getServerName().length(); i++) {
 		    line.append('-');
 		}
-        dualLog("---------------------{0}\n" +
+        dualLog("\n---------------------{0}\n" +
         "simulator version  : {1}\n" +
         "console-rest port  : {2}\n" +
         "http proxy port    : {3}\n" +
@@ -481,6 +534,7 @@ public class Service {
 	 * @throws Exception
 	 */
 	public void stop() throws UnableToStopJettyServerException {
+		cleanupLogging();
 		if (server.isStarted()) {
 		    try {
 		        server.stop();
