@@ -111,6 +111,25 @@
 						</xsd:attribute>
 					</xsd:complexType>
 				</xsd:element>
+				<xsd:element name="proxy-tls" minOccurs="0">
+					<xsd:complexType>
+						<xsd:attribute name="https-port" use="required" type="aliasableInteger">
+							<xsd:annotation>
+								<xsd:documentation><![CDATA[
+									Indicates the port on which https traffic should be received. Unlike proxy-port and console-port this attribute does NOT yet support 'auto'
+								]]></xsd:documentation>
+							</xsd:annotation>
+						</xsd:attribute>
+						<xsd:attribute name="cert-host" use="required" type="aliasableToken">
+							<xsd:annotation>
+								<xsd:documentation><![CDATA[
+									Indicates the fully qualified name of the host that will be represented by the auto-generated certificate used during the initial TLS handshake for an incoming request. For such a certificate to be accepted by browsers it must match the host to which traffic was going such as "localhost.lds.org". Alternatively, RFC 2818 Http Over TLS dictates that browsers should accept certificates with a wildcard such as "*.lds.org". But such will only be accepted for that level of the domain and not further subdomains. So such a certificate will be accepted for foo.lds.org but not more.foo.lds.org.
+									Note that the auto-generated certificate and its corresponding private key will be stored in the current directory in files with names of <host>-cert.pem and <host>-priv.pem respectively. For wildcarded hosts the wildcard character is specified in the filenames as two underscore characters. Upon restarting the wamulator these files are looked for and used if found so that the same certificate will continue to be used and not force you to have to accept a newly generated one in your browser the first time that you again access the proxy-tls port after restarting.
+								]]></xsd:documentation>
+							</xsd:annotation>
+						</xsd:attribute>
+					</xsd:complexType>
+				</xsd:element>
 				<xsd:element name="console-recording" minOccurs="0">
 					<xsd:annotation>
 						<xsd:documentation><![CDATA[
