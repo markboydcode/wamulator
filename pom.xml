@@ -36,6 +36,22 @@
             <timezone>+7</timezone>
         </developer>
     </developers>
+    <ciManagement>
+     <system>CruiseControl</system>
+     <url>http://code.lds.org/cruisecontrol/buildresults/App_wrap_shim-Dev</url>
+    </ciManagement>
+    <mailingLists>
+     <mailingList>
+      <name>WAMulator-dev</name>
+      <archive>http://tech.lds.org/pipermail/wamulator-dev/</archive>
+      <post>mailto://wamulator-dev@tech.lds.org</post>
+      <subscribe>http://tech.lds.org/mailman/listinfo/wamulator-dev</subscribe>
+     </mailingList>
+    </mailingLists>
+    <scm>
+     <url>https://dev.lds.org/svn/sso-simulator/</url>
+     <developerConnection>https://dev.lds.org/svn/sso-simulator</developerConnection>
+    </scm>
     <build>
         <resources>
             <resource>
