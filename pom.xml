@@ -21,6 +21,7 @@
     different header injection values to simulate the real populace that will
     eventually hit the application when deployed into the real sso environment.
     </description>
+    <url>https://tech.lds.org/wiki/WAMulator</url>
 
     <inceptionYear>2009</inceptionYear>
 
@@ -49,8 +50,8 @@
      </mailingList>
     </mailingLists>
     <scm>
-     <url>scm:svn:https://dev.lds.org/svn/sso-simulator/</url>
-     <developerConnection>https://dev.lds.org/svn/sso-simulator</developerConnection>
+     <url>https://dev.lds.org/svn/sso-simulator/</url>
+     <developerConnection>scm:svn:https://dev.lds.org/svn/sso-simulator</developerConnection>
     </scm>
     <build>
         <resources>
