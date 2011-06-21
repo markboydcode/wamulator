@@ -49,7 +49,7 @@
      </mailingList>
     </mailingLists>
     <scm>
-     <url>https://dev.lds.org/svn/sso-simulator/</url>
+     <url>scm:svn:https://dev.lds.org/svn/sso-simulator/</url>
      <developerConnection>https://dev.lds.org/svn/sso-simulator</developerConnection>
     </scm>
     <build>
