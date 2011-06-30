@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.james.mime4j.codec.EncoderUtil;
+import org.apache.james.mime4j.codec.EncoderUtil.Usage;
 import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.proxy.header.Header;
 import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
@@ -51,6 +53,13 @@ public class User {
 		this.headers.put(UserHeaderNames.CN, username);
 	}
 
+	/**
+	 * Adds a header with its value to the buffer and encodes the value 
+	 * according to rfc2047 if needed.
+	 * 
+	 * @param name
+	 * @param value
+	 */
 	public void addHeader(String name, String value) {
 		this.headers.remove(name);
 		this.headers.put(name, value);
@@ -58,7 +67,8 @@ public class User {
 
 	public void injectUserHeaders(HeaderBuffer headersBfr) {
 		for(Entry<String, String> e : headers.entrySet()) {
-			headersBfr.append(new Header(e.getKey(), e.getValue()));
+	        String encV = EncoderUtil.encodeIfNecessary(e.getValue(), Usage.TEXT_TOKEN, 0);
+			headersBfr.append(new Header(e.getKey(), encV));
 		}
 	}
 

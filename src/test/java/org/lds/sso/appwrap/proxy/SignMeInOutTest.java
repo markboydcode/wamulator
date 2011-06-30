@@ -88,6 +88,8 @@ public class SignMeInOutTest {
         status = client.executeMethod(authM);
 
         Assert.assertEquals(status, 302);
+        loc = method.getResponseHeader("location");
+        Assert.assertNotNull(loc, "location header not returned for redirect after sign-in");
         Header setCk = authM.getResponseHeader("set-cookie");
         Assert.assertNotNull(setCk, "set-cookie header not in sign-in response");
         String rawCk = setCk.getValue();

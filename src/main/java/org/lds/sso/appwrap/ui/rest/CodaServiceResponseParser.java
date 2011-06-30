@@ -66,16 +66,16 @@ public class CodaServiceResponseParser implements ContentHandler{
 	static {
 		Map<String,String> m = new HashMap<String,String>();
 		m.put("birthdate",UserHeaderNames.BIRTH_DATE);
-		m.put("cn",UserHeaderNames.PREFIX + "cn");
+		m.put("cn",UserHeaderNames.CN);
 		m.put("gender",UserHeaderNames.GENDER);
-		m.put("givenName",UserHeaderNames.PREFIX + "given-name");
+		m.put("givenName",UserHeaderNames.GIVEN_NAME);
 		m.put("individualId",UserHeaderNames.INDIVIDUAL_ID);
 		m.put("ldsAccountId",UserHeaderNames.LDS_ACCOUNT_ID);
 		m.put("ldsMrn",UserHeaderNames.LDS_MRN);
 		m.put("positions",UserHeaderNames.POSITIONS);
-		m.put("preferredLanguage",UserHeaderNames.PREFIX + "preferred-language");
-		m.put("preferredName",UserHeaderNames.PREFIX + "preferred-name");
-		m.put("sn",UserHeaderNames.PREFIX + "sn");
+		m.put("preferredLanguage",UserHeaderNames.PREFERRED_LANG);
+		m.put("preferredName",UserHeaderNames.PREFERRED_NAME);
+		m.put("sn",UserHeaderNames.SN);
 		m.put("units",UserHeaderNames.UNITS);
 		m.put("email",UserHeaderNames.EMAIL);
 		coda2sso = m;

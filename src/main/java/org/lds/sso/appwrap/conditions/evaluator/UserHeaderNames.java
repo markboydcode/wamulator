@@ -96,6 +96,7 @@ public class UserHeaderNames {
         hdr.put(UserHeaderNames.LDS_MRN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
         hdr.put(UserHeaderNames.SN, UserHeaderNames.EMPTY_VALUE_INDICATOR);
         hdr.put(UserHeaderNames.PREFERRED_NAME, UserHeaderNames.EMPTY_VALUE_INDICATOR);
+        hdr.put(UserHeaderNames.PREFERRED_LANG, UserHeaderNames.EMPTY_VALUE_INDICATOR);
         hdr.put(UserHeaderNames.INDIVIDUAL_ID, UserHeaderNames.EMPTY_VALUE_INDICATOR);
         hdr.put(UserHeaderNames.GIVEN_NAME, UserHeaderNames.EMPTY_VALUE_INDICATOR);
         hdr.put(UserHeaderNames.GENDER, UserHeaderNames.EMPTY_VALUE_INDICATOR);

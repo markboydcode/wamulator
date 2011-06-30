@@ -67,10 +67,6 @@ public class RequestHandler implements Runnable {
 
     public static final String EMPTY_START_LINE = "empty-start-line";
 
-    private static final String[] excludeHeaders = new String[] { "connection" };
-
-    // public static final String REQUEST_LINE = "request-line";
-    // public static final String RESPONSE_LINE = "response-line";
     public static final String HOST = "host";
 
     public static final String PORT = "port";
@@ -158,7 +154,7 @@ public class RequestHandler implements Runnable {
             clientIn = new BufferedInputStream(pSocket.getInputStream());
             clientOut = new BufferedOutputStream(pSocket.getOutputStream());
 
-            reqPkg = getHttpPackage(true, clientIn, excludeHeaders, false, log);
+            reqPkg = getHttpPackage(true, clientIn, false, log);
 
             if (cLog.isLoggable(Level.FINE)) {
                 fos = new FileOutputStream(Config.LOG_FILES_LOCATION + connId 
@@ -452,7 +448,7 @@ public class RequestHandler implements Runnable {
                 // Content-Length header field, so we have to listen until
                 // they decide to disconnect (or the connection times out).
                 LogUtils.fine(cLog, "Awaiting data from: {0}:{1}", appEndpoint.getHost(), appEndpoint.getEndpointPort());
-                resPkg = getHttpPackage(false, serverIn, excludeHeaders, true, log);
+                resPkg = getHttpPackage(false, serverIn, true, log);
                 resPkg.scheme = serverScheme;
 
                 if (resPkg.socketTimeout) {
@@ -1176,7 +1172,7 @@ public class RequestHandler implements Runnable {
      * Creates an HttpPackage object filled with the data representing the
      * stream of characters and bytes for the http request of response.
      */
-    private HttpPackage getHttpPackage(boolean isForRequest, InputStream in, String[] excludeHeaders, boolean waitForDisconnect,
+    private HttpPackage getHttpPackage(boolean isForRequest, InputStream in, boolean waitForDisconnect,
             PrintStream log) {
         HttpPackage pkg = new HttpPackage();
 

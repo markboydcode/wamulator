@@ -149,6 +149,25 @@ public class RequestHandlerIntegrationTest {
                             }
                             req = "host-header-test";
                         }
+                        else if (input.contains("/wamulat-48/rfc2047/test/")) {
+                            answer = "preferredname: ???";
+                            String hdrKey = RequestHandler.CRLF + "preferredname:";
+                            int idx = inputLC.indexOf(hdrKey);
+
+                            if (idx != -1) {
+                                int cr = input.indexOf(RequestHandler.CRLF, idx+1);
+                                String val = null;
+                                if (cr == -1) {
+                                    // last header
+                                    val = input.substring(idx+hdrKey.length()).trim();
+                                }
+                                else {
+                                    val = input.substring(idx+hdrKey.length(), cr).trim();
+                                }
+                                answer = "preferredname: " + val;
+                            }
+                            req = "wamulat-48-test";
+                        }
                         else if (input.contains("/restricted/test/")) {
                             answer = "You made it";
                             req = "restricted-test";
@@ -336,6 +355,9 @@ public class RequestHandlerIntegrationTest {
             + "   <unenforced cpath='/no-preserve/*'/>"
             + "   <cctx-mapping cctx='/host-header/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/host-header/*' host-header='host.lds.org:2445'/>"
             + "   <unenforced cpath='/host-header/*'/>"
+            + "   <cctx-mapping cctx='/wamulat-48/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/wamulat-48/*'/>"
+            + "   <unenforced cpath='/wamulat-48/*'/>"
+            
             + "   <cctx-mapping cctx='/restricted/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/restricted/*' preserve-host='false'/>"
             + "   <allow action='GET' cpath='/restricted/*'/>"
             + "   <cctx-mapping cctx='/conditional/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/conditional/*' preserve-host='false'/>"
@@ -361,6 +383,15 @@ public class RequestHandlerIntegrationTest {
             //+ "  <user name='ngiwb2' pwd='password1'>"
             + "  <user name='ngiwb2'>"
             + "   <ldsApplications value='aaa,bbb,ccc'/>"
+            + "   <sso-header name='preferredname' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
+            + "   <sso-header name='policy-givenname' value='Jay Admin'/>"
+            + "   <sso-header name='policy-preferredlanguage' value='eng'/>"
+            + "   <sso-header name='policy-preferred-name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
+            + "   <sso-header name='policy-given-name' value='Jay Admin'/>"
+            + "   <sso-header name='policy-preferred-language' value='eng'/>"
+            + "   <sso-header name='policy-preferred_name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
+            + "   <sso-header name='policy-given_name' value='Jay Admin'/>"
+            + "   <sso-header name='policy-preferred_language' value='eng'/>"
             + "  </user>"
             + " </users>"
             + "</config>");
@@ -689,6 +720,32 @@ public class RequestHandlerIntegrationTest {
         String response = method.getResponseBodyAsString().trim();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
         Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " 127.0.0.1:" + serverPort);
+        method.releaseConnection();
+    }
+
+    @Test
+    public void test_wamulat_48() throws HttpException, IOException {
+        System.out.println("----> test_wamulat_48 ");
+        
+        Config cfg = Config.getInstance();
+        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.lds.org");
+        System.out.println(" auth'd ngiwb2");
+
+        String uri = "http://local.lds.org:" + sitePort + "/wamulat-48/rfc2047/test/";
+        HttpClient client = new HttpClient();
+
+        HostConfiguration hcfg = new HostConfiguration();
+        hcfg.setProxy("127.0.0.1", sitePort);
+        client.setHostConfiguration(hcfg);
+
+        HttpMethod method = new GetMethod(uri);
+        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
+        method.setFollowRedirects(false);
+
+        int status = client.executeMethod(method);
+        String response = method.getResponseBodyAsString().trim();
+        Assert.assertEquals(status, 200, "should have returned http 200 OK");
+        Assert.assertEquals(response, "preferredname: =?UTF-8?Q?Jay_=E9=87=91<script>alert(0)</script>=E8=99=AC_Admin?=");
         method.releaseConnection();
     }
 

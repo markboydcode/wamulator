@@ -8,7 +8,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.47-SNAPSHOT</version>
+    <version>5.47</version>
 
     <name>SSO Environment Simulator</name>
 
@@ -167,6 +167,12 @@
     </distributionManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.james</groupId>
+            <artifactId>apache-mime4j</artifactId>
+            <version>0.6</version>
+        </dependency>
+
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk16</artifactId>
