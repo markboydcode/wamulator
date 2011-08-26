@@ -180,7 +180,8 @@ public class RequestHandler implements Runnable {
                         "The request sent by the client was empty." + CRLF
                         + "Ensure that the site(s) is(are) configured correctly.",
                         null, reqPkg);
-                sendProxyResponse(404, "Bad Request", bytes, reqPkg, clientIn, clientOut, user, startTime, log, true); //don't log these
+                //Lets not even try to send a 404 in this case. 
+                //sendProxyResponse(404, "Bad Request", bytes, reqPkg, clientIn, clientOut, user, startTime, log, true); //don't log these
                 return;
             }
             
