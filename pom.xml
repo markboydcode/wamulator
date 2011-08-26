@@ -147,28 +147,14 @@
         </plugins>
     </build>
 
-    <distributionManagement>
+	<distributionManagement>
+		<site>
+			<id>lds-nexus</id>
+			<name>LDS Maven2 Site Reports</name>
+			<url>dav:https://code.lds.org/nexus/content/sites/maven-sites/appwrap</url>
+		</site>
+	</distributionManagement>
 
-        <repository>
-            <id>icslib-repo</id>
-            <name>ICS Maven2 Repository</name>
-            <url>scp://icslib//opt/icsdev/maven2/lds-repo/</url>
-
-        </repository>
-
-        <snapshotRepository>
-            <id>icslib-repo</id>
-            <name>ICSLIB Maven2 Repository</name>
-            <url>scp://icslib//opt/icsdev/maven2/lds-snapshots/</url>
-        </snapshotRepository>
-
-        <site>
-            <id>icslib-repo</id>
-            <name>ICSLIB Maven2 Site Reports</name>
-            <url>scp://icslib//var/www/html/projects/${artifactId}/${version}</url>
-        </site>
-
-    </distributionManagement>
 
     <dependencies>
         <dependency>
