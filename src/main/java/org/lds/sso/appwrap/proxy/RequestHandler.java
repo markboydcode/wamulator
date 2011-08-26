@@ -180,7 +180,7 @@ public class RequestHandler implements Runnable {
                         "The request sent by the client was empty." + CRLF
                         + "Ensure that the site(s) is(are) configured correctly.",
                         null, reqPkg);
-                //Lets not even try to send a 404 in this case. 
+                //Lets not even try to send a 404 in this case. WAMULAT-53
                 //sendProxyResponse(404, "Bad Request", bytes, reqPkg, clientIn, clientOut, user, startTime, log, true); //don't log these
                 return;
             }
