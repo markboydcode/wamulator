@@ -28,7 +28,7 @@ public class ConfigSamplesVerificationTest {
         Service service = Service.getService("classpath:config-samples/console-only.xml");
         service.start();
         Config cfg = Config.getInstance();
-        hitRest_getCookieName("http://127.0.0.1:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
+        hitRest_getCookieName("http://localhost:" + cfg.getConsolePort() + "/oes/v1.0/rest/local.lds.org/getCookieName");
         service.stop();
     }
 
