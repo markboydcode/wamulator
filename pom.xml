@@ -1,22 +1,22 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<parent>
 		<artifactId>stack-master</artifactId>
 		<groupId>org.lds.stack</groupId>
 		<version>3.1.4</version>
 	</parent>
 
-    <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.lds.sso</groupId>
-    <artifactId>appwrap</artifactId>
-    <packaging>jar</packaging>
-    <version>5.48-SNAPSHOT</version>
+	<groupId>org.lds.sso</groupId>
+	<artifactId>appwrap</artifactId>
+	<packaging>jar</packaging>
+	<version>5.48-SNAPSHOT</version>
 
-    <name>SSO Environment Simulator</name>
+	<name>SSO Environment Simulator</name>
 
-    <description>
+	<description>
     This is a project that simulates a runtime webapp sso environment and
     implements an http proxy and the rest api of the opensso policy server
     allowing apps to be routed to, urls enforced, client lib calls to the policy
@@ -25,94 +25,94 @@
     different header injection values to simulate the real populace that will
     eventually hit the application when deployed into the real sso environment.
     </description>
-    <url>https://tech.lds.org/wiki/WAMulator</url>
+	<url>https://tech.lds.org/wiki/WAMulator</url>
 
-    <inceptionYear>2009</inceptionYear>
+	<inceptionYear>2009</inceptionYear>
 
-    <developers>
-        <developer>
-            <name>Mark R. Boyd</name>
-            <id>boydmr</id>
-            <email>boydmr@ldschurch.org</email>
-            <organization>The LDS Church</organization>
-            <roles>
-                <role>Principal Engineer</role>
-            </roles>
-            <timezone>+7</timezone>
-        </developer>
-    </developers>
-    <ciManagement>
-     <system>CruiseControl</system>
-     <url>http://code.lds.org/cruisecontrol/buildresults/App_wrap_shim-Dev</url>
-    </ciManagement>
-    <mailingLists>
-     <mailingList>
-      <name>WAMulator-dev</name>
-      <archive>http://tech.lds.org/pipermail/wamulator-dev/</archive>
-      <post>mailto://wamulator-dev@tech.lds.org</post>
-      <subscribe>http://tech.lds.org/mailman/listinfo/wamulator-dev</subscribe>
-     </mailingList>
-    </mailingLists>
-    <scm>
-     <url>https://dev.lds.org/svn/sso-simulator/</url>
-     <developerConnection>scm:svn:https://dev.lds.org/svn/sso-simulator</developerConnection>
-    </scm>
-    <build>
-        <resources>
-            <resource>
-                <directory>src/main/versioning</directory>
-                <filtering>true</filtering>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-            </resource>
-        </resources>
-        <plugins>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2-beta-4</version>
-                <executions>
-                    <execution>
-                        <id>jar-with-dependencies</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/assembly/jar-assembly.xml</descriptor>
-                            </descriptors>
-                            <archive>
-                                <manifest>
-                                    <mainClass>org.lds.sso.appwrap.Service</mainClass>
-                                </manifest>
-                            </archive>
-                            <attach>true</attach>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                </configuration>
-            </plugin>
-            <plugin>
+	<developers>
+		<developer>
+			<name>Mark R. Boyd</name>
+			<id>boydmr</id>
+			<email>boydmr@ldschurch.org</email>
+			<organization>The LDS Church</organization>
+			<roles>
+				<role>Principal Engineer</role>
+			</roles>
+			<timezone>+7</timezone>
+		</developer>
+	</developers>
+	<ciManagement>
+		<system>CruiseControl</system>
+		<url>http://code.lds.org/cruisecontrol/buildresults/App_wrap_shim-Dev</url>
+	</ciManagement>
+	<mailingLists>
+		<mailingList>
+			<name>WAMulator-dev</name>
+			<archive>http://tech.lds.org/pipermail/wamulator-dev/</archive>
+			<post>mailto://wamulator-dev@tech.lds.org</post>
+			<subscribe>http://tech.lds.org/mailman/listinfo/wamulator-dev</subscribe>
+		</mailingList>
+	</mailingLists>
+	<scm>
+		<url>https://dev.lds.org/svn/sso-simulator/</url>
+		<developerConnection>scm:svn:https://dev.lds.org/svn/sso-simulator</developerConnection>
+	</scm>
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/versioning</directory>
+				<filtering>true</filtering>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.2-beta-4</version>
+				<executions>
+					<execution>
+						<id>jar-with-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/main/assembly/jar-assembly.xml</descriptor>
+							</descriptors>
+							<archive>
+								<manifest>
+									<mainClass>org.lds.sso.appwrap.Service</mainClass>
+								</manifest>
+							</archive>
+							<attach>true</attach>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>wagon-maven-plugin</artifactId>
 				<version>1.0-beta-2</version>
@@ -144,8 +144,8 @@
 					</execution>
 				</executions>
 			</plugin>
-        </plugins>
-    </build>
+		</plugins>
+	</build>
 
 	<distributionManagement>
 		<site>
@@ -156,113 +156,120 @@
 	</distributionManagement>
 
 
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.james</groupId>
-            <artifactId>apache-mime4j</artifactId>
-            <version>0.6</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
-            <version>1.45</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-servlet_2.4_spec</artifactId>
-            <version>1.1.1</version>
-            <type>jar</type>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
-        </dependency>
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.james</groupId>
+			<artifactId>apache-mime4j</artifactId>
+			<version>0.6</version>
+		</dependency>
 
 		<dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty</artifactId>
-            <version>6.1.7</version>
-        </dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk16</artifactId>
+			<version>1.45</version>
+		</dependency>
 
-        <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty-util</artifactId>
-            <version>6.1.7</version>
-        </dependency>
+		<dependency>
+			<groupId>org.apache.geronimo.specs</groupId>
+			<artifactId>geronimo-servlet_2.4_spec</artifactId>
+			<version>1.1.1</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
 
-        <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jsp-2.1</artifactId>
-            <version>6.1.7</version>
-        </dependency>
+		<dependency>
+			<groupId>commons-httpclient</groupId>
+			<artifactId>commons-httpclient</artifactId>
+			<version>3.1</version>
+		</dependency>
 
-        <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jsp-api-2.1</artifactId>
-            <version>6.1.7</version>
-        </dependency>
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jetty</artifactId>
+			<version>6.1.7</version>
+		</dependency>
 
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>5.14</version>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jetty-util</artifactId>
+			<version>6.1.7</version>
+		</dependency>
 
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-            <version>2.5.2</version>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jsp-2.1</artifactId>
+			<version>6.1.7</version>
+		</dependency>
 
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymockclassextension</artifactId>
-            <version>2.5.2</version>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jsp-api-2.1</artifactId>
+			<version>6.1.7</version>
+		</dependency>
 
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-            <version>2.1_3</version>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>5.14</version>
+			<scope>test</scope>
+		</dependency>
 
-        <dependency>
-        	<groupId>commons-io</groupId>
-        	<artifactId>commons-io</artifactId>
-        	<version>2.0</version>
-        </dependency>
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>2.0</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<version>2.5.2</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymockclassextension</artifactId>
+			<version>2.5.2</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>cglib</groupId>
+			<artifactId>cglib</artifactId>
+			<version>2.1_3</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.0</version>
+		</dependency>
 
 
-        <dependency>
-        	<groupId>commons-lang</groupId>
-        	<artifactId>commons-lang</artifactId>
-        	<version>2.5</version>
-        </dependency>
-        
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.5</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.lds.stack</groupId>
 			<artifactId>stack-jul-ext</artifactId>
 			<version>1.0.1</version>
 		</dependency>
-    </dependencies>
-    <repositories>
-        <repository>
-            <id>lds-maven2</id>
-            <name>lds-maven2</name>
-            <url>http://icslib/maven2/archive</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+	</dependencies>
+	<repositories>
+		<repository>
+			<id>lds-maven2</id>
+			<name>lds-maven2</name>
+			<url>http://icslib/maven2/archive</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 
 </project>
