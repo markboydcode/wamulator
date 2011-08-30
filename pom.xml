@@ -1,6 +1,5 @@
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<parent>
 		<artifactId>stack-master</artifactId>
 		<groupId>org.lds.stack</groupId>
@@ -12,7 +11,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>5.48-SNAPSHOT</version>
+    <version>5.48</version>
 
 	<name>SSO Environment Simulator</name>
 
@@ -54,8 +53,8 @@
 		</mailingList>
 	</mailingLists>
 	<scm>
-		<url>https://dev.lds.org/svn/sso-simulator/</url>
-		<developerConnection>scm:svn:https://dev.lds.org/svn/sso-simulator</developerConnection>
+		<url>https://dev.lds.org/svn/sso-simulator/tags/appwrap-5.48</url>
+		<developerConnection>scm:svn:https://dev.lds.org/svn/sso-simulator/tags/appwrap-5.48</developerConnection>
 	</scm>
 	<build>
 		<resources>
