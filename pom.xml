@@ -9,10 +9,10 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.lds.sso</groupId>
-	<artifactId>appwrap</artifactId>
-	<packaging>jar</packaging>
-	<version>5.48-SNAPSHOT</version>
+    <groupId>org.lds.sso</groupId>
+    <artifactId>appwrap</artifactId>
+    <packaging>jar</packaging>
+    <version>5.48</version>
 
 	<name>SSO Environment Simulator</name>
 
