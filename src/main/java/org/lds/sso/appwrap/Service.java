@@ -451,7 +451,7 @@ public class Service {
             proxy = new ProxyListener(cfg, coordinator);
         }
         catch(IOException ioe) {
-            throw new UnableToListenOnProxyPortException(ioe);
+            throw new UnableToListenOnProxyPortException("Proxy is unable to listen on port " + cfg.getProxyPort(), ioe);
         }
         proxyRunner = new Thread(proxy);
         proxyRunner.setName("Http Proxy Listener");
