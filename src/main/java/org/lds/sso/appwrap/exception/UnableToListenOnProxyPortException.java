@@ -13,7 +13,7 @@ public class UnableToListenOnProxyPortException extends Exception {
      */
     private static final long serialVersionUID = 1L;
 
-    public UnableToListenOnProxyPortException(Throwable t) {
-        super(t);
+    public UnableToListenOnProxyPortException(String msg, Throwable t) {
+        super(msg, t);
     }
 }
