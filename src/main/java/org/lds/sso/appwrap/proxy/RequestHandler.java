@@ -49,6 +49,7 @@ import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.lds.sso.appwrap.proxy.header.HeaderHandler;
 import org.lds.sso.appwrap.proxy.header.SecondPhaseAction;
 import org.lds.sso.appwrap.proxy.tls.TrustAllManager;
+import org.lds.sso.appwrap.security.LocalHostOnlyEnforcingHandler;
 import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 
 public class RequestHandler implements Runnable {
@@ -154,12 +155,26 @@ public class RequestHandler implements Runnable {
             clientIn = new BufferedInputStream(pSocket.getInputStream());
             clientOut = new BufferedOutputStream(pSocket.getOutputStream());
 
+
             reqPkg = getHttpPackage(true, clientIn, false, log);
 
             if (cLog.isLoggable(Level.FINE)) {
                 fos = new FileOutputStream(Config.LOG_FILES_LOCATION + connId 
                         + Config.LOG_FILES_SUFFIX);
                 log = new PrintStream(fos);
+            }
+
+            // see if we are locked down to local traffic only and enforce as needed
+            if (cfg.isAllowingLocalTrafficOnly() && 
+            		! LocalHostOnlyEnforcingHandler.isLocalAccess(pSocket.getInetAddress())) {
+                byte[] bytes = getResponse(LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_CODE, 
+                		LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_MSG,
+                		LocalHostOnlyEnforcingHandler.HTML_TITLE,
+                		LocalHostOnlyEnforcingHandler.getHtmlMessage(pSocket.getInetAddress()),
+                        null, reqPkg);
+                sendProxyResponse(LocalHostOnlyEnforcingHandler.INT_HTTP_RESPONSE_CODE, 
+                		LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_MSG,bytes, reqPkg, clientIn, clientOut, user, startTime, log, true);
+                return;
             }
 
             if(reqPkg.socketTimeout) {

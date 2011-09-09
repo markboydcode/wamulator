@@ -111,7 +111,18 @@
 						</xsd:attribute>
 					</xsd:complexType>
 				</xsd:element>
-				<xsd:element name="proxy-tls" minOccurs="0">
+				<xsd:element name="port-access" minOccurs="0" maxOccurs="1">
+					<xsd:complexType>
+						<xsd:attribute name="local-traffic-only" use="required" type="aliasableBoolean">
+							<xsd:annotation>
+								<xsd:documentation><![CDATA[
+									Indicates if traffic to all ports is restricted to traffic from the local box only.
+								]]></xsd:documentation>
+							</xsd:annotation>
+						</xsd:attribute>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="proxy-tls" minOccurs="0" maxOccurs="1">
 					<xsd:complexType>
 						<xsd:attribute name="https-port" use="required" type="aliasableInteger">
 							<xsd:annotation>

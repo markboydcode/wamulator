@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -36,6 +38,7 @@ import org.lds.sso.appwrap.rest.exposeews.v1.UserNameForToken;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
+import org.lds.sso.appwrap.security.LocalHostOnlyEnforcingHandler;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
 import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
 import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
@@ -234,15 +237,6 @@ public class Service {
 		// This is just a directory within your source tree, and can be exported as part of your normal .jar
 		final String WEBAPPDIR = "webapp";
 
-		if (cfg.getConsolePort() == 0) {
-		    server = new Server();
-	        Connector connector=new SocketConnector();
-	        connector.setPort(0);
-	        server.setConnectors(new Connector[]{connector});
-		}
-		else {
-	        server = new Server(cfg.getConsolePort());
-		}
 		final String CONTEXTPATH = "/admin";
 
 		// for localhost:port/admin/index.html and whatever else is in the webapp directory
@@ -255,7 +249,20 @@ public class Service {
         cfgInjector.addHandler(cdsso);
         //cfgInjector.addHandler(adj);
 
-		HandlerCollection handlers = new HandlerCollection();
+        /*
+         * Create a collection of handlers that know what URL to watch for and
+         * handle the request if not already handled by someone else. All get
+         * called regardless so they need to verify the request still needs to
+         * be handled before doing so.
+         */
+		HandlerCollection handlers = null;
+		if (cfg.isAllowingLocalTrafficOnly()) {
+			LogUtils.info(logger, "Restricting console and REST traffic to local host.", (Object []) null);
+			handlers = new LocalHostOnlyEnforcingHandler();
+		}
+		else {
+			handlers = new HandlerCollection();
+		}
 		if (cfg.getRestVersion() == null) {
 		    throw new IllegalArgumentException("Must declare the REST interface that the Simulator should expose. " +
 		    		"See documentation for the <config> element's rest-version attribute. Supported versions are: "
@@ -327,6 +334,52 @@ public class Service {
 		// placing webapp handler after other handlers allows for actions to be placed
 		// under same root context '/admin'.
 		handlers.addHandler(cfgInjector);
+	    server = new Server();
+	    Connector connector = null;
+		
+		if (cfg.isAllowingLocalTrafficOnly()) {
+			// set up custom connector so that we can capture the socket's 
+			// InetAddress an a thread local for the handler to enforce 
+			// appropriate access using servlet mechanisms for the responses.
+			connector = new SocketConnector() {
+				
+			    public void accept(int acceptorID)
+			        	throws IOException, InterruptedException
+	        	{   
+			        Socket socket = _serverSocket.accept();
+			        configure(socket);
+			        final InetAddress addr = socket.getInetAddress();
+			        
+			        Connection connection=new Connection(socket) {
+
+						@Override
+						public void run() {
+				    		LocalHostOnlyEnforcingHandler.getAddressHolder().setAddress(addr);
+				    		System.out.println("-----> to " + Thread.currentThread().getName() + " attached " + addr);
+				    		try {
+				    			super.run();
+				    		}
+				    		finally {
+					    		System.out.println("-----> from " + Thread.currentThread().getName() + " detached " + addr);
+					    		LocalHostOnlyEnforcingHandler.removeAddressHolder();
+				    		}
+						}
+			        	
+			        };
+			        connection.dispatch();
+		        }
+			};
+		}
+		else {
+	        connector=new SocketConnector();
+		}
+		if (cfg.getConsolePort() == 0) {
+	        connector.setPort(0);
+		}
+		else {
+			connector.setPort(cfg.getConsolePort());
+		}
+		server.setConnectors(new Connector[] {connector});
 		server.setHandler(handlers);
 		server.setGracefulShutdown(1000);
 	}

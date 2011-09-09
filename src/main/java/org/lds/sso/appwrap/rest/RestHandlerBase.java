@@ -15,7 +15,8 @@ import org.mortbay.jetty.handler.AbstractHandler;
 /**
  * The abstract base handler for all rest handlers providing the path mapping 
  * capability executing the doHandle abstract method only if the indicated path
- * prefix matches the start of the URL currently being targeted.
+ * prefix matches the start of the URL currently being targeted and the request
+ * has not yet been handled.
  * 
  * @author Mark Boyd
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints

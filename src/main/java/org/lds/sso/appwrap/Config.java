@@ -235,6 +235,12 @@ public class Config {
      * milliseconds which is 20 seconds.
      */
     private int proxyOutboundSoTimeout = 20000;
+
+    /**
+     * Indicates whether traffic is only allowed from the local host or not. Defaults
+     * to true.
+     */
+	private boolean allowLocalTrafficOnly = true;
     
 
 	private static final String SERVER_NAME = determineCurrentVersion();
@@ -906,4 +912,24 @@ public class Config {
     public int getProxyOutboundSoTimeout() {
         return proxyOutboundSoTimeout ;
     }
+
+    /**
+     * Returns true if configuration specifies that only local traffic is allowed
+     * on the proxy and console ports.
+     * 
+     * @return
+     */
+	public boolean isAllowingLocalTrafficOnly() {
+		return allowLocalTrafficOnly;
+	}
+
+	/**
+     * Configures whether local traffic only is accepted on procy and console
+     * ports.
+     * 
+     * @return
+     */
+	public void setAllowingLocalTrafficOnly(boolean bool) {
+		allowLocalTrafficOnly = bool;
+	}
 }

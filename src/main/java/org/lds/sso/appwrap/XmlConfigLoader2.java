@@ -618,6 +618,8 @@ public class XmlConfigLoader2 {
                 cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
             } else if (path.matches("/config/sso-cookie/cdsso")) {
                 cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
+            } else if (path.matches("/config/port-access")) {
+            	cfg.setAllowingLocalTrafficOnly(Boolean.parseBoolean(getStringAtt("local-traffic-only", path, atts)));
             } else if (path.matches("/config/proxy-tls")) {
                 cfg.setProxyHttpsPort(getIntegerAtt("https-port", path, atts));
                 cfg.setProxyHttpsCertHost(getStringAtt("cert-host", path, atts));
