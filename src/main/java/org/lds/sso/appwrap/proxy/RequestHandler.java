@@ -1198,10 +1198,26 @@ public class RequestHandler implements Runnable {
                 return pkg;
             }
             captureHeaders(pkg, in, log);
-            if (pkg.type == HttpPackageType.EMPTY
-                    || (pkg.type == HttpPackageType.RESPONSE && pkg.responseCode != 200 && pkg.contentLength == 0)) {
+            
+            // do we need to capture body or can we move on with just headers?
+            // leave this in this open/multi-if-statement form for ease of
+            // comprehension
+			if (pkg.type == HttpPackageType.EMPTY) {
                 return pkg;
             }
+			if (pkg.type == HttpPackageType.RESPONSE) {
+				// may need to add support for HEAD request at some point so 
+				// that we don't go on listening for a body
+				if (pkg.responseCode == 304 // per rfc2616, section 10.3.5
+						|| pkg.responseCode == 204 // per rfc2616, section 10.2.5
+						|| pkg.responseCode == 205 // per rfc2616, section 10.2.6
+						) { 
+					return pkg; 
+				}
+				if (pkg.responseCode != 200 && pkg.contentLength == 0) {
+					return pkg;
+				}
+			}
 
             captureBody(pkg, in, log, waitForDisconnect);
         }
@@ -1316,6 +1332,7 @@ public class RequestHandler implements Runnable {
                 byte[] buf = new byte[4096];
                 int bytesIn = 0;
                 while (((byteCount < pkg.contentLength) || (waitForDisconnect)) && ((bytesIn = in.read(buf)) >= 0)) {
+                	
                     pkg.bodyStream.write(buf, 0, bytesIn);
                     byteCount += bytesIn;
                 }
