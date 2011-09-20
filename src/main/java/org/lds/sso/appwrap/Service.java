@@ -355,12 +355,12 @@ public class Service {
 						@Override
 						public void run() {
 				    		LocalHostOnlyEnforcingHandler.getAddressHolder().setAddress(addr);
-				    		System.out.println("-----> to " + Thread.currentThread().getName() + " attached " + addr);
+				    		// System.out.println("-----> to thread " + Thread.currentThread().getName() + " attached console socket from " + addr);
 				    		try {
 				    			super.run();
 				    		}
 				    		finally {
-					    		System.out.println("-----> from " + Thread.currentThread().getName() + " detached " + addr);
+					    		// System.out.println("-----> from thread " + Thread.currentThread().getName() + " detached console socket from " + addr);
 					    		LocalHostOnlyEnforcingHandler.removeAddressHolder();
 				    		}
 						}
