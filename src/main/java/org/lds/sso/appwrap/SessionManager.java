@@ -58,12 +58,12 @@ public class SessionManager {
                                 DomainSessionsMapHolder holder = ent.getValue();
                                 Map<String, Session> copy = copySessionContainer(ent.getKey());
                                 
-                                for (Iterator<Entry<String, Session>> sItr = copy.entrySet().iterator(); itr.hasNext();) {
+                                for (Iterator<Entry<String, Session>> sItr = copy.entrySet().iterator(); sItr.hasNext();) {
                                     Entry<String, Session> sEnt = sItr.next();
                                     Session s = sEnt.getValue();
                                     
                                     if (!s.testIsActive()) {
-                                        itr.remove();
+                                        sItr.remove();
                                         LogUtils.info(cLog, "Session {0} in domain '{1}' expired.", s.token, ent.getKey());
                                     }
                                 }
