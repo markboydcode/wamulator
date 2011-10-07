@@ -117,6 +117,7 @@ src/main/java/org/lds/sso/appwrap/rest/LogoutHandler.java -text svneol=unset#tex
 src/main/java/org/lds/sso/appwrap/rest/RestHandlerBase.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/RestVersion.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/URLConnectionTemplate.java -text
+src/main/java/org/lds/sso/appwrap/rest/exposeews/v1/CookieName.java -text
 src/main/java/org/lds/sso/appwrap/rest/exposeews/v1/UserNameForToken.java -text
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/ArePermitted.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/AreTokensValid.java -text svneol=unset#text/plain

@@ -34,6 +34,7 @@ import org.lds.sso.appwrap.rest.GetCookieName;
 import org.lds.sso.appwrap.rest.IsTokenValidHandler;
 import org.lds.sso.appwrap.rest.LogoutHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
+import org.lds.sso.appwrap.rest.exposeews.v1.CookieName;
 import org.lds.sso.appwrap.rest.exposeews.v1.UserNameForToken;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
@@ -330,6 +331,7 @@ public class Service {
         // token authority handler so that WAMulator can front policy-exposee
         // but run against real OAM environments for hosts/apps/policies.
         handlers.addHandler(new UserNameForToken("/admin/oam-ta/username-for-token"));
+        handlers.addHandler(new CookieName("/admin/oam-ta/cookie-name"));
 
 		// placing webapp handler after other handlers allows for actions to be placed
 		// under same root context '/admin'.
