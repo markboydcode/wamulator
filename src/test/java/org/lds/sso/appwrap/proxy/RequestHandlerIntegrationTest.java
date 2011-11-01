@@ -19,6 +19,8 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
+import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -390,6 +392,65 @@ public class RequestHandlerIntegrationTest {
 		        String response = method.getResponseBodyAsString().trim();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
 		        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " local.lds.org:" + csc.sitePort);
+		        method.releaseConnection();
+			}
+    	}),
+    	verify_serviceUrl_signIn_signOut_injected(new RhIntTest() {
+
+			public boolean appliesTo(ServerSideContext ctx) {
+				return ctx.envelope.contains("/verify/required-headers/injected");
+			}
+
+			public void handleServerSide(ServerSideContext ctx) {
+				ctx.answer = "";
+				this.lookForHdr(ctx, UserHeaderNames.SERVICE_URL);
+				this.lookForHdr(ctx, GlobalHeaderNames.SIGNIN);
+				this.lookForHdr(ctx, GlobalHeaderNames.SIGNOUT);
+			}
+			
+			private void lookForHdr(ServerSideContext ctx, String hdr) {
+                int idx = ctx.envelopeLC.indexOf(hdr);
+
+                if (idx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, idx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(idx+hdr.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(idx+hdr.length(), cr).trim();
+                    }
+                    ctx.answer += hdr + "=" + val + RequestHandler.CRLF;
+                }
+                else {
+                    ctx.answer += hdr + "--NOT FOUND" + RequestHandler.CRLF;
+                }
+			}
+
+			public String getSimMappingAndAccess(ClientSideContext csc) {
+				return "<cctx-mapping cctx='/verify/required-headers/injected*' thost='127.0.0.1' tport='" + csc.serverPort + "' tpath='/verify/required-headers/injected*' preserve-host='true'/>"
+			            + "<unenforced cpath='/verify/required-headers/injected*'/>";
+			}
+
+			public void runTest(ClientSideContext csc) throws Exception {
+		        System.out.println("----> test_verify_serviceUrl_signIn_signOut_injected ");
+		        String uri = "http://local.lds.org:" + csc.sitePort + "/verify/required-headers/injected";
+		        HttpClient client = new HttpClient();
+
+		        HostConfiguration hcfg = new HostConfiguration();
+		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+		        client.setHostConfiguration(hcfg);
+
+		        HttpMethod method = new GetMethod(uri);
+
+		        method.setFollowRedirects(false);
+		        int status = client.executeMethod(method);
+		        String response = method.getResponseBodyAsString().trim();
+		        System.out.println("--response from server: " + response);
+		        Assert.assertFalse(response.contains(UserHeaderNames.SERVICE_URL + "--NOT FOUND"));
+		        Assert.assertFalse(response.contains(GlobalHeaderNames.SIGNIN + "--NOT FOUND"));
+		        Assert.assertFalse(response.contains(GlobalHeaderNames.SIGNOUT + "--NOT FOUND"));
 		        method.releaseConnection();
 			}
     	}),
@@ -1386,6 +1447,11 @@ public class RequestHandlerIntegrationTest {
 
     //////////////// tests with config and/or server-side functionality start here
     
+    @Test
+    public void test_verify_serviceUrl_signIn_signOut_injected() throws Exception {
+    	RhTest.verify_serviceUrl_signIn_signOut_injected.impl.runTest(cctx);
+    }
+
     @Test
     public void test_404_payload_with_content_length_is_passed_through() throws Exception {
     	RhTest.resp_code_404_test_wcl.impl.runTest(cctx);
