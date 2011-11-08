@@ -741,7 +741,7 @@ public class RequestHandler implements Runnable {
 
     private byte[] logoutAndGet302RedirectToSameRequest(HttpPackage reqPkg,
             String token, String httpMsg) throws IOException {
-        String origReq = "http://" + reqPkg.hostHdr + reqPkg.requestLine.getUri();
+        String origReq = reqPkg.scheme+"://" + reqPkg.hostHdr + reqPkg.requestLine.getUri();
 
         String domain = cfg.getSessionManager().getCookieDomainForHost(reqPkg.host);
         cfg.getSessionManager().terminateSession(token, domain);
@@ -1052,7 +1052,7 @@ public class RequestHandler implements Runnable {
 
 
     private byte[] get302RedirectToLoginPage(HttpPackage pkg, String httpReasonMsg) throws IOException {
-        String origReq = "http://" + pkg.hostHdr + pkg.requestLine.getUri();
+        String origReq = pkg.scheme+"://" + pkg.hostHdr + pkg.requestLine.getUri();
         String origEncReq = URLEncoder.encode(origReq, "utf-8");
         String location = getLoginPageWithGotoUrl(origEncReq);
 
@@ -1106,7 +1106,7 @@ public class RequestHandler implements Runnable {
                 token = q.substring(idx + (SignInPageCdssoHandler.CDSSO_PARAM_NAME + "=").length(), idxE);
             }
         }
-        String location = "http://" + pkg.hostHdr + pkg.path;
+        String location = pkg.scheme+"://" + pkg.hostHdr + pkg.path;
         if (cleaned != null) {
             location += "?" + cleaned;
         }
