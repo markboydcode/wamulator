@@ -64,7 +64,7 @@ public class SessionManager {
                                     
                                     if (!s.testIsActive()) {
                                         sItr.remove();
-                                        LogUtils.info(cLog, "Session {0} in domain '{1}' expired.", s.token, ent.getKey());
+                                        LogUtils.info(cLog, "Session {0} in domain {1} expired.", s.token, (String) ent.getKey());
                                     }
                                 }
                                 holder.sessions = copy;

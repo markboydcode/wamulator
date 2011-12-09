@@ -229,6 +229,7 @@ src/test/java/org/lds/sso/appwrap/proxy/PolicyServiceUrlTest.java -text svneol=u
 src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerIntegrationTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/RequestHandlerTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/Rfc2817Test.java -text
+src/test/java/org/lds/sso/appwrap/proxy/ServiceUrlInjected4RootUrlTest.java -text
 src/test/java/org/lds/sso/appwrap/proxy/SignMeInOutTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StartLineTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/proxy/StripEmptyHeadersTest.java -text svneol=unset#text/plain

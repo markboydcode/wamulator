@@ -141,6 +141,8 @@ public class SelectUserHandler extends RestHandlerBase {
             	// anyone running without coda
                 // returnWithError("no-user-source-specified", minusQp, parms, response);
                 // return;
+            } else if (name.startsWith("ldap://")) {
+            	
             } else {
                 HttpClient client = new HttpClient();
                 uri = ext.replaceAll("\\{username\\}", name);
@@ -162,7 +164,7 @@ public class SelectUserHandler extends RestHandlerBase {
             if (userAtts == null // coda not used 
              || userAtts.get("good") != null) { // coda couldn't find user
                 User user = uman.getUser(name);
-                if(user == null) { //couldn't find user in config either
+                if(user == null) { //couldn't find user in config either 
                     returnWithError("user-not-found", minusQp, parms, response);
                     return;
                 }
