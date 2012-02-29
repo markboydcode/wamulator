@@ -40,7 +40,9 @@ public class RequestHandlerIntegrationTest {
     }
     
     /**
-     * Conveys context into and out of handleServerSide method.
+     * Conveys context into and out of {@link RequestHandlerIntegrationTest.RhIntTest#appliesTo(ServerSideContext)}
+     * and {@link RequestHandlerIntegrationTest.RhIntTest#handleServerSide(ServerSideContext)} 
+     * methods.
      * 
      * @author BoydMR
      *
@@ -174,6 +176,64 @@ public class RequestHandlerIntegrationTest {
      *
      */
     private enum RhTest {
+        /**
+         *  @see https://tech.lds.org/jira/browse/WAMULAT-60
+         */
+    	wamulat_60_test(new RhIntPlusTest() {
+			public boolean appliesTo(ServerSideContext ctx) {
+				return ctx.envelope.contains("/wamulat-60/test");
+			}
+			public void handleServerSide(ServerSideContext ctx) {
+				// Response method used instead
+			}
+			public void handleServerResponse(String envelop, String envelopLC, final OutputStream out) {
+				String output = "HTTP/1.1 302 Moved Permanently" + RequestHandler.CRLF
+	                    + "Server: test-harness" + RequestHandler.CRLF
+	                    + "Location: local.lds.org:9080/some/path" + RequestHandler.CRLF
+                    + RequestHandler.CRLF;
+				try {
+                    System.out.println();
+                    System.out.println("--- returned ---");
+                    System.out.println(output);
+					out.write(output.getBytes());
+					out.flush();
+					out.close();
+				}
+				catch(IOException ioe) {
+					ioe.printStackTrace();
+					return;
+				}
+			}
+
+			public String getSimMappingAndAccess(ClientSideContext csc) {
+				return "<cctx-mapping cctx='/wamulat-60/test*' thost='127.0.0.1' tport='"
+						+ csc.serverPort
+						+ "' tpath='/wamulat-60/test*'/>"
+						+ "<unenforced cpath='/wamulat-60/test*'/>";
+			}
+
+			public void runTest(ClientSideContext csc) throws Exception {
+				Config.getInstance(); // reset configuration
+		        System.out.println("----> wamulat_60_test");
+		        String uri = "http://local.lds.org:" + csc.sitePort + "/wamulat-60/test/req";
+		        HttpClient client = new HttpClient();
+
+		        HostConfiguration hcfg = new HostConfiguration();
+		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+		        client.setHostConfiguration(hcfg);
+
+		        HttpMethod method = new GetMethod(uri);
+		        method.setFollowRedirects(false);
+		        long start = System.currentTimeMillis();
+		        int status = client.executeMethod(method);
+		        Assert.assertEquals(status, 302, "should have returned http 302");
+		        Header loc = method.getResponseHeader("location");
+
+		        Assert.assertEquals(loc.getValue(), "local.lds.org:9080/some/path",
+		                "redirect location was wrong.");
+		        method.releaseConnection();
+			}
+    	}),
         /**
          *  @see https://tech.lds.org/jira/browse/WAMULAT-56
          */
@@ -1495,6 +1555,11 @@ public class RequestHandlerIntegrationTest {
     @Test
     public void test_preserve_host() throws Exception {
     	RhTest.preserve_host_test.impl.runTest(cctx);
+    }
+    
+    @Test
+    public void wamulat_60_test() throws Exception {
+    	RhTest.wamulat_60_test.impl.runTest(cctx);
     }
     
     @Test

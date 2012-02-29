@@ -276,12 +276,6 @@ public class RequestHandler implements Runnable {
                         log, true);
                 return;
             }
-            // ensure that server will close connection after completion of
-            // sending content so that servers that don't include a content-length
-            // header don't cause the proxy to await the tcp-timeout expiration
-            // before sending the received content back to the client.
-            reqPkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
-
             // add header for prevention of infinite loops directly back to the proxy
             reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
 
@@ -556,9 +550,6 @@ public class RequestHandler implements Runnable {
 // ##    ##  ##       ##    ## ##        ##     ## ##   ### ##    ## ##
 // ##     ## ########  ######  ##         #######  ##    ##  ######  ########
 //
-            // ensure that client will not attempt another request
-            resPkg.headerBfr.append(new Header(HeaderDef.Connection, "close"));
-
             // include our connId in response headers to coordinate responses
             // with proxy logs if needed when troubleshooting app issues
             resPkg.headerBfr.append(new Header(HttpPackage.CONN_ID_NM, this.connId));
@@ -1350,13 +1341,6 @@ public class RequestHandler implements Runnable {
      * Reads the input stream until it sees the empty line separating headers
      * from the body of the http package and captures values of headers of
      * interest placing them in the passed-in package object.
-     *
-     * TODO: At some point we should implement the proper handling of the "connection"
-     * header as specified in section 14.10 of rfc2616 whereby we parse the
-     * values of the connection header splitting the values into connection-tokens
-     * which then represent header names which headers should be removed from
-     * the packet by a proxy and the proxy should include its own versions if
-     * needed to handle the connection to the targeted server.
      *
      * @param pkg
      * @param in
