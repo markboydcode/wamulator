@@ -1,5 +1,7 @@
+/*.iml
 /*.pem
 /.classpath
+/.idea
 /.project
 /.settings
 /C-*.log
