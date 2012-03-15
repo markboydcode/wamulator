@@ -927,12 +927,14 @@ public class RequestHandlerIntegrationTest {
 		        		+ RequestHandlerIntegrationTest.getMultiEscaped(MULTI_BYTE_CHARS_TEXT) + "'");
 		        String val = MULTI_BYTE_CHARS_TEXT;
 				try {
-                    val = MimeUtility.encodeText(val);
+                    val = MimeUtility.encodeText(val, "utf-8", null);
     		        System.out.println("After MimeEncoding was '" + val + "'");
     		        method.setRequestHeader("client-injected-multi-byte", val);
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
+				
+				// try encoding with james encoder
 
 		        int status = client.executeMethod(method);
 		        String response = method.getResponseBodyAsString().trim();
