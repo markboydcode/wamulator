@@ -861,7 +861,21 @@ public class RequestHandlerIntegrationTest {
                     		matched = true;
                     	}
                     	else {
-                    		System.out.println("Expected " + MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING + " but decoding '" + val + "' became '" + decd + "'");
+                    		String logMsg = "Expected '" + MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING + "' but decoding header value '" + val + "' resulted in '" + decd + "'";
+                    		StringBuffer asciiSafe = new StringBuffer();
+                    		for(int i=0; i<logMsg.length(); i++) {
+                    			char c = logMsg.charAt(i);
+                    			if (((int)c) > 127) {
+                    				String chars = Integer.toHexString((int)c).toUpperCase();
+                    				
+                    				asciiSafe.append("\\u");
+                    				asciiSafe.append(chars);
+                    			}
+                    			else {
+                    				asciiSafe.append(c);
+                    			}
+                    		}
+                    		System.out.println(asciiSafe.toString());
                     	}
 					}
 					catch (UnsupportedEncodingException e) {
