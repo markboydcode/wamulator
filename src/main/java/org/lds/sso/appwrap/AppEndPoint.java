@@ -379,7 +379,7 @@ public class AppEndPoint implements EndPoint {
 				for(NvPair pair : atts) {
 					String val = pair.getValue();
 					try {
-	                    val = MimeUtility.encodeText(val);
+	                    val = MimeUtility.encodeText(val, "utf-8", null);
 	                } catch (UnsupportedEncodingException e) {
 	                    cLog.warning("Unsupported Encoding specified for header '"
 	                            + pair.getName() + "'. Leaving as unencoded.");
