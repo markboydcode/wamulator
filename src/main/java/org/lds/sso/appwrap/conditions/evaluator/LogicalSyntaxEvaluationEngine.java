@@ -15,21 +15,9 @@ import java.util.logging.Logger;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.lds.sso.appwrap.conditions.evaluator.syntax.AND;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.Assignment;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.Attribute;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.CtxMatches;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.HasAssignment;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsAccountId;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.HasLdsApplication;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.HasPosition;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.IsEmployee;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.IsMember;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.LdsAccount;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.MemberOfUnit;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.NOT;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.OR;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.Position;
-import org.lds.sso.appwrap.conditions.evaluator.syntax.Unit;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -291,21 +279,9 @@ public class LogicalSyntaxEvaluationEngine {
     private static Map<String, Class> getSyntax() {
         Map<String, Class> map = new HashMap<String, Class>();
 
-        add(map, HasLdsAccountId.class);
-        add(map, IsEmployee.class);
-        add(map, IsMember.class);
-        add(map, MemberOfUnit.class);
-        add(map, HasPosition.class);
-        add(map, HasAssignment.class);
-        add(map, Assignment.class);
-        add(map, Position.class);
-        add(map, Unit.class);
         add(map, AND.class);
         add(map, OR.class);
         add(map, NOT.class);
-        add(map, LdsAccount.class);
-        add(map, CtxMatches.class);
-        add(map, HasLdsApplication.class);
         add(map, Attribute.class);
 
         return map;

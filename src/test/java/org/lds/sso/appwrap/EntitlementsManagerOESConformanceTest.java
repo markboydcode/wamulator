@@ -1,5 +1,7 @@
 package org.lds.sso.appwrap;
 
+import org.lds.sso.appwrap.identity.User;
+import org.lds.sso.appwrap.identity.UserManager;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -8,21 +10,37 @@ public class EntitlementsManagerOESConformanceTest {
 
     @BeforeClass
     public void load() throws Exception {
+    	System.getProperties().remove("non-existent-sys-prop");
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
+        	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
+            + "\""
+            + "  <users>"
+            + "   <user name='clark' pwd='?'>"
+            + "    <att name='apps' value='superman'/>"
+            + "   </user>"
+            + "   <user name='pres' pwd='?'>"
+            + "    <att name='positions' value='p1/5u524735/1u791040/'/>"
+            + "    <att name='units' value='7u56030/5u524735/1u791040/'/>"
+            + "   </user>"
+            + "   <user name='bish' pwd='?'>"
+            + "    <att name='positions' value='p4/7u56030/5u524735/1u791040/'/>" 
+            + "   </user>"
+            + "  </users>"
+        	+ "\"?>"
             + "<config console-port='88' proxy-port='45'>"
 
             + "  <conditions>"
             + "   <condition alias='super-user'>"
-            + "    <HasLdsApplication value='superman'/>"
+            + "    <Attribute name='apps' operation='equals' value='superman'/>"
             + "   </condition>"
             
             + "   <condition alias='bishop'>"
-            + "     <HasPosition id='4'/>" 
+            + "     <Attribute name='positions' operation='equals' value='p4/*'/>" 
             + "   </condition>"
             
             + "   <condition alias='stake-pres'>"
-            + "     <HasPosition id='1'/>"  
+            + "     <Attribute name='positions' operation='equals' value='p1/*'/>"  
             + "   </condition>"
             + "  </conditions>"
 
@@ -39,19 +57,8 @@ public class EntitlementsManagerOESConformanceTest {
             + "    </entitlements>"
             + "   </by-site>"
             + "  </sso-traffic>"
+            + "  <user-source type='xml'>xml={{usr-src-xml}}</user-source>"
 
-            + "  <users>"
-            + "   <user name='clark' pwd='?'>"
-            + "    <ldsApplications value='superman'/>"
-            + "   </user>"
-            + "   <user name='pres' pwd='?'>"
-            + "    <sso-header name='policy-ldspositions' value='p1/5u524735/1u791040/'/>"
-            + "    <sso-header name='policy-ldsunits' value='7u56030/5u524735/1u791040/'/>"
-            + "   </user>"
-            + "   <user name='bish' pwd='?'>"
-            + "    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>" 
-            + "   </user>"
-            + "  </users>"
             + "</config>";
         
         Config cfg = new Config();

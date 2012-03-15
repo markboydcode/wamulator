@@ -6,9 +6,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLEncoder;
+
+import javax.mail.internet.MimeUtility;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -20,7 +23,6 @@ import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -32,6 +34,9 @@ public class RequestHandlerIntegrationTest {
     private Service service = null;
     private Thread server = null;
     private ClientSideContext cctx = new ClientSideContext();
+    
+    private static final String MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING = "Jay 金&lt;script>alert(0)&lt;/script>虬 Admin"; 
+    private static final String MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING = "Jay 金<script>alert(0)</script>虬 Admin"; 
     
     private static class ClientSideContext {
     	int sitePort = -1;
@@ -463,7 +468,7 @@ public class RequestHandlerIntegrationTest {
 
 			public void handleServerSide(ServerSideContext ctx) {
 				ctx.answer = "";
-				this.lookForHdr(ctx, UserHeaderNames.SERVICE_URL);
+				this.lookForHdr(ctx, GlobalHeaderNames.SERVICE_URL);
 				this.lookForHdr(ctx, GlobalHeaderNames.SIGNIN);
 				this.lookForHdr(ctx, GlobalHeaderNames.SIGNOUT);
 			}
@@ -508,7 +513,7 @@ public class RequestHandlerIntegrationTest {
 		        int status = client.executeMethod(method);
 		        String response = method.getResponseBodyAsString().trim();
 		        System.out.println("--response from server: " + response);
-		        Assert.assertFalse(response.contains(UserHeaderNames.SERVICE_URL + "--NOT FOUND"));
+		        Assert.assertFalse(response.contains(GlobalHeaderNames.SERVICE_URL + "--NOT FOUND"));
 		        Assert.assertFalse(response.contains(GlobalHeaderNames.SIGNIN + "--NOT FOUND"));
 		        Assert.assertFalse(response.contains(GlobalHeaderNames.SIGNOUT + "--NOT FOUND"));
 		        method.releaseConnection();
@@ -615,6 +620,219 @@ public class RequestHandlerIntegrationTest {
 		        method.releaseConnection();
 			}
     	}),
+    	profile_header_injection_test(new RhIntTest() {
+			public boolean appliesTo(ServerSideContext ctx) {
+				return ctx.envelope.contains("/profile-att/header/test/");
+			}
+
+			public String getSimMappingAndAccess(ClientSideContext csc) {
+				return "<cctx-mapping cctx='/profile-att/header/*' thost='127.0.0.1' tport='"
+						+ csc.serverPort
+						+ "' tpath='/profile-att/header/*'>"
+						+ " <headers>"
+			            + "  <profile-att name='prof-1' attribute='att-1'/>"
+			            + "  <profile-att name='prof-2' attribute='att-2'/>"
+						+ " </headers>"
+						+ "</cctx-mapping>"
+						+ "<allow action='GET' cpath='/profile-att/header/*'/>";
+			}
+
+			public void handleServerSide(ServerSideContext ctx) {
+				// when finished .answer should be "prof-vals: prof-1=val1; prof-2=val2-1,val2-2"
+            	ctx.answer = "prof-vals: ";
+
+            	// check prof-1 first and inject into response
+                String sHdr = RequestHandler.CRLF + "prof-1:";
+                int sIdx = ctx.envelopeLC.indexOf(sHdr);
+
+                if (sIdx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, sIdx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(sIdx+sHdr.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(sIdx+sHdr.length(), cr).trim();
+                    }
+                    ctx.answer += "prof-1=" + val;
+                }
+                
+            	// check first of multi & inject into response
+                String mHdr = RequestHandler.CRLF + "prof-2:";
+                int mIdx = ctx.envelopeLC.indexOf(mHdr);
+
+                if (mIdx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, mIdx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(mIdx+mHdr.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(mIdx+mHdr.length(), cr).trim();
+                    }
+                    ctx.answer += "; prof-2=" + val;
+                }
+
+            	// check second of multi & inject into response
+                int m2Idx = ctx.envelopeLC.indexOf(mHdr, mIdx+1);
+
+                if (m2Idx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, m2Idx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(m2Idx+mHdr.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(m2Idx+mHdr.length(), cr).trim();
+                    }
+                    ctx.answer += "," + val;
+                }
+			}
+
+			public void runTest(ClientSideContext csc) throws Exception {
+		        System.out.println("----> profile_header_injection_test ");
+		        
+		        // only verify for authenticated user
+		        String uri = "http://local.lds.org:" + csc.sitePort + "/profile-att/header/test/";
+		        Config cfg = Config.getInstance();
+		        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.lds.org");
+		        System.out.println(" auth'd ngiwb2");
+
+		        HttpClient client2 = new HttpClient();
+
+		        HostConfiguration hcfg2 = new HostConfiguration();
+		        hcfg2.setProxy("127.0.0.1", csc.sitePort);
+		        client2.setHostConfiguration(hcfg2);
+
+		        HttpMethod method2 = new GetMethod(uri);
+		        method2.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
+		        method2.setFollowRedirects(false);
+
+		        int status2 = client2.executeMethod(method2);
+		        String response2 = method2.getResponseBodyAsString().trim();
+		        Assert.assertEquals(status2, 200, "should have returned http 200 OK");
+		        Assert.assertEquals(response2, "prof-vals: prof-1=val1; prof-2=val2-1,val2-2");
+		        method2.releaseConnection();
+			}
+    	}),
+    	fixed_header_injection_test(new RhIntTest() {
+			public boolean appliesTo(ServerSideContext ctx) {
+				return ctx.envelope.contains("/fixed-value/header/test/");
+			}
+
+			public void handleServerSide(ServerSideContext ctx) {
+				// when finished .answer should be "fixed-vals: single=single-1; multi=multi-1,multi-2"
+            	ctx.answer = "fixed-vals: ";
+
+            	// check single first and inject into response
+                String sHdr = RequestHandler.CRLF + "single:";
+                int sIdx = ctx.envelopeLC.indexOf(sHdr);
+
+                if (sIdx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, sIdx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(sIdx+sHdr.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(sIdx+sHdr.length(), cr).trim();
+                    }
+                    ctx.answer += "single=" + val;
+                }
+                
+            	// check first of multi & inject into response
+                String mHdr = RequestHandler.CRLF + "multi:";
+                int mIdx = ctx.envelopeLC.indexOf(mHdr);
+
+                if (mIdx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, mIdx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(mIdx+mHdr.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(mIdx+mHdr.length(), cr).trim();
+                    }
+                    ctx.answer += "; multi=" + val;
+                }
+
+            	// check second of multi & inject into response
+                int m2Idx = ctx.envelopeLC.indexOf(mHdr, mIdx+1);
+
+                if (m2Idx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, m2Idx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(m2Idx+mHdr.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(m2Idx+mHdr.length(), cr).trim();
+                    }
+                    ctx.answer += "," + val;
+                }
+			}
+
+			public String getSimMappingAndAccess(ClientSideContext csc) {
+				return "<cctx-mapping cctx='/fixed-value/header/*' thost='127.0.0.1' tport='"
+						+ csc.serverPort
+						+ "' tpath='/fixed-value/header/*'>"
+						+ " <headers>"
+						+ "  <fixed-value name='single' value='single-1'/>"
+						+ "  <fixed-value name='multi' value='multi-1'/>"
+						+ "  <fixed-value name='multi' value='multi-2'/>"
+						+ " </headers>"
+						+ "</cctx-mapping>"
+						+ "<unenforced cpath='/fixed-value/header/*'/>";
+			}
+
+			public void runTest(ClientSideContext csc) throws Exception {
+		        System.out.println("----> fixed_header_injection_test ");
+		        
+		        // first verify for UN-authenticated user
+		        String uri = "http://local.lds.org:" + csc.sitePort + "/fixed-value/header/test/";
+		        HttpClient client = new HttpClient();
+
+		        HostConfiguration hcfg = new HostConfiguration();
+		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+		        client.setHostConfiguration(hcfg);
+
+		        HttpMethod method = new GetMethod(uri);
+		        method.setFollowRedirects(false);
+
+		        int status = client.executeMethod(method);
+		        String response = method.getResponseBodyAsString().trim();
+		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
+		        Assert.assertEquals(response, "fixed-vals: single=single-1; multi=multi-1,multi-2");
+		        method.releaseConnection();
+
+		        // now verify for authenticated user
+		        Config cfg = Config.getInstance();
+		        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.lds.org");
+		        System.out.println(" auth'd ngiwb2");
+
+		        HttpClient client2 = new HttpClient();
+
+		        HostConfiguration hcfg2 = new HostConfiguration();
+		        hcfg2.setProxy("127.0.0.1", csc.sitePort);
+		        client2.setHostConfiguration(hcfg2);
+
+		        HttpMethod method2 = new GetMethod(uri);
+		        method2.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
+		        method2.setFollowRedirects(false);
+
+		        int status2 = client2.executeMethod(method2);
+		        String response2 = method2.getResponseBodyAsString().trim();
+		        Assert.assertEquals(status2, 200, "should have returned http 200 OK");
+		        Assert.assertEquals(response2, "fixed-vals: single=single-1; multi=multi-1,multi-2");
+		        method2.releaseConnection();
+			}
+    	}),
     	wamulat_48_test(new RhIntTest() {
 			public boolean appliesTo(ServerSideContext ctx) {
 				return ctx.envelope.contains("/wamulat-48/rfc2047/test/");
@@ -635,14 +853,32 @@ public class RequestHandlerIntegrationTest {
                     else {
                         val = ctx.envelope.substring(idx+hdrKey.length(), cr).trim();
                     }
-                    ctx.answer = "preferredname: " + val;
+                    String decd = null;
+                    boolean matched = false;
+                    try {
+                    	decd = MimeUtility.decodeText(val);
+                    	if (decd.equals(MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING)) {
+                    		matched = true;
+                    	}
+                    	else {
+                    		System.out.println("Expected " + MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING + " but decoding '" + val + "' became '" + decd + "'");
+                    	}
+					}
+					catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                    ctx.answer = "preferredname matched: " + matched;
                     }
 			}
 
 			public String getSimMappingAndAccess(ClientSideContext csc) {
 				return "<cctx-mapping cctx='/wamulat-48/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/wamulat-48/*'/>"
+						+ csc.serverPort + "' tpath='/wamulat-48/*'>"
+						+ " <headers>"
+						+ "  <profile-att name='preferredname' attribute='preferredname'/>"
+						+ " </headers>"
+						+ "</cctx-mapping>"
 						+ "<unenforced cpath='/wamulat-48/*'/>";
 			}
 
@@ -667,7 +903,7 @@ public class RequestHandlerIntegrationTest {
 		        int status = client.executeMethod(method);
 		        String response = method.getResponseBodyAsString().trim();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, "preferredname: =?UTF-8?Q?Jay_=E9=87=91<script>alert(0)</script>=E8=99=AC_Admin?=");
+		        Assert.assertEquals(response, "preferredname matched: true");
 		        method.releaseConnection();
 			}
     	}),
@@ -1453,17 +1689,43 @@ public class RequestHandlerIntegrationTest {
         this.setUpTestServer();
         
         // now set up the shim to verify various handling characteristics
+    	System.getProperties().remove("non-existent-sys-prop");
         String xml = ""
             + "<?xml version='1.0' encoding='UTF-8'?>"
+        	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
+            + "\""
+            + " <users>"
+            + "  <user name='ngiwb1' pwd='password1'/>"
+            //+ "  <user name='ngiwb2' pwd='password1'>"
+            + "  <user name='ngiwb2'>"
+            + "   <att name='apps' value='aaa'/>"
+            + "   <att name='apps' value='bbb'/>"
+            + "   <att name='apps' value='ccc'/>"
+            + "   <att name='preferredname'      value='" + MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING + "'/>"
+            + "   <att name='givenname'          value='Jay Admin'/>"
+            + "   <att name='preferredlanguage'  value='eng'/>"
+            + "   <att name='preferred-name'     value='" + MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING + "'/>"
+            + "   <att name='given-name'         value='Jay Admin'/>"
+            + "   <att name='preferred-language' value='eng'/>"
+            + "   <att name='preferred_name'     value='" + MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING + "'/>"
+            + "   <att name='given_name'         value='Jay Admin'/>"
+            + "   <att name='preferred_language' value='eng'/>"
+            + "   <att name='att-1' value='val1'/>"
+            + "   <att name='att-2' value='val2-1'/>"
+            + "   <att name='att-2' value='val2-2'/>"
+            + "  </user>"
+            + " </users>"
+        	+ "\"?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-cookie name='lds-policy' domain='.lds.org' />"
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <conditions>"
             + "  <condition alias='app-bbb'>"
-            + "   <HasLdsApplication value='bbb'/>"
+            + "   <Attribute name='apps' operation='equals' value='bbb'/>"
             + "  </condition>"
             + " </conditions>"
+            + " <user-source type='xml'>xml={{usr-src-xml}}</user-source>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>";
             
@@ -1474,22 +1736,6 @@ public class RequestHandlerIntegrationTest {
             xml = xml // TODO
             + "  </by-site>"
             + " </sso-traffic>"
-            + " <users>"
-            + "  <user name='ngiwb1' pwd='password1'/>"
-            //+ "  <user name='ngiwb2' pwd='password1'>"
-            + "  <user name='ngiwb2'>"
-            + "   <ldsApplications value='aaa,bbb,ccc'/>"
-            + "   <sso-header name='preferredname' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <sso-header name='policy-givenname' value='Jay Admin'/>"
-            + "   <sso-header name='policy-preferredlanguage' value='eng'/>"
-            + "   <sso-header name='policy-preferred-name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <sso-header name='policy-given-name' value='Jay Admin'/>"
-            + "   <sso-header name='policy-preferred-language' value='eng'/>"
-            + "   <sso-header name='policy-preferred_name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <sso-header name='policy-given_name' value='Jay Admin'/>"
-            + "   <sso-header name='policy-preferred_language' value='eng'/>"
-            + "  </user>"
-            + " </users>"
             + "</config>";
         service = Service.getService("string:" + xml);
         service.start();
@@ -1580,6 +1826,16 @@ public class RequestHandlerIntegrationTest {
     @Test
     public void test_dont_preserve_host() throws Exception {
     	RhTest.no_preserve_host_test.impl.runTest(cctx);
+    }
+    
+    @Test
+    public void profile_header_injection_test() throws Exception {
+    	RhTest.profile_header_injection_test.impl.runTest(cctx);
+    }
+
+    @Test
+    public void fixed_header_injection_test() throws Exception {
+    	RhTest.fixed_header_injection_test.impl.runTest(cctx);
     }
 
     @Test

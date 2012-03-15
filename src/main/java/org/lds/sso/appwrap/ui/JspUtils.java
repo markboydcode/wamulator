@@ -1,15 +1,14 @@
 package org.lds.sso.appwrap.ui;
 
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.Session;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.identity.Session;
 
 /**
  * Object used in jsp:usebean for stuff that I can't do directly in the jsp.
@@ -99,28 +98,6 @@ public class JspUtils {
             };
         }
         return crlfToBr; 
-    }
-    
-    
-    /**
-     * Returns a Map implementation whose get takes the passed-in header name
-     * and returns a Boolean true if it is a supported SSO injected header
-     * and false otherwise.
-     *  
-     * @return
-     */
-    public BaseMapImpl<Boolean> getIsSsoDefinedHeader() {
-        if (isSsoDefinedHdr == null) {
-
-            isSsoDefinedHdr = new BaseMapImpl<Boolean>() {
-                @Override
-                public Boolean get(Object key) {
-                    String value = (String) key;
-                    return UserHeaderNames.defaultHeaders.get(value) != null;
-                }
-            };
-        }
-        return isSsoDefinedHdr; 
     }
     
     /**

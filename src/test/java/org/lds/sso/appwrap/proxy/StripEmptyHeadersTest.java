@@ -1,32 +1,21 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
-import org.lds.sso.appwrap.User;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
@@ -45,6 +34,8 @@ public class StripEmptyHeadersTest {
 	private Service service = null;
     private Thread server = null;
     private int sitePort = -1;
+    
+    private static final String HDR_NAME="policy-something";
 
 	@Test
 	public void test_emptyHeadersPassed_then_emptyHeadersStripped() throws Exception {
@@ -83,26 +74,22 @@ public class StripEmptyHeadersTest {
                         String answer = null;
 
                         if (input.contains("/verify-empty-hdr-injected/")) {
-                            answer = UserHeaderNames.INDIVIDUAL_ID
-                                + ": not found";
-                            int idx = input.indexOf(UserHeaderNames.INDIVIDUAL_ID + ":");
+                            answer = HDR_NAME + ": not found";
+                            int idx = input.indexOf(HDR_NAME + ":");
 
                             if (idx != -1) {
                                 int col = input.indexOf(":", idx+1);
                                 int cr = input.indexOf(RequestHandler.CRLF, col+1);
                                 String val = input.substring(col+1, cr).trim();
-                                answer = UserHeaderNames.INDIVIDUAL_ID
-                                + ": found '" + val + "'";
+                                answer = HDR_NAME + ": found";
                             }
                             req = "verify-empty-hdr-injected";
                         }
                         else if (input.contains("/verify-stripped/")) {
-                            answer = UserHeaderNames.INDIVIDUAL_ID
-                                + ": cleared";
+                            answer = HDR_NAME + ": cleared";
 
-                            if (input.contains(UserHeaderNames.INDIVIDUAL_ID + ":")) {
-                                answer = UserHeaderNames.INDIVIDUAL_ID
-                                + ": seen";
+                            if (input.contains(HDR_NAME + ":")) {
+                                answer = HDR_NAME + ": seen";
                             }
                             req = "stripped-test";
                         }
@@ -163,20 +150,28 @@ public class StripEmptyHeadersTest {
         server.start();
 
         // now set up the shim to verify empty headers are injected
+    	System.getProperties().remove("non-existent-sys-prop");
         service = Service.getService("string:"
             + "<?xml version='1.0' encoding='UTF-8'?>"
+        	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
+            + "\"xml="
+            + " <users>"
+            + "  <user name='ngiwb1' pwd='password1'>"
+            + "   <Att name='non-existent-att' value=''/>"
+            + "  </user>"
+            + " </users>"
+        	+ "\"?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-cookie name='lds-policy' domain='.lds.org' />"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping cctx='/test/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/test/*'/>"
+            + "   <cctx-mapping cctx='/test/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/test/*'>"
+            + "   </cctx-mapping>"
             + "   <unenforced cpath='/test/*'/>"
             + "  </by-site>"
             + " </sso-traffic>"
-            + " <users>"
-            + "  <user name='ngiwb1' pwd='password1'/>"
-            + " </users>"
+            + " <user-source type='xml'>{{usr-src-props}}</user-source>"
             + "</config>");
         service.start();
         sitePort = Config.getInstance().getProxyPort();
@@ -195,9 +190,9 @@ public class StripEmptyHeadersTest {
         // get the user cookie
         String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
 
-        // ------------ TEST TWO: empty headers get injected
+        // ------------ TEST TWO: empty headers make it through
 
-        // now connect and verify we get empty headers injected
+        // now connect and verify that empty headers get passed through.
         String uri = "http://local.lds.org:" + sitePort + "/test/verify-empty-hdr-injected/";
         HttpClient client = new HttpClient();
 
@@ -206,8 +201,9 @@ public class StripEmptyHeadersTest {
         client.setHostConfiguration(hcfg);
 
         HttpMethod method = new GetMethod(uri);
-
+        
         method.addRequestHeader(new Header("Cookie", cfg.getCookieName() + "=" + token));
+        method.addRequestHeader(new Header("policy-something", ""));
 
         method.setFollowRedirects(false);
         int status = client.executeMethod(method);
@@ -215,7 +211,7 @@ public class StripEmptyHeadersTest {
         System.out.println(response);
         // sanity check that we got there
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
-        Assert.assertEquals(response, UserHeaderNames.INDIVIDUAL_ID + ": found ''");
+        Assert.assertEquals(response, HDR_NAME + ": found");
         method.releaseConnection();
 
         // ------------ TEST THREE: empty headers get stripped
@@ -239,7 +235,7 @@ public class StripEmptyHeadersTest {
         System.out.println(r2);
         // sanity check that we got there
         Assert.assertEquals(s2, 200, "should have returned http 200 OK");
-        Assert.assertEquals(r2, UserHeaderNames.INDIVIDUAL_ID + ": cleared");
+        Assert.assertEquals(r2, HDR_NAME + ": cleared");
 
         // ------------ TEST FOUR: empty headers stripped indicator not seen if none stripped
 
@@ -255,9 +251,7 @@ public class StripEmptyHeadersTest {
 
         // add all user header values for ngiwb1 so none will be empty
         User usr = cfg.getUserManager().getUser("ngiwb1");
-        for ( String hdrNm : UserHeaderNames.defaultHeaders.keySet()) {
-            usr.addHeader(hdrNm, "not-empty");
-        }
+        usr.addAttribute("non-existent-att", "not-empty");
         m3.setFollowRedirects(false);
         int s3 = c3.executeMethod(m3);
         String r3 = m3.getResponseBodyAsString().trim();

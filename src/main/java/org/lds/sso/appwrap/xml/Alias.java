@@ -29,6 +29,8 @@ public class Alias {
 	public final String name;      // the name of the alias
 	public final String value;     // the derived alias value
 	public final String original;  // the original alias value
+	public static final String MACRO_START = "{{";
+	public static final String MACRO_END = "}}";
 	
 	// regex for old-style aliases
 	private static final Pattern propertyPattern = Pattern.compile("(((\\w\\s\\w)|([\\w\\-_]))*)\\s*=\\s*\"?(system:|classpath:|file:)?([\\{\\}\\w\\-_\\s\\./\\*]*)\"?\\s*");
@@ -134,7 +136,7 @@ public class Alias {
 	}
 	
 	/**
-     * User during config file parsing to resolve references to {{token}} to
+     * Used during config file parsing to resolve references to {{token}} to
      * values stored in the aliases map by "token" key. If not found then an
      * illegal argument exception is thrown.
      * 
@@ -143,17 +145,17 @@ public class Alias {
      */
     public static String resolveAliases(String val) {
         int curIdx = 0;
-        int leftCurlys = val.indexOf("{{");
+        int leftCurlys = val.indexOf(MACRO_START);
         StringBuffer resolved = new StringBuffer();
         boolean foundEnd = false;
 
         while (leftCurlys != -1) {
             String text = val.substring(curIdx, leftCurlys);
             resolved.append(text);
-            int rightCurlys = val.indexOf("}}", leftCurlys + 2);
+            int rightCurlys = val.indexOf(MACRO_END, leftCurlys + 2);
             if (rightCurlys == -1) {
                 throw new IllegalArgumentException(
-                        "Unmatched '}}' for alias in " + val);
+                        "Unmatched '" + MACRO_END + "' for alias in " + val);
             }
             String alias = val.substring(leftCurlys + 2, rightCurlys);
             String value = XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES).getAliasValue(alias);
@@ -167,7 +169,7 @@ public class Alias {
                 foundEnd = true;
                 break;
             } else {
-                leftCurlys = val.indexOf("{{", curIdx);
+                leftCurlys = val.indexOf(MACRO_START, curIdx);
             }
         }
         if (!foundEnd) {

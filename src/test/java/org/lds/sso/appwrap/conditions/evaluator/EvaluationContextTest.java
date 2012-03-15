@@ -1,13 +1,12 @@
 package org.lds.sso.appwrap.conditions.evaluator;
 
-import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
 import org.easymock.classextension.EasyMock;
-import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.SyntaxBase;
+import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -29,14 +28,8 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsEmployee debug-user='boydmr'/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='employee' operation='exists' debug-user='boydmr'/>");
             SyntaxBase base = (SyntaxBase) ev;
-
-            Principal p = EasyMock.createMock(Principal.class);
-            p.getName();
-            EasyMock.expectLastCall().andReturn(
-                    "id=BoydMR,ou=user,ou=people,o=lds");
-            EasyMock.replay(p);
 
             User u = EasyMock.createMock(User.class);
             EasyMock.expect(u.getUsername()).andReturn("boydmr");
@@ -64,7 +57,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsEmployee debug='true'/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='employee' operation='exists' debug='true'/>");
             SyntaxBase base = (SyntaxBase) ev;
 
             EvaluationContext ctx = new EvaluationContext();
@@ -83,7 +76,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("test-evaluator", "<IsEmployee/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='employee' operation='exists' />");
             SyntaxBase base = (SyntaxBase) ev;
 
             EvaluationContext ctx = new EvaluationContext();

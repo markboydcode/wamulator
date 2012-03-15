@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.identity;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
+import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.io.LogUtils;
 
 public class SessionManager {
@@ -354,4 +355,21 @@ public class SessionManager {
         copy.put(s.token, s);
         domainSessions.get(ckDomain).sessions = copy;
     }
+
+    /**
+     * Passes through all domains terminating sessions for this token.
+     * 
+     * @param token
+     */
+	public void terminateSessionsForToken(String token) {
+		for(DomainSessionsMapHolder holder : domainSessions.values()) {
+			Session s = holder.sessions.get(token);
+			if (s != null) {
+				Map<String, Session> copy = new TreeMap<String, Session>();
+				copy.putAll(holder.sessions);
+				copy.remove(token);
+				holder.sessions = copy;
+			}
+		}
+	}
 }

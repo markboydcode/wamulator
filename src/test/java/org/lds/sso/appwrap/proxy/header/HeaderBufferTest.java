@@ -60,7 +60,7 @@ public class HeaderBufferTest {
         Assert.assertNull(buf.getHeaders(null));
         Assert.assertNull(buf.getHeaders(HeaderDef.Extension));
         Assert.assertNull(buf.removeHeader(HeaderDef.Extension));
-        Assert.assertNull(buf.removeHeader(null));
+        Assert.assertNull(buf.removeHeader((HeaderDef)null));
     }
     
     @Test

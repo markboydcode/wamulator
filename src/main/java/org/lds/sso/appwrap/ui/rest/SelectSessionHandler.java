@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.SessionManager;
+import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 

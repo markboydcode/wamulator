@@ -1,5 +1,6 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.identity;
 
+import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

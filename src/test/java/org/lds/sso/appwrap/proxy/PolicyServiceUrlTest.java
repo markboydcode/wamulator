@@ -1,15 +1,10 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -18,7 +13,7 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -112,9 +107,9 @@ public class PolicyServiceUrlTest {
                                     : (input.contains("/service-url2/") ? "URL2"
                                             : "GTURL"));
                             String sUrl = null;
-                            int sIdx = input.indexOf(UserHeaderNames.SERVICE_URL);
+                            int sIdx = input.indexOf(GlobalHeaderNames.SERVICE_URL);
                             if (sIdx == -1) {
-                                sUrl = UserHeaderNames.SERVICE_URL + " not found in request headers";
+                                sUrl = GlobalHeaderNames.SERVICE_URL + " not found in request headers";
                             }
                             else {
                                 int cIdx = input.indexOf(":", sIdx+1);
@@ -226,7 +221,7 @@ public class PolicyServiceUrlTest {
         Assert.assertEquals(status, 302, "should have returned http 302 not modified");
         Header url = method.getResponseHeader("X-SURL-RECEIVED");
 
-        System.out.println(UserHeaderNames.SERVICE_URL + " Received: " + url.getValue());
+        System.out.println(GlobalHeaderNames.SERVICE_URL + " Received: " + url.getValue());
         String expected = "http://10.10.10.10:1010" + RestVersion.CD_OESv1.getRestUrlBase() + "labs-local.lds.org/";
         Assert.assertTrue(url.getValue().equals(expected),
                 "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");
@@ -248,7 +243,7 @@ public class PolicyServiceUrlTest {
         Assert.assertEquals(status, 302, "should have returned http 302 not modified");
         Header url = method.getResponseHeader("X-SURL-RECEIVED");
 
-        System.out.println(UserHeaderNames.SERVICE_URL + " Received: " + url.getValue());
+        System.out.println(GlobalHeaderNames.SERVICE_URL + " Received: " + url.getValue());
         String expected = "http://labs-local.lds.org:" + Config.getInstance().getConsolePort() + RestVersion.CD_OESv1.getRestUrlBase() + "labs-local.lds.org/";
         Assert.assertTrue(url.getValue().equals(expected),
                 "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");
@@ -270,7 +265,7 @@ public class PolicyServiceUrlTest {
         Assert.assertEquals(status, 302, "should have returned http 302 not modified");
         Header url = method.getResponseHeader("X-SURL-RECEIVED");
 
-        System.out.println(UserHeaderNames.SERVICE_URL + " Received: " + url.getValue());
+        System.out.println(GlobalHeaderNames.SERVICE_URL + " Received: " + url.getValue());
         String expected = "http://other.lds.org:" + Config.getInstance().getConsolePort() + RestVersion.CD_OESv1.getRestUrlBase() + "other.lds.org/";
         Assert.assertTrue(url.getValue().equals(expected),
         "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");

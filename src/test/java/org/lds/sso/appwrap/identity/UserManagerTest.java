@@ -1,9 +1,11 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.identity;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.lds.sso.appwrap.identity.User;
+import org.lds.sso.appwrap.identity.UserManager;
 import org.testng.annotations.Test;
 
 public class UserManagerTest {

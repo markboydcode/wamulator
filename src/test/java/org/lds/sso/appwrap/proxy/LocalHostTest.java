@@ -32,8 +32,15 @@ public class LocalHostTest {
         Config cfg = new Config();
 
         // now set up the shim to verify empty headers are injected
+    	System.getProperties().remove("non-existent-sys-prop");
         service = Service.getService("string:"
             + "<?xml version='1.0' encoding='UTF-8'?>"
+        	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
+            + "\"xml="
+            + " <users>"
+            + "  <user name='ngiwb1' pwd='password1'/>"
+            + " </users>"
+        	+ "\"?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-cookie name='lds-policy' domain='localhost' />"
@@ -45,9 +52,7 @@ public class LocalHostTest {
             + "    <allow action='GET' cpath='/is-alive?*'/>"
             + "  </by-site>"
             + " </sso-traffic>"
-            + " <users>"
-            + "  <user name='ngiwb1' pwd='password1'/>"
-            + " </users>"
+            + " <user-source type='xml'>{{usr-src-props}}</user-source>"
             + "</config>");
         service.start();
         sitePort = Config.getInstance().getProxyPort();

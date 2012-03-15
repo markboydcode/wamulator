@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.identity.SessionManager;
+import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.proxy.CookiePathRewriter;
 
 /**

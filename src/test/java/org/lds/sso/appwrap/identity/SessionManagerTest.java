@@ -1,8 +1,10 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.identity;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 
+import org.lds.sso.appwrap.identity.Session;
+import org.lds.sso.appwrap.identity.SessionManager;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

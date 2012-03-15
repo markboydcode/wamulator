@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
-import org.lds.sso.appwrap.User;
+import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -19,14 +19,16 @@ public class ORTest extends TestBaseClass {
 	public void testHasPosition_OR_DebugOutput() throws Exception {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<OR debug-user='ngienglishbishop'>" +
-				" <HasPosition id='3'/>" +
-				" <IsEmployee/>" +
-				"</OR>");;
+				" <Attribute name='position' operation='EQUALS' value='p3*'/>" +
+				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
+				"</OR>");
 		
 		// stuff evaluator will go after
+		NvPair[] posAtts = new NvPair[] {};
+		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "A")};
 		User usr = EasyMock.createMock(User.class);
-		EasyMock.expect(usr.getProperty(UserHeaderNames.DN)).andReturn("id=ngiEnglishBishop,ou=int,ou=people,o=lds");
-		EasyMock.expect(usr.getProperty(UserHeaderNames.POSITIONS)).andReturn(null);
+        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
 		EasyMock.replay(usr);
 
@@ -42,7 +44,8 @@ public class ORTest extends TestBaseClass {
 		BufferedReader br = new BufferedReader(sr);
 
 		Assert.assertEquals(br.readLine(), "T  <OR debug-user='ngienglishbishop'>");
-		Assert.assertEquals(br.readLine(), "T    <IsEmployee/>  user has ou=int in their dn");
+		Assert.assertEquals(br.readLine(), "T    <Attribute name='employeestatus' operation='EQUALS' value='A'/>  user has attribute that matches value, actual: A");
+
 		Assert.assertEquals(br.readLine(), "   </OR>");
 		Assert.assertEquals(br.readLine(), "----- env -----");
 		Assert.assertEquals(br.readLine(), "somevar1 = somevalue1");
@@ -53,14 +56,16 @@ public class ORTest extends TestBaseClass {
 	public void testHasPosition_OR_notDebugOutput() throws Exception {
         IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<OR debug-user='ngienglishbishop'>" +
-				" <HasPosition id='3'/>" +
-				" <IsEmployee/>" +
-				"</OR>");;
+				" <Attribute name='position' operation='EQUALS' value='p3*'/>" +
+				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
+				"</OR>");
 		
 		// stuff evaluator will go after
+		NvPair[] posAtts = new NvPair[] {};
+		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "T")};
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getProperty(UserHeaderNames.DN)).andReturn("id=ngiEnglishBishop,ou=ext,ou=people,o=lds");
-        EasyMock.expect(usr.getProperty(UserHeaderNames.POSITIONS)).andReturn(null);
+        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 

@@ -39,16 +39,27 @@ public class RestHttpTest {
 
         System.setProperty("is-cdol-syntax",
                 "<OR>\r\n" +
-                "<HasPosition id='1'/>\r\n" +
-                "<HasPosition id='4'/>\r\n" +
-                "<HasPosition id='52'/>\r\n" +
-                "<HasPosition id='57'/>\r\n" +
+                "<Attribute name='position' operation='equals' value='p1/*'/>\r\n" +
+                "<Attribute name='position' operation='equals' value='p4/*'/>\r\n" +
+                "<Attribute name='position' operation='equals' value='p52/*'/>\r\n" +
+                "<Attribute name='position' operation='equals' value='p57/*'/>\r\n" +
                 "</OR>");
+    	System.getProperties().remove("non-existent-sys-prop");
 
         StringBuffer config = new StringBuffer("string:")
         .append("<?xml version='1.0' encoding='UTF-8'?>")
         .append("<?system-alias is-cdol-syntax=\"is-cdol-syntax\"?>")
         .append("<?system-alias is-cdol=\"is-cdol\" default=\"{{is-cdol-syntax}}\"?>")
+        .append("<?system-alias usr-src-xml=non-existent-sys-prop default=")
+        .append("\"")
+        .append(" <users>")
+        .append("  <user name='user1' pwd='pwd'/>")
+        .append("  <user name='user2' pwd='pwd'/>")
+        .append("   <user name='ngiwb1' pwd='password1'>")
+        .append("    <att name='position' value='p4/7u56030/5u524735/1u791040/'/>") // bishop
+        .append("   </user>")
+        .append(" </users>")
+        .append("\"?>")
         .append("<config console-port='auto' proxy-port='auto' ")
         .append(" rest-version='CD-OESv1'>")
         .append(" <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='false'/>")
@@ -63,13 +74,7 @@ public class RestHttpTest {
         .append("   </entitlements>")
         .append("  </by-site>")
         .append(" </sso-traffic>")
-        .append(" <users>")
-        .append("  <user name='user1' pwd='pwd'/>")
-        .append("  <user name='user2' pwd='pwd'/>")
-        .append("   <user name='ngiwb1' pwd='password1'>")
-        .append("    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>") // bishop
-        .append("   </user>")
-        .append(" </users>")
+        .append(" <user-source type='xml'>xml={{usr-src-xml}}</user-source>")
         .append("</config>");
 
         service = Service.getService(config.toString());

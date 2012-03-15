@@ -1,10 +1,8 @@
 package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
 import java.io.PrintWriter;
-import java.security.Principal;
 import java.util.Map;
 
-import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;

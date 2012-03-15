@@ -33,14 +33,6 @@
 </table>
 </td>
 <td valign="top">
-<div style="font-style: italic; color: green; padding: 3px 3px 3px 20px">Headers Injected</div>
-<!-- change to dynamically inject here via json ajax with jquery -->
-<table>
-<c:forEach items="${requestScope.selectedUser.headers}" var="hdr">
-<tr><td><c:choose><c:when test="${jsputils.isSsoDefinedHeader[hdr.name]}"><span style="padding: 0 5px 0 20px;">${hdr.name}:</span></c:when><c:otherwise><span title='Not an SSO Injected Header' style="padding: 0 5px 0 20px; background-color: rgb(255,180,180)">${hdr.name}:</span></c:otherwise></c:choose></td><td><c:out value='${hdr.value}'/></td></tr>
-</c:forEach>
-</table>
-<!-- end of proposed change to dynamically inject here via json ajax -->
 <div style="font-style: italic; color: green; padding: 3px 3px 3px 20px">Attributes</div>
 <table>
 <c:forEach items="${requestScope.selectedUser.attributes}" var="att">
@@ -60,6 +52,7 @@
 <tr><td><c:if test="${session.token == requestScope.currentToken}"><IMG src="pointer.png"/></c:if></td>
 <td><a href="/admin/action/set-session/${session.token}">${session.token}</a></td>
 <td>${session.remainingSeconds}</td>
+<td><a href="/admin/action/terminate-session/${session.token}"><img src="delete.gif" style="border: none"/></a></td></tr>
 </tr>
 </c:forEach>
 </c:forEach>

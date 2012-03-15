@@ -26,8 +26,16 @@ public class SignMeInOutTest {
         // clear out any config residue from other tests
         new Config();
 
+    	System.getProperties().remove("non-existent-sys-prop");
         StringBuffer config = new StringBuffer("string:")
         .append("<?xml version='1.0' encoding='UTF-8'?>")
+        .append("<?system-alias usr-src-props=non-existent-sys-prop default=")
+        .append("\"xml=")
+        .append(" <users>")
+        .append("  <user name='user1' pwd='pwd'/>")
+        .append("  <user name='user2' pwd='pwd'/>")
+        .append(" </users>")
+        .append("\"?>")
         .append("<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>")
         .append(" <sso-cookie name='lds-policy' domain='.lds.org'/>")
         .append(" <sso-sign-in-url value='http://local.lds.org:{{console-port}}/admin/selectUser.jsp'/>")
@@ -39,10 +47,7 @@ public class SignMeInOutTest {
         .append("    <unenforced cpath='/is-alive?*'/>")
         .append("  </by-site>")
         .append(" </sso-traffic>")
-        .append(" <users>")
-        .append("  <user name='user1' pwd='pwd'/>")
-        .append("  <user name='user2' pwd='pwd'/>")
-        .append(" </users>")
+        .append(" <user-source type='xml'>{{usr-src-props}}</user-source>")
         .append("</config>");
 
         service = Service.getService(config.toString());

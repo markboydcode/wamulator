@@ -5,7 +5,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -14,6 +16,9 @@ import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.identity.ExternalUserSource;
+import org.lds.sso.appwrap.identity.SessionManager;
+import org.lds.sso.appwrap.identity.UserManager;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.header.Header;
 import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
@@ -192,7 +197,7 @@ public class Config {
 
 	private String stateCookieName;
 
-	private String externalUserSource = null;
+	private List<ExternalUserSource> externalUserSources = new ArrayList<ExternalUserSource>();
 
     private int maxEntries = MAX_TRAFFIC_ENTRIES;
 
@@ -254,6 +259,8 @@ public class Config {
 	public Config() {
 		loadSessionManager();
 		startRepeatRequestRecordSweeper();
+		// clear out any residue in xml loader
+		XmlConfigLoader2.parsingContextAccessor.get().clear();
 
 		if (instance != null) {
 			instance.stopRepeatRequestRecordSweeper();
@@ -811,18 +818,17 @@ public class Config {
 	}
 
 	/**
-	 * Sets the external site from whence user information can be loaded for 
-	 * injection in headers. Can include a macro of "{username}" which will be
-	 * replaced with the value entered in the codaUserSelect.jsp page. 
+	 * Adds an {@link ExternalUserSource} from whence user information can be 
+	 * loaded for injection in headers and evaluation in policies.  
 	 * 
 	 * @param source
 	 */
-	public void setExternalUserSource(String source) {
-		this.externalUserSource = source;
+	public void addExternalUserSource(ExternalUserSource source) {
+		this.externalUserSources.add(source);
 	}
 	
-	public String getExternalUserSource() {
-		return this.externalUserSource;
+	public List<ExternalUserSource> getExternalUserSources() {
+		return this.externalUserSources;
 	}
 
 	/**

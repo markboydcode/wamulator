@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
-import org.lds.sso.appwrap.User;
+import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -20,15 +20,17 @@ public class ANDTest extends TestBaseClass
 		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug-user='ngienglishbishop'>" +
 				" <NOT>" +
-				"  <HasPosition id='3'/>" +
+				"  <Attribute name='position' operation='EQUALS' value='p3*'/>" +
 				" </NOT>" +
-				" <IsEmployee/>" +
-				"</AND>");;
+				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
+				"</AND>");
 		
 		// stuff evaluator will go after
+		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p4/7u345/5u897/1u2001/")};
+		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "A")};
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getProperty(UserHeaderNames.DN)).andReturn("id=ngiEnglishBishop,ou=int,ou=people,o=lds");
-        EasyMock.expect(usr.getProperty(UserHeaderNames.POSITIONS)).andReturn("p4/7u345/5u897/1u2001/");
+        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -59,14 +61,16 @@ public class ANDTest extends TestBaseClass
 	public void testHasPosition_AND_DebugOutput() throws Exception {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug-user='ngienglishbishop'>" +
-				" <HasPosition id='3'/>" +
-				" <IsEmployee/>" +
-				"</AND>");;
+				" <Attribute name='position' operation='EQUALS' value='p3*'/>" +
+				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
+				"</AND>");
 		
 		// stuff evaluator will go after
+		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p3/7u345/5u897/1u2001/")};
+		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "A")};
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getProperty(UserHeaderNames.DN)).andReturn("id=ngiEnglishBishop,ou=int,ou=people,o=lds");
-        EasyMock.expect(usr.getProperty(UserHeaderNames.POSITIONS)).andReturn("p3/7u345/5u897/1u2001/");
+        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -76,7 +80,7 @@ public class ANDTest extends TestBaseClass
 		env.put("somevar3", "somevalue3");
 
 		EvaluationContext ctx = new EvaluationContext(usr, env);
-		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should not have position 3 and should be an employee");
+		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have position 3 and should be an employee");
 
 		String output = swa.getLogOutput();
 		StringReader sr = new StringReader(output);
@@ -97,14 +101,16 @@ public class ANDTest extends TestBaseClass
 	public void testHasPosition_AND_notDebugOutput() throws Exception {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug-user='ngienglishbishop'>" +
-				" <HasPosition id='3'/>" +
-				" <IsEmployee/>" +
-				"</AND>");;
+				" <Attribute name='position' operation='EQUALS' value='p3*'/>" +
+				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
+				"</AND>");
 		
 		// stuff evaluator will go after
+		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p3/7u345/5u897/1u2001/")};
+		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "T")};
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getProperty(UserHeaderNames.DN)).andReturn("id=ngiEnglishBishop,ou=ext,ou=people,o=lds");
-        EasyMock.expect(usr.getProperty(UserHeaderNames.POSITIONS)).andReturn("p3/7u345/5u897/1u2001/");
+        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -123,7 +129,7 @@ public class ANDTest extends TestBaseClass
 		// for AND if not all criteria were met then we simplify output and only
 		// show the offending evalutor
 		Assert.assertEquals(br.readLine(), "F  <AND debug-user='ngienglishbishop'>");
-		Assert.assertEquals(br.readLine(), "F    <IsEmployee/>  user does not have ou=int in their dn");
+		Assert.assertEquals(br.readLine(), "F    <Attribute name='employeestatus' operation='EQUALS' value='A'/>  user does not have attribute that matches value, actual: T");
 		Assert.assertEquals(br.readLine(), "   </AND>");
 		Assert.assertEquals(br.readLine(), "----- env -----");
         Assert.assertEquals(br.readLine(), "somevar1 = somevalue1");
@@ -136,14 +142,16 @@ public class ANDTest extends TestBaseClass
 	public void test_debug_with_hashtable_in_env() throws Exception {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", 
 				"<AND debug='true'>" +
-				" <HasPosition id='3'/>" +
-				" <IsEmployee/>" +
-				"</AND>");;
+				" <Attribute name='position' operation='EQUALS' value='p3*'/>" +
+				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
+				"</AND>");
 		
 		// stuff evaluator will go after
+		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p3/7u345/5u897/1u2001/")};
+		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "T")};
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getProperty(UserHeaderNames.DN)).andReturn("id=ngiEnglishBishop,ou=ext,ou=people,o=lds");
-        EasyMock.expect(usr.getProperty(UserHeaderNames.POSITIONS)).andReturn("p3/7u345/5u897/1u2001/");
+        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -167,7 +175,7 @@ public class ANDTest extends TestBaseClass
 		// for AND if not all criteria were met then we simplify output and only
 		// show the offending evalutor
 		Assert.assertEquals(br.readLine(), "F  <AND debug='true'>");
-		Assert.assertEquals(br.readLine(), "F    <IsEmployee/>  user does not have ou=int in their dn");
+		Assert.assertEquals(br.readLine(), "F    <Attribute name='employeestatus' operation='EQUALS' value='A'/>  user does not have attribute that matches value, actual: T");
 		Assert.assertEquals(br.readLine(), "   </AND>");
 		Assert.assertEquals(br.readLine(), "----- env -----");
 		Assert.assertEquals(br.readLine(), "somevar1 = somevalue1");

@@ -13,6 +13,7 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
 
 public class SiteMatcher {
@@ -29,6 +30,7 @@ public class SiteMatcher {
     
     protected int endPoints = 0;
     protected int policies = 0;
+	private EndPoint lastEndPointAdded = null;
 
 	/**
 	 * Create a matcher that allows multiple URLs to be configured within it.
@@ -129,6 +131,11 @@ public class SiteMatcher {
 	public void addMapping(EndPoint point) {
 		point.setDeclarationOrder(++endPoints);
 		mappedEndPoints.add(point);
+		lastEndPointAdded = point;
+	}
+	
+	public EndPoint getLastMappingAdded() {
+		return lastEndPointAdded;
 	}
 	
     /**

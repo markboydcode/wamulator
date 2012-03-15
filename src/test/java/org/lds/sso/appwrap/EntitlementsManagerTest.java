@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap;
 
+import org.lds.sso.appwrap.identity.UserManager;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -7,21 +8,37 @@ public class EntitlementsManagerTest {
 
     @Test
     public void test() throws Exception {
-        System.setProperty("is-employee-syntax", "<IsEmployee/>");
-        System.setProperty("is-524735-member-syntax", "<MemberOfUnit id='524735'/>");
+        System.setProperty("is-employee-syntax", "<Attribute name='emp' operation='equals' value='yes'/>");
+        System.setProperty("is-524735-member-syntax", "<Attribute name='units' operation='equals' value='*u524735/*'/>");
         System.setProperty("is-cdol-syntax", 
                 "<OR>\r\n" + 
-                "<HasPosition id='1'/>\r\n" + 
-                "<HasPosition id='4'/>\r\n" + 
-                "<HasPosition id='52'/>\r\n" + 
-                "<HasPosition id='57'/>\r\n" + 
+                "<Attribute name='position' operation='equals' value='p1/*'/>\r\n" + 
+                "<Attribute name='position' operation='equals' value='p4/*'/>\r\n" + 
+                "<Attribute name='position' operation='equals' value='p52/*'/>\r\n" + 
+                "<Attribute name='position' operation='equals' value='p57/*'/>\r\n" + 
                 "</OR>");
+    	System.getProperties().remove("non-existent-sys-prop");
         
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias is-employee=system:is-employee-syntax?>"
             + "<?alias is-cdol=system:is-cdol-syntax?>"
             + "<?alias is-in-524735=system:is-524735-member-syntax?>"
+        	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
+            + "\""
+            + "  <users>"
+            + "   <user name='aaa' pwd='password1'>"
+            + "    <att name='emp' value='yes'/>" // is employee, not bishop
+            + "   </user>"
+            + "   <user name='bbb' pwd='password1'>"
+            + "    <att name='position' value='p4/7u56030/5u524735/1u791040/'/>" // is NOT employee, is bishop
+            + "    <att name='units' value='7u56030/5u524735/1u791040/'/>"
+            + "   </user>"
+            + "   <user name='ngiwb1' pwd='password1'>"
+            + "    <att name='position' value='p4/7u56030/5u524735/1u791040/'/>" // bishop
+            + "   </user>"
+            + "  </users>"
+        	+ "\"?>"
             + "<config console-port='88' proxy-port='45'>"
             + "  <sso-traffic>"
             + "   <by-site host='local.lds.org' port='80'>"
@@ -35,19 +52,7 @@ public class EntitlementsManagerTest {
             + "    </entitlements>"
             + "   </by-site>"
             + "  </sso-traffic>"
-            + "  <users>"
-            + "   <user name='aaa' pwd='password1'>"
-            + "    <sso-header name='policy-dn' value='cn=jeremy, ou=int, o=lds'/>" // is employee, not bishop
-            + "   </user>"
-            + "   <user name='bbb' pwd='password1'>"
-            + "    <sso-header name='policy-dn' value='cn=jeremy, ou=ext, o=lds'/>" // is NOT employee, is bishop
-            + "    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>"
-            + "    <sso-header name='policy-ldsunits' value='7u56030/5u524735/1u791040/'/>"
-            + "   </user>"
-            + "   <user name='ngiwb1' pwd='password1'>"
-            + "    <sso-header name='policy-ldspositions' value='p4/7u56030/5u524735/1u791040/'/>" // bishop
-            + "   </user>"
-            + "  </users>"
+            + " <user-source type='xml'>xml={{usr-src-xml}}</user-source>"
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);

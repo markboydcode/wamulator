@@ -20,8 +20,13 @@ public class GlobalHeaderNames {
     /**
      * The prefix of all session attributes injected by this processor.
      */
-    public static final String PREFIX = UserHeaderNames.PREFIX;
-    
+    public static final String PREFIX = "policy-";
+
+    /**
+     * Name of the header that contains the URL pointing to the oes rest service.
+     */
+    public static final String SERVICE_URL = PREFIX + "service-url";
+
     /**
      * global properties injected by this processor.
      */

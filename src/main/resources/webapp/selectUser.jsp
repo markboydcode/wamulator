@@ -7,7 +7,9 @@
 <c:set var="gotoQueryParm" scope="page" value="?goto=${jsputils.encode[param.goto]}"/>
 </c:if>
 <html>
-<head><title>Console: ${requestScope.config.serverName}</title></head>
+<head>
+<title>Console: ${requestScope.config.serverName}</title>
+</head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- masthead -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">
@@ -17,11 +19,41 @@
 <div style="padding: 0 10 10 10px;">
 <div style="font-style: italic; color: green; padding: 12px 3px 10px 3px">
 <div>Select a user to start their session or...</div>
-<div>Enter username and password if you like typing. :-)</div>
+<div>Enter username and password.</div>
 <span><c:if test="${not empty(gotoUriEnc)}"><a href="${gotoUriEnc}">Return to ${gotoUriEnc}</a></c:if></span>
 </div>
 <table border='0' padding='0' cellpadding='0'>
  <tr><td style='vertical-align: top;'>
+<c:if test="${param['page-error'] == 'user-not-found'}">
+<span style="padding; background:#EFDFDF none repeat scroll 0 0; border:1px solid #E0ACA6; 
+color:#C23232; display:block; font-family:'Lucida Grande','Lucida Sans Unicode',sans-serif; 
+font-size:12px; margin-bottom:0; margin-top:10px; width: 250px;
+padding:15px 20px; text-align:left;">The username you provided is not valid.</span>
+</c:if>
+<c:if test="${param['page-error'] == 'no-user-source-specified'}">
+<span style="padding; background:#EFDFDF none repeat scroll 0 0; border:1px solid #E0ACA6; 
+color:#C23232; display:block; font-family:'Lucida Grande','Lucida Sans Unicode',sans-serif; 
+font-size:12px; margin-bottom:0; margin-top:10px; width: 250px;
+padding:15px 20px; text-align:left;">For this sign-in page a <i>source</i> attribute must be specified for the <i>&lt;users&gt;</i> configuration element.</span>
+</c:if>
+<c:if test="${param['page-error'] == 'error-accessing-ext-source'}">
+<span style="padding; background:#EFDFDF none repeat scroll 0 0; border:1px solid #E0ACA6; 
+color:#C23232; display:block; font-family:'Lucida Grande','Lucida Sans Unicode',sans-serif; 
+font-size:12px; margin-bottom:0; margin-top:10px; width: 250px;
+padding:15px 20px; text-align:left;">Unable to access user source. See log for details.</span>
+</c:if>
+<c:if test="${param['page-error'] == 'error-must-use-http-post'}">
+<span style="padding; background:#EFDFDF none repeat scroll 0 0; border:1px solid #E0ACA6; 
+color:#C23232; display:block; font-family:'Lucida Grande','Lucida Sans Unicode',sans-serif; 
+font-size:12px; margin-bottom:0; margin-top:10px; width: 250px;
+padding:15px 20px; text-align:left;">Must use http POST when authenticating.</span>
+</c:if>
+<c:if test="${param['page-error'] == 'failed-authentication'}">
+<span style="padding; background:#EFDFDF none repeat scroll 0 0; border:1px solid #E0ACA6; 
+color:#C23232; display:block; font-family:'Lucida Grande','Lucida Sans Unicode',sans-serif; 
+font-size:12px; margin-bottom:0; margin-top:10px; width: 250px;
+padding:15px 20px; text-align:left;">Incorrect Username or Password.</span>
+</c:if>
 <form id='loginForm' action='/admin/action/set-user' method='post' >
  <div id="login">
   <fieldset>

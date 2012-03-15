@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.identity;
 
 /**
  * Simple class for keeping track of a session id and the point in time 

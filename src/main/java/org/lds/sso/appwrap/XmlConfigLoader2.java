@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.SAXParser;
@@ -21,8 +24,14 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.identity.ExternalUserSource;
+import org.lds.sso.appwrap.identity.ExternalUserSource.ConfigurationException;
+import org.lds.sso.appwrap.identity.SessionManager;
+import org.lds.sso.appwrap.identity.coda.CodaUserSource;
+import org.lds.sso.appwrap.identity.ldap.LdapUserSource;
+import org.lds.sso.appwrap.identity.legacy.WamulatorUserSource;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.io.SimpleErrorHandler;
 import org.lds.sso.appwrap.rest.RestVersion;
@@ -58,6 +67,12 @@ public class XmlConfigLoader2 {
     public static final String PARSING_IS_IN_CONDITION = "is-in-condition";
     public static final String PARSING_CONDITION_CONTENT = "condition-content";
     public static final String PARSING_CONDITION_ALIAS = "condition-alias";
+	public static final String PARSING_USR_SRC_CONTENT = "user-source-content";
+	public static final String PARSING_CURR_EXT_USR_SRC = "user-source";
+	public static final String PARSING_FIXED_ATTS = "fixed-attributes";
+	public static final String PARSING_PROFILE_ATTS = "profile-attributes";
+	
+
 
     public static final String PROP_DEFAULT = "property";
     
@@ -96,7 +111,7 @@ public class XmlConfigLoader2 {
      * Threadlocal that creates a thread specific map used during parsing of the
      * xml configuration file.
      */
-    static final ThreadLocal<Map<String,Object>> parsingContextAccessor =
+    public static final ThreadLocal<Map<String,Object>> parsingContextAccessor =
         new ThreadLocal<Map<String,Object>> () {
 
         @Override
@@ -165,6 +180,10 @@ public class XmlConfigLoader2 {
         parsingContextAccessor.get().put(PARSING_CONFIG,
                 Config.getInstance());
         put(PARSING_ALIASES, new AliasHolder());
+        parsingContextAccessor.get().put(PARSING_FIXED_ATTS, 
+        		new HashMap<String, List<String>>());
+        parsingContextAccessor.get().put(PARSING_PROFILE_ATTS, 
+        		new HashMap<String, String>());
         
         boolean validate = content.contains(WAMULATOR_SCHEMA_NAMESPACE_URI);
         // now run alias and embedded condition parser
@@ -249,6 +268,7 @@ public class XmlConfigLoader2 {
      */
     public static class Path {
         List<String> steps = new ArrayList<String>();
+        Map<String, Integer> depths = new HashMap<String, Integer>();  
         private String compositePath = "/";
 
         /**
@@ -258,8 +278,32 @@ public class XmlConfigLoader2 {
          */
         public synchronized void add(String step) {
             steps.add(step);
-            buildPath();
+            buildTypePath();
+            incrementInstanceCount();
         }
+
+        /**
+         * Keeps track of current node index within sibling group for each level
+         * penetrated for building the instance path. For example, if I was looking
+         * in the second level1 node's children at content within the first level3
+         * child I would have an instance path of:
+         * 
+         * /root/level1[2]/level3[1]
+         * 
+         * @param compositePath2
+         */
+        private void incrementInstanceCount() {
+        	// ignore root
+        	if (! compositePath.equals("/")) {
+        		Integer count = depths.get(compositePath);
+        		if (count == null) {
+        			depths.put(compositePath, 1);
+        		}
+        		else {
+        			depths.put(compositePath, count.intValue() + 1);
+        		}
+        	}
+    	}
 
         /**
          * Builds a String of the steps currently in the path for speeding
@@ -267,7 +311,7 @@ public class XmlConfigLoader2 {
          * 
          * @param step
          */
-        private synchronized void buildPath() {
+        private synchronized void buildTypePath() {
             StringBuffer bfr = new StringBuffer();
             for (String step : steps) {
                 bfr.append('/');
@@ -277,6 +321,41 @@ public class XmlConfigLoader2 {
             if ("".equals(compositePath)) {
                 compositePath = "/";
             }
+        }
+
+    	/**
+         * Builds a String of the steps currently in the path including instance
+         * counts for sibling groups. 
+         * 
+         * ie: /root/level1[2]/level2[1]/level3[6]
+         * 
+         * @param step
+         */
+        private synchronized String buildInstancePath() {
+            StringBuffer noIndicesBfr = new StringBuffer();
+            StringBuffer bfr = new StringBuffer();
+            int depth = 0;
+            
+            for (String step : steps) {
+                noIndicesBfr.append('/');
+                noIndicesBfr.append(step);
+                bfr.append('/');
+                bfr.append(step);
+                Integer count = depths.get(noIndicesBfr.toString());
+                
+                // don't include index for root node, will always be 1
+                if (depth != 0 && count != null) {
+                	bfr.append('[');
+                	bfr.append("" + count.intValue());
+                	bfr.append(']');
+                }
+                depth++;
+            }
+            String instPath = bfr.toString();
+            if ("".equals(instPath)) {
+                instPath = "/";
+            }
+            return instPath;
         }
 
         /**
@@ -313,7 +392,7 @@ public class XmlConfigLoader2 {
                         + "'. Can't remove.");
             }
             steps.remove(steps.size() - 1);
-            buildPath();
+            buildTypePath();
         }
 
         /**
@@ -330,7 +409,7 @@ public class XmlConfigLoader2 {
          * Returns the composite path represented by this Path object.
          */
         public String toString() {
-            return compositePath;
+            return buildInstancePath();
         }
     }
 
@@ -503,7 +582,7 @@ public class XmlConfigLoader2 {
      * @param atts
      * @return
      */
-    static String getStringAtt(String attName, Path pathToElement,
+    public static String getStringAtt(String attName, Path pathToElement,
             Attributes atts) {
         return getStringAtt(attName, pathToElement, atts, true);
     }
@@ -517,7 +596,7 @@ public class XmlConfigLoader2 {
      * @param required
      * @return
      */
-    static String getStringAtt(String attName, Path pathToElement,
+    public static String getStringAtt(String attName, Path pathToElement,
             Attributes atts, boolean required) {
         String val = atts.getValue(attName);
         if (val == null || "".equals(val)) {
@@ -556,7 +635,7 @@ public class XmlConfigLoader2 {
 
     public static class CfgContentHandler implements ContentHandler {
 
-        public CfgContentHandler() {
+		public CfgContentHandler() {
         }
 
 
@@ -616,6 +695,12 @@ public class XmlConfigLoader2 {
                 cfg.setCookieName(getStringAtt("name", path, atts));
                 cfg.getSessionManager().setMasterCookieDomain(getStringAtt("domain", path, atts));
                 cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
+                int timeout = getIntegerAtt("session-timeout-seconds", path,
+                        atts, false);
+                if (timeout != -1) {
+                    SessionManager sman = cfg.getSessionManager();
+                    sman.setSessionInactivityTimeoutSeconds(timeout);
+                }
             } else if (path.matches("/config/sso-cookie/cdsso")) {
                 cfg.getSessionManager().addCookieDomain(getStringAtt("domain", path, atts));
             } else if (path.matches("/config/port-access")) {
@@ -665,15 +750,14 @@ public class XmlConfigLoader2 {
                     cfg.setSignInPage(getStringAtt("value", path, atts));
                 }
             } else if (path.matches("/config/sso-header")) {
-                String hdrNm = getStringAtt("name", path, atts);
-                String hdrVl = getStringAtt("value", path, atts);
-                if (hdrNm.equals(UserHeaderNames.SERVICE_URL)) {
-                    String msg = "NOTE: Global sso-header declaration for '"
-                            + hdrNm
-                            + "' is now ignored since it is automatically generated.";
-                } else {
-                    cfg.addGlobalHeader(hdrNm, hdrVl);
-                }
+            	// break backwards compatibility of legacy /config/sso-header 
+            	// construct and indicate use of new 
+            	// <cctx-mapping>/headers/fixed-value objects instead
+            	throw new IllegalArgumentException("The /config/sso-header element "
+            			+ "is no longer supported. Use "
+            			+ "cctx-mapping/headers/fixed-value elements instead. "
+            			+ GlobalHeaderNames.SERVICE_URL 
+            			+ " is injected automatically.");
             } else if (path.matches("/config/sso-traffic")) {
                 cfg.setStripEmptyHeaders(Boolean.parseBoolean(getStringAtt(
                         "strip-empty-headers", path, atts, false)));
@@ -747,6 +831,10 @@ public class XmlConfigLoader2 {
                 String cctx = getStringAtt("cctx", path, atts);
                 String thost = getStringAtt("thost", path, atts);
                 String policyServiceGateway = getStringAtt("policy-service-url-gateway", path, atts, false);
+                String schemeHeaderOvrd = getStringAtt("scheme-header-name", path, atts, false);
+                String injectSchemeHeader = getStringAtt("inject-scheme-header", path, atts, false);
+                boolean injectScheme = (injectSchemeHeader == null ? true : Boolean
+                        .parseBoolean(injectSchemeHeader));
                 String hostHdr = getStringAtt("host-header", path, atts, false);
                 String scheme = getStringAtt("scheme", path, atts,
                         false);
@@ -796,8 +884,40 @@ public class XmlConfigLoader2 {
                                     + "*' which precedes it in document order and hence "
                                     + "will never receive any requests.");
                 }
-                ep = new AppEndPoint(sm.getHost(), cctx, tpath, thost, tport, scheme, preserve, hostHdr, policyServiceGateway);
+                ep = new AppEndPoint(sm.getHost(), cctx, tpath, thost, tport, scheme, preserve, hostHdr, policyServiceGateway,
+                		injectScheme, schemeHeaderOvrd);
                 sm.addMapping(ep);
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {
+                parsingContextAccessor.get().put(PARSING_FIXED_ATTS, new HashMap<String, List<String>>());
+                parsingContextAccessor.get().put(PARSING_PROFILE_ATTS, new HashMap<String, String>());
+
+            	
+            	/* this match and the next two process these types of delcarations
+	<headers>
+      <fixed-value name='policy-something' value='fixed-value' />
+      <fixed-value name='policy-something' value='a-second-value' />
+      <profile-att name='policy-cn' attribute='cn' />
+      <profile-att name='policy-ldsaccountid' attribute='ldsaccountid' />
+    </headers>
+
+            	 */
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers/fixed-value")) {
+                String nm = getStringAtt("name", path, atts);
+                String vl = getStringAtt("value", path, atts);
+            	@SuppressWarnings("unchecked")
+				Map<String, List<String>> fixedHdrsMap = (Map<String, List<String>>) parsingContextAccessor.get().get(PARSING_FIXED_ATTS);
+            	List<String> vals = fixedHdrsMap.get(nm);
+            	if (vals == null) {
+            		vals = new ArrayList<String>();
+            		fixedHdrsMap.put(nm, vals);
+            	}
+            	vals.add(vl);
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers/profile-att")) {
+                String nm = getStringAtt("name", path, atts);
+                String att = getStringAtt("attribute", path, atts);
+            	@SuppressWarnings("unchecked")
+				Map<String, String> profileHdrsMap = (Map<String, String>) parsingContextAccessor.get().get(PARSING_PROFILE_ATTS);
+            	profileHdrsMap.put(nm, att);
             } else if (path.matches("/config/sso-traffic/by-site/unenforced")) {
                 TrafficManager trafficMgr = cfg.getTrafficManager();
                 SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
@@ -868,33 +988,41 @@ public class XmlConfigLoader2 {
                 EntitlementsManager entMgr = cfg.getEntitlementsManager();
                 entMgr.addEntitlement(ent);
             } else if (path.matches("/config/users")) {
-                String source = getStringAtt("source", path, atts, false);
-                cfg.setExternalUserSource(source);
-
-                int timeout = getIntegerAtt("session-timeout-seconds", path,
-                        atts, false);
-                if (timeout != -1) {
-                    SessionManager sman = cfg.getSessionManager();
-                    sman.setSessionInactivityTimeoutSeconds(timeout);
+            	// break backwards compatibility of legacy /config/users 
+            	// construct and indicate use of new /config/user-source
+            	// objects instead
+            	throw new IllegalArgumentException("The <users> element and "
+            			+ "nested <user> declarations are no longer supported "
+            			+ "directly within "
+            			+ "the wamulator config file's XML. <users> has been "
+            			+ "replaced by one-to-many <user-source> elements. And its "
+            			+ "session-timeout-seconds attribute has been moved to "
+            			+ "the <sso-cookie> element. "
+            			+ "See wiki documentation for how to move your existing "
+            			+ "<users> element and its content to one or more "
+            			+ "<user-soure type='xml'> declarations or leverage "
+            			+ "the new CODA and LDAP user sources.");
+            } else if (path.matches("/config/user-source")) {
+                String type = getStringAtt("type", path, atts);
+                ExternalUserSource src = null;
+                
+                if (type.equals("xml")) {
+                	src = new WamulatorUserSource();
                 }
-            } else if (path.matches("/config/users/user")) {
-                String usrNm = getStringAtt("name", path, atts);
-                String usrPwd = getStringAtt("pwd", path, atts, false);
-                UserManager mgr = cfg.getUserManager();
-                mgr.setUser(usrNm, usrPwd);
-            } else if (path.matches("/config/users/user/sso-header")) {
-                String hdrNm = getStringAtt("name", path, atts);
-                String hdrVl = getStringAtt("value", path, atts);
-                cfg.getUserManager().addHeaderForLastUserAdded(hdrNm, hdrVl);
-            } else if (path.matches("/config/users/user/ldsApplications")) {
-                String vl = getStringAtt("value", path, atts);
-                cfg.getUserManager().addAttributeForLastUserAdded(
-                        User.LDSAPPS_ATT, vl);
-            } else if (path.matches("/config/users/user/att")) {
-                String nl = getStringAtt("name", path, atts);
-                String vl = getStringAtt("value", path, atts);
-                cfg.getUserManager().addAttributeForLastUserAdded(
-                        nl, vl);
+                else if (type.equals("coda")) {
+                	src = new CodaUserSource();
+                }
+                else if (type.equals("ldap")) {
+                	src = new LdapUserSource();
+                }
+                else {
+                	throw new IllegalArgumentException("user-source at "
+                			+ path + " does not have a valid type '"
+                			+ type + "'. Must be one of 'xml', 'coda', or 'ldap'.");
+                }
+                src.setUserManager(cfg.getUserManager());
+                parsingContextAccessor.get().put(PARSING_CURR_EXT_USR_SRC, src);
+                parsingContextAccessor.get().put(PARSING_USR_SRC_CONTENT, new StringBuffer());
             } else if (path.matches("/config/sso-traffic/rewrite-redirect")) {
                 String from = getStringAtt("from", path, atts);
                 String to = getStringAtt("to", path, atts);
@@ -928,7 +1056,37 @@ public class XmlConfigLoader2 {
             if (path.matches("/config/conditions/condition")) {
                 parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION,
                         Boolean.FALSE);
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {
+            	@SuppressWarnings("unchecked")
+				Map<String, List<String>> fixedHdrsMap = (Map<String, List<String>>) parsingContextAccessor.get().get(PARSING_FIXED_ATTS); 
+                @SuppressWarnings("unchecked")
+				Map<String, String> profileHdrsMap = (Map<String, String>) parsingContextAccessor.get().get(PARSING_PROFILE_ATTS);
+                TrafficManager trafficMgr = cfg.getTrafficManager();
+                SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
+                EndPoint ep = sm.getLastMappingAdded();
+                if (ep instanceof AppEndPoint) {
+                	AppEndPoint aep = (AppEndPoint) ep;
+                	aep.setFixedHeaders(fixedHdrsMap);
+                	aep.setProfileHeaders(profileHdrsMap);
+                }
+            } else if (path.matches("/config/user-source")) {
+                ExternalUserSource src = (ExternalUserSource) parsingContextAccessor.get().get(PARSING_CURR_EXT_USR_SRC);
+                StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_USR_SRC_CONTENT);
+                try {
+					src.setConfig(path, parseUserSourceContent(path, chars.toString()));
+				}
+				catch (ConfigurationException e) {
+					throw new SAXException("Unable to load external source at " + path, e);
+				}
+                cfg.addExternalUserSource(src);
             } else if (path.matches("/config")) {
+            	if (cfg.getExternalUserSources().size() == 0) {
+            		cLog.log(Level.WARNING, "No User Sources were specified. User Authenitcation can NOT take place.");
+            	}
+        		// verify that by-site host was declared for master cookie domain
+        		// so that we have a place to house the sign-in page
+        		// TODO alias the sign-in page to the current domain when redirecting
+        		// ie: to all domains and use cookies instead of goto query parm
                 if (cfg.getTrafficManager().getMasterSite() == null){
                     throw new IllegalStateException("The master cookie domain was set to '"
                             + cfg.getSessionManager().getMasterCookieDomain() 
@@ -942,8 +1100,54 @@ public class XmlConfigLoader2 {
             path.remove(name);
         }
 
-        public void characters(char[] ch, int start, int length)
+        /**
+         * Parses textual content of a /config/user-source element which should
+         * be in the form of a single macro once leading and trailing white 
+         * space is removed or if not that them java.util.Properties textual
+         * format. For the former the macro is resolved and is assumed to be 
+         * in java.util.Properites forms.
+         * In text
+         * @param path 
+         * @param string
+         * @return
+         */
+        private Properties parseUserSourceContent(Path path, String content) {
+        	// see if we are injecting all config via a macro
+        	content = content.trim();
+        	if (content.startsWith(Alias.MACRO_START) && content.endsWith(Alias.MACRO_END)) {
+        		content = Alias.resolveAliases(content);
+        	}
+        	// now parse first then resolve aliases afterward allowing for
+        	// injection of xml for a single property
+        	Properties props = new Properties();
+        	try {
+				props.load(new StringReader(content));
+			}
+			catch (IOException e) {
+				throw new IllegalArgumentException("Unable to load Properties  configuration for "
+						+ path + ". Content: " + content, e);
+			}
+        	
+        	// now go through each property and resolve any aliases in its value
+        	Properties resolved = new Properties();
+        	for(Entry<Object, Object> ent : props.entrySet()) {
+        		String nm = (String) ent.getKey();
+        		String val = (String) ent.getValue();
+        		val = Alias.resolveAliases(val);
+        		resolved.setProperty(nm, val);
+        	}
+			return resolved;
+		}
+
+
+		public void characters(char[] ch, int start, int length)
                 throws SAXException {
+            Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
+
+            if (path.matches("/config/user-source")) {
+                StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_USR_SRC_CONTENT);
+                chars.append(ch, start, length);
+            }
         }
 
         public void endDocument() throws SAXException {

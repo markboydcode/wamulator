@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.SyntaxBase;
+import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
 
 /**
@@ -103,6 +103,7 @@ public class EvaluationContext {
 	public void beginLoggingSatisfiedChildEvaluators() {
 		parentLogUtils.add(logUtils);
 		logUtils = new LogHolder(logUtils.indent);
+		logUtils.logSatisfied();
 	}
 	
 	public void beginLoggingEitherChildEvaluatorOutcome() {
@@ -165,7 +166,8 @@ public class EvaluationContext {
 	 * @param string
 	 */
 	public void logResult(SyntaxBase evaluator, boolean outcome, String message) {
-		if ((logUtils.isLoggingSatisfied() && outcome == true) ||
+		if (logUtils.isLoggingBoth() ||
+				(logUtils.isLoggingSatisfied() && outcome == true) ||
 				(logUtils.isLoggingSatisfied() == false && outcome == false) ||
 				debugTrigger == evaluator) {
 			logUtils.log.print((outcome ? "T" : "F"));
@@ -230,6 +232,10 @@ public class EvaluationContext {
 			log = new PrintWriter(buffer);
 		}
 		
+		public boolean isLoggingBoth() {
+			return shouldLogBoth;
+		}
+
 		/**
 		 * Indicates that only conditions returning false from 
 		 * {@link IEvaluator#isConditionSatisfied(EvaluationContext)} should 

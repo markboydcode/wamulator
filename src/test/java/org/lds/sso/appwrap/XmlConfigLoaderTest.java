@@ -2,16 +2,195 @@ package org.lds.sso.appwrap;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.List;
+import java.util.Map;
 
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.identity.ExternalUserSource.ConfigurationException;
+import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import org.xml.sax.SAXException;
 
 public class XmlConfigLoaderTest {
+    
+    @Test
+    public void test_loading_of_profile_headers () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-cookie name='lds-policy' domain='.lds.org'/>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='www.lds.org' port='45'>"
+            + "   <cctx-mapping cctx='/*' thost='127.0.0.1' tport='1000' tpath='/*'>"
+            + "    <headers>"
+            + "     <profile-att name='prof-1' attribute='att-1'/>"
+            + "     <profile-att name='prof-2' attribute='att-2'/>"
+            + "    </headers>"
+            + "   </cctx-mapping>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        SiteMatcher site = cfg.getTrafficManager().getSite("www.lds.org", 45);
+        EndPoint ep = site.getEndpointForCanonicalUrl("/some/path");
+        Assert.assertTrue(ep instanceof AppEndPoint, "should be instance of AppEndPoint");
+        AppEndPoint app = (AppEndPoint) ep;
+        Map<String, String> prof = app.profileHeaders;
+        
+        Assert.assertNotNull(prof.get("prof-1"), "should have found profile header of 'prof-1'");
+        Assert.assertEquals(prof.get("prof-1"), "att-1", "should have found profile header value 'att-1' for 'prof-1'");
+        
+        Assert.assertNotNull(prof.get("prof-2"), "should have found profile header of 'prof-2'");
+        Assert.assertEquals(prof.get("prof-2"), "att-2", "should have found profile header value 'att-2' for 'prof-2'");
+    }
+    
+    @Test
+    public void test_loading_of_fixed_headers () throws Exception {
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-cookie name='lds-policy' domain='.lds.org'/>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='www.lds.org' port='45'>"
+            + "   <cctx-mapping cctx='/*' thost='127.0.0.1' tport='1000' tpath='/*'>"
+            + "    <headers>"
+            + "     <fixed-value name='single' value='single-1'/>"
+            + "     <fixed-value name='multi' value='multi-1'/>"
+            + "     <fixed-value name='multi' value='multi-2'/>"
+            + "    </headers>"
+            + "   </cctx-mapping>"
+            + "  </by-site>"
+            + " </sso-traffic>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        SiteMatcher site = cfg.getTrafficManager().getSite("www.lds.org", 45);
+        EndPoint ep = site.getEndpointForCanonicalUrl("/some/path");
+        Assert.assertTrue(ep instanceof AppEndPoint, "should be instance of AppEndPoint");
+        AppEndPoint app = (AppEndPoint) ep;
+        Map<String, List<String>> fixed = app.fixedHeaders;
+        
+        Assert.assertNotNull(fixed.get("single"), "should have found fixed header of 'single'");
+        Assert.assertEquals(fixed.get("single").size(), 1, "should have found one fixed header value for 'single'");
+        Assert.assertEquals(fixed.get("single").get(0), "single-1", "should have found one fixed header value of 'single-1' for 'single'");
+        
+        Assert.assertNotNull(fixed.get("multi"), "should have found fixed header of 'multi'");
+        Assert.assertEquals(fixed.get("multi").size(), 2, "should have found two fixed header values for 'multi'");
+        Assert.assertEquals(fixed.get("multi").get(0), "multi-1", "should have found fixed header value of 'multi-1' for 'multi' at position 0");
+        Assert.assertEquals(fixed.get("multi").get(1), "multi-2", "should have found fixed header value of 'multi-2' for 'multi' at position 1");
+    }
+    
+    @Test
+    public void test_loading_of_attributes () throws Exception {
+    	System.getProperties().remove("non-existent-sys-prop");
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<?system-alias xml-usr-src-cfg=non-existent-sys-prop default="
+            + "\"xml="
+            + " <users>"
+            + "  <unique-attribute name='ldsaccountid'/>"
+            + "   <user name='nnn' pwd='pwd'>"
+            + "    <att name='ldsaccountid' value='20'/>"
+            + "   </user>"
+            + "   <user name='mmm' pwd='pwd'>"
+            + "    <att name='ldsaccountid' value='33'/>"
+            + "   </user>"
+            + " </users>"
+            + "\"?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-cookie name='lds-policy' domain='.lds.org'/>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='www.lds.org' port='45'/>"
+            + " </sso-traffic>"
+            + " <user-source type='xml'>{{xml-usr-src-cfg}}</user-source>"
+            + "</config>";
+        Config cfg = new Config();
+        XmlConfigLoader2.load(xml);
+        Assert.assertEquals(cfg.getUserManager().getUsers().size(), 2, "two users should have been loaded");
+        Assert.assertNotNull(cfg.getUserManager().getUser("nnn"), "user 'nnn' should have been loaded");
+        Assert.assertNotNull(cfg.getUserManager().getUser("nnn").getAttributes(), "at least one attribute should have been loaded");
+        Assert.assertEquals(cfg.getUserManager().getUser("nnn").getAttributes().length, 1, "at least one attribute should have been loaded");
+        Assert.assertNotNull(cfg.getUserManager().getUser("nnn").getAttribute("ldsaccountid"), "ldsaccountid attribute should have been loaded");
+        NvPair[] ids = cfg.getUserManager().getUser("nnn").getAttribute("ldsaccountid");
+        Assert.assertEquals(ids.length, 1, "only one ldsaccountid attribute should have been loaded for user");
+        Assert.assertEquals(ids[0].getValue(), "20", "ldsaccountid of 20 should have been loaded");
+        Assert.assertNotNull(cfg.getUserManager().getUser("mmm"), "user 'mmm' should have been loaded");
+        Assert.assertNotNull(cfg.getUserManager().getUser("mmm").getAttributes(), "at least one attribute should have been loaded");
+        Assert.assertEquals(cfg.getUserManager().getUser("mmm").getAttributes().length, 1, "at least one attribute should have been loaded");
+        Assert.assertNotNull(cfg.getUserManager().getUser("mmm").getAttribute("ldsaccountid"), "ldsaccountid attribute should have been loaded");
+        NvPair[] ids2 = cfg.getUserManager().getUser("mmm").getAttribute("ldsaccountid");
+        Assert.assertEquals(ids2.length, 1, "only one ldsaccountid attribute should have been loaded for user");
+        Assert.assertEquals(ids2[0].getValue(), "33", "ldsaccountid of 33 should have been loaded");
+    }
+    
+    @Test
+    public void test_unique_attribute_enforcement () throws Exception {
+    	System.getProperties().remove("non-existent-sys-prop");
+        String xml = 
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?alias site=labs-local.lds.org?>"
+            + "<?system-alias xml-usr-src-cfg=non-existent-sys-prop default="
+            + "\"xml="
+            + " <users>"
+            + "  <unique-attribute name='ldsaccountid'/>"
+            + "   <user name='nnn' pwd='pwd'>"
+            + "    <att name='ldsaccountid' value='20'/>"
+            + "   </user>"
+            + "   <user name='mmm' pwd='pwd'>"
+            + "    <att name='ldsaccountid' value='33'/>"
+            + "   </user>"
+            + "   <user name='ooo' pwd='pwd'>"
+            + "    <att name='ldsaccountid' value='20'/>"
+            + "   </user>"
+            + " </users>"
+            + " \r\n"
+            + " enforce-uniqueness=ldsaccountid"
+            + " \r\n"
+            + "\"?>"
+            + "<config console-port='88' proxy-port='45'>"
+            + " <sso-cookie name='lds-policy' domain='.lds.org'/>"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='www.lds.org' port='45'/>"
+            + " </sso-traffic>"
+            + " <user-source type='xml'>{{xml-usr-src-cfg}}</user-source>"
+            + "</config>";
+        Config cfg = new Config();
+        try {
+            XmlConfigLoader2.load(xml);
+        }
+        catch(Exception e) {
+            Throwable t = e.getCause();
+            if (!(t instanceof SAXException)) {
+                Assert.fail("Threw " + t.getClass().getName() + " but expected SAXException");
+            }
+            t=t.getCause();
+            if (!(t instanceof ConfigurationException)) {
+                Assert.fail("Threw " + t.getClass().getName() + " but expected ConfigurationException");
+            }
+            t=t.getCause();
+            if (!(t instanceof IllegalArgumentException)) {
+                Assert.fail("Threw " + t.getClass().getName() + " but expected IllegalArgumentException");
+            }
+            String msg = t.getMessage();
+            if (msg == null) {
+            	Assert.fail("Exception message should not be null.");
+            }
+            if (! msg.contains("Uniqueness Constraint")) {
+            	Assert.fail("Exception message should have contained the words, 'Uniqueness Constraint'.");
+            	
+            }
+            return;
+        }
+        Assert.fail("IllegalArgumentException should have been thrown since ldsaccountid was declared unique and a duplicate value was incurred.");
+    }
     
     @SuppressWarnings("unchecked")
     @Test
@@ -65,16 +244,25 @@ public class XmlConfigLoaderTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testEmbeddedConditions () throws Exception {
+    	// make sure system prop is empty, then define sys alias with default 
+    	System.getProperties().remove("non-existent-sys-prop");
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias site=labs-local.lds.org?>"
+            + "<?system-alias xml-user-source-props=non-existent-sys-prop default=" 
+            + "\"xml=" 
+            + "  <users>"
+            + "    <user name='nnn' pwd='pwd'>"
+            + "    </user>"
+            + "  </users>"
+            + "\"?>"
             + "<config console-port='88' proxy-port='45'>"
             + "  <conditions>"
             + "   <condition alias='o&apos;hare prj'>"
             + "    <OR site='{{site}}'>" + ((char)10) + ((char)9) + ((char)13)
-            + "     <HasLdsApplication value='o&apos;hare prj'/>"
+            + "     <Attribute name='acctid' operation='equals' value='o&apos;hare prj'/>"
             + "<!-- comment gets dropped -->"
-            + "     <HasLdsApplication value='o&quot;hare prj'/>"
+            + "     <Attribute name='acctid' operation='equals' value='o&quot;hare prj'/>"
             + "    </OR>"
             + "   </condition>"
             + "  </conditions>"
@@ -84,13 +272,7 @@ public class XmlConfigLoaderTest {
             + "   <allow action='GET' cpath='/conditional/*' condition='{{o&apos;hare prj}}'/>"
             + "  </by-site>"
             + " </sso-traffic>"
-            + "  <users>"
-            + "    <user name='nnn' pwd='pwd'>"
-//            + "      <sso-header name='header-a' value='aaa'/>" 
-//            + "      <ldsApplication value='111'/>" 
-//            + "      <ldsApplication value='222'/>" 
-            + "    </user>"
-            + "  </users>"
+            + " <user-source type='xml'>{{xml-user-source-props}}</user-source>"
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
@@ -98,7 +280,7 @@ public class XmlConfigLoaderTest {
         Assert.assertTrue(aliases.containsAlias("o'hare prj"), "should have alias key of o'hare");
         // note that white space is preserved in syntax.
         // also note that carriage returns are normalized to line feeds
-        Assert.assertEquals(aliases.getAliasValue("o'hare prj"), "    <OR site='labs-local.lds.org'>\n\t\n     <HasLdsApplication value='o&apos;hare prj'></HasLdsApplication>     <HasLdsApplication value='o&quot;hare prj'></HasLdsApplication>    </OR>   ");
+        Assert.assertEquals(aliases.getAliasValue("o'hare prj"), "    <OR site='labs-local.lds.org'>\n\t\n     <Attribute name='acctid' operation='equals' value='o&apos;hare prj'></Attribute>     <Attribute name='acctid' operation='equals' value='o&quot;hare prj'></Attribute>    </OR>   ");
         SiteMatcher site = cfg.getTrafficManager().getSite("local.lds.org", 45);
         OrderedUri uri = site.getUriMatcher("http", "local.lds.org", 45, "/conditional/test", null);
         Assert.assertTrue(uri instanceof AllowedUri, "URI should have been instance of AllowedUri but was " + uri.getClass().getSimpleName());
@@ -201,21 +383,23 @@ public class XmlConfigLoaderTest {
 
     @Test
     public void testUserAttributes () throws Exception {
+    	System.setProperty("config.props", "xml="
+                + "  <users>"
+                + "    <user name='nnn' pwd='pwd'>"
+                + "      <att name='ldsApplications' value='111'/>" 
+                + "      <att name='ldsApplications' value='222'/>" 
+                + "    </user>"
+                + "  </users>");
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias site=labs-local.lds.org?>"
+            + "<?system-alias xml-source-props=config.props?>"		
             + "<config console-port='88' proxy-port='45'>"
             + "  <sso-cookie name='lds-policy' domain='.host.net'/>"
             + "  <sso-traffic>"
             + "   <by-site host='local.host.net' port='45'/>"
             + "  </sso-traffic>"
-            + "  <users>"
-            + "    <user name='nnn' pwd='pwd'>"
-            + "      <sso-header name='header-a' value='aaa'/>" 
-            + "      <ldsApplications value='111'/>" 
-            + "      <ldsApplications value='222'/>" 
-            + "    </user>"
-            + "  </users>"
+            + "  <user-source type='xml'>{{xml-source-props}}</user-source>"
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
@@ -223,9 +407,9 @@ public class XmlConfigLoaderTest {
         Assert.assertNotNull(u);
         NvPair[] atts = u.getAttributes();
         Assert.assertEquals(atts.length, 2);
-        Assert.assertEquals(atts[0].getName(), User.LDSAPPS_ATT);
+        Assert.assertEquals(atts[0].getName(), "ldsApplications");
         Assert.assertEquals(atts[0].getValue(), "111");
-        Assert.assertEquals(atts[1].getName(), User.LDSAPPS_ATT);
+        Assert.assertEquals(atts[1].getName(), "ldsApplications");
         Assert.assertEquals(atts[1].getValue(), "222");
     }
     
@@ -769,7 +953,7 @@ public class XmlConfigLoaderTest {
             file.delete();
         }
         FileWriter writer = new FileWriter(path);
-        writer.write("<HasLdsApplication value='1234'/>\n");
+        writer.write("<Attribute name='ldsApplications' operation='EQUALS' value='1234'/>\n");
         writer.flush();
         writer.close();
         
@@ -787,9 +971,9 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addAttribute(User.LDSAPPS_ATT, "1234");
+        u1234.addAttribute("ldsApplications", "1234");
         User user = new User("user", "user"); 
-        user.addAttribute(User.LDSAPPS_ATT, "1000");
+        user.addAttribute("ldsApplications", "1000");
 
         String uri = "http://labs-local.lds.org:45/auth/_app/debug";
         Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
@@ -876,7 +1060,7 @@ public class XmlConfigLoaderTest {
     @Test
     public void test_conditionValuesInParseContainers() throws Exception {
         
-        System.setProperty("condition-syntax", "<HasLdsApplication value='123'/>");
+        System.setProperty("condition-syntax", "<Attribute name='acctid' operation='equals' value='123'/>");
         
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"
@@ -892,7 +1076,7 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         AliasHolder conSyntaxes = XmlConfigLoader2.get(XmlConfigLoader2.PARSING_ALIASES);
         Assert.assertNotNull(conSyntaxes.getAliasValue("somealias"));
-        Assert.assertEquals(conSyntaxes.getAliasValue("somealias"), "<HasLdsApplication value='123'/>");
+        Assert.assertEquals(conSyntaxes.getAliasValue("somealias"), "<Attribute name='acctid' operation='equals' value='123'/>");
         Assert.assertEquals(conSyntaxes.getAlias("somealias").toString(), "system:condition-syntax");        
     }
 
@@ -910,9 +1094,9 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1234");
+        u1234.addAttribute("ldsApplications", "1234");
         User user = new User("user", "user"); 
-        user.addHeader(UserHeaderNames.LDS_ACCOUNT_ID, "1000");
+        user.addAttribute("ldsApplications", "1000");
 
         String uri = "app://labs-local.lds.org/auth/_app/debug";
         boolean u12134Answer = tman.isPermitted("POST", uri, u1234); 

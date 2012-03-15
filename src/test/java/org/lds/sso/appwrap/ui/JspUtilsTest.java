@@ -1,10 +1,8 @@
 package org.lds.sso.appwrap.ui;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Map;
 
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -21,17 +19,6 @@ import org.testng.annotations.Test;
  *
  */
 public class JspUtilsTest {
-
-    @Test
-    public void test_getIsSsoDefinedHeader() {
-        JspUtils util = new JspUtils();
-        Map<String, Boolean> obj = util.getIsSsoDefinedHeader();
-        Assert.assertTrue(obj.get(UserHeaderNames.BIRTH_DATE));
-
-        Map<String, Boolean> obj2 = util.getIsSsoDefinedHeader();
-        Assert.assertSame(obj, obj2);
-        Assert.assertFalse(obj2.get("some-completely-random-string"));
-    }
 
     @Test
     public void test_getCrlfToBr() {

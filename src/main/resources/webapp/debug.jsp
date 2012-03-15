@@ -17,8 +17,10 @@
 <td  valign="top">
 <div style="font-size: medium; font-weight: bold; padding: 3px">Headers Seen by Server</div>
 <table border='1'>
-<c:forEach items="${header}" var="hdr">
-<tr><td>${hdr.key}</td><td>${hdr.value}</td></tr>
+<c:forEach items="${headerValues}" var="hdrVals">
+ <c:forEach items="${hdrVals.value}" var="hdrVal">
+<tr><td>${hdrVals.key}</td><td>${hdrVal}</td></tr>
+ </c:forEach>
 </c:forEach>
 </table>
 </td>

@@ -8,21 +8,18 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.lang.StringUtils;
 import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.SessionManager;
-import org.lds.sso.appwrap.User;
-import org.lds.sso.appwrap.UserManager;
-import org.lds.sso.appwrap.io.LogUtils;
+import org.lds.sso.appwrap.identity.ExternalUserSource;
+import org.lds.sso.appwrap.identity.ExternalUserSource.Response;
+import org.lds.sso.appwrap.identity.SessionManager;
+import org.lds.sso.appwrap.identity.UserManager;
 import org.lds.sso.appwrap.proxy.RequestHandler;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
@@ -37,7 +34,7 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
 public class SelectUserHandler extends RestHandlerBase {
 
     private static final Logger cLog = Logger.getLogger(SelectUserHandler.class.getName());
-
+    
     public SelectUserHandler(String pathPrefix) {
         super(pathPrefix);
     }
@@ -114,78 +111,70 @@ public class SelectUserHandler extends RestHandlerBase {
         // keep in mind for automated sign-in we may not have goto or referer.        
         String referer = request.getHeader("referer");
         if (referer != null) {
+        	referer = URLDecoder.decode(referer, "utf-8");
         	int qmIdx = referer.indexOf("?");
         	minusQp = (qmIdx != -1 ? referer.substring(0, qmIdx) : referer);
         	parms = getParms(referer, qmIdx);
         	redirectTarget = referer;
         }
-        String gotoUri = request.getParameter("goto");
 
+        String gotoUri = request.getParameter("goto");
         if (gotoUri != null && !gotoUri.equals("")) {
             gotoUri = URLDecoder.decode(gotoUri, "utf-8");
             redirectTarget = gotoUri;
         }
-
-        String name = request.getParameter("username");
-        String usr = null;
-
-        if (name != null && !"".equals(name)) {
-            // coda user service being accessed for attributes
-            String ext = cfg.getExternalUserSource();
-            Map<String, String> userAtts = null;
-            String uri = null;
-            String content = null;
-            if (ext == null || "".equals(ext)) {
-            	// drop down into regular user manager search.
-            	// TODO ask Scott why we require coda config. This breaks
-            	// anyone running without coda
-                // returnWithError("no-user-source-specified", minusQp, parms, response);
-                // return;
-            } else if (name.startsWith("ldap://")) {
-            	
-            } else {
-                HttpClient client = new HttpClient();
-                uri = ext.replaceAll("\\{username\\}", name);
-                HttpMethod method = new GetMethod(uri);
-                method.setFollowRedirects(false);
-                method.setRequestHeader("Accept", "application/xml");
-                int status = client.executeMethod(method);
-                content = method.getResponseBodyAsString();
-
-                if (status != 200) {
-                    LogUtils.severe(cLog, "Non 200 response code recieved from {0}, content returned: {1}", uri, content);
-                    returnWithError("error-accessing-ext-source", minusQp, parms, response);
-                    return;
-                }
-                CodaServiceResponseParser parser = new CodaServiceResponseParser(content);
-                userAtts = parser.getValues();
-            }
-            UserManager uman = cfg.getUserManager();
-            if (userAtts == null // coda not used 
-             || userAtts.get("good") != null) { // coda couldn't find user
-                User user = uman.getUser(name);
-                if(user == null) { //couldn't find user in config either 
-                    returnWithError("user-not-found", minusQp, parms, response);
-                    return;
-                }
-            } else {
-                // add user if found in cmis, or redirect back to sign-in if failed
-                // ie: redirectTarget = referer plus error message via query param
-                uman.setUser(name, "n/a");
-                userAtts.put("policy-coda-status", "200-coda user atts retrieved");
-                for (Iterator<Map.Entry<String, String>> itr = userAtts.entrySet().iterator(); itr.hasNext();) {
-                    Map.Entry<String, String> ent = itr.next();
-                    uman.addHeaderForLastUserAdded(ent.getKey(), ent.getValue());
-                }
-            }
-
-            usr = name;
-            authenticated = true;
-        } else {
-            String uri = request.getRequestURI();
-            usr = uri.substring(uri.lastIndexOf('/') + 1);
-            authenticated = true;
+/*
+ * WAMULAT-57 fix in progress
+ * add in once we have updated the selectUser.jsp page to allow selection of 
+ * user links to populate form and submit via ajax.
+        String method = request.getMethod(); 
+        if (! method.equalsIgnoreCase("POST")) {
+            returnWithError("error-must-use-http-post", minusQp, parms, response);
+            return;
         }
+*/
+        String name = request.getParameter("username");
+        UserManager uman = cfg.getUserManager();
+        
+        if (StringUtils.isEmpty(name)) {
+        	// backwards compatibility allowing username to be last path on uri
+            String uri = request.getRequestURI();
+            name = uri.substring(uri.lastIndexOf('/') + 1);
+        }
+
+        String password = request.getParameter("password");
+    	List<ExternalUserSource> sources = cfg.getExternalUserSources();
+    	Response extResult = null;
+    	int srcIdx = 0;
+    	/*
+    	 * scan through all registered sources only returning when we have
+    	 * exhausted the list or received a loaded, or failedAuthN. These
+    	 * last two indicate that we found a user in that store so send 
+    	 * a message to the screen accordingly or a message relative to the
+    	 * last store's response. Logs should show failures in previous
+    	 * stores if any.
+    	 */
+    	while(srcIdx < sources.size() 
+    			&& (extResult == null 
+    			|| extResult == Response.ErrorAccessingSource 
+    			|| extResult == Response.UserNotFound)) {
+    		ExternalUserSource src = sources.get(srcIdx);
+        	extResult = src.loadExternalUser(name, password);
+        	srcIdx++;
+    	}
+    	switch(extResult) {
+    	case ErrorAccessingSource: 
+            returnWithError("error-accessing-ext-source", minusQp, parms, response);
+            return;
+    	case UserNotFound:
+            returnWithError("user-not-found", minusQp, parms, response);
+            return;
+    	case UnableToAuthenticate:
+            returnWithError("failed-authentication", minusQp, parms, response);
+            return;
+    	case UserInfoLoaded:
+    		authenticated = true;
+    	}
 
         if (authenticated) {
             SessionManager smgr = cfg.getSessionManager();
@@ -198,7 +187,7 @@ public class SelectUserHandler extends RestHandlerBase {
                     + "cookie domain for host '" + request.getServerName() + "'");
             }
             if (cookieDomain != null) {
-                String token = smgr.generateSessionToken(usr, request.getServerName());
+                String token = smgr.generateSessionToken(name, request.getServerName());
                 Cookie c = new Cookie(cfg.getCookieName(), token);
                 c.setPath("/");
                 if (! cookieDomain.equals("localhost")) {

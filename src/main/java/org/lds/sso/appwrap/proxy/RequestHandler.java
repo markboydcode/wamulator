@@ -36,12 +36,11 @@ import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.EndPoint;
 import org.lds.sso.appwrap.LocalFileEndPoint;
 import org.lds.sso.appwrap.Service;
-import org.lds.sso.appwrap.SessionManager;
 import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
-import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.identity.SessionManager;
+import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.header.HandlerSet;
 import org.lds.sso.appwrap.proxy.header.Header;
@@ -218,13 +217,11 @@ public class RequestHandler implements Runnable {
             // HACK!!! to rewrite embedded host references during webdav tests
             //rewriteEnbeddedDomainPattern(reqPkg, "--->", "localhost.lds.org", "mail.ldschurch.org");
 
-            // indicate over which scheme the client request was received 
+            // indicate in the package over which scheme the client request was received 
             if (isSecure) {
-                reqPkg.headerBfr.append(new Header("X-Forwarded-Scheme", "https"));
                 reqPkg.scheme = "https";
             }
             else {
-                reqPkg.headerBfr.append(new Header("X-Forwarded-Scheme", "http"));
                 reqPkg.scheme = "http";
             }
 
@@ -370,15 +367,14 @@ public class RequestHandler implements Runnable {
                         return;
                     }
                 }
-                // inject user headers if session is had regarless of enforced/unenforced
+                // mark session as active
                 if (user != null) {
-                    user.injectUserHeaders(reqPkg.headerBfr);
                     cfg.getSessionManager().markSessionAsActive(token, reqPkg.host);
                 }
-                // now strip empty headers and inject policy-service-url
+                // now inject app specific headers, policy-service-url, host adjustments, and strip empties
                 if  (endpoint instanceof AppEndPoint) {
                     AppEndPoint appEndpoint = (AppEndPoint) endpoint;
-                    injectPolicyServiceUrl(appEndpoint, reqPkg);
+                    appEndpoint.injectHeaders(cfg, reqPkg, user, isSecure);
                     stripEmptyHeadersAsNeeded(reqPkg);
                 }
             }
@@ -659,52 +655,6 @@ public class RequestHandler implements Runnable {
             this.tlsContext = ctx;
         }
         return tlsContext.getSocketFactory();
-    }
-
-    /**
-     * Injects the policy-service-url pointing to the one for the by-site element
-     * that contained our context mapping end point possibly with adjusted
-     * gateway host and port if specified like when server is behind a firewall
-     * and can't get to rest service without a reverse proxy tunnel
-     *
-     * @param appEndpoint
-     * @param reqPkg
-     */
-    private void injectPolicyServiceUrl(AppEndPoint appEndpoint,
-            HttpPackage reqPkg) {
-        Header hdr = new Header(UserHeaderNames.SERVICE_URL, "");
-        // first remove if one was set through config
-        reqPkg.headerBfr.removeExtensionHeader(UserHeaderNames.SERVICE_URL);
-        String hdrBase = "http://";
-        if (appEndpoint.getPolicyServiceGateway() == null) {
-            hdrBase += appEndpoint.getCanonicalHost() + ":" + cfg.getConsolePort();
-        }
-        else {
-            hdrBase += appEndpoint.getPolicyServiceGateway();
-        }
-        switch(cfg.getRestVersion()) {
-        case OPENSSO:
-            hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase());
-            break;
-        case CD_OESv1:
-            hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase() + appEndpoint.getCanonicalHost() + "/");
-        }
-        reqPkg.headerBfr.append(hdr);
-
-        if (! appEndpoint.preserveHostHeader()) {
-            Header hhdr = reqPkg.headerBfr.getHeader(HeaderDef.Host);
-            String h = reqPkg.hostHdr;
-            String hostHdr = (appEndpoint.getHostHeader() != null ?
-                    appEndpoint.getHostHeader() :
-                        (appEndpoint.getHost()
-                                + (appEndpoint.getEndpointPort() != 80
-                                        ? (":" + appEndpoint.getEndpointPort())
-                                                : "")));
-            if (hhdr != null && hhdr.getValue() != hostHdr) {
-                reqPkg.headerBfr.set(new Header("X-Forwarded-Host", hhdr.getValue()));
-            }
-            reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
-        }
     }
 
     /**

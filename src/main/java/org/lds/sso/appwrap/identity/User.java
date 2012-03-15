@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.identity;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -6,28 +6,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.james.mime4j.codec.EncoderUtil;
-import org.apache.james.mime4j.codec.EncoderUtil.Usage;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
-import org.lds.sso.appwrap.proxy.header.Header;
-import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
+import org.lds.sso.appwrap.NvPair;
 
 public class User {
-	public static final String LDSAPPS_ATT = "ldsApplications";
 	
 	protected String password = null;
 	protected String username = null;
-	private Map<String, String> headers = new TreeMap<String, String>(UserHeaderNames.defaultHeaders);
 	Principal principal = null;
     private Set<NvPair> atts = new TreeSet<NvPair>();
 
 	public User(String username, String pwd) {
 		this.password = pwd;
 		this.username = username;
-        this.headers.put(UserHeaderNames.CN, username);
 		this.principal = new Principal() {
 			
 			private String name = "sso.appwrap.user." + User.this.username;
@@ -50,31 +42,7 @@ public class User {
 	}
 	public void setUsername(String username) {
 		this.username = username;
-		this.headers.put(UserHeaderNames.CN, username);
 	}
-
-	/**
-	 * Adds a header with its value to the buffer and encodes the value 
-	 * according to rfc2047 if needed.
-	 * 
-	 * @param name
-	 * @param value
-	 */
-	public void addHeader(String name, String value) {
-		this.headers.remove(name);
-		this.headers.put(name, value);
-	}
-
-	public void injectUserHeaders(HeaderBuffer headersBfr) {
-		for(Entry<String, String> e : headers.entrySet()) {
-	        String encV = EncoderUtil.encodeIfNecessary(e.getValue(), Usage.TEXT_TOKEN, 0);
-			headersBfr.append(new Header(e.getKey(), encV));
-		}
-	}
-
-    public NvPair[] getHeaders() {
-        return getAsNvPairArry(headers);
-    }
 
     public NvPair[] getAttributes() {
         return atts.toArray(new NvPair[] {});
@@ -92,10 +60,6 @@ public class User {
             
         }
         return arr;
-    }
-
-    public String getProperty(String name) {
-        return headers.get(name);
     }
 
     public boolean hasAttributeValue(String name, String value) {
@@ -142,4 +106,11 @@ public class User {
     public String toString() {
         return "user: " + username;
     }
+
+    /**
+     * Purges any previously cached attribute values.
+     */
+	public void clearAttributes() {
+		atts.clear();
+	}
 }

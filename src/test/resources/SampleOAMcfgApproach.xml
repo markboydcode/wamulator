@@ -1,0 +1,259 @@
+
+<!-- checking in here as we begin work on import/export conformance of config file -->
+
+<deployment at='2011-10-04_10:20:52.828-0600' >
+  <environment id='ddev' host='d-dev.lds.org'>
+    <header-replacements>
+      <rep name='policy-service-url'>http://oes-int.ldschurch.org/wam/rest/oes/</rep>
+    </header-replacements>
+    <routes host='local.lds.org' port='2306'>
+      <route app='' thost='' tport='' tpath=''/>
+    </routes>
+  </environment>
+  <application id='d-lds.org/leader' authHost='d-lds.org' cctx='/leader' >
+    <authentication scheme='login' failure-redirect-url='/SSOSignIn/?error=authfailed'/>
+    <headers>
+      <fixed-value name='cctx' value='/leader/content' />
+      <fixed-value name='policy-service-url' value='{{policy-service-url}}' />
+      <fixed-value name='policy-signin' value='signmein' />
+      <fixed-value name='policy-signout' value='signmeout' />
+      <profile-att name='policy-cn' attribute='cn' />
+      <profile-att name='policy-dn' attribute='obuniqueid' />
+      <profile-att name='policy-gender' attribute='ldsgender' />
+      <profile-att name='policy-givenname' attribute='givenname' />
+      <profile-att name='policy-ldsaccountid' attribute='ldsaccountid' />
+      <profile-att name='policy-ldsbdate' attribute='ldsbdate' />
+      <profile-att name='policy-ldsemailaddress' attribute='ldsemailaddress' />
+      <profile-att name='policy-ldsgender' attribute='ldsgender' />
+      <profile-att name='policy-ldsindividualid' attribute='ldscmisid' />
+      <profile-att name='policy-ldsmrn' attribute='ldsmrn' />
+      <profile-att name='policy-ldspositions' attribute='ldsposv2' />
+      <profile-att name='policy-ldsunits' attribute='ldsunit' />
+      <profile-att name='policy-preferredlanguage' attribute='preferredlanguage' />
+      <profile-att name='policy-preferredname' attribute='preferredname' />
+      <profile-att name='policy-sn' attribute='sn' />
+    </headers>
+    <authorization failure-redirect-url='/denied.html'>
+      <rule name='Allow 1,2,3,4,5,12,51,52,54,55,56,57,59,60,66,67,68,70,789,1278 leader/ocl/home' enabled='true' allow-takes-precedence='true' >
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p2/*)(ldsposv2=p3/*)(ldsposv2=p4/*) (ldsposv2=p5/*)(ldsposv2=p9/*)(ldsposv2=p12/*)(ldsposv2=p51/*)(ldsposv2=p52/*)(ldsposv2=p54/*)(ldsposv2=p55/*)(ldsposv2=p56/*)(ldsposv2=p57/*)(ldsposv2=p59/*)(ldsposv2=p60/*) (ldsposv2=p66/*)(ldsposv2=p67/*)(ldsposv2=p68/*)(ldsposv2=p70/*)(ldsposv2=p789/*)(ldsposv2=p1278/*))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Allow All Members' enabled='true' allow-takes-precedence='false' >
+        <description>Allow LDS Members</description>
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(ldsMRN=*)</condition>
+        </allow>
+        <deny>
+        </deny>
+      </rule>
+      <rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='false' >
+        <description>Allow All Authenticated Users</description>
+        <allow>
+                    <condition  type='role' value='Anyone' />
+        </allow>
+        <deny>
+        </deny>
+      </rule>
+      <rule name='Allow Positions 1, 2, 3, 4, 5, 12, 30, 51, 52, 53, 54, 55, 56, 57,58,59,60,66,67, 68,69,70,363,364, 414, 491,782,783,784,785,786,787,788,789,790,791,803,804, 1172, 1173,1174,1180, 1278,1449, 1543 /leader/navigation/cdol-overflow.jsf' enabled='true' allow-takes-precedence='true' >
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p2/*)(ldsposv2=p3/*)(ldsposv2=p4/*)(ldsposv2=p5/*)(ldsposv2=p9/*)(ldsposv2=p12/*)(ldsposv2=p30/*)(ldsposv2=p51/*)(ldsposv2=p52/*)(ldsposv2=p53/*)(ldsposv2=p54/*)(ldsposv2=p55/*)(ldsposv2=p56/*)(ldsposv2=p57/*)(ldsposv2=p58/*)(ldsposv2=p59/*)(ldsposv2=p60/*)(ldsposv2=p66/*)(ldsposv2=p67/*)(ldsposv2=p68/*)(ldsposv2=p69/*)(ldsposv2=p70/*)(ldsposv2=p363/*)(ldsposv2=p364/*)(ldsposv2=p414/*)(ldsposv2=p491/*)(ldsposv2=p782/*)(ldsposv2=p783/*)(ldsposv2=p784/*)(ldsposv2=p785/*)(ldsposv2=p786/*)(ldsposv2=p787/*)(ldsposv2=p788/*)(ldsposv2=p789/*)(ldsposv2=p790/*)(ldsposv2=p791/*)(ldsposv2=p803/*)(ldsposv2=p804/*)(ldsposv2=p1172/*)(ldsposv2=1173/*)(ldsposv2=p1174/*)(ldsposv2=p1180/*)(ldsposv2=p1278/*)(ldsposv2=p1449/*)(ldsposv2=p1543/*))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Allow Positions 1, 4, 5 &amp; 12' enabled='true' allow-takes-precedence='true' >
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p4/*)(ldsposv2=p5/*)(ldsposv2=p12/*))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Allow Positions 1, 4, 56, 1278, 51, 5, 70 &amp; 12' enabled='true' allow-takes-precedence='true' >
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p4/*)(ldsposv2=p56/*)(ldsposv2=p1278/*)(ldsposv2=p51/*)(ldsposv2=p5/*)(ldsposv2=p70/*)(ldsposv2=p12/*))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Allow Positions 1, 5, 51 &amp; 70' enabled='true' allow-takes-precedence='true' >
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p5/*)(ldsposv2=p51/*)(ldsposv2=p70/*))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Allow Positions 1,2,3,4,,5,6,7,8,12,19,20,21,23,24,25,30,31,32,33,34,35,51,52,53,54,55,56,57,58,59,60,66,67,68,69,70,113,114,115,414,491,521,775,776,783,784,787,788,789,790,803,804,1101,1102,1103,1172,1173,1174,1175,1178,1179,1180,1181,1182,1184,1278,1449,1543,1752,1753,ldsappproxy=mls-membership /leader /leader/navigation/home combined' enabled='true' allow-takes-precedence='true' >
+        <description>Allow Positions 1,2,3,4,,5,6,7,8,12,19,20,21,23,24,25,30,31,32,33,34,35,51,52,53,54,55,56,57,58,59,60,66,67,68,69,70,113,114,115,414,491,521,775,776,783,784,787,788,789,790,803,804,1101,1102,1103,1172,1173,1174,1175,1178,1179,1180,1181,1182,1184,1278,1449,1543,1752,1753,ldsappproxy=mls-membership /leader /leader/navigation/home combined</description>
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p2/*)(ldsposv2=p3/*)(ldsposv2=p4/*)(ldsposv2=p5/*)(ldsposv2=p6/*)(ldsposv2=p7/*)(ldsposv2=p8/*)(ldsposv2=p9/*)(ldsposv2=p12/*)(ldsposv2=p19/*)(ldsposv2=p20/*)(ldsposv2=p21/*)(ldsposv2=p23/*)(ldsposv2=p24/*)(ldsposv2=p25/*)(ldsposv2=p30/*)(ldsposv2=p31/*)(ldsposv2=p32/*)(ldsposv2=p33/*)(ldsposv2=p34/*)(ldsposv2=p35/*)(ldsposv2=p51/*)(ldsposv2=p52/*)(ldsposv2=p53/*)(ldsposv2=p54/*)(ldsposv2=p55/*)(ldsposv2=p56/*)(ldsposv2=p57/*)(ldsposv2=p58/*)(ldsposv2=p59/*)(ldsposv2=p60/*)(ldsposv2=p66/*)(ldsposv2=p67/*)(ldsposv2=p68/*)(ldsposv2=p69/*)(ldsposv2=p70/*)(ldsposv2=p113/*)(ldsposv2=p114/*)(ldsposv2=p115/*)(ldsposv2=p414/*)(ldsposv2=p491/*)(ldsposv2=p521/*)(ldsposv2=p775/*)(ldsposv2=p776/*)(ldsposv2=p783/*)(ldsposv2=p784/*)(ldsposv2=p787/*)(ldsposv2=p788/*)(ldsposv2=p789/*)(ldsposv2=p790/*)(ldsposv2=p803/*)(ldsposv2=p804/*)(ldsposv2=p1101/*)(ldsposv2=p1102/*)(ldsposv2=p1103/*)(ldsposv2=p1172/*)(ldsposv2=p1173/*)(ldsposv2=p1174/*)(ldsposv2=p1175/*)(ldsposv2=p1178/*)(ldsposv2=p1179/*)(ldsposv2=p1180/*)(ldsposv2=p1181/*)(ldsposv2=p1182/*)(ldsposv2=p1184/*)(ldsposv2=p1278/*)(ldsposv2=p1449/*)(ldsposv2=p1543/*)(ldsposv2=p1752/*)(ldsposv2=p1753/*)(ldsappproxy=mls-membership))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Allow Positions 1,4,5,12,51,56,70,491,1278,1449' enabled='true' allow-takes-precedence='true' >
+        <description>Allow Positions 1,4,5,12,51,56,70,491,1278,1449</description>
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p4/*)(ldsposv2=p5/*)(ldsposv2=p12/*)(ldsposv2=p51/*)(ldsposv2=p56/*)(ldsposv2=p70/*)(ldsposv2=p491/*)(ldsposv2=p1278/*)(ldsposv2=p1449/*))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Allow Positions 4,12,54,55,56,57,58,59,60,787,788,789,790,1278' enabled='true' allow-takes-precedence='true' >
+        <description>Allow Positions 4,12,54,55,56,57,58,59,60,787,788,789,790,1278</description>
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p4/*)(ldsposv2=p12/*)(ldsposv2=p54/*)(ldsposv2=p55/*)(ldsposv2=p56/*)(ldsposv2=p57/*)(ldsposv2=p58/*)(ldsposv2=p59/*)(ldsposv2=p60/*)(ldsposv2=p787/*)(ldsposv2=p788/*)(ldsposv2=p789/*)(ldsposv2=p790/*)(ldsposv2=p1278/*))</condition>
+        </allow>
+        <deny>
+        </deny>
+      </rule>
+      <rule name='Allow Positions 789, 12, 70, 68, 5, 51, 1278, 56, 57, 52, 4 &amp; 1' enabled='true' allow-takes-precedence='true' >
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p789/*)(ldsposv2=p12/*)(ldsposv2=p70/*)(ldsposv2=p68/*)(ldsposv2=p5/*)(ldsposv2=p51/*)(ldsposv2=p1278/*)(ldsposv2=p56/*)(ldsposv2=p57/*)(ldsposv2=p52/*)(ldsposv2=p4/*)(ldsposv2=p1/*))</condition>
+        </allow>
+        <deny>
+                    <condition  type='role' value='Anyone' />
+        </deny>
+      </rule>
+      <rule name='Forbidden Countries List' enabled='true' allow-takes-precedence='true' >
+        <description>This rule will protect saint&apos;s physical address by blocking saints access to directory, calendar mls/mbr mls/cr</description>
+        <allow>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(ldsposv2=p1/*)(ldsposv2=p4/*)(ldsposv2=p5/*)(ldsposv2=p12/*))</condition>
+        </allow>
+        <deny>
+          <condition  type='ldap' >ldap:///ou=People,o=lds??sub?(|(co=CHN)(co=PAK)(co=VNM)(co=NPL)(co=IRN)(co=IRQ)(co=ISR)(co=LBY)(co=SAU)(co=SYR)(co=TUN)(co=ESH)(co=YEM)(co=PSE)(co=BGD)(co=MMR)(co=AFG)(co=DZE))</condition>
+        </deny>
+      </rule>
+    </authorization>
+    <policy name='/leader/content{/.../*,*}'>
+      <url>content{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Authenticated Users</authorization>
+    </policy>
+    <policy name='/leader/services/leaders/messaging{/.../*,*}'>
+      <url>services/leaders/messaging{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Authenticated Users</authorization>
+    </policy>
+    <policy name='/leader/navigation/home.jsf{/.../*,*}'>
+      <url>navigation/home.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Forbidden Countries List  | Allow Positions 1,2,3,4,,5,6,7,8,12,19,20,21,23,24,25,30,31,32,33,34,35,51,52,53,54,55,56,57,58,59,60,66,67,68,69,70,113,114,115,414,491,521,775,776,783,784,787,788,789,790,803,804,1101,1102,1103,1172,1173,1174,1175,1178,1179,1180,1181,1182,1184,1278,1449,1543,1752,1753,ldsappproxy=mls-membership /leader /leader/navigation/home combined</authorization>
+    </policy>
+    <policy name='/leader/navigation/cdol-overflow.jsf{/.../*,*}'>
+      <url>navigation/cdol-overflow.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1, 2, 3, 4, 5, 12, 30, 51, 52, 53, 54, 55, 56, 57,58,59,60,66,67, 68,69,70,363,364, 414, 491,782,783,784,785,786,787,788,789,790,791,803,804, 1172, 1173,1174,1180, 1278,1449, 1543 /leader/navigation/cdol-overflow.jsf</authorization>
+    </policy>
+    <policy name='/leader/navigation/memberInfo-overflow.jsf{/.../*,*}'>
+      <url>navigation/memberInfo-overflow.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow All Members</authorization>
+    </policy>
+    <policy name='/leader/navigation/focus.jsf{/.../*,*}'>
+      <url>navigation/focus.jsf{/.../*,*}</url>
+      <operations>GET,POST,PUT</operations>
+      <authorization format='exposee' >Allow Positions 1,4,5,12,51,56,70,491,1278,1449</authorization>
+    </policy>
+    <policy name='/leader/navigation/interview.jsf{/.../*,*}'>
+      <url>navigation/interview.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 4,12,54,55,56,57,58,59,60,787,788,789,790,1278</authorization>
+    </policy>
+    <policy name='/leader/navigation/missionaries.jsf{/.../*,*}'>
+      <url>navigation/missionaries.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1, 5, 51 \&amp; 70</authorization>
+    </policy>
+    <policy name='/leader/navigation/missionary-notserved.jsf{/.../*,*}'>
+      <url>navigation/missionary-notserved.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1, 5, 51 \&amp; 70</authorization>
+    </policy>
+    <policy name='/leader/navigation/missionary-couples.jsf{/.../*,*}'>
+      <url>navigation/missionary-couples.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1, 5, 51 \&amp; 70</authorization>
+    </policy>
+    <policy name='/leader/navigation/recommends.jsf{/.../*,*}'>
+      <url>navigation/recommends.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1, 4, 56, 1278, 51, 5, 70 \&amp; 12</authorization>
+    </policy>
+    <policy name='/leader/navigation/trend-charts.jsf{/.../*,*}'>
+      <url>navigation/trend-charts.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1, 4, 5 \&amp; 12</authorization>
+    </policy>
+    <policy name='/leader/navigation/prospective-elders.jsf{/.../*,*}'>
+      <url>navigation/prospective-elders.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1, 5, 51 \&amp; 70</authorization>
+    </policy>
+    <policy name='/leader/navigation/membership.jsf{/.../*,*}'>
+      <url>navigation/membership.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 789, 12, 70, 68, 5, 51, 1278, 56, 57, 52, 4 \&amp; 1</authorization>
+    </policy>
+    <policy name='/leader/navigation/organizations.jsf{/.../*,*}'>
+      <url>navigation/organizations.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 789, 12, 70, 68, 5, 51, 1278, 56, 57, 52, 4 \&amp; 1</authorization>
+    </policy>
+    <policy name='/leader/navigation/finances.jsf{/.../*,*}'>
+      <url>navigation/finances.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 789, 12, 70, 68, 5, 51, 1278, 56, 57, 52, 4 \&amp; 1</authorization>
+    </policy>
+    <policy name='/leader/navigation/unit-member-list.jsf{/.../*,*}'>
+      <url>navigation/unit-member-list.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Positions 1,4,5,12,51,56,70,491,1278,1449</authorization>
+    </policy>
+    <policy name='/leader/navigation/messaging-list.jsf{/.../*,*}'>
+      <url>navigation/messaging-list.jsf{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Authenticated Users</authorization>
+    </policy>
+    <policy name='/leader/images{/.../*,*}'>
+      <url>images{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Authenticated Users</authorization>
+    </policy>
+    <policy name='/leader/scripts{/.../*,*}'>
+      <url>scripts{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Authenticated Users</authorization>
+    </policy>
+    <policy name='/leader/styles{/.../*,*}'>
+      <url>styles{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Authenticated Users</authorization>
+    </policy>
+    <policy name='/leader/a4j{/.../*,*}'>
+      <url>a4j{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Allow Authenticated Users</authorization>
+    </policy>
+    <policy name='/leader/ocl/home{/.../*,*}'>
+      <url>ocl/home{/.../*,*}</url>
+      <operations>GET</operations>
+      <authentication scheme='anonymous' />
+      <authorization format='exposee' >Allow 1,2,3,4,5,12,51,52,54,55,56,57,59,60,66,67,68,70,789,1278 leader/ocl/home</authorization>
+    </policy>
+    <policy name='/leader{/.../*,*}'>
+      <url>{/.../*,*}</url>
+      <operations>GET</operations>
+      <authorization format='exposee' >Forbidden Countries List  | Allow Positions 1,2,3,4,,5,6,7,8,12,19,20,21,23,24,25,30,31,32,33,34,35,51,52,53,54,55,56,57,58,59,60,66,67,68,69,70,113,114,115,414,491,521,775,776,783,784,787,788,789,790,803,804,1101,1102,1103,1172,1173,1174,1175,1178,1179,1180,1181,1182,1184,1278,1449,1543,1752,1753,ldsappproxy=mls-membership /leader /leader/navigation/home combined</authorization>
+    </policy>
+  </application>
+</deployment>

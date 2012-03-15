@@ -3,13 +3,12 @@ package org.lds.sso.appwrap.ui.rest;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang.StringUtils;
 import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.SessionManager;
-import org.lds.sso.appwrap.io.LogUtils;
+import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
@@ -38,33 +37,9 @@ public class TerminateSessionHandler extends RestHandlerBase {
 
 		String uri = request.getRequestURI();
 		String token = uri.substring(uri.lastIndexOf('/')+1);
-		Cookie[] cookies = request.getCookies();
-		for(Cookie ck : cookies) {
-		    if (ck.getName().equals(cfg.getCookieName())) {
-		        String currToken = ck.getValue();
-                if (currToken.equals(token)) {
-                    // deleting current session so clear out cookie
-                    SessionManager smgr = cfg.getSessionManager();
-                    String cookieDomain = null;
-                    try {
-                        cookieDomain = smgr.getCookieDomainForHost(request.getServerName());
-                    }
-                    catch( IllegalArgumentException e) {
-                        LogUtils.info(cLog, "Unable to clear cookie since can't find configured cookie domain for host '{0}'", 
-                        	request.getServerName());
-                    }
-                    if (cookieDomain != null) {
-                        cfg.getSessionManager().terminateSession(token, cookieDomain);
-                        Cookie c = new Cookie(cfg.getCookieName(), token);
-                        c.setPath("/");
-                        c.setDomain(cookieDomain);
-                        c.setMaxAge(0); // clears the cookie
-                        c.setVersion(1);
-                        response.addCookie(c);
-                    }
-                }
-                break;
-		    }
+		if (StringUtils.isNotEmpty(token)) {
+	        SessionManager smgr = cfg.getSessionManager();
+	        smgr.terminateSessionsForToken(token);
 		}
 		String referer = request.getHeader("referer");
 		if (referer == null || referer.equals("")) {

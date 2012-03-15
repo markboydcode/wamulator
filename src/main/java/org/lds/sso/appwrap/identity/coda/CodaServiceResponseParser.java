@@ -1,4 +1,4 @@
-package org.lds.sso.appwrap.ui.rest;
+package org.lds.sso.appwrap.identity.coda;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -7,7 +7,7 @@ import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -60,25 +60,43 @@ import org.xml.sax.XMLReader;
 public class CodaServiceResponseParser implements ContentHandler{
 	static final Map<String,String> coda2sso;
 
+	private static final String PREFIX = GlobalHeaderNames.PREFIX;
+
+    public static final String BIRTH_DATE = PREFIX + "ldsbdate";
+    public static final String CN = PREFIX + "cn";
+    public static final String GENDER = PREFIX + "gender";
+    public static final String GIVEN_NAME = PREFIX + "givenname";
+    public static final String INDIVIDUAL_ID = PREFIX + "ldsindividualid";
+	public static final String LDS_ACCOUNT_ID = PREFIX + "ldsaccountid";
+    public static final String LDS_MRN = PREFIX + "ldsmrn";
+    public static final String POSITIONS = PREFIX + "ldspositions";
+    public static final String PREFERRED_LANG = PREFIX + "preferredlanguage";
+    public static final String PREFERRED_NAME = PREFIX + "preferredname";
+    public static final String SN = PREFIX + "sn";
+    public static final String UNITS = PREFIX + "ldsunits";
+    public static final String EMAIL = PREFIX + "ldsemailaddress";
+
 	/**
 	 * Loads mapping of coda response element names to sso headers. 
 	 */
 	static {
 		Map<String,String> m = new HashMap<String,String>();
-		m.put("birthdate",UserHeaderNames.BIRTH_DATE);
-		m.put("cn",UserHeaderNames.CN);
-		m.put("gender",UserHeaderNames.GENDER);
-		m.put("givenName",UserHeaderNames.GIVEN_NAME);
-		m.put("individualId",UserHeaderNames.INDIVIDUAL_ID);
-		m.put("ldsAccountId",UserHeaderNames.LDS_ACCOUNT_ID);
-		m.put("ldsMrn",UserHeaderNames.LDS_MRN);
-		m.put("positions",UserHeaderNames.POSITIONS);
-		m.put("preferredLanguage",UserHeaderNames.PREFERRED_LANG);
-		m.put("preferredName",UserHeaderNames.PREFERRED_NAME);
-		m.put("sn",UserHeaderNames.SN);
-		m.put("units",UserHeaderNames.UNITS);
-		m.put("email",UserHeaderNames.EMAIL);
+		m.put("birthdate", BIRTH_DATE);
+		m.put("cn", CN);
+		m.put("gender", GENDER);
+		m.put("givenName", GIVEN_NAME);
+		m.put("individualId", INDIVIDUAL_ID);
+		m.put("ldsAccountId", LDS_ACCOUNT_ID);
+		m.put("ldsMrn", LDS_MRN);
+		m.put("positions", POSITIONS);
+		m.put("preferredLanguage", PREFERRED_LANG);
+		m.put("preferredName", PREFERRED_NAME);
+		m.put("sn", SN);
+		m.put("units", UNITS);
+		m.put("email", EMAIL);
 		coda2sso = m;
+
+
 	}
 	
 	/**

@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.User;
+import org.lds.sso.appwrap.identity.User;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.handler.HandlerList;
 

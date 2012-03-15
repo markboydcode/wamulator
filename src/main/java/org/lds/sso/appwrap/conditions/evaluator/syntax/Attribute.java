@@ -3,9 +3,9 @@ package org.lds.sso.appwrap.conditions.evaluator.syntax;
 import java.util.Map;
 
 import org.lds.sso.appwrap.NvPair;
-import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
+import org.lds.sso.appwrap.identity.User;
 
 /**
  * Created by IntelliJ IDEA.
@@ -96,6 +96,11 @@ public class Attribute extends SyntaxBase {
     }
 
     public static boolean wildCardMatch(String text, String pattern){
+    	// if no wildcard then test for exact match
+    	if (!pattern.contains("*")) {
+    		return text.equals(pattern);
+    	}
+    	
         boolean startWithWildcard = pattern.startsWith("*");
         boolean endsWithWildcard = pattern.endsWith("*");
         String [] tokens = pattern.split("(?<!\\\\)\\*"); //Find all * that don't have a \ before them

@@ -66,6 +66,23 @@ public class HeaderBuffer implements Iterable<Header>{
         return removeHeader(hdr);
     }
     
+    public List<Header> removeHeader(String name) {
+		HeaderDef def = HeaderDef.getDefByName(name);
+
+		if (def == HeaderDef.Extension) {
+			return _removeExtensionHeader(name);
+		}
+		else {
+			return removeHeader(def);
+		}
+
+    }
+    
+    private List<Header> _removeExtensionHeader(String name) {
+        Header hdr = new Header(name, "");
+        return removeHeader(hdr);
+    }
+    
     /**
      * Returns the list of Extension Headers removed having the passed-in 
      * name.
@@ -77,8 +94,7 @@ public class HeaderBuffer implements Iterable<Header>{
         if (name == null || HeaderDef.getDefByName(name) != HeaderDef.Extension) {
             return null;
         }
-        Header hdr = new Header(name, "");
-        return removeHeader(hdr);
+        return _removeExtensionHeader(name);
     }
     
     private List<Header> removeHeader(Header hdr){

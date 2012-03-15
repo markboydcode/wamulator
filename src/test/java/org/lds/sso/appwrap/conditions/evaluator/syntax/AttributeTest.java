@@ -7,10 +7,10 @@ import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
 import org.lds.sso.appwrap.NvPair;
-import org.lds.sso.appwrap.User;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
+import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -67,6 +67,22 @@ public class AttributeTest extends TestBaseClass {
         Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test with value test");
 
     }
+
+    @Test
+	public void test_equals_exact_but_att_value_longer() throws Exception {
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='p3' debug='true'/>");
+
+        User usr = EasyMock.createMock(User.class);
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "p3/7u345/5u897/1u2001/")});
+        EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
+        EasyMock.replay(usr);
+
+        Map<String,String> env = new TreeMap<String,String>();
+
+        EvaluationContext ctx = new EvaluationContext(usr, env);
+		Assert.assertFalse(ev.isConditionSatisfied(ctx), "does have attribute that starts with p3 but also has more text without wildcard match");
+
+	}
 
     @Test
 	public void testAttributeOperationEqualsWithWildcardTrue() throws Exception {
@@ -207,4 +223,59 @@ public class AttributeTest extends TestBaseClass {
         EvaluationContext ctx = new EvaluationContext(usr, env);
 		ev.isConditionSatisfied(ctx);
 	}
+    
+    @Test
+    public void test_wildcard_match_with_embeddedwildcard() {
+    	Assert.assertEquals(Attribute.wildCardMatch("p3/7u4555/6u899/", "p3/*/6u899/"), true);
+    }
+    
+    @Test
+    public void test_wildcard_match_with_embeddedwildcard_exact() {
+    	Assert.assertEquals(Attribute.wildCardMatch("p3//6u899/", "p3/*/6u899/"), true);
+    }
+    
+    @Test
+    public void test_wildcard_match_with_startwildcard() {
+    	Assert.assertEquals(Attribute.wildCardMatch("p3/7u4555/6u899/", "*6u899/"), true);
+    }
+    
+    @Test
+    public void test_wildcard_match_with_startwildcard_exact() {
+    	Assert.assertEquals(Attribute.wildCardMatch("6u899/", "*6u899/"), true);
+    }
+    
+    @Test
+    public void test_wildcard_match_with_endwildcard() {
+    	Assert.assertEquals(Attribute.wildCardMatch("p3/7u4555/6u899/", "p3*"), true);
+    }
+    
+    @Test
+    public void test_wildcard_match_with_endwildcard_exact() {
+    	Assert.assertEquals(Attribute.wildCardMatch("p3", "p3*"), true);
+    }
+    
+    @Test
+    public void test_wildcard_match_noMatch_middle() {
+    	Assert.assertEquals(Attribute.wildCardMatch("x3/7u4555/p3/6u899/", "p3"), false);
+    }
+    
+    @Test
+    public void test_wildcard_match_noMatch_middle_wAstr() {
+    	Assert.assertEquals(Attribute.wildCardMatch("x3/7u4555/p3/6u899/", "p3*"), false);
+    }
+    
+    @Test
+    public void test_wildcard_match_noMatch_middle_wAstrPre() {
+    	Assert.assertEquals(Attribute.wildCardMatch("x3/7u4555/p3/6u899/", "*p3"), false);
+    }
+    
+    @Test
+    public void test_wildcard_match_noMatch() {
+    	Assert.assertEquals(Attribute.wildCardMatch("p3/7u4555/6u899/", "p3"), false);
+    }
+    
+    @Test
+    public void test_wildcard_match_exact() {
+    	Assert.assertEquals(Attribute.wildCardMatch("p3", "p3"), true);
+    }
 }

@@ -15,7 +15,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
-import org.lds.sso.appwrap.conditions.evaluator.UserHeaderNames;
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -67,9 +67,9 @@ public class ServiceUrlInjected4RootUrlTest {
                         if (input.startsWith("GET /global/some/path/ HTTP/1.1") ||
                         		input.startsWith("GET / HTTP/1.1") ||
                         		input.startsWith("GET /resources/css/pages/home.css HTTP/1.1")) {
-                        	answer = UserHeaderNames.SERVICE_URL + ": ???";
+                        	answer = GlobalHeaderNames.SERVICE_URL + ": ???";
 
-                            String hdrKey = RequestHandler.CRLF + UserHeaderNames.SERVICE_URL + ":";
+                            String hdrKey = RequestHandler.CRLF + GlobalHeaderNames.SERVICE_URL + ":";
                             int idx = inputLC.indexOf(hdrKey);
 
                             if (idx != -1) {
@@ -82,7 +82,7 @@ public class ServiceUrlInjected4RootUrlTest {
                                 else {
                                     val = input.substring(idx+hdrKey.length(), cr).trim();
                                 }
-                                answer = UserHeaderNames.SERVICE_URL + ": " + val;
+                                answer = GlobalHeaderNames.SERVICE_URL + ": " + val;
                             }
                             req = "policy-service-url-injection-test";
                         }
@@ -148,17 +148,33 @@ public class ServiceUrlInjected4RootUrlTest {
         this.setUpTestServer();
         
         // now set up the shim to verify various handling characteristics
+        System.getProperties().remove("non-existent-sys-prop");
+        
         service = Service.getService("string:"
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<?alias console-port=" + consolePort + "?>"
             + "<?alias proxy-port=" + proxyPort + "?>"
+            + "<?system-alias user-src-props=non-existent-sys-prop default="
+            + "\"xml="
+            + " <users>"
+            + "  <user name='ngiwb2'>"
+            + "   <Att name='apps' value='aaa,bbb,ccc'/>"
+            + "   <Att name='preferredname' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
+            + "   <Att name='policy-givenname' value='Jay Admin'/>"
+            + "   <Att name='policy-preferredlanguage' value='eng'/>"
+            + "   <Att name='policy-preferred-name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
+            + "   <Att name='policy-given-name' value='Jay Admin'/>"
+            + "   <Att name='policy-preferred-language' value='eng'/>"
+            + "   <Att name='policy-preferred_name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
+            + "   <Att name='policy-given_name' value='Jay Admin'/>"
+            + "   <Att name='policy-preferred_language' value='eng'/>"
+            + "  </user>"
+            + " </users>"
+            + "\"?>"
             + "<config console-port='{{console-port}}' proxy-port='{{proxy-port}}'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-cookie name='lds-policy' domain='.ldschurch.org' />"
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
-            + "<sso-sign-in-url value='http://local.ldschurch.org:{{console-port}}/admin/codaUserSelect.jsp'/>"
-            + "<sso-header name='policy-service-url' value='http://local.ldschurch.org:{{console-port}}/rest/'/>"
-            + "<sso-header name='connection' value='close'/>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.ldschurch.org' port='{{proxy-port}}'>"
             + "   <cctx-mapping cctx='/global*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/global*'/>"
@@ -169,20 +185,7 @@ public class ServiceUrlInjected4RootUrlTest {
             + "   <allow cpath='/*?*' action='GET,POST'/>"
             + "  </by-site>"
             + " </sso-traffic>"
-            + " <users>"
-            + "  <user name='ngiwb2'>"
-            + "   <ldsApplications value='aaa,bbb,ccc'/>"
-            + "   <sso-header name='preferredname' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <sso-header name='policy-givenname' value='Jay Admin'/>"
-            + "   <sso-header name='policy-preferredlanguage' value='eng'/>"
-            + "   <sso-header name='policy-preferred-name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <sso-header name='policy-given-name' value='Jay Admin'/>"
-            + "   <sso-header name='policy-preferred-language' value='eng'/>"
-            + "   <sso-header name='policy-preferred_name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <sso-header name='policy-given_name' value='Jay Admin'/>"
-            + "   <sso-header name='policy-preferred_language' value='eng'/>"
-            + "  </user>"
-            + " </users>"
+            + " <user-source type='xml'>{{user-src-props}}</user-source>"
             + "</config>");
         service.start();
         sitePort = Config.getInstance().getProxyPort();

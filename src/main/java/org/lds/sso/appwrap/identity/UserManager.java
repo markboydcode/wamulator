@@ -1,10 +1,11 @@
-package org.lds.sso.appwrap;
+package org.lds.sso.appwrap.identity;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
 
 public class UserManager {
 	protected Map<String, User> users = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
@@ -16,8 +17,9 @@ public class UserManager {
 	 * 
 	 * @param user
 	 * @param password
+	 * @return 
 	 */
-	public synchronized void setUser(String username, String password) {
+	public synchronized User setUser(String username, String password) {
 		// first clone the map so we don't get concurrent mod exception
 		Map<String, User> copy = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
 		copy.putAll(users);
@@ -39,6 +41,7 @@ public class UserManager {
 		lastUserAdded = usr;
 		// now replace old map 
 		users = copy;
+		return usr;
 	}
 	
 	/**
@@ -91,35 +94,11 @@ public class UserManager {
 	 * @param username
 	 * @return
 	 */
-	public User  getUser(String username) {
+	public User getUser(String username) {
 		if (username == null) {
 			return null;
 		}
 		return users.get(username);
-	}
-
-	public void addHeader(String username, String name, String value) {
-		User usr = users.get(username);
-		
-		if (usr != null) {
-			usr.addHeader(name, value);
-		}
-	}
-
-	/**
-	 * Adds a header for the last user added. The header should NOT end with a 
-	 * colon.
-	 * 
-	 * @param header
-	 * @param value
-	 * @throws SSOException 
-	 */
-	public void addHeaderForLastUserAdded(String header, String value) {
-		if (lastUserAdded != null && header != null && value != null
-				&& ! "".equals(header) && ! "".equals(value)) {
-			header = header.trim();
-			lastUserAdded.addHeader(header, value);
-		}
 	}
 
     public void addAttributeForLastUserAdded(String name, String value) {

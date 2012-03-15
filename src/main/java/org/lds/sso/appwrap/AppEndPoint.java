@@ -1,11 +1,21 @@
 package org.lds.sso.appwrap;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import javax.mail.internet.MimeUtility;
+
+import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
+import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.RequestLine;
 import org.lds.sso.appwrap.proxy.StartLine;
+import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderDef;
 
 /**
  * Represents the mapping from canonical space URLs to application space URLs
@@ -68,6 +78,26 @@ public class AppEndPoint implements EndPoint {
 
     private String scheme;
 
+	/**
+	 * Returns the name of the header that should be injected to convey that 
+	 * the request was received over http or https. Defaults to X-Forwarded-Scheme.
+	 *  
+	 * @return
+	 */
+	private String schemeHeaderName = "X-Forwarded-Scheme";
+
+	/**
+	 * Indicates if a scheme header should be injected for this application 
+	 * such as X-Forwarded-Scheme. Defaults to true.
+	 * 
+	 * @return
+	 */
+	private boolean injectSchemeHeader = true;
+
+	protected Map<String, List<String>> fixedHeaders;
+
+	protected Map<String, String> profileHeaders;
+
 	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, 
 	        String host, int port, 
 	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
@@ -101,7 +131,33 @@ public class AppEndPoint implements EndPoint {
         updateId();
     }
 
-    private void updateId() {
+	/**
+	 * Constructor that allows us to override default x-forwarded-scheme
+	 * header behavior.
+	 * 
+	 * @param host
+	 * @param cctx
+	 * @param tpath
+	 * @param thost
+	 * @param tport
+	 * @param scheme
+	 * @param preserve
+	 * @param hostHdr
+	 * @param policyServiceGateway
+	 * @param injectScheme
+	 * @param schemeHeader
+	 */
+    public AppEndPoint(String host, String cctx, String tpath, String thost, int tport, String scheme,
+			boolean preserve, String hostHdr, String policyServiceGateway, boolean injectScheme,
+			String schemeHeader) {
+    	this(host, cctx, tpath, thost, tport, scheme, preserve, hostHdr, policyServiceGateway);
+    	this.injectSchemeHeader = injectScheme;
+    	if (schemeHeader != null) {
+        	this.schemeHeaderName = schemeHeader;
+    	}
+	}
+
+	private void updateId() {
         this.id = this.canonicalHost + this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
 	}
     
@@ -243,5 +299,159 @@ public class AppEndPoint implements EndPoint {
 
 	public String getHost() {
 		return host;
+	}
+
+	public void setFixedHeaders(Map<String, List<String>> fixedHdrs) {
+		this.fixedHeaders = fixedHdrs;
+	}
+
+	public void setProfileHeaders(Map<String, String> profileHdrs) {
+		this.profileHeaders = profileHdrs;
+	}
+
+    /**
+     * Injects the policy-service-url pointing to the one for the by-site element
+     * that contained our context mapping end point possibly with adjusted
+     * gateway host and port if specified like when server is behind a firewall
+     * and can't get to rest service without a reverse proxy tunnel
+     * @param cfg 
+     *
+     * @param appEndpoint
+     * @param reqPkg
+     */
+    private void injectPolicyServiceUrlHdr(Config cfg, HttpPackage reqPkg) {
+        // first remove any injected header
+        Header hdr = new Header(GlobalHeaderNames.SERVICE_URL, "");
+        reqPkg.headerBfr.removeExtensionHeader(GlobalHeaderNames.SERVICE_URL);
+
+        String hdrBase = "http://";
+        if (getPolicyServiceGateway() == null) {
+            hdrBase += getCanonicalHost() + ":" + cfg.getConsolePort();
+        }
+        else {
+            hdrBase += this.getPolicyServiceGateway();
+        }
+        switch(cfg.getRestVersion()) {
+        case OPENSSO:
+            hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase());
+            break;
+        case CD_OESv1:
+            hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase() + getCanonicalHost() + "/");
+        }
+        reqPkg.headerBfr.append(hdr);
+    }
+
+	/**
+	 * Injects/adjusts headers specific for the endpoint.
+	 * 
+	 * @param cfg
+	 * @param reqPkg
+	 * @param user
+	 * @param isSecure
+	 */
+	public void injectHeaders(Config cfg, HttpPackage reqPkg, User user, boolean isSecure) {
+		injectProfileHeaders(user, reqPkg);
+		adjustHostHdr(reqPkg);
+		injectSchemeHeader(isSecure, reqPkg);
+		injectPolicyServiceUrlHdr(cfg, reqPkg);
+		injectFixedHdrs(reqPkg);
+	}
+	
+	/**
+	 * Injects headers with values from the a User's attributes.
+	 * 
+	 * @param user
+	 * @param reqPkg
+	 */
+	private void injectProfileHeaders(User user, HttpPackage reqPkg) {
+		if (profileHeaders == null) {
+			return;
+		}
+
+		for(Entry<String, String> ent : this.profileHeaders.entrySet()) {
+			String hdrName = ent.getKey();
+			String attName = ent.getValue();
+			// first scrub existing to prevent injection
+			reqPkg.headerBfr.removeHeader(hdrName);
+			// now inject
+			if (user != null) {
+				NvPair[] atts = user.getAttribute(attName);
+				for(NvPair pair : atts) {
+					String val = pair.getValue();
+					try {
+	                    val = MimeUtility.encodeText(val);
+	                } catch (UnsupportedEncodingException e) {
+	                    cLog.warning("Unsupported Encoding specified for header '"
+	                            + pair.getName() + "'. Leaving as unencoded.");
+	                }
+					reqPkg.headerBfr.append(new Header(hdrName, val));
+				}
+			}
+		}
+	}
+
+	/**
+	 * Injects any fixed headers declared in config file.
+	 * 
+	 * @param reqP
+	 */
+	private void injectFixedHdrs(HttpPackage reqPkg) {
+		if (fixedHeaders == null) {
+			return;
+		}
+		for(Entry<String, List<String>> hdr : fixedHeaders.entrySet()) {
+			// first scrub existing to prevent injection
+			reqPkg.headerBfr.removeHeader(hdr.getKey());
+			// now inject
+			for(String val : hdr.getValue()) {
+				reqPkg.headerBfr.append(new Header(hdr.getKey(), val));
+			}
+		}
+	}
+
+	/**
+	 * Optionally injects a header to indicate by which scheme a request was 
+	 * received.
+	 * 
+	 * @param isSecure
+	 * @param reqPkg
+	 */
+	private void injectSchemeHeader(boolean isSecure, HttpPackage reqPkg) {
+        // first remove any injected header
+        reqPkg.headerBfr.removeHeader(schemeHeaderName);
+        
+        // indicate via headers over which scheme the client request was received 
+        if (injectSchemeHeader) {
+            if (isSecure) {
+                reqPkg.headerBfr.append(new Header(schemeHeaderName, "https"));
+                reqPkg.scheme = "https";
+            }
+            else { 
+                reqPkg.headerBfr.append(new Header(schemeHeaderName, "http"));
+                reqPkg.scheme = "http";
+            }
+        }
+	}
+
+	/**
+	 * Adjusts the Host header and injects X-Forwarded-Host if needed.
+	 * 
+	 * @param reqPkg
+	 */
+	private void adjustHostHdr(HttpPackage reqPkg) {
+        if (! this.preserveHostHeader) {
+            Header hhdr = reqPkg.headerBfr.getHeader(HeaderDef.Host);
+            String h = reqPkg.hostHdr;
+            String hostHdr = (getHostHeader() != null ?
+                    getHostHeader() :
+                        (getHost()
+                                + (getEndpointPort() != 80
+                                        ? (":" + getEndpointPort())
+                                                : "")));
+            if (hhdr != null && ! hhdr.getValue().equals(hostHdr)) {
+                reqPkg.headerBfr.set(new Header("X-Forwarded-Host", hhdr.getValue()));
+            }
+            reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
+        }
 	}
 }
