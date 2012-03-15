@@ -35,8 +35,7 @@ public class RequestHandlerIntegrationTest {
     private Thread server = null;
     private ClientSideContext cctx = new ClientSideContext();
     
-    private static final String MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING = "Jay 金&lt;script>alert(0)&lt;/script>虬 Admin"; 
-    private static final String MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING = "Jay 金<script>alert(0)</script>虬 Admin"; 
+    private static final String MULTI_BYTE_CHARS_TEXT = "ソフトウェア 建築家 software engineer"; 
     
     private static class ClientSideContext {
     	int sitePort = -1;
@@ -857,11 +856,11 @@ public class RequestHandlerIntegrationTest {
                     boolean matched = false;
                     try {
                     	decd = MimeUtility.decodeText(val);
-                    	if (decd.equals(MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING)) {
+                    	if (decd.equals(MULTI_BYTE_CHARS_TEXT)) {
                     		matched = true;
                     	}
                     	else {
-                    		String logMsg = "Expected '" + MULTI_BYTE_CHARS_TEXT_POST_XML_PARSING + "' but decoding header value '" + val + "' resulted in '" + decd + "'";
+                    		String logMsg = "Expected '" + MULTI_BYTE_CHARS_TEXT + "' but decoding header value '" + val + "' resulted in '" + decd + "'";
                     		StringBuffer asciiSafe = new StringBuffer();
                     		for(int i=0; i<logMsg.length(); i++) {
                     			char c = logMsg.charAt(i);
@@ -1715,13 +1714,13 @@ public class RequestHandlerIntegrationTest {
             + "   <att name='apps' value='aaa'/>"
             + "   <att name='apps' value='bbb'/>"
             + "   <att name='apps' value='ccc'/>"
-            + "   <att name='preferredname'      value='" + MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING + "'/>"
+            + "   <att name='preferredname'      value='" + MULTI_BYTE_CHARS_TEXT + "'/>"
             + "   <att name='givenname'          value='Jay Admin'/>"
             + "   <att name='preferredlanguage'  value='eng'/>"
-            + "   <att name='preferred-name'     value='" + MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING + "'/>"
+            + "   <att name='preferred-name'     value='" + MULTI_BYTE_CHARS_TEXT + "'/>"
             + "   <att name='given-name'         value='Jay Admin'/>"
             + "   <att name='preferred-language' value='eng'/>"
-            + "   <att name='preferred_name'     value='" + MULTI_BYTE_CHARS_TEXT_PRE_XML_PARSING + "'/>"
+            + "   <att name='preferred_name'     value='" + MULTI_BYTE_CHARS_TEXT + "'/>"
             + "   <att name='given_name'         value='Jay Admin'/>"
             + "   <att name='preferred_language' value='eng'/>"
             + "   <att name='att-1' value='val1'/>"
