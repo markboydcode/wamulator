@@ -97,7 +97,32 @@ public class RequestHandlerIntegrationTest {
         String answer = null;
     }
     
+    
     /**
+     * Encodes multi-byte chars (actually chars above 127) with unicode escaping
+     * so that they can be logged.
+     * 
+     * @param val
+     * @return
+     */
+	public static String getMultiEscaped(String val) {
+		StringBuffer asciiSafe = new StringBuffer();
+		for(int i=0; i<val.length(); i++) {
+			char c = val.charAt(i);
+			if (((int)c) > 127) {
+				String chars = Integer.toHexString((int)c).toUpperCase();
+				
+				asciiSafe.append("\\u");
+				asciiSafe.append(chars);
+			}
+			else {
+				asciiSafe.append(c);
+			}
+		}
+		return asciiSafe.toString();
+	}
+
+	/**
      * Allows for responses that need to have access to the output stream and
      * more control of the output flow. 
      * 
@@ -861,24 +886,10 @@ public class RequestHandlerIntegrationTest {
                     	}
                     	else {
                     		String logMsg = "Expected '" + MULTI_BYTE_CHARS_TEXT + "' but decoding header value '" + val + "' resulted in '" + decd + "'";
-                    		StringBuffer asciiSafe = new StringBuffer();
-                    		for(int i=0; i<logMsg.length(); i++) {
-                    			char c = logMsg.charAt(i);
-                    			if (((int)c) > 127) {
-                    				String chars = Integer.toHexString((int)c).toUpperCase();
-                    				
-                    				asciiSafe.append("\\u");
-                    				asciiSafe.append(chars);
-                    			}
-                    			else {
-                    				asciiSafe.append(c);
-                    			}
-                    		}
-                    		System.out.println(asciiSafe.toString());
+                    		System.out.println(getMultiEscaped(logMsg));
                     	}
 					}
 					catch (UnsupportedEncodingException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
                     ctx.answer = "preferredname matched: " + matched;
@@ -908,10 +919,20 @@ public class RequestHandlerIntegrationTest {
 		        HostConfiguration hcfg = new HostConfiguration();
 		        hcfg.setProxy("127.0.0.1", csc.sitePort);
 		        client.setHostConfiguration(hcfg);
-
+		        
 		        HttpMethod method = new GetMethod(uri);
 		        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
 		        method.setFollowRedirects(false);
+		        System.out.println("Injecting client header value of '" 
+		        		+ RequestHandlerIntegrationTest.getMultiEscaped(MULTI_BYTE_CHARS_TEXT) + "'");
+		        String val = MULTI_BYTE_CHARS_TEXT;
+				try {
+                    val = MimeUtility.encodeText(val);
+    		        System.out.println("After MimeEncoding was '" + val + "'");
+    		        method.setRequestHeader("client-injected-multi-byte", val);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
 
 		        int status = client.executeMethod(method);
 		        String response = method.getResponseBodyAsString().trim();
@@ -2006,4 +2027,5 @@ public class RequestHandlerIntegrationTest {
             cfg.setProxyInboundSoTimeout(old);
         }
     }
+
 }
