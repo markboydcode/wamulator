@@ -74,7 +74,7 @@ public class CodaUserSource implements ExternalUserSource {
 	@Override
 	public void setConfig(Path path, Properties config) throws ConfigurationException {
 		if (! config.contains("url") || 
-				! config.getProperty("url").contains("{{username}}") ||
+				! config.getProperty("url").contains("{username}") ||
 				! config.getProperty("url").startsWith("http://")) {
 			throw new ConfigurationException("Configuration for CODA user-source at "
 					+ path + " must have form "
