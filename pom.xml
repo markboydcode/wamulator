@@ -11,7 +11,7 @@
     <groupId>org.lds.sso</groupId>
     <artifactId>appwrap</artifactId>
     <packaging>jar</packaging>
-    <version>6.1</version>
+    <version>6.2-SNAPSHOT</version>
 
 	<name>SSO Environment Simulator</name>
 
@@ -53,8 +53,8 @@
 		</mailingList>
 	</mailingLists>
 	<scm>
-		<url>https://code.lds.org/svn/sso-simulator/tags/appwrap-6.1</url>
-		<developerConnection>scm:svn:https://code.lds.org/svn/sso-simulator/tags/appwrap-6.1</developerConnection>
+		<url>https://code.lds.org/svn/sso-simulator/trunk</url>
+		<developerConnection>scm:svn:https://code.lds.org/svn/sso-simulator/trunk</developerConnection>
 	</scm>
 	<build>
 		<resources>
