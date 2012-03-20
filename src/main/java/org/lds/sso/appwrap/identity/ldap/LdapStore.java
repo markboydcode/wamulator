@@ -346,7 +346,9 @@ public class LdapStore {
 			String url, String[] atts) {
 		Hashtable<String, Object> env = new Hashtable<String, Object>();
 		env.put(SEARCH_BASE_DN, searchBase);
-		env.put(ATTRIBUTES_TO_OBTAIN, atts);
+		if (atts != null) {
+			env.put(ATTRIBUTES_TO_OBTAIN, atts);
+		}
 		env.put(Context.SECURITY_PRINCIPAL, bindDn);
 		env.put(Context.SECURITY_CREDENTIALS, bindPwd);
 		env.put(Context.PROVIDER_URL, url);
