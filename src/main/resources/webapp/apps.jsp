@@ -1,4 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@page contentType="text/html; charset=utf-8" %>
+<%@ page session="false" %>
 <html>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- TABS -->

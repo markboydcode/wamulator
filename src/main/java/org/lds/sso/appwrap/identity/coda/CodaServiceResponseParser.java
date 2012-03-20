@@ -7,7 +7,6 @@ import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -58,47 +57,7 @@ import org.xml.sax.XMLReader;
  *
  */
 public class CodaServiceResponseParser implements ContentHandler{
-	static final Map<String,String> coda2sso;
 
-	private static final String PREFIX = GlobalHeaderNames.PREFIX;
-
-    public static final String BIRTH_DATE = PREFIX + "ldsbdate";
-    public static final String CN = PREFIX + "cn";
-    public static final String GENDER = PREFIX + "gender";
-    public static final String GIVEN_NAME = PREFIX + "givenname";
-    public static final String INDIVIDUAL_ID = PREFIX + "ldsindividualid";
-	public static final String LDS_ACCOUNT_ID = PREFIX + "ldsaccountid";
-    public static final String LDS_MRN = PREFIX + "ldsmrn";
-    public static final String POSITIONS = PREFIX + "ldspositions";
-    public static final String PREFERRED_LANG = PREFIX + "preferredlanguage";
-    public static final String PREFERRED_NAME = PREFIX + "preferredname";
-    public static final String SN = PREFIX + "sn";
-    public static final String UNITS = PREFIX + "ldsunits";
-    public static final String EMAIL = PREFIX + "ldsemailaddress";
-
-	/**
-	 * Loads mapping of coda response element names to sso headers. 
-	 */
-	static {
-		Map<String,String> m = new HashMap<String,String>();
-		m.put("birthdate", BIRTH_DATE);
-		m.put("cn", CN);
-		m.put("gender", GENDER);
-		m.put("givenName", GIVEN_NAME);
-		m.put("individualId", INDIVIDUAL_ID);
-		m.put("ldsAccountId", LDS_ACCOUNT_ID);
-		m.put("ldsMrn", LDS_MRN);
-		m.put("positions", POSITIONS);
-		m.put("preferredLanguage", PREFERRED_LANG);
-		m.put("preferredName", PREFERRED_NAME);
-		m.put("sn", SN);
-		m.put("units", UNITS);
-		m.put("email", EMAIL);
-		coda2sso = m;
-
-
-	}
-	
 	/**
 	 * Accumulates character content within an element.
 	 */
@@ -198,11 +157,7 @@ public class CodaServiceResponseParser implements ContentHandler{
 
 	public void endElement(String uri, String localName, String name) throws SAXException {
 		if (depth == 2) {
-			String header = coda2sso.get(name);
-			if (header == null) {
-				header = name;
-			}
-			attValues.put(header, chars.toString());
+			attValues.put(name, chars.toString());
 		}
 		depth--;
 	}

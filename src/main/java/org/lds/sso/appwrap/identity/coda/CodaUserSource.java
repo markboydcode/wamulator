@@ -1,6 +1,7 @@
 package org.lds.sso.appwrap.identity.coda;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -42,7 +43,8 @@ public class CodaUserSource implements ExternalUserSource {
 	@Override
 	public Response loadExternalUser(String username, String password) throws IOException {
         HttpClient client = new HttpClient();
-        String uri = sourceUri.replaceAll("\\{username\\}", username);
+        String urlencUser = URLEncoder.encode(username, "utf-8");
+        String uri = sourceUri.replaceAll("\\{username\\}", urlencUser);
         HttpMethod method = new GetMethod(uri);
         method.setFollowRedirects(false);
         method.setRequestHeader("Accept", "application/xml");
@@ -73,9 +75,12 @@ public class CodaUserSource implements ExternalUserSource {
 
 	@Override
 	public void setConfig(Path path, Properties config) throws ConfigurationException {
-		if (! config.contains("url") || 
-				! config.getProperty("url").contains("{username}") ||
-				! config.getProperty("url").startsWith("http://")) {
+		boolean hasUrl = config.containsKey("url");
+		String url = config.getProperty("url");
+		boolean hasMacro = url.contains("{username}");
+		boolean usesHttp = url.startsWith("http://") || url.startsWith("https://");
+		
+		if (! hasUrl || ! hasMacro || ! usesHttp) {
 			throw new ConfigurationException("Configuration for CODA user-source at "
 					+ path + " must have form "
 					+ "url=<fully-qualified-coda-http-URL-with-embedded-{username}-macro>.");

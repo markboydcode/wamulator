@@ -230,7 +230,6 @@ src/test/java/org/lds/sso/appwrap/proxy/header/HeaderTest.java -text svneol=unse
 src/test/java/org/lds/sso/appwrap/rest/oes/v1/RestHttpTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/JspUtilsTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParserTest.java -text svneol=unset#text/plain
-src/test/resources/CodaServiceResponseParserTest-bad.txt -text svneol=unset#text/plain
 src/test/resources/CodaServiceResponseParserTest-good.txt -text svneol=unset#text/plain
 src/test/resources/ComplexSyntaxTest.xml -text svneol=unset#text/plain
 src/test/resources/HasLdsAccountConversionSample.xml -text svneol=unset#text/plain

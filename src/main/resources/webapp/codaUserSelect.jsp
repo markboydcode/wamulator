@@ -1,4 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@page contentType="text/html; charset=utf-8" %>
+<%@ page session="false" %>
 <jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <c:set var="gotoQueryParm" scope="page" value=""/>
 <c:set var="gotoUriEnc" scope="page" value=""/>

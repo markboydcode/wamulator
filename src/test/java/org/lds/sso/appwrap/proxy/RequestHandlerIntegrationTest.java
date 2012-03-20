@@ -1158,7 +1158,7 @@ public class RequestHandlerIntegrationTest {
 			public String getSimMappingAndAccess(ClientSideContext csc) {
 				return "<cctx-mapping cctx='/bad/response/startline*' thost='127.0.0.1' tport='"
 						+ csc.serverPort
-						+ "' tpath='/bad/startline*'/>"
+						+ "' tpath='/bad/response/startline*'/>"
 						+ "<unenforced cpath='/bad/response/startline*'/>";
 			}
 

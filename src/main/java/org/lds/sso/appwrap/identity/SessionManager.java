@@ -63,7 +63,7 @@ public class SessionManager {
                                     Entry<String, Session> sEnt = sItr.next();
                                     Session s = sEnt.getValue();
                                     
-                                    if (!s.testIsActive()) {
+                                    if (!s.isActive()) {
                                         sItr.remove();
                                         LogUtils.info(cLog, "Session {0} in domain {1} expired.", s.token, (String) ent.getKey());
                                     }
@@ -180,7 +180,7 @@ public class SessionManager {
         try {
             String domain = getCookieDomainForHost(host);
             Session s = domainSessions.get(domain).sessions.get(token);
-            return s != null && s.testIsActive();
+            return s != null && s.isActive();
         }
         catch (IllegalArgumentException a) {
             // can't find cookie domain for specified host
@@ -203,7 +203,7 @@ public class SessionManager {
         }
         for(String domain : cookieDomains) {
             Session s = domainSessions.get(domain).sessions.get(token);
-            return s != null && s.testIsActive();
+            return s != null && s.isActive();
         }
         return false;
     }
@@ -371,5 +371,25 @@ public class SessionManager {
 				holder.sessions = copy;
 			}
 		}
+	}
+
+	/**
+	 * Returns the session represented by the token if such a session exists
+	 * and if the session is still active. Returns null otherwise. 
+	 * 
+	 * @param token
+	 * @return
+	 */
+	public Session getSessionForToken(String token) {
+        if (token == null) {
+            return null;
+        }
+        for(String domain : cookieDomains) {
+            Session s = domainSessions.get(domain).sessions.get(token);
+            if (s != null && s.isActive()) {
+            	return s;
+            }
+        }
+        return null;
 	}
 }

@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.identity.ExternalUserSource;
+import org.lds.sso.appwrap.identity.Session;
 import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.identity.UserManager;
 import org.lds.sso.appwrap.io.LogUtils;
@@ -455,12 +456,11 @@ public class Config {
 		if (token == null) {
 			return null;
 		}
-		int dashIdx = token.lastIndexOf('-');
-		if (dashIdx == -1) {
-			// invalid token format
+		Session s = getSessionManager().getSessionForToken(token);
+		if (s == null) {
 			return null;
 		}
-		return token.substring(0, dashIdx);
+		return s.getUsername();
 	}
 
 	public int getProxyPort() {
@@ -527,17 +527,6 @@ public class Config {
     }
 
 	/**
-	 * Adds a global header to be injected into proxy requests targeted at
-	 * registered application sites.
-	 * 
-	 * @param name
-	 * @param value
-	 */
-	public void addGlobalHeader(String name, String value) {
-		this.headers.put(name, value);
-	}
-
-	/**
 	 * Injects any global headers into the headers buffer prior to sending the
 	 * request on to the targeted site.
 	 * 
@@ -545,28 +534,12 @@ public class Config {
 	 */
 	public void injectGlobalHeaders(HeaderBuffer headersBfr) {
 		for (Entry<String, String> e : headers.entrySet()) {
+			headersBfr.removeHeader(e.getKey());
+		}
+		for (Entry<String, String> e : headers.entrySet()) {
+			
 			headersBfr.append(new Header(e.getKey(), e.getValue()));
 		}
-	}
-
-	/**
-	 * Returns an array of name/value pairs representing the set of global
-	 * headers injected into requests targeting registered sites.
-	 * 
-	 * @return
-	 */
-	public NvPair[] getGlobalHeaders() {
-		NvPair[] hdr = null;
-
-		if (headers.size() > 0) {
-			hdr = new NvPair[headers.size()];
-			int idx = 0;
-			for (Entry<String, String> e : headers.entrySet()) {
-				hdr[idx++] = new NvPair(e.getKey(), e.getValue());
-			}
-
-		}
-		return hdr;
 	}
 
 	public void setCookieName(String cookieName) {

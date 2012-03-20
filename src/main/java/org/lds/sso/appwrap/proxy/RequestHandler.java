@@ -39,11 +39,13 @@ import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
+import org.lds.sso.appwrap.identity.Session;
 import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.header.HandlerSet;
 import org.lds.sso.appwrap.proxy.header.Header;
+import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
 import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.lds.sso.appwrap.proxy.header.HeaderHandler;
 import org.lds.sso.appwrap.proxy.header.SecondPhaseAction;
@@ -274,7 +276,7 @@ public class RequestHandler implements Runnable {
                 return;
             }
             // add header for prevention of infinite loops directly back to the proxy
-            reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
+            purgeAndInjectHeader(reqPkg.headerBfr, HttpPackage.SHIM_HANDLED_HDR_NM, "handled");
 
             // for non-ignored traffic perform the enforcements and translations
             RequestLine appReqLn = reqPkg.requestLine; // default to request line as-is
@@ -297,15 +299,16 @@ public class RequestHandler implements Runnable {
                 cfg.injectGlobalHeaders(reqPkg.headerBfr);
                 // include our connId in request headers to coordinate app logs
                 // with proxy logs if needed when troubleshooting app issues
-                reqPkg.headerBfr.append(new Header(HttpPackage.CONN_ID_NM, this.connId));
+                purgeAndInjectHeader(reqPkg.headerBfr, HttpPackage.CONN_ID_NM, this.connId);
 
                 TrafficManager appMgr = cfg.getTrafficManager();
                 String token = cfg.getTokenFromCookie(reqPkg.cookiesHdr);
-                if (!cfg.getSessionManager().isValidToken(token)) {
+                Session s = cfg.getSessionManager().getSessionForToken(token);
+                if (s == null || ! s.isActive()) {
                     token = null;
                 }
                 else {
-                    String username = cfg.getUsernameFromToken(token);
+                    String username = s.getUsername();
                     user = cfg.getUserManager().getUser(username);
                 }
                 // check for signin/signout query parms and act accordingly
@@ -338,7 +341,7 @@ public class RequestHandler implements Runnable {
 
                 // endpoint is registered, translate request Uri and set cctx
                 // header
-                reqPkg.headerBfr.append(new Header("cctx", endpoint.getCanonicalContextRoot()));
+                purgeAndInjectHeader(reqPkg.headerBfr, "cctx", endpoint.getCanonicalContextRoot());
 
                 // policies only set for http but cover both http and https for now
                 if (!appMgr.isUnenforced("http", reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
@@ -407,7 +410,6 @@ public class RequestHandler implements Runnable {
 //
                 AppEndPoint appEndpoint = (AppEndPoint) endpoint;
                 appReqLn = appEndpoint.getAppRequestUri(reqPkg);
-                reqPkg.headerBfr.removeExtensionHeader("X-Forwarded-Host"); //TODO: REMOVE THIS BOYDMR!!!  
                 request = serializePackage((StartLine) appReqLn, reqPkg);
 
                 Socket server = null; // socket to remote server
@@ -593,6 +595,18 @@ public class RequestHandler implements Runnable {
     }
 
     /**
+     * Purge any header prior to injecting it. 
+     * 
+     * @param headerBfr
+     * @param name
+     * @param value
+     */
+    private void purgeAndInjectHeader(HeaderBuffer headerBfr, String name, String value) {
+        headerBfr.removeHeader(HttpPackage.SHIM_HANDLED_HDR_NM);
+        headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
+	}
+
+	/**
      * Hack for scanning body content in both directions for a domain and 
      * replacing it with another during testing of webdav proxying. Kept here 
      * for future reference but not currently used. Needs more work if we want
@@ -675,7 +689,7 @@ public class RequestHandler implements Runnable {
             if (removed.length() > 1) {
                 // take off leader comma
                 String list = removed.substring(1).toString();
-                reqPkg.headerBfr.append(new Header(HttpPackage.SHIM_STRIPPED_HEADERS, list));
+                purgeAndInjectHeader(reqPkg.headerBfr, HttpPackage.SHIM_STRIPPED_HEADERS, list);
             }
         }
     }
