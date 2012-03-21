@@ -40,6 +40,7 @@ public class Session {
 	    s.mgr = this.mgr;
 	    s.token = this.token;
 	    s.markAsActive();
+	    s.username = this.username;
 	    return s;
 	}
 	

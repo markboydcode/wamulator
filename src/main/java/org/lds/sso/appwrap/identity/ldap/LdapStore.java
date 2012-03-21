@@ -209,7 +209,9 @@ public class LdapStore {
 		@SuppressWarnings("unchecked")
 		Hashtable<String, Object> env = (Hashtable<String, Object>) srchEnv.clone();
 		env.put(Context.SECURITY_PRINCIPAL, userDn);
-		env.put(Context.SECURITY_CREDENTIALS, password);
+		if (password != null) {
+			env.put(Context.SECURITY_CREDENTIALS, password);
+		}
 		try {
 			return _bind(env, false);
 		}
@@ -339,11 +341,16 @@ public class LdapStore {
 	 * Passes a new environment for connecting to ldap and performs validation
 	 * and tests binding.
 	 * 
-	 * @param name
-	 * @param res
+	 * @param searchBase
+	 * @param bindDn
+	 * @param bindPwd
+	 * @param url
+	 * @param useTlsExtension indicates that the connection should leverate the
+	 * TLS extension to LDAP for the duration of connections.
+	 * @param atts
 	 */
 	public static void setEnv(String searchBase, String bindDn, String bindPwd,
-			String url, String[] atts) {
+			String url, boolean useTlsExtension, String[] atts) {
 		Hashtable<String, Object> env = new Hashtable<String, Object>();
 		env.put(SEARCH_BASE_DN, searchBase);
 		if (atts != null) {
@@ -355,7 +362,10 @@ public class LdapStore {
 		env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 		env.put(Context.SECURITY_AUTHENTICATION, "simple");
 		env.put("java.naming.ldap.version", "3");
-        env.put(Context.SECURITY_PROTOCOL, "ssl");
+
+		if (useTlsExtension) {
+	        env.put(Context.SECURITY_PROTOCOL, "ssl");
+		}
         
         // ensure that we trust certs from ldap server in thread safe manner
         if (! SslTrustAllOnDemandLoader.installed) {

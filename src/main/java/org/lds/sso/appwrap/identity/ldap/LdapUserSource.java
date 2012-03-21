@@ -84,6 +84,8 @@ public class LdapUserSource implements ExternalUserSource {
         String dn = validate(path, props, "search-bind-dn");
         String pwd = validate(path, props, "search-bind-pwd");
         String url = validate(path, props, "url");
+        // tls is used by default. must proactively disable by including this property.
+        boolean disableTls = Boolean.parseBoolean(props.getProperty("disableTls", "false"));
 
         String atts = props.getProperty("attributes");
         String[] list = null;
@@ -103,7 +105,7 @@ public class LdapUserSource implements ExternalUserSource {
         	}
         }
 
-        LdapStore.setEnv(searchBase, dn,pwd, url, list);
+        LdapStore.setEnv(searchBase, dn,pwd, url, ! disableTls, list);
         
 	}
 
