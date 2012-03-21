@@ -40,6 +40,7 @@ import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
 import org.lds.sso.appwrap.rest.oes.v1.AreTokensValid;
 import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.security.LocalHostOnlyEnforcingHandler;
+import org.lds.sso.appwrap.ui.FavIconHandler;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
 import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
 import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
@@ -325,6 +326,7 @@ public class Service {
 		handlers.addHandler(new TerminateSessionHandler("/admin/action/terminate-session"));
         handlers.addHandler(new TrafficRecordingHandler("/admin/action/recording/"));
         handlers.addHandler(new ImAliveHandler(ImAliveHandler.IS_ALIVE_PATH));
+        handlers.addHandler(new FavIconHandler(FavIconHandler.FAVICON_PATH));
         handlers.addHandler(new LogFileHandler("/admin/logs"));
         handlers.addHandler(new TerminateSimulatorHandler("/admin/shutdown"));
 

@@ -1,7 +1,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@page contentType="text/html; charset=utf-8" %>
 <%@ page session="false" %>
-<html>
+<html><head><title>Header Helper</title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- masthead -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">

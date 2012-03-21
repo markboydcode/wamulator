@@ -124,8 +124,10 @@ src/main/java/org/lds/sso/appwrap/rest/oes/v1/GetOesV1CookieName.java -text svne
 src/main/java/org/lds/sso/appwrap/rest/oes/v1/HandlerHitLogger.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/security/LocalHostOnlyEnforcingHandler.java -text
 src/main/java/org/lds/sso/appwrap/ui/BaseMapImpl.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ui/FavIconHandler.java -text
 src/main/java/org/lds/sso/appwrap/ui/ImAliveHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/JspUtils.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/ui/favicon.ico -text
 src/main/java/org/lds/sso/appwrap/ui/rest/ConfigInjectingHandlerList.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/JettyWebappUrlAdjustingHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/ui/rest/LogFileHandler.java -text
