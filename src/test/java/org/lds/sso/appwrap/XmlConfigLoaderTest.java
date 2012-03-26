@@ -117,14 +117,14 @@ public class XmlConfigLoaderTest {
         Assert.assertEquals(cfg.getUserManager().getUsers().size(), 2, "two users should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("nnn"), "user 'nnn' should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("nnn").getAttributes(), "at least one attribute should have been loaded");
-        Assert.assertEquals(cfg.getUserManager().getUser("nnn").getAttributes().length, 1, "at least one attribute should have been loaded");
+        Assert.assertEquals(cfg.getUserManager().getUser("nnn").getAttributes().length, 2, "at least one attribute in addition to automatic cn attribute should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("nnn").getAttribute("ldsaccountid"), "ldsaccountid attribute should have been loaded");
         NvPair[] ids = cfg.getUserManager().getUser("nnn").getAttribute("ldsaccountid");
         Assert.assertEquals(ids.length, 1, "only one ldsaccountid attribute should have been loaded for user");
         Assert.assertEquals(ids[0].getValue(), "20", "ldsaccountid of 20 should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("mmm"), "user 'mmm' should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("mmm").getAttributes(), "at least one attribute should have been loaded");
-        Assert.assertEquals(cfg.getUserManager().getUser("mmm").getAttributes().length, 1, "at least one attribute should have been loaded");
+        Assert.assertEquals(cfg.getUserManager().getUser("mmm").getAttributes().length, 2, "at least one attribute in addition to automatic cn attribute should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("mmm").getAttribute("ldsaccountid"), "ldsaccountid attribute should have been loaded");
         NvPair[] ids2 = cfg.getUserManager().getUser("mmm").getAttribute("ldsaccountid");
         Assert.assertEquals(ids2.length, 1, "only one ldsaccountid attribute should have been loaded for user");
@@ -406,11 +406,14 @@ public class XmlConfigLoaderTest {
         User u = cfg.getUserManager().getUser("nnn");
         Assert.assertNotNull(u);
         NvPair[] atts = u.getAttributes();
-        Assert.assertEquals(atts.length, 2);
-        Assert.assertEquals(atts[0].getName(), "ldsApplications");
-        Assert.assertEquals(atts[0].getValue(), "111");
+        // 3 is correct since 'cn' attribute is added automatically
+        Assert.assertEquals(atts.length, 3);
+        Assert.assertEquals(atts[0].getName(), "cn");
+        Assert.assertEquals(atts[0].getValue(), "nnn");
         Assert.assertEquals(atts[1].getName(), "ldsApplications");
-        Assert.assertEquals(atts[1].getValue(), "222");
+        Assert.assertEquals(atts[1].getValue(), "111");
+        Assert.assertEquals(atts[2].getName(), "ldsApplications");
+        Assert.assertEquals(atts[2].getValue(), "222");
     }
     
 	@Test
