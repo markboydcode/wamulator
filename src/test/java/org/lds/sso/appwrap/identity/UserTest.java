@@ -1,10 +1,35 @@
 package org.lds.sso.appwrap.identity;
 
-import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class UserTest {
+
+	// tests fix for WAMULAT-71
+    @Test
+    public void test_change_cn_att() {
+        User usr = new User("usr", "pwd");
+        usr.setUsername("usr2");
+        Assert.assertNotNull(usr.getAttributes());
+        Assert.assertEquals(usr.getAttributes().length, 1);
+
+        Assert.assertNotNull(usr.getAttribute(User.ATT_CN));
+        Assert.assertEquals(usr.getAttribute(User.ATT_CN).length, 1);
+        Assert.assertTrue(usr.hasAttributeValue(User.ATT_CN, "usr2"));
+    }
+
+	// tests fix for WAMULAT-71
+    @Test
+    public void test_has_cn_att_automatically() {
+        User usr = new User("usr", "pwd");
+
+        Assert.assertNotNull(usr.getAttributes());
+        Assert.assertEquals(usr.getAttributes().length, 1);
+
+        Assert.assertNotNull(usr.getAttribute(User.ATT_CN));
+        Assert.assertEquals(usr.getAttribute(User.ATT_CN).length, 1);
+        Assert.assertTrue(usr.hasAttributeValue(User.ATT_CN, "usr"));
+    }
 
     @Test
     public void test_multivalued_atts() {
@@ -22,7 +47,8 @@ public class UserTest {
         usr.addAttribute("3", "3-three");
 
         Assert.assertNotNull(usr.getAttributes());
-        Assert.assertEquals(usr.getAttributes().length, 9);
+        // 10 is correct because 'cn' attribute is added automatically
+        Assert.assertEquals(usr.getAttributes().length, 10);
 
         Assert.assertNotNull(usr.getAttribute("0"));
         Assert.assertEquals(usr.getAttribute("0").length, 2);
