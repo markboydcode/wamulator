@@ -19,6 +19,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
@@ -481,6 +482,56 @@ public class RequestHandlerIntegrationTest {
 		        String response = method.getResponseBodyAsString().trim();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
 		        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " local.lds.org:" + csc.sitePort);
+		        method.releaseConnection();
+			}
+    	}),
+    	verify_cctx_injected_test(new RhIntTest() {
+
+			public boolean appliesTo(ServerSideContext ctx) {
+				return ctx.envelope.contains("/verify/cctx/injected/test/");
+			}
+
+			public void handleServerSide(ServerSideContext ctx) {
+				
+                ctx.answer = HeaderDef.Host.getNameWithColon() + " ???";
+                String hstHdrKey = RequestHandler.CRLF + AppEndPoint.CCTX_HEADER + ":";
+                int idx = ctx.envelopeLC.indexOf(hstHdrKey);
+
+                if (idx != -1) {
+                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, idx+1);
+                    String val = null;
+                    if (cr == -1) {
+                        // last header
+                        val = ctx.envelope.substring(idx+hstHdrKey.length()).trim();
+                    }
+                    else {
+                        val = ctx.envelope.substring(idx+hstHdrKey.length(), cr).trim();
+                    }
+                    ctx.answer = AppEndPoint.CCTX_HEADER + ": " + val;
+                }
+			}
+
+			public String getSimMappingAndAccess(ClientSideContext csc) {
+				return "<cctx-mapping cctx='/verify/cctx/injected/*' thost='127.0.0.1' tport='" + csc.serverPort + "' tpath='/verify/cctx/injected/*'/>"
+			            + "<unenforced cpath='/verify/cctx/injected/*'/>";
+			}
+
+			public void runTest(ClientSideContext csc) throws Exception {
+		        System.out.println("----> test_verify_cctx_injected ");
+		        String uri = "http://local.lds.org:" + csc.sitePort + "/verify/cctx/injected/test/";
+		        HttpClient client = new HttpClient();
+
+		        HostConfiguration hcfg = new HostConfiguration();
+		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+		        client.setHostConfiguration(hcfg);
+
+		        HttpMethod method = new GetMethod(uri);
+
+		        method.setFollowRedirects(false);
+		        int status = client.executeMethod(method);
+		        String response = method.getResponseBodyAsString().trim();
+		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
+		        Assert.assertEquals(response, AppEndPoint.CCTX_HEADER + ":" + " /verify/cctx/injected");
 		        method.releaseConnection();
 			}
     	}),
@@ -1837,6 +1888,11 @@ public class RequestHandlerIntegrationTest {
     @Test
     public void test_preserve_host() throws Exception {
     	RhTest.preserve_host_test.impl.runTest(cctx);
+    }
+
+    @Test
+    public void test_verify_cctx_injected() throws Exception {
+    	RhTest.verify_cctx_injected_test.impl.runTest(cctx);
     }
     
     @Test

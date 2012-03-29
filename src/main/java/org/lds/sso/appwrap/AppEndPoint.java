@@ -39,6 +39,16 @@ public class AppEndPoint implements EndPoint {
      */
     public static final String HTTPS_SCHEME = "https";
 
+    /**
+     * The name of the cctx header to be injected with all requests.
+     */
+    public static final String CCTX_HEADER = "cctx";
+    
+    /**
+     * The cctx header to be injected with all requests.
+     */
+	private Header cctxHeader = null;
+
 	private String canonicalContextRoot = null;
 
 	private String applicationContextRoot = null;
@@ -113,6 +123,13 @@ public class AppEndPoint implements EndPoint {
         this.endpointPort = port;
         this.canonicalHost = canonicalHost;
         this.canonicalContextRoot = canonicalCtx;
+        if (canonicalCtx != null) {
+        	String cctx = canonicalCtx;
+        	if (canonicalCtx.endsWith("/")) {
+        		cctx = canonicalCtx.substring(0,canonicalCtx.lastIndexOf('/'));
+        	}
+            this.cctxHeader = new Header(CCTX_HEADER, cctx);
+        }
         this.applicationContextRoot = appCtx;
         this.host = host;
         if (scheme != null && scheme.toLowerCase().equals(AppEndPoint.HTTPS_SCHEME)) {
@@ -355,6 +372,7 @@ public class AppEndPoint implements EndPoint {
 		injectSchemeHeader(isSecure, reqPkg);
 		injectPolicyServiceUrlHdr(cfg, reqPkg);
 		injectFixedHdrs(reqPkg);
+		injectCctxFixedHdrs(reqPkg);
 	}
 	
 	/**
@@ -406,6 +424,18 @@ public class AppEndPoint implements EndPoint {
 			for(String val : hdr.getValue()) {
 				reqPkg.headerBfr.append(new Header(hdr.getKey(), val));
 			}
+		}
+	}
+
+	/**
+	 * Injects cctx header.
+	 * 
+	 * @param reqP
+	 */
+	private void injectCctxFixedHdrs(HttpPackage reqPkg) {
+		if (cctxHeader != null) {
+			reqPkg.headerBfr.removeHeader(CCTX_HEADER);
+			reqPkg.headerBfr.append(cctxHeader);
 		}
 	}
 
