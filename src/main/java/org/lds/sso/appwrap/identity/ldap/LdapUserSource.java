@@ -23,6 +23,8 @@ import org.lds.sso.appwrap.identity.UserManager;
 public class LdapUserSource implements ExternalUserSource {
 	private static final Logger cLog = Logger.getLogger(LdapUserSource.class.getName());
 	
+	public static final String[] STRING_ARRAY = new String[] {};
+	
 	private UserManager users = null;
 
 	/**
@@ -34,7 +36,7 @@ public class LdapUserSource implements ExternalUserSource {
 	public Response loadExternalUser(String username, String password) throws IOException {
 		Map<String, List<String>> atts;
 		try {
-			atts = LdapStore.getUserAttributes(username, password);
+			atts = callLdap(username, password);
 		}
 		catch (UnableToConnecToLdap e) {
 			cLog.log(Level.SEVERE, "Unable to load external user attributes.", e);
@@ -63,15 +65,49 @@ public class LdapUserSource implements ExternalUserSource {
 			return Response.ErrorAccessingSource;
 		}
 		User user = users.setUser(username, password);
-		user.clearAttributes();
-		
+
         for (Map.Entry<String, List<String>> ent : atts.entrySet()) {
-        	for(String val : ent.getValue()) {
-                user.addAttribute(ent.getKey(), val);
-        	}
+            	user.addAttributeValues(ent.getKey(), ent.getValue().toArray(STRING_ARRAY));
         }
         return Response.UserInfoLoaded;
 	}
+
+	/**
+	 * Provides for testability by a subclass mocking up responses without 
+	 * incurring calls to ldap infrastructure.
+	 * 
+	 * @param username
+	 * @param password
+	 * @return
+	 * @throws UnableToLoadUserAttributes 
+	 * @throws UnableToGetUserAttributes 
+	 * @throws UnableToBindEndUser 
+	 * @throws UnableToSearchForUser 
+	 * @throws UserNotFound 
+	 * @throws UnableToBindSearchUser 
+	 * @throws UnableToConnecToLdap 
+	 */
+	protected Map<String, List<String>> callLdap(String username, String password) throws UnableToConnecToLdap,
+			UnableToBindSearchUser, UserNotFound, UnableToSearchForUser, UnableToBindEndUser,
+			UnableToGetUserAttributes, UnableToLoadUserAttributes {
+		return LdapStore.getUserAttributes(username, password);
+	}
+
+	/**
+	 * Provides for testability by a subclass mocking up responses without 
+	 * incurring calls to ldap infrastructure.
+	 * 
+	 * @param searchBase
+	 * @param dn
+	 * @param pwd
+	 * @param url
+	 * @param b
+	 * @param list
+	 */
+	protected void testLdap(String searchBase, String dn, String pwd, String url, boolean enableTls, String[] list) {
+        LdapStore.setEnv(searchBase, dn,pwd, url, enableTls, list);
+	}
+
 
 	@Override
 	public void setUserManager(UserManager umgr) {
@@ -105,8 +141,7 @@ public class LdapUserSource implements ExternalUserSource {
         	}
         }
 
-        LdapStore.setEnv(searchBase, dn,pwd, url, ! disableTls, list);
-        
+        testLdap(searchBase, dn, pwd, url, ! disableTls, list);
 	}
 
 	/**

@@ -2,6 +2,7 @@ package org.lds.sso.appwrap.proxy;
 
 import java.net.MalformedURLException;
 
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.Config;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -18,7 +19,7 @@ public class RequestHandlerTest {
         HttpPackage pkg = new HttpPackage();
         pkg.host = "localhost";
         pkg.port = 10;
-        pkg.scheme = "http";
+        pkg.scheme = Scheme.HTTP;
         pkg.path = "/some/resource";
         StartLine sl = new StartLine("GET /some/resource HTTP1.1");
         pkg.requestLine = sl;
@@ -37,7 +38,7 @@ public class RequestHandlerTest {
         HttpPackage pkg = new HttpPackage();
         pkg.host = "localhost";
         pkg.port = 10;
-        pkg.scheme = "http";
+        pkg.scheme = Scheme.HTTP;
         pkg.path = "/some/resource";
         if (query != null) {
             pkg.query = "q=" + query;

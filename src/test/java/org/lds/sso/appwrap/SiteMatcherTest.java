@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap;
 
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -21,11 +22,11 @@ public class SiteMatcherTest {
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
-        SiteMatcher m = tman.getSite("local.lds.org", 80);
+        SiteMatcher m = tman.getSite(Scheme.HTTP, "local.lds.org", 80);
         EndPoint ep = m.getEndpointForCanonicalUrl("/a/b/c/d");
         Assert.assertEquals(ep.getCanonicalContextRoot(), "/a/b/c", "/a/b/c should be found before /a mapping");
         ep = m.getEndpointForCanonicalUrl("/a/b/d/e");
-        Assert.assertEquals(ep.getCanonicalContextRoot(), "/a", "/a should be found before /a/b mapping hiding /a/b");
+        Assert.assertEquals(ep.getCanonicalContextRoot(), "/a", "/a should be found");
    }
 
     @Test

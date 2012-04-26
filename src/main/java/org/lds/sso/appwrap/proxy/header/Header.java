@@ -90,7 +90,7 @@ public class Header implements Comparable<Header>{
         
         if (def == o.def && def == HeaderDef.Extension) {
             // extension headers sort by ext name
-            return name.compareTo(o.name);  
+            return name.toLowerCase().compareTo(o.name.toLowerCase());  
         }
         return def.compareTo(o.def); // sort by declaration order in headerdef
     }
@@ -114,7 +114,7 @@ public class Header implements Comparable<Header>{
             return false;
         }
         if (def == HeaderDef.Extension) {
-            return name.equals(o.name);
+            return name.equalsIgnoreCase(o.name);
         }
         return def.equals(o.def);
     }

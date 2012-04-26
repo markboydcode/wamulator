@@ -9,7 +9,7 @@
 <c:set var="gotoQueryParm" scope="page" value="?goto=${jsputils.encode[param.goto]}"/>
 </c:if>
 <html>
-<head><title>Console: ${requestScope.config.serverName}</title></head>
+<head><title><c:choose><c:when test='${empty requestScope.config.consoleTitle}'>Console: ${requestScope.config.serverName}</c:when><c:otherwise>${requestScope.config.consoleTitle}</c:otherwise></c:choose></title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- masthead -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">

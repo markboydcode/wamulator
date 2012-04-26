@@ -6,10 +6,54 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.lds.sso.appwrap.identity.legacy.WamulatorUserSource;
+
 
 public class UserManager {
 	protected Map<String, User> users = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
 	private User lastUserAdded;
+	
+	/**
+	 * Defines how values for an attribute values are aggregated when more are 
+	 * added in by different user sources when sources are chained.
+	 * 
+	 * @author BoydMR
+	 *
+	 */
+	public enum Aggregation{
+		/**
+		 * The values set by a {@link WamulatorUserSource} become fixed and values 
+		 * for such an attribute from following stores are ignored.
+		 */
+		FIX,
+		/**
+		 * Values for an attribute from all stores are preserved. This is the
+		 * default. But two equals values for the same attribute will be reduced to
+		 * only one copy.
+		 */
+		MERGE,
+		/**
+		 * The values contributed from the last store to contribute 
+		 * replace all others.
+		 */
+		REPLACE;
+		
+		/**
+		 * Returns the value whose name is the same ignoring case or defaults
+		 * to {@link MERGE}.
+		 * 
+		 * @param aggregation
+		 * @return
+		 */
+		public static Aggregation lookup(String aggregation) {
+			for(Aggregation a : values()) {
+				if (a.name().equalsIgnoreCase(aggregation)) {
+					return a;
+				}
+			}
+			return MERGE;
+		}
+	}
 	
 	/**
 	 * Adds a user to the set of configured users or replaces a user already
@@ -101,11 +145,33 @@ public class UserManager {
 		return users.get(username);
 	}
 
-    public void addAttributeForLastUserAdded(String name, String value) {
-        if (lastUserAdded != null && name != null && value != null
-                && ! "".equals(name) && ! "".equals(value)) {
+	/**
+	 * Set values for an attribute subject to aggregation rules for the 
+	 * attribute defaulting to {@link Aggregation#MERGE} if the attribute has
+	 * not yet been defined.
+	 * 
+	 * @param name
+	 * @param values
+	 */
+    public void addAttributeValuesForLastUserAdded(String name, String[] values) {
+    	addAttributeValuesForLastUserAdded(name, values, null);
+    }
+    
+    /**
+	 * Set values for an attribute subject to aggregation rules for the 
+	 * attribute and setting its {@link Aggregation} strategy if the attribute has
+	 * not yet been defined. If null is passed in for the aggregation strategy
+	 * then it defaults to {@link Aggregation#MERGE}.
+     * 
+     * @param name
+     * @param values
+     * @param aggregation
+     */
+    public void addAttributeValuesForLastUserAdded(String name, String[] values, Aggregation ag) {
+        if (lastUserAdded != null && name != null && values != null
+                && ! "".equals(name) && ! "".equals(values)) {
             name = name.trim();
-            lastUserAdded.addAttribute(name, value);
+            lastUserAdded.addAttributeValues(name, values, ag);
         }
     }
 }

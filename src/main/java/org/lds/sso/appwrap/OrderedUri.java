@@ -2,6 +2,9 @@ package org.lds.sso.appwrap;
 
 import java.util.logging.Logger;
 
+import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
+
 public class OrderedUri implements Comparable<OrderedUri>{
 	private static Logger logger = Logger.getLogger(OrderedUri.class.getName());
 
@@ -16,13 +19,16 @@ public class OrderedUri implements Comparable<OrderedUri>{
     protected String host;
     protected int port;
     protected String id;
-    private String scheme;
+    private InboundScheme scheme = InboundScheme.HTTP;
     private String cpathDeclaration;
     
-    public OrderedUri(String scheme, String host, int port, String path, String query, String cpathDeclaration) {
+    public OrderedUri(InboundScheme scheme, String host, int port, String path, String query, String cpathDeclaration) {
         this.cpathDeclaration = cpathDeclaration;
         this.host = host;
         this.port = port;
+        if (scheme == null) {
+        	scheme = InboundScheme.HTTP; // default
+        }
         this.scheme = scheme;
         
         pathMatch = path;
@@ -87,7 +93,7 @@ public class OrderedUri implements Comparable<OrderedUri>{
         return false;
     }
     
-    public boolean matches(String scheme, String host, int port, String path, String query) {
+    public boolean matches(Scheme scheme, String host, int port, String path, String query) {
 		logger.fine("@@ Testing cpath=" + pathMatch + ", scheme=" + this.scheme + ", host=" + this.host +
 					", port=" + this.port + ", query=" + queryMatch + ", queryIsRequired=" + queryIsRequired +
 					", queryPrefix=" + queryPrefix + ", useQueryPrefixMatching=" + useQueryPrefixMatching);
@@ -100,10 +106,16 @@ public class OrderedUri implements Comparable<OrderedUri>{
 		return match;
     }
 
-	public boolean _matches(String scheme, String host, int port, String path, String query) {
-		if ((this.scheme != null && ! this.scheme.equals(scheme)) ||
-				(this.host != null && ! this.host.equals(host)) ||
-				this.port != port) {
+	public boolean _matches(Scheme scheme, String host, int port, String path, String query) {
+		if ((this.host != null && ! this.host.equals(host))) {
+			return false;
+		}
+		// return false if configured scheme is not BOTH and incoming scheme 
+		// differs from configured or they are the same and the port from the
+		// host header does not match
+		if (this.scheme != InboundScheme.BOTH 
+				&& ! this.scheme.moniker.equals(scheme.moniker) 
+					|| (this.scheme.moniker.equals(scheme.moniker) && this.port != port)) {
 			return false;
 		}
 

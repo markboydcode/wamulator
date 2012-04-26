@@ -8,10 +8,12 @@
 <c:set var="gotoUriEnc" scope="page" value="${param.goto}"/>
 <c:set var="gotoQueryParm" scope="page" value="?goto=${jsputils.encode[param.goto]}"/>
 </c:if>
+<c:set var="formAction" scope="page" value="/admin/action/set-user"/>
+<c:if test="${not empty(requestScope.config.loginAction)}">
+ <c:set var="formAction" scope="page" value="${requestScope.config.loginAction}"/>
+</c:if>
 <html>
-<head>
-<title>Console: ${requestScope.config.serverName}</title>
-</head>
+<head><title><c:choose><c:when test='${empty requestScope.config.consoleTitle}'>Console: ${requestScope.config.serverName}</c:when><c:otherwise>${requestScope.config.consoleTitle}</c:otherwise></c:choose></title></head>
 <body style="background-color: #EEF; margin: 0px; padding: 0px;">
 <!-- masthead -->
 <div style="background-color: white; padding-left: 15px; padding-top: 10px; padding-bottom: 5px;">
@@ -56,7 +58,7 @@ color:#C23232; display:block; font-family:'Lucida Grande','Lucida Sans Unicode',
 font-size:12px; margin-bottom:0; margin-top:10px; width: 250px;
 padding:15px 20px; text-align:left;">Incorrect Username or Password.</span>
 </c:if>
-<form id='loginForm' action='/admin/action/set-user' method='post' >
+<form id='loginForm' action='${formAction}${gotoQueryParm}' method='post' >
  <div id="login">
   <fieldset>
    <dl>
@@ -83,7 +85,7 @@ padding:15px 20px; text-align:left;">Incorrect Username or Password.</span>
 <table>
 <c:forEach items="${requestScope.config.userManager.users}" var="user">
 <tr><td><c:if test="${user.username == requestScope.currentUserName}"><IMG src="pointer.png"/></c:if></td>
-<td><a href="/admin/action/set-user/${user.username}${gotoQueryParm}">${user.username}</a></td></tr>
+<td><a href="${formAction}/${user.username}${gotoQueryParm}">${user.username}</a></td></tr>
 </c:forEach>
 </table>
 </td>

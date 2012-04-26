@@ -3,6 +3,8 @@
  */
 package org.lds.sso.appwrap;
 
+import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
+
 /**
  * Marker class for unenforced URIs.
  * 
@@ -11,7 +13,7 @@ package org.lds.sso.appwrap;
  */
 public class UnenforcedUri extends OrderedUri {
 
-    public UnenforcedUri(String scheme, String host, int port, String path,
+    public UnenforcedUri(InboundScheme scheme, String host, int port, String path,
             String query, String cpathDeclaration ) {
         super(scheme, host, port, path, query, cpathDeclaration);
     }

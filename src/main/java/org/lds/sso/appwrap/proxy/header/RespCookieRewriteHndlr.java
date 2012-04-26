@@ -20,16 +20,23 @@ public class RespCookieRewriteHndlr implements HeaderHandler {
 
     public void handle(String lcHeaderName, String headerValue,
             HttpPackage pkg, HandlerSet hSet, Config cfg) {
-        String rawCookie = headerValue.trim();
+        String rawSetCookieHdrVal = headerValue.trim();
         TrafficManager mgr = cfg.getTrafficManager();
-        String rewrite = mgr.rewriteCookiePath(rawCookie);
-        pkg.headerBfr.append(new Header(HeaderDef.SetCookie, rewrite));
+        String rewrite = rawSetCookieHdrVal;
+        
+        if (mgr.cookieRewritesExist()) {
+            rewrite = mgr.rewriteCookiePath(rawSetCookieHdrVal);
+        }
 
-        if (!rewrite.equals(rawCookie)) {
-            // if rewritten, indicate in headers
+        if (rewrite.equals(rawSetCookieHdrVal)) {
+            pkg.headerBfr.append(new Header(HeaderDef.SetCookie, rawSetCookieHdrVal));
+        }
+        else {
+            pkg.headerBfr.append(new Header(HeaderDef.SetCookie, rewrite));
+            // allow clients to see original via a set-cookie-WAS header
             pkg.headerBfr.append(new Header(HeaderDef.SetCookie.getName() + "-WAS",
-                    rawCookie));
-            LogUtils.fine(cLog, "rewriting cookie from: {0} to: {1}", rawCookie, rewrite);
+            		rawSetCookieHdrVal));
+            LogUtils.fine(cLog, "rewriting cookie from: {0} to: {1}", rawSetCookieHdrVal, rewrite);
         }
     }
 

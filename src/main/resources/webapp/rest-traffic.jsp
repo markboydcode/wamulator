@@ -4,7 +4,7 @@
 <jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <html>
 <head>
-<title>Console: ${requestScope.config.serverName}</title>
+<title><c:choose><c:when test='${empty requestScope.config.consoleTitle}'>Console: ${requestScope.config.serverName}</c:when><c:otherwise>${requestScope.config.consoleTitle}</c:otherwise></c:choose></title>
 <style type="text/css" media="screen"><!--
 tr.odd {background: #DDF;}
 --></style>

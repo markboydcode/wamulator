@@ -2,6 +2,7 @@ package org.lds.sso.appwrap;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,14 +31,160 @@ public class AppEndPoint implements EndPoint {
 	private static final Logger cLog = Logger.getLogger(AppEndPoint.class.getName());
 
 	/**
-	 * Represents the http scheme over tcp.
+	 * The scheme of packages once inside the wamulator meaning only http or
+	 * https indicating on which scheme the traffic entered or received.
+	 * 
+	 * @author BoydMR
+	 * 
 	 */
-    public static final String HTTP_SCHEME = "http";
-    
-    /**
-     * Represents the http scheme over tls over tcp.
-     */
-    public static final String HTTPS_SCHEME = "https";
+	public enum Scheme {
+		/**
+		 * Represents the http scheme over tcp.
+		 */
+		HTTP("http"),
+
+		/**
+	     * Represents the http scheme over tls over tcp.
+	     */
+		HTTPS("https");
+		
+		public final String moniker;
+		private static Map<String, Scheme> schemes;
+
+		Scheme(String moniker) {
+			this.moniker = moniker;
+			addMapping(moniker);
+		}
+		
+		private void addMapping(String mon) {
+			if (Scheme.schemes == null) {
+				Scheme.schemes = new HashMap<String, Scheme>();
+			}
+			Scheme.schemes.put(mon, this);
+		}
+		
+		public String getMoniker() {
+			return moniker;
+		}
+
+		public static Scheme fromMoniker(String mon) {
+			Scheme s = schemes.get(mon);
+			if (s == null) {
+				s = HTTP;
+			}
+			return s;
+		}
+	}
+
+	/**
+	 * The allowed values for inbound scheme related configuration such as
+	 * by-site's scheme attribute and cctx-mapping's cscheme attribute. For
+	 * incoming matching HTTP, HTTPS, and BOTH are valid config values meaning
+	 * only incoming connections will respectively match an enpoint if the
+	 * scheme is 'http', 'https', or either.
+	 * 
+	 * @author BoydMR
+	 * 
+	 */
+	public enum InboundScheme {
+		/**
+		 * Represents the http scheme over tcp.
+		 */
+		HTTP("http"),
+
+		/**
+	     * Represents the http scheme over tls over tcp.
+	     */
+		HTTPS("https"),
+		
+		/**
+		 * Indicates that either HTTP or HTTPS scheme will match for this
+		 * endpoing if other aspects match.
+		 */
+		BOTH("both");
+		
+		public final String moniker;
+		private static Map<String, InboundScheme> schemes;
+		
+		InboundScheme(String moniker) {
+			this.moniker = moniker;
+			addMapping(moniker);
+		}
+		
+		private void addMapping(String mon) {
+			if (InboundScheme.schemes == null) {
+				InboundScheme.schemes = new HashMap<String, InboundScheme>();
+			}
+			InboundScheme.schemes.put(mon, this);
+		}
+
+		public String getMoniker() {
+			return moniker;
+		}
+		
+		public static InboundScheme fromMoniker(String mon) {
+			InboundScheme s = schemes.get(mon);
+			if (s == null) {
+				s = HTTP;
+			}
+			return s;
+		}
+	}
+	
+	/**
+	 * The allowed values for outbound scheme related configuration. For 
+	 * outgoing connections HTTP and HTTPS respectively indicate 
+	 * the scheme that should be used regardless of what was used on incoming
+	 * connections while SAME indicates that the scheme used on the incoming
+	 * connection should be used on the outgoing connection.
+	 * 
+	 * @author BoydMR
+	 *
+	 */
+	public enum OutboundScheme {
+		/**
+		 * Represents the http scheme over tcp.
+		 */
+		HTTP("http"),
+
+		/**
+	     * Represents the http scheme over tls over tcp.
+	     */
+		HTTPS("https"),
+		
+		/**
+		 * Indicates that whatever scheme was used for the incoming connection
+		 * will also be used on the outgoing connection.
+		 */
+		SAME("same");
+		
+		public final String moniker;
+		private static Map<String, OutboundScheme> schemes;
+
+		OutboundScheme(String moniker) {
+			this.moniker = moniker;
+			addMapping(moniker);
+		}
+		
+		private void addMapping(String mon) {
+			if (OutboundScheme.schemes == null) {
+				OutboundScheme.schemes = new HashMap<String, OutboundScheme>();
+			}
+			OutboundScheme.schemes.put(mon, this);
+		}
+
+		public String getMoniker() {
+			return moniker;
+		}
+		
+		public static OutboundScheme fromMoniker(String mon) {
+			OutboundScheme s = schemes.get(mon);
+			if (s == null) {
+				s = HTTP;
+			}
+			return s;
+		}
+	}
 
     /**
      * The name of the cctx header to be injected with all requests.
@@ -54,6 +201,15 @@ public class AppEndPoint implements EndPoint {
 	private String applicationContextRoot = null;
 
 	int endpointPort = -1;
+	
+	/**
+	 * The tls port only if multiple ports are used. If the tscheme is http or
+	 * https then only one port is needed and will be found in endpointPort. 
+	 * This variable is only needed for when tscheme is 'same' indicating that
+	 * the scheme used on the incoming connection should also be used on the 
+	 * outgoing connection.
+	 */
+	int endpointTlsPort = -1;
 
 	String host = null;
 
@@ -76,6 +232,14 @@ public class AppEndPoint implements EndPoint {
     private Integer declarationOrder = null;
 
     /**
+     * The scheme that must be used by incoming connections to map to this
+     * endpoint router. If 'both' then it will match on incoming connections for
+     * http and https. If 'https' then it will only match on https connections. 
+     * Any other value or not specifying will default to http.
+     */
+	private InboundScheme canonicalScheme;
+
+    /**
      * The host of the by-site element within which this context mapping 
      * application endpoint resides to facilitate exposing a rest service specific
      * to the by-site element and injecting a corresponding policy-service-url.
@@ -86,7 +250,13 @@ public class AppEndPoint implements EndPoint {
 
     private String policyServiceGateway;
 
-    private String scheme;
+    /**
+     * The scheme that should be used when connecting to the remote endpoint.
+     * Possible values are 'http' and 'https' but also 'same' which indicates
+     * that whatever scheme was used on the incoming connection should be used
+     * on the outgoing connection to the remote endpoint. The default is 'same'.
+     */
+    private OutboundScheme appScheme;
 
 	/**
 	 * Returns the name of the header that should be injected to convey that 
@@ -107,20 +277,25 @@ public class AppEndPoint implements EndPoint {
 	protected Map<String, List<String>> fixedHeaders;
 
 	protected Map<String, String> profileHeaders;
+	
+	protected List<String> purgedHeaders;
 
 	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, 
 	        String host, int port, 
 	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
-	    this(canonicalHost, canonicalCtx, appCtx, host, port, 
-	            HTTP_SCHEME, // default to http scheme for backward compatibility 
+	    this(null, canonicalHost, canonicalCtx, appCtx, host, port, 
+	            OutboundScheme.HTTP, -1, 
 	            preserveHost, hostHdr, policyServiceGateway);
 	}
 	
-	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, 
-	        String host, int port, String scheme, 
+	public AppEndPoint(InboundScheme canonicalScheme, String canonicalHost, String canonicalCtx, String appCtx, 
+	        String host, int port, OutboundScheme appScheme, int outgoingTlsPort,
 	        boolean preserveHost, String hostHdr,
             String policyServiceGateway) {
         this.endpointPort = port;
+        this.endpointTlsPort = outgoingTlsPort;
+        this.canonicalScheme = (canonicalScheme == null || 
+        		canonicalScheme.getMoniker().toLowerCase().equals(InboundScheme.HTTPS.moniker) ? InboundScheme.HTTPS : InboundScheme.HTTP);
         this.canonicalHost = canonicalHost;
         this.canonicalContextRoot = canonicalCtx;
         if (canonicalCtx != null) {
@@ -132,11 +307,11 @@ public class AppEndPoint implements EndPoint {
         }
         this.applicationContextRoot = appCtx;
         this.host = host;
-        if (scheme != null && scheme.toLowerCase().equals(AppEndPoint.HTTPS_SCHEME)) {
-            this.scheme = AppEndPoint.HTTPS_SCHEME;
+        if (appScheme != null && appScheme.moniker.toLowerCase().equals(OutboundScheme.HTTPS.moniker)) {
+            this.appScheme = OutboundScheme.HTTPS;
         }
         else { // the default
-            this.scheme = AppEndPoint.HTTP_SCHEME;
+            this.appScheme = OutboundScheme.HTTP;
         }
         this.preserveHostHeader = preserveHost;
         this.hostHdr = hostHdr;
@@ -164,10 +339,10 @@ public class AppEndPoint implements EndPoint {
 	 * @param injectScheme
 	 * @param schemeHeader
 	 */
-    public AppEndPoint(String host, String cctx, String tpath, String thost, int tport, String scheme,
-			boolean preserve, String hostHdr, String policyServiceGateway, boolean injectScheme,
+    public AppEndPoint(InboundScheme scheme, String host, String cctx, String tpath, String thost, int tport, OutboundScheme tscheme,
+    		 int outgoingTlsPort, boolean preserve, String hostHdr, String policyServiceGateway, boolean injectScheme,
 			String schemeHeader) {
-    	this(host, cctx, tpath, thost, tport, scheme, preserve, hostHdr, policyServiceGateway);
+    	this(scheme, host, cctx, tpath, thost, tport, tscheme, outgoingTlsPort, preserve, hostHdr, policyServiceGateway);
     	this.injectSchemeHeader = injectScheme;
     	if (schemeHeader != null) {
         	this.schemeHeaderName = schemeHeader;
@@ -178,8 +353,15 @@ public class AppEndPoint implements EndPoint {
         this.id = this.canonicalHost + this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
 	}
     
-    public boolean useHttpsScheme() {
-        return this.scheme.equals(HTTPS_SCHEME);
+	/**
+	 * Answers true if SSL should be used when connecting to the back-end
+	 * application represented by this end point.
+	 * 
+	 * @param incoming
+	 * @return
+	 */
+    public boolean useHttpsScheme(Scheme incoming) {
+        return this.appScheme == OutboundScheme.HTTPS || (this.appScheme == OutboundScheme.SAME && incoming == Scheme.HTTPS);  
     }
 
     public String getCanonicalHost() {
@@ -244,8 +426,27 @@ public class AppEndPoint implements EndPoint {
 		this.applicationContextRoot = applicationContextRoot;
 	}
 
-	public int getEndpointPort() {
+	/**
+	 * Returns the port to which to connect for the back-end application 
+	 * represented by this end point which may be the tSslPort or the port
+	 * depending on if it should be over SSL or not.
+	 *  
+	 * @param incomingScheme
+	 * @return
+	 */
+	public int getEndpointPort(Scheme incomingScheme) {
+		if (this.appScheme == OutboundScheme.SAME && incomingScheme == Scheme.HTTPS) {
+			return endpointTlsPort;
+		}
 		return endpointPort;
+	}
+
+	/**
+	 * Returns the endpointPort value which corresponds to tport on the corresponding
+	 * cctx-mapping element which allows for late 'console-port' alias resolution.
+	 */
+	public int getEndpointHttpPort() {
+		return this.endpointPort;
 	}
 
     /**
@@ -325,6 +526,10 @@ public class AppEndPoint implements EndPoint {
 	public void setProfileHeaders(Map<String, String> profileHdrs) {
 		this.profileHeaders = profileHdrs;
 	}
+	
+	public void setPurgedHeaders(List<String> purgedHdrs) {
+		this.purgedHeaders = purgedHdrs;
+	}
 
     /**
      * Injects the policy-service-url pointing to the one for the by-site element
@@ -364,12 +569,12 @@ public class AppEndPoint implements EndPoint {
 	 * @param cfg
 	 * @param reqPkg
 	 * @param user
-	 * @param isSecure
+	 * @param incomingScheme
 	 */
-	public void injectHeaders(Config cfg, HttpPackage reqPkg, User user, boolean isSecure) {
+	public void injectHeaders(Config cfg, HttpPackage reqPkg, User user, Scheme incomingScheme) {
 		injectProfileHeaders(user, reqPkg);
 		adjustHostHdr(reqPkg);
-		injectSchemeHeader(isSecure, reqPkg);
+		injectSchemeHeader(incomingScheme, reqPkg);
 		injectPolicyServiceUrlHdr(cfg, reqPkg);
 		injectFixedHdrs(reqPkg);
 		injectCctxFixedHdrs(reqPkg);
@@ -393,14 +598,13 @@ public class AppEndPoint implements EndPoint {
 			reqPkg.headerBfr.removeHeader(hdrName);
 			// now inject
 			if (user != null) {
-				NvPair[] atts = user.getAttribute(attName);
-				for(NvPair pair : atts) {
-					String val = pair.getValue();
+				String[] vals = user.getAttribute(attName);
+				for(String val : vals) {
 					try {
 	                    val = MimeUtility.encodeText(val, "utf-8", null);
 	                } catch (UnsupportedEncodingException e) {
 	                    cLog.warning("Unsupported Encoding specified for header '"
-	                            + pair.getName() + "'. Leaving as unencoded.");
+	                            + attName + "'. Leaving as unencoded.");
 	                }
 					reqPkg.headerBfr.append(new Header(hdrName, val));
 				}
@@ -428,6 +632,21 @@ public class AppEndPoint implements EndPoint {
 	}
 
 	/**
+	 * Purges any headers declared in config file with the purge-header
+	 * directive.
+	 * 
+	 * @param reqP
+	 */
+	public void stripPurgedHeaders(HttpPackage reqPkg) {
+		if (purgedHeaders == null) {
+			return;
+		}
+		for(String hdr : purgedHeaders) {
+			reqPkg.headerBfr.removeHeader(hdr);
+		}
+	}
+
+	/**
 	 * Injects cctx header.
 	 * 
 	 * @param reqP
@@ -443,23 +662,17 @@ public class AppEndPoint implements EndPoint {
 	 * Optionally injects a header to indicate by which scheme a request was 
 	 * received.
 	 * 
-	 * @param isSecure
+	 * @param incomingScheme
 	 * @param reqPkg
 	 */
-	private void injectSchemeHeader(boolean isSecure, HttpPackage reqPkg) {
+	private void injectSchemeHeader(Scheme incomingScheme, HttpPackage reqPkg) {
         // first remove any injected header
         reqPkg.headerBfr.removeHeader(schemeHeaderName);
         
         // indicate via headers over which scheme the client request was received 
         if (injectSchemeHeader) {
-            if (isSecure) {
-                reqPkg.headerBfr.append(new Header(schemeHeaderName, "https"));
-                reqPkg.scheme = "https";
-            }
-            else { 
-                reqPkg.headerBfr.append(new Header(schemeHeaderName, "http"));
-                reqPkg.scheme = "http";
-            }
+        	reqPkg.headerBfr.append(new Header(schemeHeaderName, incomingScheme.moniker));
+        	reqPkg.scheme = incomingScheme;
         }
 	}
 
@@ -475,8 +688,8 @@ public class AppEndPoint implements EndPoint {
             String hostHdr = (getHostHeader() != null ?
                     getHostHeader() :
                         (getHost()
-                                + (getEndpointPort() != 80
-                                        ? (":" + getEndpointPort())
+                                + (getEndpointPort(reqPkg.scheme) != 80
+                                        ? (":" + getEndpointPort(reqPkg.scheme))
                                                 : "")));
             if (hhdr != null && ! hhdr.getValue().equals(hostHdr)) {
                 reqPkg.headerBfr.set(new Header("X-Forwarded-Host", hhdr.getValue()));

@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.Map;
 
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.identity.ExternalUserSource.ConfigurationException;
@@ -37,7 +38,7 @@ public class XmlConfigLoaderTest {
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        SiteMatcher site = cfg.getTrafficManager().getSite("www.lds.org", 45);
+        SiteMatcher site = cfg.getTrafficManager().getSite(Scheme.HTTP, "www.lds.org", 45);
         EndPoint ep = site.getEndpointForCanonicalUrl("/some/path");
         Assert.assertTrue(ep instanceof AppEndPoint, "should be instance of AppEndPoint");
         AppEndPoint app = (AppEndPoint) ep;
@@ -71,7 +72,7 @@ public class XmlConfigLoaderTest {
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        SiteMatcher site = cfg.getTrafficManager().getSite("www.lds.org", 45);
+        SiteMatcher site = cfg.getTrafficManager().getSite(Scheme.HTTP, "www.lds.org", 45);
         EndPoint ep = site.getEndpointForCanonicalUrl("/some/path");
         Assert.assertTrue(ep instanceof AppEndPoint, "should be instance of AppEndPoint");
         AppEndPoint app = (AppEndPoint) ep;
@@ -119,16 +120,16 @@ public class XmlConfigLoaderTest {
         Assert.assertNotNull(cfg.getUserManager().getUser("nnn").getAttributes(), "at least one attribute should have been loaded");
         Assert.assertEquals(cfg.getUserManager().getUser("nnn").getAttributes().length, 2, "at least one attribute in addition to automatic cn attribute should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("nnn").getAttribute("ldsaccountid"), "ldsaccountid attribute should have been loaded");
-        NvPair[] ids = cfg.getUserManager().getUser("nnn").getAttribute("ldsaccountid");
+        String[] ids = cfg.getUserManager().getUser("nnn").getAttribute("ldsaccountid");
         Assert.assertEquals(ids.length, 1, "only one ldsaccountid attribute should have been loaded for user");
-        Assert.assertEquals(ids[0].getValue(), "20", "ldsaccountid of 20 should have been loaded");
+        Assert.assertEquals(ids[0], "20", "ldsaccountid of 20 should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("mmm"), "user 'mmm' should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("mmm").getAttributes(), "at least one attribute should have been loaded");
         Assert.assertEquals(cfg.getUserManager().getUser("mmm").getAttributes().length, 2, "at least one attribute in addition to automatic cn attribute should have been loaded");
         Assert.assertNotNull(cfg.getUserManager().getUser("mmm").getAttribute("ldsaccountid"), "ldsaccountid attribute should have been loaded");
-        NvPair[] ids2 = cfg.getUserManager().getUser("mmm").getAttribute("ldsaccountid");
+        String[] ids2 = cfg.getUserManager().getUser("mmm").getAttribute("ldsaccountid");
         Assert.assertEquals(ids2.length, 1, "only one ldsaccountid attribute should have been loaded for user");
-        Assert.assertEquals(ids2[0].getValue(), "33", "ldsaccountid of 33 should have been loaded");
+        Assert.assertEquals(ids2[0], "33", "ldsaccountid of 33 should have been loaded");
     }
     
     @Test
@@ -281,8 +282,8 @@ public class XmlConfigLoaderTest {
         // note that white space is preserved in syntax.
         // also note that carriage returns are normalized to line feeds
         Assert.assertEquals(aliases.getAliasValue("o'hare prj"), "    <OR site='labs-local.lds.org'>\n\t\n     <Attribute name='acctid' operation='equals' value='o&apos;hare prj'></Attribute>     <Attribute name='acctid' operation='equals' value='o&quot;hare prj'></Attribute>    </OR>   ");
-        SiteMatcher site = cfg.getTrafficManager().getSite("local.lds.org", 45);
-        OrderedUri uri = site.getUriMatcher("http", "local.lds.org", 45, "/conditional/test", null);
+        SiteMatcher site = cfg.getTrafficManager().getSite(Scheme.HTTP, "local.lds.org", 45);
+        OrderedUri uri = site.getUriMatcher(Scheme.HTTP, "local.lds.org", 45, "/conditional/test", null);
         Assert.assertTrue(uri instanceof AllowedUri, "URI should have been instance of AllowedUri but was " + uri.getClass().getSimpleName());
         AllowedUri au = (AllowedUri) uri;
         String condId = site.conditionsMap.get(au);
@@ -637,7 +638,7 @@ public class XmlConfigLoaderTest {
         Assert.assertFalse(tman.isEnforced(url), 
         "due to wrong port should NOT be enforced " + url);
         
-        url = "apps://labs-local.lds.org/auth/ui/some/path/lower";
+        url = "https://labs-local.lds.org/auth/ui/some/path/lower";
         Assert.assertFalse(tman.isEnforced(url), 
         "due to wrong scheme should NOT be enforced " + url);
         
@@ -660,7 +661,7 @@ public class XmlConfigLoaderTest {
         Assert.assertFalse(tman.isUnenforced(url), 
         "due to wrong port should NOT be unenforced " + url);
         
-        url = "apps://labs-local.lds.org/auth/ui/sign-in";
+        url = "https://labs-local.lds.org/auth/ui/sign-in";
         Assert.assertFalse(tman.isUnenforced(url), 
         "due to wrong scheme should NOT be unenforced " + url);
         
@@ -725,7 +726,7 @@ public class XmlConfigLoaderTest {
         Assert.assertFalse(tman.isUnenforced(url), 
         "due to wrong port should NOT be unenforced " + url);
         
-        url = "apps://labs-local.lds.org/auth/ui/sign-in";
+        url = "https://labs-local.lds.org/auth/ui/sign-in";
         Assert.assertFalse(tman.isUnenforced(url), 
         "due to wrong scheme should NOT be unenforced " + url);
         
@@ -928,12 +929,12 @@ public class XmlConfigLoaderTest {
 	}
 
 	@Test
-	public void testArcaneSchemeConfigIsAllowed() throws Exception {
+	public void testHttpsSchemeConfigIsAllowed() throws Exception {
 		String xml = 
 			"<?xml version='1.0' encoding='UTF-8'?>"
 			+ "<config console-port='88' proxy-port='45'>"
 			+ " <sso-traffic>"
-			+ "  <by-site scheme='app' host='labs-local.lds.org' port='80'>"
+			+ "  <by-site scheme='https' host='labs-local.lds.org' port='80'>"
 			+ "    <unenforced cpath='/auth/ui/*'/>"
 	        + "    <allow action='GET,POST' cpath='/auth/_app/*'/>"
 	        + "  </by-site>"
@@ -944,7 +945,7 @@ public class XmlConfigLoaderTest {
 		TrafficManager tman = cfg.getTrafficManager();
 		boolean res = tman.isUnenforced("http://labs-local.lds.org/auth/ui/sign-in");
 		Assert.assertFalse(res, "due to wrong scheme should NOT be unenforced http://labs-local.lds.org:/auth/ui/sign-in");
-		res = tman.isUnenforced("app://labs-local.lds.org/auth/ui/sign-in");
+		res = tman.isUnenforced("https://labs-local.lds.org/auth/ui/sign-in");
 		Assert.assertTrue(res, "should be unenforced http://labs-local.lds.org:/auth/ui/sign-in");
 	}
 
@@ -974,9 +975,9 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addAttribute("ldsApplications", "1234");
+        u1234.addAttributeValues("ldsApplications", new String[] {"1234"});
         User user = new User("user", "user"); 
-        user.addAttribute("ldsApplications", "1000");
+        user.addAttributeValues("ldsApplications", new String[] {"1000"});
 
         String uri = "http://labs-local.lds.org:45/auth/_app/debug";
         Assert.assertTrue(tman.isPermitted("POST", uri, u1234), "should be allowed " + uri);
@@ -1097,9 +1098,9 @@ public class XmlConfigLoaderTest {
         XmlConfigLoader2.load(xml);
         TrafficManager tman = cfg.getTrafficManager();
         User u1234 = new User("bish", "bish"); 
-        u1234.addAttribute("ldsApplications", "1234");
+        u1234.addAttributeValues("ldsApplications", new String[] {"1234"});
         User user = new User("user", "user"); 
-        user.addAttribute("ldsApplications", "1000");
+        user.addAttributeValues("ldsApplications", new String[] {"1000"});
 
         String uri = "app://labs-local.lds.org/auth/_app/debug";
         boolean u12134Answer = tman.isPermitted("POST", uri, u1234); 

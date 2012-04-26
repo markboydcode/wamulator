@@ -2,6 +2,7 @@ package org.lds.sso.appwrap.identity;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -9,18 +10,20 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.lds.sso.appwrap.NvPair;
+import org.lds.sso.appwrap.identity.UserManager.Aggregation;
 
 public class User {
 	public static final String ATT_CN = "cn";
 	protected String password = null;
 	protected String username = null;
 	Principal principal = null;
+	private Map<String, Aggregation> aggregation = new HashMap<String, Aggregation>();
     private Set<NvPair> atts = new TreeSet<NvPair>();
 
 	public User(String username, String pwd) {
 		this.password = pwd;
 		this.username = username;
-		this.addAttribute(ATT_CN, username);
+		this.addAttributeValues(ATT_CN, new String[] {username}, Aggregation.FIX);
 		this.principal = new Principal() {
 			
 			private String name = "sso.appwrap.user." + User.this.username;
@@ -41,9 +44,10 @@ public class User {
 	public String getUsername() {
 		return username;
 	}
+	
 	public void setUsername(String username) {
 		this.removeAttribute(ATT_CN);
-		this.addAttribute(ATT_CN, username);
+		atts.add(new NvPair(ATT_CN, username));
 		this.username = username;
 	}
 
@@ -113,20 +117,56 @@ public class User {
      * 
      * @return
      */
-    public NvPair[] getAttribute(String name) {
-        List<NvPair> pairs = new ArrayList<NvPair>();
+    public String[] getAttribute(String name) {
+        List<String> vals = new ArrayList<String>();
         for(NvPair pair : atts) {
             if ((name == null && pair.getName() == null) ||
                     (name != null && name.equals(pair.getName()))) {
-                pairs.add(pair);
+                vals.add(pair.getValue());
             }
         }
             
-        return pairs.toArray(new NvPair[] {});
+        return vals.toArray(new String[] {});
     }
 
-    public void addAttribute(String name, String value) {
-        atts.add(new NvPair(name, value));
+    public void addAttributeValues(String name, String[] values) {
+    	addAttributeValues(name, values, null);
+    }
+    
+    public void addAttributeValues(String name, String[] values, Aggregation ag) {
+    	Aggregation curr = this.aggregation.get(name);
+    	
+    	if (curr == null) {
+    		if (ag == null) {
+    			ag = Aggregation.MERGE; // default
+    		}
+    		this.aggregation.put(name, ag);
+    		for (String val : values) {
+    			atts.add(new NvPair(name, val));
+    		}
+    		return;
+    	}
+    	switch(curr) {
+    	case FIX:
+    		// don't allow to change
+    		break;
+    	case MERGE:
+    		for (String val : values) {
+    			atts.add(new NvPair(name, val));
+    		}
+    		break;
+    	case REPLACE:
+    		Set<NvPair> newAtts = new TreeSet<NvPair>();
+    		for(NvPair p : atts) {
+    			if (! p.getName().equalsIgnoreCase(name)) {
+    				newAtts.add(p);
+    			}
+    		}
+    		for (String val : values) {
+    			newAtts.add(new NvPair(name, val));
+    		}
+    		atts = newAtts;
+    	}
     }
     
     public String toString() {
@@ -138,5 +178,6 @@ public class User {
      */
 	public void clearAttributes() {
 		atts.clear();
+		aggregation.clear();
 	}
 }

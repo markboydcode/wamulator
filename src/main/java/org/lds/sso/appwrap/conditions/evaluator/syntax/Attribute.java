@@ -2,7 +2,6 @@ package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
 import java.util.Map;
 
-import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.identity.User;
@@ -60,21 +59,21 @@ public class Attribute extends SyntaxBase {
         boolean satisfied = false;
         switch (operation) {
             case EQUALS:
-                NvPair[] attribute = user.getAttribute(attributeName);
-                if (attribute != null) {
-                    for(NvPair p : attribute) {
-                        if (wildCardMatch(p.getValue(), attributeValue)) {
+                String[] vals = user.getAttribute(attributeName);
+                if (vals != null) {
+                    for(String val : vals) {
+                        if (wildCardMatch(val, attributeValue)) {
                             satisfied = true;
                             break;
                         }
                     }
                 }
                 if(satisfied){
-                    debug(evaluationCtx, satisfied, String.format("user has attribute that matches value, actual: %s", attribute[0].getValue()));
+                    debug(evaluationCtx, satisfied, String.format("user has attribute that matches value, actual: %s", vals[0]));
                 }
                 else{
-                    if (attribute != null && attribute.length != 0) {
-                        debug(evaluationCtx, satisfied, String.format("user does not have attribute that matches value, actual: %s", attribute[0].getValue()));
+                    if (vals != null && vals.length != 0) {
+                        debug(evaluationCtx, satisfied, String.format("user does not have attribute that matches value, actual: %s", vals[0]));
                     }
                     else {
                         debug(evaluationCtx, satisfied, "user does not have attribute");

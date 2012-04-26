@@ -23,6 +23,9 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
+import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
+import org.lds.sso.appwrap.AppEndPoint.OutboundScheme;
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
@@ -69,6 +72,8 @@ public class XmlConfigLoader2 {
     public static final String PARSING_CONDITION_ALIAS = "condition-alias";
 	public static final String PARSING_USR_SRC_CONTENT = "user-source-content";
 	public static final String PARSING_CURR_EXT_USR_SRC = "user-source";
+	
+	public static final String PARSING_PURGED_HDRS = "purge-headers";
 	public static final String PARSING_FIXED_ATTS = "fixed-attributes";
 	public static final String PARSING_PROFILE_ATTS = "profile-attributes";
 	
@@ -182,6 +187,8 @@ public class XmlConfigLoader2 {
         put(PARSING_ALIASES, new AliasHolder());
         parsingContextAccessor.get().put(PARSING_FIXED_ATTS, 
         		new HashMap<String, List<String>>());
+        parsingContextAccessor.get().put(PARSING_PURGED_HDRS, 
+        		new ArrayList<String>());
         parsingContextAccessor.get().put(PARSING_PROFILE_ATTS, 
         		new HashMap<String, String>());
         
@@ -620,17 +627,48 @@ public class XmlConfigLoader2 {
      * @param path
      */
     static void isDeclarationUseful(SiteMatcher sm, CPathParts cp, Path path) {
-        OrderedUri ou = sm.getManagerOfUri(sm.getScheme(), sm.getHost(), sm
-                .getPort(), cp.path, cp.query);
-        if (ou != null) {
-            throw new IllegalArgumentException("URLs matching cpath attribute value '" 
-                    + cp.rawValue + "' of " + path + " will be consumed by '"
-                    + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
-                    + "' declaration with cpath value of '" 
-                    + ou.getCpathDeclaration() 
-                    + "' which precedes it in document order. "
-                    + "Declare elements for nested URLs first.");
-        }
+    	InboundScheme newSmScheme = sm.getScheme();
+    	OrderedUri ou =null;
+    	
+    	if (newSmScheme == InboundScheme.BOTH) {
+    		ou = sm.getManagerOfUri(Scheme.HTTP, sm.getHost(), sm
+                    .getPort(), cp.path, cp.query);
+    		if (ou != null) {
+                throw new IllegalArgumentException("URLs matching cpath attribute value '" 
+                        + cp.rawValue + "' of " + path + " on http will be consumed by '"
+                        + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
+                        + "' declaration with cpath value of '" 
+                        + ou.getCpathDeclaration() 
+                        + "' which precedes it in document order. "
+                        + "Declare elements for nested URLs first.");
+    		}
+			ou = sm.getManagerOfUri(Scheme.HTTPS, sm.getHost(), sm
+                    .getPort(), cp.path, cp.query);
+    		if (ou != null) {
+                throw new IllegalArgumentException("URLs matching cpath attribute value '" 
+                        + cp.rawValue + "' of " + path + " on https will be consumed by '"
+                        + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
+                        + "' declaration with cpath value of '" 
+                        + ou.getCpathDeclaration() 
+                        + "' which precedes it in document order. "
+                        + "Declare elements for nested URLs first.");
+    		}
+    	}
+    	else {
+    		Scheme s = Scheme.fromMoniker(newSmScheme.moniker);
+			ou = sm.getManagerOfUri(s, sm.getHost(), sm
+                    .getPort(), cp.path, cp.query);
+	        if (ou != null) {
+	            throw new IllegalArgumentException("URLs matching cpath attribute value '" 
+	                    + cp.rawValue + "' of " + path + " on " 
+	                    + s.moniker + " will be consumed by '"
+	                    + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
+	                    + "' declaration with cpath value of '" 
+	                    + ou.getCpathDeclaration() 
+	                    + "' which precedes it in document order. "
+	                    + "Declare elements for nested URLs first.");
+	        }
+    	}
     }
 
     public static class CfgContentHandler implements ContentHandler {
@@ -715,6 +753,11 @@ public class XmlConfigLoader2 {
                 cfg.getTrafficRecorder().setRecording(sso);
                 boolean rest = Boolean.parseBoolean(getStringAtt("rest", path,
                         atts));
+                String consoleTitle = getStringAtt("title", path, atts, false);
+                
+                if (consoleTitle != null && ! "".equals(consoleTitle)) {
+                	cfg.setConsoleTitle(consoleTitle);
+                }
                 cfg.getTrafficRecorder().setRecordingRest(rest);
                 Integer maxEntries = Config.MAX_TRAFFIC_ENTRIES;
                 try {
@@ -749,6 +792,8 @@ public class XmlConfigLoader2 {
                 } else {
                     cfg.setSignInPage(getStringAtt("value", path, atts));
                 }
+                cfg.setSignInPageAction(getStringAtt("formAction", path, atts, false));
+                
             } else if (path.matches("/config/sso-header")) {
             	// break backwards compatibility of legacy /config/sso-header 
             	// construct and indicate use of new 
@@ -765,10 +810,7 @@ public class XmlConfigLoader2 {
                     LogUtils.info(cLog, "Proxy is configured to strip empty headers.");
                 }
             } else if (path.matches("/config/sso-traffic/by-site")) {
-                String scheme = atts.getValue("scheme");
-                if (scheme == null || scheme.equals("")) {
-                    scheme = "http";
-                }
+                InboundScheme scheme = InboundScheme.fromMoniker(atts.getValue("scheme"));
                 String host = getStringAtt("host", path, atts);
                 int port = -1;
                 String portS = atts.getValue("port");
@@ -789,12 +831,8 @@ public class XmlConfigLoader2 {
                     port = getIntegerAtt("port", path, atts);
                 }
                 TrafficManager trafficMgr = cfg.getTrafficManager();
-                SiteMatcher m = trafficMgr.getSite(host, port);
-                // causes reuse of existing site matcher but this will need to
-                // change if/when we support any other protocol besides http 
-                // since SiteMatcher constructor takes scheme but 
-                // trafficMgr.getSite() only uses host and port to distinguish 
-                // between them.
+                SiteMatcher m = trafficMgr.getSite(scheme, host, port);
+                // causes reuse of existing site matcher
                 if (m == null) {
                     m = new SiteMatcher(scheme, host, port, trafficMgr);
                     trafficMgr.addMatcher(m);
@@ -811,7 +849,7 @@ public class XmlConfigLoader2 {
                             "cctx must end with '*' in " + path);
                 }
                 cctx = cctx.substring(0, cctx.length() - 1);
-                String type = getStringAtt("content-type", path, atts);
+                String type = getStringAtt("content-type", path, atts, false);
                 TrafficManager trafficMgr = cfg.getTrafficManager();
                 SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
                 EndPoint ep = sm.getEndpointForCanonicalUrl(cctx);
@@ -830,14 +868,22 @@ public class XmlConfigLoader2 {
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
                 String cctx = getStringAtt("cctx", path, atts);
                 String thost = getStringAtt("thost", path, atts);
+                OutboundScheme outgoingScheme = OutboundScheme.fromMoniker(
+                		getStringAtt("tscheme", path, atts, false));
                 String policyServiceGateway = getStringAtt("policy-service-url-gateway", path, atts, false);
                 String schemeHeaderOvrd = getStringAtt("scheme-header-name", path, atts, false);
                 String injectSchemeHeader = getStringAtt("inject-scheme-header", path, atts, false);
                 boolean injectScheme = (injectSchemeHeader == null ? true : Boolean
                         .parseBoolean(injectSchemeHeader));
                 String hostHdr = getStringAtt("host-header", path, atts, false);
-                String scheme = getStringAtt("scheme", path, atts,
-                        false);
+                if (getStringAtt("scheme", path, atts,
+                        false) != null) {
+                	throw new SAXException("Attribute 'scheme' of " + path
+                			+ " has been replaced by 'tscheme'. Please replace "
+                			+ "'scheme' with 'tscheme'.");
+                }
+                InboundScheme incomingScheme = InboundScheme.fromMoniker(
+                		getStringAtt("cscheme", path, atts, false));
                 String preserveHost = getStringAtt("preserve-host", path, atts,
                         false);
                 boolean preserve = (preserveHost == null ? true : Boolean
@@ -859,6 +905,19 @@ public class XmlConfigLoader2 {
                 } else {
                     tport = getIntegerAtt("tport", path, atts);
                 }
+
+                int outgoingTlsPort = getIntegerAtt("tSslPort", path, atts, false);
+                if (outgoingTlsPort == -1) {
+                    if (outgoingScheme == OutboundScheme.SAME) {
+                    	throw new IllegalArgumentException("tscheme of " 
+                    			+ path + " specifies 'same' but no tSslPort is specified for outbound https traffic.");
+                    }
+                    if (outgoingScheme == OutboundScheme.HTTPS) {
+                    	throw new IllegalArgumentException("tscheme of " 
+                    			+ path + " specifies 'https' but no tSslPort is specified for outbound https traffic.");
+                    }
+                }
+
                 String tpath = getStringAtt("tpath", path, atts);
                 // enforce terminating asterisk solely for reminding readers of
                 // the config file that these are uri root contexts that will be
@@ -884,10 +943,12 @@ public class XmlConfigLoader2 {
                                     + "*' which precedes it in document order and hence "
                                     + "will never receive any requests.");
                 }
-                ep = new AppEndPoint(sm.getHost(), cctx, tpath, thost, tport, scheme, preserve, hostHdr, policyServiceGateway,
-                		injectScheme, schemeHeaderOvrd);
+                ep = new AppEndPoint(incomingScheme, sm.getHost(), cctx, 
+                		tpath, thost, tport, outgoingScheme, outgoingTlsPort, preserve, hostHdr, 
+                		policyServiceGateway, injectScheme, schemeHeaderOvrd);
                 sm.addMapping(ep);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {
+                parsingContextAccessor.get().put(PARSING_PURGED_HDRS, new ArrayList<String>());
                 parsingContextAccessor.get().put(PARSING_FIXED_ATTS, new HashMap<String, List<String>>());
                 parsingContextAccessor.get().put(PARSING_PROFILE_ATTS, new HashMap<String, String>());
 
@@ -901,6 +962,11 @@ public class XmlConfigLoader2 {
     </headers>
 
             	 */
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers/purge-header")) {
+                String nm = getStringAtt("name", path, atts);
+            	@SuppressWarnings("unchecked")
+				List<String> purgedHdrsList = (List<String>) parsingContextAccessor.get().get(PARSING_PURGED_HDRS);
+            	purgedHdrsList.add(nm);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers/fixed-value")) {
                 String nm = getStringAtt("name", path, atts);
                 String vl = getStringAtt("value", path, atts);
@@ -1015,10 +1081,22 @@ public class XmlConfigLoader2 {
                 else if (type.equals("ldap")) {
                 	src = new LdapUserSource();
                 }
+// for when/if we allow flowing of users from one wamulator to another such as
+// when having a wamulator per domain secure.lds.org versus lds.org with users
+// only defined in one and pulled to the other.
+//                
+//                else if (type.equals("wamulator")) {
+//                	src = new OtherWamulatorUserSource();
+//                }
                 else {
                 	throw new IllegalArgumentException("user-source at "
                 			+ path + " does not have a valid type '"
                 			+ type + "'. Must be one of 'xml', 'coda', or 'ldap'.");
+//        			+ type + "'. Must be one of 'xml', 'coda', 'ldap', or 'wamulator'.");
+                }
+                String stopOnFoundS = getStringAtt("stopOnFound", path, atts, false);
+                if (stopOnFoundS == null) {
+                	stopOnFoundS = "true"; // default
                 }
                 src.setUserManager(cfg.getUserManager());
                 parsingContextAccessor.get().put(PARSING_CURR_EXT_USR_SRC, src);
@@ -1058,6 +1136,8 @@ public class XmlConfigLoader2 {
                         Boolean.FALSE);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {
             	@SuppressWarnings("unchecked")
+				List<String> purgedHdrsList = (List<String>) parsingContextAccessor.get().get(PARSING_PURGED_HDRS); 
+            	@SuppressWarnings("unchecked")
 				Map<String, List<String>> fixedHdrsMap = (Map<String, List<String>>) parsingContextAccessor.get().get(PARSING_FIXED_ATTS); 
                 @SuppressWarnings("unchecked")
 				Map<String, String> profileHdrsMap = (Map<String, String>) parsingContextAccessor.get().get(PARSING_PROFILE_ATTS);
@@ -1068,6 +1148,7 @@ public class XmlConfigLoader2 {
                 	AppEndPoint aep = (AppEndPoint) ep;
                 	aep.setFixedHeaders(fixedHdrsMap);
                 	aep.setProfileHeaders(profileHdrsMap);
+                	aep.setPurgedHeaders(purgedHdrsList);
                 }
             } else if (path.matches("/config/user-source")) {
                 ExternalUserSource src = (ExternalUserSource) parsingContextAccessor.get().get(PARSING_CURR_EXT_USR_SRC);

@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
-import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.identity.User;
@@ -26,8 +25,8 @@ public class ANDTest extends TestBaseClass
 				"</AND>");
 		
 		// stuff evaluator will go after
-		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p4/7u345/5u897/1u2001/")};
-		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "A")};
+		String[] posAtts = new String[] {new String("p4/7u345/5u897/1u2001/")};
+		String[] empAtts = new String[] {new String("A")};
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
         EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
@@ -66,8 +65,8 @@ public class ANDTest extends TestBaseClass
 				"</AND>");
 		
 		// stuff evaluator will go after
-		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p3/7u345/5u897/1u2001/")};
-		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "A")};
+		String[] posAtts = new String[] {new String("p3/7u345/5u897/1u2001/")};
+		String[] empAtts = new String[] {new String("A")};
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
         EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
@@ -106,8 +105,8 @@ public class ANDTest extends TestBaseClass
 				"</AND>");
 		
 		// stuff evaluator will go after
-		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p3/7u345/5u897/1u2001/")};
-		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "T")};
+		String[] posAtts = new String[] {new String("p3/7u345/5u897/1u2001/")};
+		String[] empAtts = new String[] {new String("T")};
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
         EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
@@ -147,8 +146,8 @@ public class ANDTest extends TestBaseClass
 				"</AND>");
 		
 		// stuff evaluator will go after
-		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p3/7u345/5u897/1u2001/")};
-		NvPair[] empAtts = new NvPair[] {new NvPair("employeestatus", "T")};
+		String[] posAtts = new String[] {new String("p3/7u345/5u897/1u2001/")};
+		String[] empAtts = new String[] {new String("T")};
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
         EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);

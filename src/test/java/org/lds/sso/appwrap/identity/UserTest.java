@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap.identity;
 
+import org.lds.sso.appwrap.identity.UserManager.Aggregation;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -34,17 +35,9 @@ public class UserTest {
     @Test
     public void test_multivalued_atts() {
         User usr = new User("usr", "pwd");
-        usr.addAttribute("0", "0-one");
-        usr.addAttribute("0", "0-two");
-
-        usr.addAttribute("1", "one");
-        usr.addAttribute("1", "two");
-        usr.addAttribute("1", "three");
-        usr.addAttribute("1", "four");
-
-        usr.addAttribute("3", "3-one");
-        usr.addAttribute("3", "3-two");
-        usr.addAttribute("3", "3-three");
+        usr.addAttributeValues("0", new String[] {"0-one", "0-two"}, null);
+        usr.addAttributeValues("1", new String[] {"one", "two", "three", "four"}, null);
+        usr.addAttributeValues("3", new String[] {"3-one", "3-two", "3-three"}, null);
 
         Assert.assertNotNull(usr.getAttributes());
         // 10 is correct because 'cn' attribute is added automatically
@@ -58,7 +51,7 @@ public class UserTest {
         Assert.assertNotNull(usr.getAttribute("1"));
         Assert.assertEquals(usr.getAttribute("1").length, 4);
         Assert.assertTrue(usr.hasAttributeValue("1", "one"));
-        Assert.assertTrue(usr.hasAttributeValue("1", "two"));
+        Assert.assertTrue(usr.hasAttributeValue("1", "two"));    
         Assert.assertTrue(usr.hasAttributeValue("1", "three"));
         Assert.assertTrue(usr.hasAttributeValue("1", "four"));
 
@@ -69,16 +62,43 @@ public class UserTest {
         Assert.assertTrue(usr.hasAttributeValue("3", "3-three"));
     }
 
+    
+    /**
+     * Verifies two things: if additional values are injected they are added to
+     * what is already there, if any values are added that already exist they
+     * have no impact meaning duplicate identical values will never be found. 
+     * 
+     */
+    @Test
+    public void test_merge_aggregation() {
+        User usr = new User("usr", "pwd");
+        usr.addAttributeValues("0", new String[] {"c", "a"}, Aggregation.MERGE);
+
+        Assert.assertNotNull(usr.getAttribute("0"));
+        Assert.assertEquals(usr.getAttribute("0").length, 2);
+        Assert.assertTrue(usr.hasAttributeValue("0", "a"));
+        Assert.assertTrue(usr.hasAttributeValue("0", "c"));
+        Assert.assertEquals(usr.getAttribute("0")[0], "a", "should be alphabetical");
+        Assert.assertEquals(usr.getAttribute("0")[1], "c", "should be alphabetical");
+
+        usr.addAttributeValues("0", new String[] {"a", "b", "c", "d"});
+        Assert.assertEquals(usr.getAttribute("0").length, 4);
+        Assert.assertEquals(usr.getAttribute("0")[0], "a", "should be alphabetical");
+        Assert.assertEquals(usr.getAttribute("0")[1], "b", "should be alphabetical");
+        Assert.assertEquals(usr.getAttribute("0")[2], "c", "should be alphabetical");
+        Assert.assertEquals(usr.getAttribute("0")[3], "d", "should be alphabetical");
+    }
+
     @Test
     public void test_hasAttribute() {
         User usr = new User("usr", "pwd");
         Assert.assertFalse(usr.hasAttribute("3"));
         Assert.assertFalse(usr.hasAttribute(null));
 
-        usr.addAttribute(null, "one");
+        usr.addAttributeValues(null, new String[] {"one"}, null);
         Assert.assertTrue(usr.hasAttribute(null));
 
-        usr.addAttribute("3", null);
+        usr.addAttributeValues("3", new String[] {null}, null);
         Assert.assertTrue(usr.hasAttribute("3"));
     }
 }

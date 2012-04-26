@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
@@ -23,7 +25,7 @@ public class SiteMatcher {
 	protected Set<OrderedUri> urls = new TreeSet<OrderedUri>();
 	private Set<EndPoint> mappedEndPoints = new TreeSet<EndPoint>();
 
-	private String scheme;
+	private InboundScheme scheme;
 	private LogicalSyntaxEvaluationEngine cEngine;
 	protected Map<String, String> cSynMap;
 	protected Map<AllowedUri, String> conditionsMap = new HashMap<AllowedUri, String>();
@@ -38,14 +40,14 @@ public class SiteMatcher {
 	 * @param host
 	 * @param port
 	 */
-	public SiteMatcher(String scheme, String host, int port, TrafficManager trafficMgr) {
+	public SiteMatcher(InboundScheme scheme, String host, int port, TrafficManager trafficMgr) {
 		this.setConditionEnv(trafficMgr.cEngine, trafficMgr.cSyntaxMap);
 		this.scheme = scheme;
 		this.host = host;
 		this.port = port;
 	}
 	
-	public OrderedUri getUriMatcher(String scheme, String host, int port, String path, String query) {
+	public OrderedUri getUriMatcher(Scheme scheme, String host, int port, String path, String query) {
         for(OrderedUri uri : urls) {
             if (uri.matches(scheme, host, port, path, query)) {
                 return uri;
@@ -54,7 +56,7 @@ public class SiteMatcher {
         return null;
 	}
 
-	public boolean isAllowed(String scheme, String host, int port, String action, String path, String query, User user) {
+	public boolean isAllowed(Scheme scheme, String host, int port, String action, String path, String query, User user) {
 		if (this.port == port && this.host.equals(host)) {
 		    OrderedUri uri = getUriMatcher(scheme, host, port, path, query);
 		    if (uri != null) {
@@ -116,16 +118,33 @@ public class SiteMatcher {
 	}
 
 	/**
-	 * Returns true if this site matches on the host, port, and uri.
+	 * Returns true if this object has the same configured InboundScheme, host, 
+	 * and port.
+	 * 
+	 * @param scheme2
+	 * @param host2
+	 * @param port2
+	 * @return
 	 */
-	public boolean matches(String host, int port) {
-		cLog.fine("Comparing site: host = " + this.host + " to passed-in host = " + host);
-		if (!this.host.equals(host) || this.port != port) {
-			cLog.fine("FAILED: The site doesn't match: " + this);
-			return false;
+	public boolean isSame(InboundScheme scheme, String host, int port) {
+		return this.scheme == scheme && this.host.equalsIgnoreCase(host) && this.port == port;
+	}
+
+	/**
+	 * Returns true if this site matches on the scheme, host, port of a uri.
+	 * @param scheme 
+	 */
+	public boolean matches(Scheme scheme, String host, int port) {
+		if (this.scheme == InboundScheme.BOTH && this.host.equals(host)) {
+			cLog.fine("SUCCESS: The site matches, use this site: " + this);
+			return true; 
 		}
-		cLog.fine("SUCCESS: The site matches, use this site: " + this);
-		return true; 
+		if (this.scheme != InboundScheme.BOTH && this.scheme.moniker.equals(scheme.moniker) && this.host.equals(host) && this.port == port) {
+			cLog.fine("SUCCESS: The site matches, use this site: " + this);
+			return true; 
+		}
+		cLog.fine("FAILED: The site doesn't match: " + this);
+		return false;
 	}
 	
 	public void addMapping(EndPoint point) {
@@ -191,7 +210,7 @@ public class SiteMatcher {
 	        
 	        if (ep instanceof AppEndPoint) {
 	            AppEndPoint aep = (AppEndPoint) ep;
-	            if (aep.getEndpointPort() == 0) {
+	            if (aep.getEndpointHttpPort() == 0) {
 	                itr.remove();
 	                aep.setEndpointPort(consolePort);
 	                updates.add(aep);
@@ -220,7 +239,7 @@ public class SiteMatcher {
 	 * @param query
      * @return
      */
-    public boolean isUnenforced(String scheme, String host, int port, String path, String query) {
+    public boolean isUnenforced(Scheme scheme, String host, int port, String path, String query) {
         OrderedUri url = getManagerOfUri(scheme, host, port, path, query);
         if (url != null) {
             if (url.getClass() == UnenforcedUri.class) {
@@ -237,7 +256,7 @@ public class SiteMatcher {
      * 
      * @return
      */
-    public boolean isEnforced(String scheme, String host, int port, String path, String query) {
+    public boolean isEnforced(Scheme scheme, String host, int port, String path, String query) {
         OrderedUri url = getManagerOfUri(scheme, host, port, path, query);
         if (url != null) {
             if (url.getClass() == AllowedUri.class) {
@@ -258,7 +277,7 @@ public class SiteMatcher {
      * @param query
      * @return
      */
-    public OrderedUri getManagerOfUri(String scheme, String host, int port, String path, String query) {
+    public OrderedUri getManagerOfUri(Scheme scheme, String host, int port, String path, String query) {
         for (OrderedUri url : urls) {
             if (url.matches(scheme, host, port, path, query)) {
                 return url;
@@ -285,7 +304,7 @@ public class SiteMatcher {
 		return port;
 	}
 
-	public String getScheme() {
+	public InboundScheme getScheme() {
 		return scheme;
 	}
 

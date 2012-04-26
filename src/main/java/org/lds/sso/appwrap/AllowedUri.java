@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
+
 /**
  * Adds semantics of actions on the URI for restricting access. 
  * 
@@ -17,12 +19,12 @@ public class AllowedUri extends UnenforcedUri {
     protected String[] actions = null;
     private boolean allow_all;
 	
-	public AllowedUri(String scheme, String host, int port, String path, String query, String cpathDeclaration) {
+	public AllowedUri(InboundScheme scheme, String host, int port, String path, String query, String cpathDeclaration) {
 		super(scheme, host, port, path, query, cpathDeclaration);
 		throw new UnsupportedOperationException("Use other constructor.");
 	}
 	
-	public AllowedUri(String scheme, String host, int port, String path, String query, String[] actions, String cpathDeclaration) {
+	public AllowedUri(InboundScheme scheme, String host, int port, String path, String query, String[] actions, String cpathDeclaration) {
 		super(scheme, host, port, path, query, cpathDeclaration);
 		this.actions = actions;
 		for(String action : actions) {

@@ -8,9 +8,13 @@
 <c:set var="gotoUriEnc" scope="page" value="${param.goto}"/>
 <c:set var="gotoQueryParm" scope="page" value="${jsputils.encode[param.goto]}"/>
 </c:if>
+<c:set var="formAction" scope="page" value="/auth/ui/authenticate"/>
+<c:if test="${not empty(requestScope.config.loginAction)}">
+ <c:set var="formAction" scope="page" value="${requestScope.config.loginAction}"/>
+</c:if>
 <html>
 <head>
-<title>Console: ${requestScope.config.serverName}</title>
+<title><c:choose><c:when test='${empty requestScope.config.consoleTitle}'>Console: ${requestScope.config.serverName}</c:when><c:otherwise>${requestScope.config.consoleTitle}</c:otherwise></c:choose></title>
 <script type="text/javascript">
 
   window.signin = function(username) {
@@ -27,7 +31,7 @@
 </div>
 <!-- masthead END -->
 <div style="padding: 0 10 10 10px;  text-align:left;">
-<form name="signinForm" action="/auth/ui/authenticate" method="post">
+<form name="signinForm" action="${formAction}" method="post">
     <input type="hidden" name="goto" value="${gotoQueryParm}"/>
 <c:if test="${param['page-error'] == 'user-not-found'}">
 <span style="padding; background:#EFDFDF none repeat scroll 0 0; border:1px solid #E0ACA6; 

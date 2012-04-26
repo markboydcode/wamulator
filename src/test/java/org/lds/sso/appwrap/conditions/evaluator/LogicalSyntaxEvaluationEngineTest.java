@@ -131,13 +131,13 @@ public class LogicalSyntaxEvaluationEngineTest {
 		
 		EvaluationContext ctx = new EvaluationContext();
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("apps", "12345");
+		ctx.user.addAttributeValues("apps", new String[] {"12345"});
 		
 		Assert.assertFalse(ev.isConditionSatisfied(ctx), "should be false since has apps 12345");
 		
 		ctx.user = EasyMock.createMock(User.class);
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("apps", "-----");
+		ctx.user.addAttributeValues("apps", new String[] {"-----"});
 		
 		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should be true since doesn't have apps 12345");
 
@@ -163,15 +163,15 @@ public class LogicalSyntaxEvaluationEngineTest {
 		
 		EvaluationContext ctx = new EvaluationContext();
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("accid", "12345");
-		ctx.user.addAttribute("employee", "A");
-		ctx.user.addAttribute("mrn", "12345");
+		ctx.user.addAttributeValues("accid", new String[] {"12345"});
+		ctx.user.addAttributeValues("employee", new String[] {"A"});
+		ctx.user.addAttributeValues("mrn", new String[] {"12345"});
 		
 		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should be employee, member, and have ldsAccountId 12345");
 
 		ctx.user = EasyMock.createMock(User.class);
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("employee", "T");
+		ctx.user.addAttributeValues("employee", new String[] {"T"});
 		
 		Assert.assertFalse(ev.isConditionSatisfied(ctx), "should fail since not an employee");
 
@@ -233,26 +233,26 @@ public class LogicalSyntaxEvaluationEngineTest {
 		
 		EvaluationContext ctx = new EvaluationContext();
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("employee", "A");
-		ctx.user.addAttribute("mrn", "something");
+		ctx.user.addAttributeValues("employee", new String[]{"A"});
+		ctx.user.addAttributeValues("mrn", new String[]{"something"});
 		
 		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should be true for employee");
 
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("employee", "E");
-		ctx.user.addAttribute("mrn", "something");
+		ctx.user.addAttributeValues("employee", new String[]{"E"});
+		ctx.user.addAttributeValues("mrn", new String[]{"something"});
 		
 		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should true for member");
 
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("employee", "E");
-		ctx.user.addAttribute("accid", "12345");
+		ctx.user.addAttributeValues("employee", new String[]{"E"});
+		ctx.user.addAttributeValues("accid", new String[]{"12345"});
 		
 		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should be true for ldsapplication 12345");
 
 		ctx.user = new User("nm","pwd");
-		ctx.user.addAttribute("employee", "E");
-		ctx.user.addAttribute("accid", "2222");
+		ctx.user.addAttributeValues("employee", new String[]{"E"});
+		ctx.user.addAttributeValues("accid", new String[]{"2222"});
 		
 		Assert.assertFalse(ev.isConditionSatisfied(ctx), "should fail since not an employee, member, or has the correct ldsapplication");
 

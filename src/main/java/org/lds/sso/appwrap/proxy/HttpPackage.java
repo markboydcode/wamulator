@@ -2,6 +2,7 @@ package org.lds.sso.appwrap.proxy;
 
 import java.io.ByteArrayOutputStream;
 
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
 
@@ -43,7 +44,7 @@ public class HttpPackage {
 	public String repeatRequestErrMsg = null;
 	public String path = null;
 	public String query = null;
-	public String scheme = null;
+	public Scheme scheme = null;
     public boolean signMeInDetected = false;
     public boolean signMeOutDetected = false;
     /**

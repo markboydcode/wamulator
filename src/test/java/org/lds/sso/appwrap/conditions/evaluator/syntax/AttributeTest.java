@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
-import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
@@ -43,7 +42,7 @@ public class AttributeTest extends TestBaseClass {
         IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "test")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"test"});
         EasyMock.replay(usr);
 
         Map<String,String> env = new TreeMap<String,String>();
@@ -58,7 +57,7 @@ public class AttributeTest extends TestBaseClass {
         IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "testAAA"), new NvPair("test", "test"), new NvPair("test", "testBBB")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"testAAA", "test", "testBBB"});
         EasyMock.replay(usr);
 
         Map<String,String> env = new TreeMap<String,String>();
@@ -73,7 +72,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='p3' debug='true'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "p3/7u345/5u897/1u2001/")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"p3/7u345/5u897/1u2001/"});
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -89,7 +88,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this * test' debug='true'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is a super test")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test"});
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -105,7 +104,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this * test *' debug='true'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is a super test don't you think")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test don't you think"});
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -121,7 +120,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this * test'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is a super test don't you think")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test don't you think"});
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
 
@@ -136,7 +135,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this is not * test'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is a super test")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test"});
         EasyMock.replay(usr);
 
         Map<String,String> env = new TreeMap<String,String>();
@@ -151,7 +150,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='bogus' value='this is not * test'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is a super test")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test"});
         EasyMock.replay(usr);
 
         Map<String,String> env = new TreeMap<String,String>();
@@ -165,7 +164,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this is not \\* test'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is not * test")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is not * test"});
         EasyMock.replay(usr);
 
         Map<String,String> env = new TreeMap<String,String>();
@@ -194,7 +193,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this is not \\* test' debug='true'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is not * test")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is not * test"});
         EasyMock.replay(usr);
 
         Map<String,String> env = new TreeMap<String,String>();
@@ -215,7 +214,7 @@ public class AttributeTest extends TestBaseClass {
 		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals'/>");
 
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new NvPair[]{new NvPair("test", "this is not * test")});
+        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is not * test"});
         EasyMock.replay(usr);
 
         Map<String,String> env = new TreeMap<String,String>();

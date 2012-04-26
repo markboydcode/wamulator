@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,6 +23,7 @@ import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.identity.ExternalUserSource;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.identity.UserManager;
+import org.lds.sso.appwrap.identity.UserManager.Aggregation;
 import org.lds.sso.appwrap.io.SimpleErrorHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -47,10 +49,37 @@ public class WamulatorUserSource implements ExternalUserSource, ContentHandler {
 	 */
 	public static final String LEGACY_USER_DECL_PATH = "/config/users/user";
 
+	public static final String[] STRING_ARRAY = new String[] {};
+	
 	private UserManager userManager;
 	protected Map<String, List<String>> uniqueAttVals = new HashMap<String, List<String>>();
+	
+	/**
+	 * Used during parsing of user attributes to keep track of aggregation
+	 * strategy for an attribute for setting once all values have been loaded.
+	 */
+	private Map<String, Aggregation> aggregation = new HashMap<String, Aggregation>();
+
+	/**
+	 * Used during parsing of user attributes to keep track of all attribute
+	 * values for a single attribute potentially separated from other
+	 * declarations such that a single call to
+	 * {@link User#addAttributeValues(String, String[], Aggregation)} can be
+	 * made.
+	 */
+	private Map<String, List<String>> attVals = new HashMap<String, List<String>>();
 
 	private Path path = new Path();
+
+	/**
+	 * If true indicates that this store is only being used to preload user
+	 * attributes to customize {@link Aggregation} of values and therefore 
+	 * {@link #loadExternalUser(String, String)} will always return 
+	 * {@link Response#UserNotFound} allowing the following source to be the
+	 * authentication source and provide attributes subject to the 
+	 * {@link Aggregation} strategies installed.  
+	 */
+	private boolean preloadOnly;
 
 	@Override
 	public void setUserManager(UserManager umgr) {
@@ -68,6 +97,7 @@ public class WamulatorUserSource implements ExternalUserSource, ContentHandler {
 				}
 			}
 		}
+		this.preloadOnly = Boolean.parseBoolean(props.getProperty("preload-only"));
         String xml = props.getProperty("xml");
         
         if (StringUtils.isEmpty(xml)) {
@@ -109,6 +139,9 @@ public class WamulatorUserSource implements ExternalUserSource, ContentHandler {
 
 	@Override
 	public Response loadExternalUser(String username, String password) throws IOException {
+        if (preloadOnly) {
+        	return Response.UserNotFound;
+        }
         User usr = userManager.getUser(username);
         
         if (usr != null) {
@@ -125,10 +158,11 @@ public class WamulatorUserSource implements ExternalUserSource, ContentHandler {
         path.add(name);
 
 		if (path.matches("/users/user")) {
-			String usrNm = getStringAtt("name", path, atts);
+			String usrName = getStringAtt("name", path, atts);
 			String usrPwd = getStringAtt("pwd", path, atts, false);
 			UserManager mgr = cfg.getUserManager();
-			mgr.setUser(usrNm, usrPwd);
+			mgr.setUser(usrName, usrPwd);
+			this.aggregation.clear();
 		}
 		else if (path.matches("/users/user/sso-header") 
 				|| path.matches("/users/user/ldsApplications")) {
@@ -154,13 +188,42 @@ public class WamulatorUserSource implements ExternalUserSource, ContentHandler {
 				}
 				attValues.add(vl);
 			}
-
-			cfg.getUserManager().addAttributeForLastUserAdded(nl, vl);
+			// defines aggregation strategy between values found in multiple
+			// stores when stopOnFound is false. Aggregation can only be set
+			// for new attributes. An existing attribute's aggregation can not
+			// be set. That means that the first declaration of an attribute for
+			// a multi-valued on must include the aggregation or it will default
+			// to 'merge' and can't be changed thereafter. Valid values are:
+			//  'fix' = value or values defined here can not be overwritten
+			//  'merge' = values found in all stores are preserved
+			//  'replace' = values found in the last store contributing replace all previous values
+			List<String> vals = attVals.get(nl);
+			if (vals == null) {
+				vals = new ArrayList<String>();
+				attVals.put(nl, vals);
+			}
+			vals.add(vl);
+			String agg = getStringAtt("aggregation", path, atts, false);
+			aggregation.put(nl, Aggregation.lookup(agg));
 		}
 	}
 
 	@Override
 	public void endElement(String uri, String localName, String qName) throws SAXException {
+		if (path.matches("/users/user")) {
+			UserManager umgr = Config.getInstance().getUserManager();
+			
+			for(Entry<String, List<String>> ent : attVals.entrySet()) {
+				umgr.addAttributeValuesForLastUserAdded(ent.getKey(), 
+						ent.getValue().toArray(STRING_ARRAY), aggregation.get(ent.getKey()));
+			}
+			attVals.clear();
+			aggregation.clear();
+		}
+		else if (path.matches("/users")) {
+			attVals = null;
+			aggregation = null;
+		}
         path.remove(qName);
 	}
 

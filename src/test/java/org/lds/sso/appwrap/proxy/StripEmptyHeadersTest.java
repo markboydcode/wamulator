@@ -251,7 +251,7 @@ public class StripEmptyHeadersTest {
 
         // add all user header values for ngiwb1 so none will be empty
         User usr = cfg.getUserManager().getUser("ngiwb1");
-        usr.addAttribute("non-existent-att", "not-empty");
+        usr.addAttributeValues("non-existent-att", new String[] {"not-empty"});
         m3.setFollowRedirects(false);
         int s3 = c3.executeMethod(m3);
         String r3 = m3.getResponseBodyAsString().trim();

@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
+import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.identity.User;
@@ -77,9 +79,9 @@ public class TrafficManager {
      * @param i
      * @return
      */
-    public boolean isUnenforced(String scheme, String host, int port,
+    public boolean isUnenforced(Scheme scheme, String host, int port,
             String path, String query) {
-        SiteMatcher m = getSite(host, port);
+        SiteMatcher m = getSite(scheme, host, port);
         if (m != null && m.isUnenforced(scheme, host, port, path, query)) {
             return true;
         }
@@ -94,9 +96,9 @@ public class TrafficManager {
      * @param i
      * @return
      */
-    public boolean isEnforced(String scheme, String host, int port,
+    public boolean isEnforced(Scheme scheme, String host, int port,
             String path, String query) {
-        SiteMatcher m = getSite(host, port);
+        SiteMatcher m = getSite(scheme, host, port);
         if (m != null && m.isEnforced(scheme, host, port, path, query)) {
             return true;
         }
@@ -109,8 +111,8 @@ public class TrafficManager {
 	 * @param uri
 	 * @return
 	 */
-	public boolean isPermitted(String scheme, String host, int port, String action, String path, String query, User user) {
-	    SiteMatcher m = getSite(host, port);
+	public boolean isPermitted(Scheme scheme, String host, int port, String action, String path, String query, User user) {
+	    SiteMatcher m = getSite(scheme, host, port);
 	    if (m != null && m.isAllowed(scheme, host, port, action, path, query, user)) {
             return true;
 	    }
@@ -147,9 +149,36 @@ public class TrafficManager {
 		return lastMatcherAdded;
 	}
 
-	public SiteMatcher getSite(String host, int port) {
+	/**
+	 * Finds a SiteMatcher that has the same configuration of InboundScheme 
+	 * (which could be of type BOTH), host and port.
+	 * 
+	 * @param scheme
+	 * @param host
+	 * @param port
+	 * @return
+	 */
+	public SiteMatcher getSite(InboundScheme scheme, String host, int port) {
 		for (SiteMatcher rm : matchers) {
-			if (rm.matches(host, port)) {
+			if (rm.isSame(scheme, host, port)) {
+				return rm;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Finds a SiteMatcher for matching against URLs which only have a scheme of
+	 * http or https.
+	 * 
+	 * @param scheme
+	 * @param host
+	 * @param port
+	 * @return
+	 */
+	public SiteMatcher getSite(Scheme scheme, String host, int port) {
+		for (SiteMatcher rm : matchers) {
+			if (rm.matches(scheme, host, port)) {
 				return rm;
 			}
 		}
@@ -163,7 +192,7 @@ public class TrafficManager {
         if ("".equals(query)) {
             query = null;
         }
-        return this.isUnenforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
+        return this.isUnenforced(Scheme.fromMoniker(u.getScheme()), u.getHost(), port, u.getPath(), query);
     }
 
     public boolean isEnforced(String fullUri) throws URISyntaxException {
@@ -173,7 +202,7 @@ public class TrafficManager {
         if ("".equals(query)) {
             query = null;
         }
-        return this.isEnforced(u.getScheme(), u.getHost(), port, u.getPath(), query);
+        return this.isEnforced(Scheme.fromMoniker(u.getScheme()), u.getHost(), port, u.getPath(), query);
     }
 
 	public boolean isPermitted(String action, String fullUri, User user) throws URISyntaxException {
@@ -183,7 +212,7 @@ public class TrafficManager {
 		if ("".equals(query)) {
 			query = null;
 		}
-		return this.isPermitted(u.getScheme(), u.getHost(), port, action, u.getPath(), query, user);
+		return this.isPermitted(Scheme.fromMoniker(u.getScheme()), u.getHost(), port, action, u.getPath(), query, user);
 	}
 
 	public void addRewriteForRedirect(String from, String to) {
@@ -213,19 +242,29 @@ public class TrafficManager {
 	}
 
 	/**
-	 * Takes the passed in absolute URL gleaned from a Location header to see
-	 * if it matches any configured rewrite directives. Returns null if it does
-	 * not match any directive and hence need not be rewritten. Returns the 
-	 * a rewritten absolute URL if a match is found.
+	 * Returns true if any cookie rewrite directives exist indicating that
+	 * cookie header parsing should be persued.
+	 * 
+	 * @return
+	 */
+	public boolean cookieRewritesExist() {
+		return this.cookieRewrites.size() > 0;
+	}
+	
+	/**
+	 * Takes the passed set-cookie header value to see
+	 * if it the path of any contained cookie matches any configured cookie 
+	 * rewrite directives. If there are no matches it is returned unchanged.
+	 * If any matches are found then the returned value will contain rewritten
+	 * paths.
 	 * 
 	 * @param redirect
 	 * @return
 	 */
 	public String rewriteCookiePath(String cookie) {
-		CookiePathRewriter cpr = new CookiePathRewriter(cookie, this.cookieRewrites);
-		return cpr.getHeader();
+		return new CookiePathRewriter(cookie, this.cookieRewrites).getHeader();
 	}
-
+    
     public List<SiteMatcher> getSites() {
         return this.matchers;
     }

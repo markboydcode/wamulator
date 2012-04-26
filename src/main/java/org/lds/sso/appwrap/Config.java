@@ -1,9 +1,11 @@
 package org.lds.sso.appwrap;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
@@ -247,6 +250,14 @@ public class Config {
      * to true.
      */
 	private boolean allowLocalTrafficOnly = true;
+
+	/**
+	 * An optional console title override. If left empty or null then the
+	 * default will be used in JSPs.
+	 */
+	private String customConsoleTitle;
+
+	private String loginPageAction;
     
 
 	private static final String SERVER_NAME = determineCurrentVersion();
@@ -254,10 +265,24 @@ public class Config {
 	public static final String CANONICAL_CTX_QPARAM_NAME = "cctx";
 
 	/**
+	 * The default mime type if none is found for a given extension in the 
+	 * mime.types file.
+	 */
+	private static final String DEFAULT_MIME_TYPE = "application/octect-stream";
+
+	/**
+	 * The mapping from extension to content type loaded from mime.types.
+	 */
+	public static final Map<String, String> mimeTypes = new TreeMap<String, String>();
+	
+	/**
 	 * DISCARDS existing Config instance available from  {@link Config#instance}
 	 * and creates a new clean unititialized one.
 	 */
 	public Config() {
+		if (mimeTypes.size() == 0) {
+			loadMimeTypes();
+		}
 		loadSessionManager();
 		startRepeatRequestRecordSweeper();
 		// clear out any residue in xml loader
@@ -269,7 +294,65 @@ public class Config {
 		instance = this;
 	}
 
-    private static String determineCurrentVersion() {
+	/**
+	 * Loads extension to content type mappings from mime.types file. Need to 
+	 * handle lines like the following:
+	 * 
+	 * Multiple extensions for the same type.
+	 * <pre>
+	 * application/octet-stream	bin dms lrf mar so dist distz pkg bpk dump elc deploy
+	 * </pre>
+	 *
+	 * Multiple white-space characters between tokens.
+	 * <pre>
+	 * application/ogg					ogx 
+	 * </pre>
+	 *
+	 * Comment lines as identified by starting with a '#' character.
+	 * <pre>
+	 * # application/ocsp-response 
+	 * </pre>
+	 */
+    private void loadMimeTypes() {
+    	InputStream is = this.getClass().getClassLoader().getResourceAsStream("mime.types");
+    	if (is == null) {
+    		cLog.log(Level.SEVERE, "mime.types file not found on classpath. File extensions won't be resolveable to content-types.");
+    		return;
+    	}
+		BufferedReader in = new BufferedReader(new InputStreamReader(is));
+		String line = null;
+		try {
+			line = in.readLine();
+		}
+		catch (IOException e) {
+    		cLog.log(Level.SEVERE, "Unable to read from mime.types file. File extensions won't be resolveable to content-types.", e);
+    		return;
+		}
+		while (line != null) {
+			try {
+				if (! line.startsWith("#")) { // skip comment lines
+					String[] toks = line.split("\\s"); // split on whitespace
+					if (toks.length > 1) {
+    					String type = toks[0];
+    					for(int i=1; i<toks.length; i++) {
+    						String ext = toks[i].trim();
+    						
+    						if (! "".equals(ext)) {
+    							mimeTypes.put(ext, type);
+    						}
+    					}
+					}
+				}
+				line = in.readLine();
+			}
+			catch (IOException e) {
+	    		cLog.log(Level.SEVERE, "Unable to finish reading from mime.types file. Some file extensions may not be resolveable to content-types.", e);
+	    		return;
+			}
+    	}
+	}
+
+	private static String determineCurrentVersion() {
 		String version = "SSO Simulator in IDE";
 		/* first see if we can get it from the package structure. The maven 
 		 * build process automatically creates a suitable manifest file the 
@@ -546,6 +629,26 @@ public class Config {
 		this.cookieName = cookieName;
 	}
 
+	/**
+	 * Sets the action of the form in wamulator provided sign-in pages if the
+	 * default needs to change.
+	 * 
+	 * @param stringAtt
+	 */
+	public void setSignInPageAction(String action) {
+		this.loginPageAction = action;
+	}
+
+	/**
+	 * If not null or empty string then this becomes the action of the form for
+	 * the wamulator's sign-in pages.
+	 * 
+	 * @return
+	 */
+	public String getLoginAction() {
+		return this.loginPageAction;
+	}
+	
 	public void setSignInPage(String absoluteLoginUrl) {
 		this.loginPageUrl = absoluteLoginUrl;
 		this.signinRequiresCheck = true;
@@ -910,5 +1013,49 @@ public class Config {
      */
 	public void setAllowingLocalTrafficOnly(boolean bool) {
 		allowLocalTrafficOnly = bool;
+	}
+
+	/**
+	 * Overrides the title of console pages to help keep track of which window
+	 * or browser tab contains your http console.
+	 * 
+	 * @param consoleTitle
+	 */
+	public void setConsoleTitle(String consoleTitle) {
+		this.customConsoleTitle = consoleTitle;
+	}
+	
+	/**
+	 * Returns the value that should override the default title of console 
+	 * pages to help keep track of which window
+	 * or browser tab contains your http console.
+	 * 
+	 * @param consoleTitle
+	 */
+	public String getConsoleTitle() {
+		return customConsoleTitle;
+	}
+
+	/**
+	 * Uses the apache mime.types file from 
+	 * http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
+	 * to translate from a file extension to a content type or drop back to 
+	 * application/octet-stream if not found or if no extension is had.
+	 * 
+	 * @param path
+	 * @return
+	 */
+	public String getContentType(String path) {
+		int idx = path.lastIndexOf('.'); 
+		if (idx == -1) {
+			return DEFAULT_MIME_TYPE;
+		}
+		String ext = path.substring(idx+1);
+		String type = mimeTypes.get(ext);
+		
+		if (type == null) {
+			return DEFAULT_MIME_TYPE;
+		}
+		return type;
 	}
 }

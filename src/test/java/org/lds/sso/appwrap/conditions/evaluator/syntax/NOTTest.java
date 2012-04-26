@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
-import org.lds.sso.appwrap.NvPair;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.identity.User;
@@ -23,7 +22,7 @@ public class NOTTest extends TestBaseClass {
 				"</NOT>");
 		
 		// stuff evaluator will go after
-		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p4/7u345/5u897/1u2001/")};
+		String[] posAtts = new String[] {"p4/7u345/5u897/1u2001/"};
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
@@ -61,7 +60,7 @@ public class NOTTest extends TestBaseClass {
 				"</NOT>");
 		
 		// stuff evaluator will go after
-		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p4/7u345/5u897/1u2001/")};
+		String[] posAtts = new String[] {"p4/7u345/5u897/1u2001/"};
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
@@ -101,7 +100,7 @@ public class NOTTest extends TestBaseClass {
 				"</NOT>");
 		
 		// stuff evaluator will go after
-		NvPair[] posAtts = new NvPair[] {new NvPair("position", "p4/7u345/5u897/1u2001/")};
+		String[] posAtts = new String[] {"p4/7u345/5u897/1u2001/"};
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
