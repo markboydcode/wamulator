@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -21,9 +20,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,12 +81,6 @@ public class RequestHandler implements Runnable {
 
     private String connId;
 
-    private boolean logClosed = false;
-
-    /**
-     * Cache of html template pages loaded from files for some responses.
-     */
-    private Map<String, String> templates = new HashMap<String, String>();
 
     /**
      * Indicates whether or not the client side connection came over TLS/SSL.
@@ -157,7 +148,7 @@ public class RequestHandler implements Runnable {
             // client streams (make sure you're using streams that use
             // byte arrays, so things like GIF and JPEG files and file
             // downloads will transfer properly)
-            clientIn = new BufferedInputStream(pSocket.getInputStream());
+        	clientIn = new BufferedInputStream(pSocket.getInputStream());
             clientOut = new BufferedOutputStream(pSocket.getOutputStream());
 
             reqPkg = getHttpPackage(true, clientIn, false, log);
@@ -201,13 +192,6 @@ public class RequestHandler implements Runnable {
             }
 
             if(reqPkg.type == HttpPackageType.EMPTY) {
-                byte[] bytes = getResponse("404", "Bad Request",
-                        "404 Bad Request",
-                        "The request sent by the client was empty." + CRLF
-                        + "Ensure that the site(s) is(are) configured correctly.",
-                        null, reqPkg);
-                //Lets not even try to send a 404 in this case. WAMULAT-53
-                //sendProxyResponse(404, "Bad Request", bytes, reqPkg, clientIn, clientOut, user, startTime, log, true); //don't log these
                 return;
             }
             
@@ -272,7 +256,7 @@ public class RequestHandler implements Runnable {
             // for non-ignored traffic perform the enforcements and translations
             RequestLine appReqLn = reqPkg.requestLine; // default to request line as-is
             // default to no translation
-            EndPoint endpoint = new AppEndPoint(null, null, null, reqPkg.host, reqPkg.port, true, null, null);
+            EndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port, true, null, null);
 
             // we only want to manage and log site related traffic
             if (reqPkg.trafficType == TrafficType.SITE) {
@@ -305,7 +289,6 @@ public class RequestHandler implements Runnable {
                     String httpMsg = "Found, Redirecting for sign-in signal";
                     sendProxyResponse(302, httpMsg, get302RedirectToLoginPage(reqPkg, httpMsg), reqPkg, clientIn, clientOut, user,
                             startTime, log, true);
-                    return;
                 }
                 if (reqPkg.signMeOutDetected && token != null) {
                     String httpMsg = "Found, Redirecting for sign-out signal";
@@ -330,7 +313,7 @@ public class RequestHandler implements Runnable {
 
                 // endpoint is registered, translate request Uri and set cctx
                 // header
-                purgeAndInjectHeader(reqPkg.headerBfr, "cctx", endpoint.getCanonicalContextRoot());
+                purgeAndInjectHeader(reqPkg.headerBfr, "cctx", endpoint.getContextRoot());
 
                 if (!appMgr.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
                     // so it requires enforcement
@@ -500,14 +483,6 @@ public class RequestHandler implements Runnable {
                             log, true);
                     return;
                 }
-                /////// HACK to rewrite embedded host references during webdav tests
-                //rewriteEnbeddedDomainPattern(resPkg, "<---", "mail.ldschurch.org", "localhost.lds.org");
-//                List<Header> removed = resPkg.headerBfr.removeHeader(HeaderDef.TransferEncoding); 
-//                if(removed.size() > 0) {
-//                    for(Header h : removed) {
-//                        System.out.println("<--- removed header: " + h);
-//                    }
-//                }
                 LogUtils.fine(cLog, "Closing I/O to: {0}:{1}", appEndpoint.getHost(), endpointPort);
                 serverIn.close();
                 serverOut.close();
@@ -541,7 +516,6 @@ public class RequestHandler implements Runnable {
             resPkg.headerBfr.append(new Header(HttpPackage.CONN_ID_NM, this.connId));
 
             response = serializePackage((StartLine) resPkg.responseLine, resPkg);
-            int responseLength = Array.getLength(response);
 
             // send the response back to the client
             LogUtils.fine(cLog, "Returning response for: {0}", appReqLn);
@@ -605,51 +579,6 @@ public class RequestHandler implements Runnable {
         headerBfr.removeHeader(HttpPackage.SHIM_HANDLED_HDR_NM);
         headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
 	}
-
-	/**
-     * Hack for scanning body content in both directions for a domain and 
-     * replacing it with another during testing of webdav proxying. Kept here 
-     * for future reference but not currently used. Needs more work if we want
-     * to enable a general content rewriter mechanism and support it via config
-     * directives.
-     * 
-     * @param pkg
-     * @param msgPrfx
-     * @param oldPtrn
-     * @param newPtrn
-     * @throws IOException
-     */
-    private void rewriteEnbeddedDomainPattern(HttpPackage pkg, String msgPrfx, String oldPtrn, String newPtrn) throws IOException {
-        Header hdr = pkg.headerBfr.getHeader(HeaderDef.ContentType);
-        if (hdr != null && hdr.getValue().contains("text/xml")
-                && pkg.bodyStream != null
-                && pkg.bodyStream.size() > oldPtrn.length()) {
-            System.out.println(msgPrfx + " Scanning HTML to replace host.");
-            byte[] bytes = pkg.bodyStream.toByteArray();
-            int end = bytes.length - oldPtrn.length();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] repl = newPtrn.getBytes();
-
-            for (int i = 0; i < end; i++) {
-                String chunk = new String(bytes, i,
-                        oldPtrn.length());
-                if (chunk.equals(oldPtrn)) {
-                    System.out.println(msgPrfx + " replaced ref at " + i);
-                    baos.write(repl);
-                    i = i + oldPtrn.length() - 1;
-                } else {
-                    baos.write(bytes[i]);
-                }
-            }
-            baos.write(bytes, end, oldPtrn.length());
-            pkg.bodyStream = baos;
-            pkg.headerBfr.getHeader(HeaderDef.ContentLength);
-            pkg.headerBfr.removeHeader(HeaderDef.ContentLength);
-            pkg.headerBfr.append(new Header(HeaderDef.ContentLength, "" + baos.size()));
-            System.out.println(msgPrfx + " rewrote from: " + new String(bytes));
-            System.out.println(msgPrfx + " rewrote   to: " + new String(baos.toByteArray()));
-        }
-    }
 
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
@@ -794,9 +723,7 @@ public class RequestHandler implements Runnable {
 								reqPkg.trafficType,
 								method,
 								reqPkg.hostHdr,
-								(reqPkg.signMeInDetected
-										|| reqPkg.signMeOutDetected ? reqPkg.origRequestList
-										.getUri() : uri),
+								(reqPkg.signMeInDetected || reqPkg.signMeOutDetected ? reqPkg.origRequestList.getUri() : uri),
 								(reqPkg.scheme != null && reqPkg.scheme == Scheme.HTTPS),
 								false);
 			}
@@ -891,8 +818,6 @@ public class RequestHandler implements Runnable {
      */
     private void determineTrafficType(HttpPackage pkg) throws URISyntaxException {
         TrafficManager appMgr = cfg.getTrafficManager();
-        StartLine sl = (StartLine)pkg.requestLine;
-        
         SiteMatcher site = appMgr.getSite(pkg.scheme, pkg.host, pkg.port);
 
         if (site != null) {
@@ -1118,7 +1043,6 @@ public class RequestHandler implements Runnable {
     	} catch(IOException e) { /* Do nothing */ }
 
         if (log != null) {
-            logClosed = true;
             log.flush();
             try {
             	fos.close();
@@ -1428,9 +1352,6 @@ public class RequestHandler implements Runnable {
      * Used to cache the next line to be read from an input stream as received
      * from calling readLine. This is used in unfolding "folded" headers.
      */
-    private boolean nextLineIsCached = false;
-    private String cachedNextLine = null;
-
     private String readLine(InputStream in, PrintStream log) throws IOException {
         // reads a line of text from an InputStream
         StringBuffer data = new StringBuffer("");

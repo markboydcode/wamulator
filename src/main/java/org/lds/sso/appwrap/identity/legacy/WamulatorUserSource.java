@@ -179,6 +179,7 @@ public class WamulatorUserSource implements ExternalUserSource, ContentHandler {
 		}
 		else if (path.matches("/users/user/att")) {
 			String nl = getStringAtt("name", path, atts);
+			nl = nl.toLowerCase();
 			String vl = getStringAtt("value", path, atts);
 			List<String> attValues = uniqueAttVals.get(nl);
 			if (attValues != null) { // so enforcing uniqueness, are we unique?

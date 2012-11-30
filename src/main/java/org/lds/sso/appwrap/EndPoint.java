@@ -9,7 +9,8 @@ package org.lds.sso.appwrap;
 public interface EndPoint extends Comparable<EndPoint> {
 	public int compareTo(EndPoint o);
 	public String getId();
-	public String getCanonicalContextRoot();
+	public String getContextRoot();
+	public String getQueryString();
     public Integer getDeclarationOrder();
     public void setDeclarationOrder(int index);
 }

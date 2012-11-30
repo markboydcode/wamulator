@@ -1,0 +1,7 @@
+input[type=submit] {
+	filter:progid:DXImageTransform.Microsoft.Gradient(endColorstr='#d6d4d0', startColorstr='#f7f5ee', gradientType='0');
+}
+
+input[type=submit]:hover {
+	filter:progid:DXImageTransform.Microsoft.Gradient(endColorstr='#e0deda', startColorstr='#fffcf5', gradientType='0');
+}

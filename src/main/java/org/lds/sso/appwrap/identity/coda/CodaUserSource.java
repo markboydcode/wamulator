@@ -110,7 +110,7 @@ public class CodaUserSource implements ExternalUserSource {
 
         User user = userManager.setUser(username, password);
         for (Entry<String, String> ent : userAtts.entrySet()) {
-            user.addAttributeValues(ent.getKey(), new String[] {ent.getValue()});
+            user.addAttributeValues(ent.getKey().toLowerCase(), new String[] {ent.getValue()});
         }
 		return Response.UserInfoLoaded;
 	}

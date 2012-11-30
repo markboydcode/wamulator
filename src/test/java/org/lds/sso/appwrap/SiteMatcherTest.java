@@ -24,9 +24,9 @@ public class SiteMatcherTest {
         TrafficManager tman = cfg.getTrafficManager();
         SiteMatcher m = tman.getSite(Scheme.HTTP, "local.lds.org", 80);
         EndPoint ep = m.getEndpointForCanonicalUrl("/a/b/c/d");
-        Assert.assertEquals(ep.getCanonicalContextRoot(), "/a/b/c", "/a/b/c should be found before /a mapping");
+        Assert.assertEquals(ep.getContextRoot(), "/a/b/c", "/a/b/c should be found before /a mapping");
         ep = m.getEndpointForCanonicalUrl("/a/b/d/e");
-        Assert.assertEquals(ep.getCanonicalContextRoot(), "/a", "/a should be found");
+        Assert.assertEquals(ep.getContextRoot(), "/a", "/a should be found");
    }
 
     @Test

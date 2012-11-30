@@ -1,0 +1,22 @@
+body { 
+  color:#000 !important;
+  background: none !important;
+}
+
+#head { display:none; }
+#body, #foot { border:0 !important; background:none !important;}
+#foot, #head, #body, .container { width:auto !important; }
+
+/* Layout
+-------------------------------------------------------------- */
+
+.container {
+  background: none;
+}
+
+/* If you're having trouble printing relative links, uncomment and customize this:
+   (note: This is valid CSS3, but it still won't go through the W3C CSS Validator) */
+
+/* a[href^="/"]:after {
+  content: " (http://www.yourdomain.com" attr(href) ") ";
+} */

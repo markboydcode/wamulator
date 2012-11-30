@@ -196,9 +196,9 @@ public class AppEndPoint implements EndPoint {
      */
 	private Header cctxHeader = null;
 
-	private String canonicalContextRoot = null;
-
-	private String applicationContextRoot = null;
+	private String contextRoot = null;
+	
+	private String queryString = null;
 
 	int endpointPort = -1;
 	
@@ -280,32 +280,39 @@ public class AppEndPoint implements EndPoint {
 	
 	protected List<String> purgedHeaders;
 
-	public AppEndPoint(String canonicalHost, String canonicalCtx, String appCtx, 
-	        String host, int port, 
+	public AppEndPoint(String canonicalHost, String cctx, String host, int port, 
 	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
-	    this(null, canonicalHost, canonicalCtx, appCtx, host, port, 
-	            OutboundScheme.HTTP, -1, 
+	    
+		this(null, canonicalHost, cctx, host, port, OutboundScheme.HTTP, -1, 
 	            preserveHost, hostHdr, policyServiceGateway);
 	}
 	
-	public AppEndPoint(InboundScheme canonicalScheme, String canonicalHost, String canonicalCtx, String appCtx, 
+	public AppEndPoint(InboundScheme canonicalScheme, String canonicalHost, String cctx, 
 	        String host, int port, OutboundScheme appScheme, int outgoingTlsPort,
-	        boolean preserveHost, String hostHdr,
-            String policyServiceGateway) {
-        this.endpointPort = port;
+	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
+		
+		this(canonicalScheme, canonicalHost, cctx, null, host, port, appScheme, outgoingTlsPort,
+		     preserveHost, hostHdr, policyServiceGateway);
+	}
+	
+	public AppEndPoint(InboundScheme canonicalScheme, String canonicalHost, String cctx, 
+	        String queryString, String host, int port, OutboundScheme appScheme, int outgoingTlsPort,
+	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
+        
+		this.endpointPort = port;
         this.endpointTlsPort = outgoingTlsPort;
         this.canonicalScheme = (canonicalScheme == null || 
         		canonicalScheme.getMoniker().toLowerCase().equals(InboundScheme.HTTPS.moniker) ? InboundScheme.HTTPS : InboundScheme.HTTP);
         this.canonicalHost = canonicalHost;
-        this.canonicalContextRoot = canonicalCtx;
-        if (canonicalCtx != null) {
-        	String cctx = canonicalCtx;
-        	if (canonicalCtx.endsWith("/")) {
-        		cctx = canonicalCtx.substring(0,canonicalCtx.lastIndexOf('/'));
+        this.contextRoot = cctx;
+        if (cctx != null) {
+        	String context = cctx;
+        	if (cctx.endsWith("/")) {
+        		context = cctx.substring(0,cctx.lastIndexOf('/'));
         	}
-            this.cctxHeader = new Header(CCTX_HEADER, cctx);
+            this.cctxHeader = new Header(CCTX_HEADER, context);
         }
-        this.applicationContextRoot = appCtx;
+        this.queryString = queryString;
         this.host = host;
         if (appScheme != null && appScheme.moniker.toLowerCase().equals(OutboundScheme.HTTPS.moniker)) {
             this.appScheme = OutboundScheme.HTTPS;
@@ -339,10 +346,19 @@ public class AppEndPoint implements EndPoint {
 	 * @param injectScheme
 	 * @param schemeHeader
 	 */
-    public AppEndPoint(InboundScheme scheme, String host, String cctx, String tpath, String thost, int tport, OutboundScheme tscheme,
+    public AppEndPoint(InboundScheme scheme, String host, String cctx, String thost, int tport, OutboundScheme tscheme,
     		 int outgoingTlsPort, boolean preserve, String hostHdr, String policyServiceGateway, boolean injectScheme,
 			String schemeHeader) {
-    	this(scheme, host, cctx, tpath, thost, tport, tscheme, outgoingTlsPort, preserve, hostHdr, policyServiceGateway);
+    	
+    	this(scheme, host, cctx, null, thost, tport, tscheme, outgoingTlsPort, preserve, hostHdr, policyServiceGateway, 
+        		injectScheme, schemeHeader);
+    }
+    
+    public AppEndPoint(InboundScheme scheme, String host, String cctx, String queryString, String thost, int tport, 
+    		OutboundScheme tscheme, int outgoingTlsPort, boolean preserve, String hostHdr, String policyServiceGateway, 
+    		boolean injectScheme, String schemeHeader) {
+    	
+    	this(scheme, host, cctx, queryString, thost, tport, tscheme, outgoingTlsPort, preserve, hostHdr, policyServiceGateway);
     	this.injectSchemeHeader = injectScheme;
     	if (schemeHeader != null) {
         	this.schemeHeaderName = schemeHeader;
@@ -350,7 +366,7 @@ public class AppEndPoint implements EndPoint {
 	}
 
 	private void updateId() {
-        this.id = this.canonicalHost + this.canonicalContextRoot + "->URI=" + host + ":" + endpointPort + applicationContextRoot;
+        this.id = this.canonicalHost + this.contextRoot + "->URI=" + host + ":" + endpointPort;
 	}
     
 	/**
@@ -410,20 +426,20 @@ public class AppEndPoint implements EndPoint {
 	    return this.preserveHostHeader;
 	}
 	
-	public String getCanonicalContextRoot() {
-		return canonicalContextRoot;
+	public String getContextRoot() {
+		return contextRoot;
 	}
 
-	public void setCanonicalContextRoot(String canonicalContextRoot) {
-		this.canonicalContextRoot = canonicalContextRoot;
+	public void setContextRoot(String contextRoot) {
+		this.contextRoot = contextRoot;
 	}
-
-	public String getApplicationContextRoot() {
-		return applicationContextRoot;
+	
+	public String getQueryString() {
+		return queryString;
 	}
-
-	public void setApplicationContextRoot(String applicationContextRoot) {
-		this.applicationContextRoot = applicationContextRoot;
+	
+	public void setQueryString(String queryString) {
+		this.queryString = queryString;
 	}
 
 	/**
@@ -498,19 +514,18 @@ public class AppEndPoint implements EndPoint {
 	 * @throws MalformedURLException 
 	 */
 	public RequestLine getAppRequestUri(HttpPackage reqPkg) throws MalformedURLException {
-		if (canonicalContextRoot == null) { // no translation available
+		if (contextRoot == null) { // no translation available
 			return reqPkg.requestLine;
 		}
-		if (!reqPkg.requestLine.getUri().toLowerCase().startsWith(canonicalContextRoot.toLowerCase())) {
-			return null;
+		String uri = reqPkg.requestLine.getUri();
+		if (!UriMatcher.matches(uri, contextRoot)) {
+			int queryIndex = uri.indexOf("?");
+			if (!UriMatcher.matches(uri.substring(queryIndex), queryString)) {
+				return null;
+			}
 		}
-		cLog.fine("REWRITE: Re-writing request URL, replacing canonical context root: " + canonicalContextRoot +
-					" with application context root: " + applicationContextRoot);
 
-        StartLine appReqLn = new StartLine(reqPkg.requestLine.getMethod(),
-                applicationContextRoot
-                        + reqPkg.requestLine.getUri().substring(
-                                canonicalContextRoot.length()),
+        StartLine appReqLn = new StartLine(reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri(),
                 reqPkg.requestLine.getHttpDecl());
 		return appReqLn;
 	}
@@ -684,7 +699,6 @@ public class AppEndPoint implements EndPoint {
 	private void adjustHostHdr(HttpPackage reqPkg) {
         if (! this.preserveHostHeader) {
             Header hhdr = reqPkg.headerBfr.getHeader(HeaderDef.Host);
-            String h = reqPkg.hostHdr;
             String hostHdr = (getHostHeader() != null ?
                     getHostHeader() :
                         (getHost()

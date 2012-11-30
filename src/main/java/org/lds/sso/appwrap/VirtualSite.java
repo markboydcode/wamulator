@@ -2,9 +2,7 @@ package org.lds.sso.appwrap;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Represents an internet site that is implemented as a reverse proxy 
@@ -103,7 +101,7 @@ public class VirtualSite {
 	 */
 	public AppEndPoint getAppEndpointForCanonicalUrl(String canUrl) {
 		for(AppEndPoint ep : apps.values()) {
-			if (canUrl.startsWith(ep.getCanonicalContextRoot())) {
+			if (canUrl.startsWith(ep.getContextRoot())) {
 				return ep;
 			}
 		}

@@ -37,6 +37,7 @@ import org.lds.sso.appwrap.identity.ldap.LdapUserSource;
 import org.lds.sso.appwrap.identity.legacy.WamulatorUserSource;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.io.SimpleErrorHandler;
+import org.lds.sso.appwrap.policy.WamulatorPolicySource;
 import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
@@ -67,22 +68,13 @@ public class XmlConfigLoader2 {
     public static final String PARSING_CONFIG = "config-instance";
     public static final String PARSING_PATH = "path";
     public static final String PARSING_CURR_SITE = "by-site-host";
-    public static final String PARSING_IS_IN_CONDITION = "is-in-condition";
-    public static final String PARSING_CONDITION_CONTENT = "condition-content";
-    public static final String PARSING_CONDITION_ALIAS = "condition-alias";
 	public static final String PARSING_USR_SRC_CONTENT = "user-source-content";
 	public static final String PARSING_CURR_EXT_USR_SRC = "user-source";
-	
-	public static final String PARSING_PURGED_HDRS = "purge-headers";
-	public static final String PARSING_FIXED_ATTS = "fixed-attributes";
-	public static final String PARSING_PROFILE_ATTS = "profile-attributes";
-	
-
+	public static final String PARSING_POL_SRC_CONTENT = "policy-source-content";
+	public static final String PARSING_CURR_EXT_POL_SRC = "policy-source";
 
     public static final String PROP_DEFAULT = "property";
-    
     private static final String XSD_LOCATION = "org/lds/sso/appwrap/wamulator-5.0.xsd";
-    
     private static final Schema schema;
     
     static {
@@ -132,7 +124,8 @@ public class XmlConfigLoader2 {
      * @param key - The ConfigProperty that keys this value in the parsingContextAccessor
      * @return - The value keyed by the ConfigProperty passed
      */
-    public static <T> T get(ConfigProperty<T> key) {
+    @SuppressWarnings("unchecked")
+	public static <T> T get(ConfigProperty<T> key) {
     	return (T)parsingContextAccessor.get().get(key.name);
     }
     
@@ -185,12 +178,6 @@ public class XmlConfigLoader2 {
         parsingContextAccessor.get().put(PARSING_CONFIG,
                 Config.getInstance());
         put(PARSING_ALIASES, new AliasHolder());
-        parsingContextAccessor.get().put(PARSING_FIXED_ATTS, 
-        		new HashMap<String, List<String>>());
-        parsingContextAccessor.get().put(PARSING_PURGED_HDRS, 
-        		new ArrayList<String>());
-        parsingContextAccessor.get().put(PARSING_PROFILE_ATTS, 
-        		new HashMap<String, String>());
         
         boolean validate = content.contains(WAMULATOR_SCHEMA_NAMESPACE_URI);
         // now run alias and embedded condition parser
@@ -673,6 +660,14 @@ public class XmlConfigLoader2 {
 
     public static class CfgContentHandler implements ContentHandler {
 
+    	// cctx-mapping attributes needed when processing policy-source file
+        String curCctx, curThost, curCscheme, curTscheme, curHostHdr;
+        String curPolicyServiceGateway,curSchemeHeaderOvrd, curInjectSchemeHeader;
+        boolean curPreserveHost, curInjectScheme;
+        OutboundScheme curOutgoingScheme;
+        InboundScheme curIncomingScheme;
+        int curTsslPort, curTport;
+    	
 		public CfgContentHandler() {
         }
 
@@ -688,6 +683,7 @@ public class XmlConfigLoader2 {
             Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
 
             path.add(name);
+            
             if (path.matches("/config")) {
                 String cpVal = atts.getValue(Config.CONSOLE_PORT_ALIAS);
                 if ("auto".equals(cpVal)) {
@@ -720,10 +716,21 @@ public class XmlConfigLoader2 {
                     cfg.setRestVersion(ver);
                 }
             } else if (path.matches("/config/conditions")) {
-                // prevents log of unsupported element below since captured here
-            } else if (path.matches("/config/conditions/condition")) {
-                // allows nested elements to be ignored without warning message of unsupported elements
-                parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION, Boolean.TRUE);
+            	// break backwards compatibility of legacy /config/conditions construct and
+            	// indicate use of new /config/sso-traffic/by-sity/cctx-mapping/policy-source
+            	// objects instead
+            	throw new IllegalArgumentException("The <conditions> element and "
+            			+ "nested <condition> declarations are no longer supported "
+            			+ "directly within "
+            			+ "the wamulator config file's XML. <conditions> has been "
+            			+ "replaced by one-to-many <policy-source> elements within "
+            			+ "the <cctx-mapping> element."
+            			+ "See wiki documentation for how to move your existing "
+            			+ "<conditions> element and its content to one or more "
+            			+ "<policy-source> declarations. The newer policy-source "
+            			+ "configuration should point to an xml file that is in the "
+            			+ "same format as the policy exposee export. This greatly "
+            			+ "simplifies wamulator configuration.");
             } else if (path.matches("/config/proxy-timeout")) {
                 cfg.setProxyInboundSoTimeout(getIntegerAtt("inboundMillis",
                         path, atts));
@@ -845,10 +852,8 @@ public class XmlConfigLoader2 {
                 // is currently supported. remove this once backwards references
                 // and env macros are added.
                 if (!cctx.endsWith("*")) {
-                    throw new IllegalArgumentException(
-                            "cctx must end with '*' in " + path);
+                    throw new IllegalArgumentException("cctx must end with '*' in " + path);
                 }
-                cctx = cctx.substring(0, cctx.length() - 1);
                 String type = getStringAtt("content-type", path, atts, false);
                 TrafficManager trafficMgr = cfg.getTrafficManager();
                 SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
@@ -860,35 +865,33 @@ public class XmlConfigLoader2 {
                                     + "*' in "
                                     + path
                                     + " is consumed by cctx mapping for '"
-                                    + ep.getCanonicalContextRoot()
+                                    + ep.getContextRoot()
                                     + "*' which precedes it in document order and hence "
                                     + "will never receive any requests.");
                 }
                 sm.addFileMapping(cctx, file, type);
+                UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx);
+            	sm.addUnenforcedUri(ue);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
-                String cctx = getStringAtt("cctx", path, atts);
-                String thost = getStringAtt("thost", path, atts);
-                OutboundScheme outgoingScheme = OutboundScheme.fromMoniker(
-                		getStringAtt("tscheme", path, atts, false));
-                String policyServiceGateway = getStringAtt("policy-service-url-gateway", path, atts, false);
-                String schemeHeaderOvrd = getStringAtt("scheme-header-name", path, atts, false);
-                String injectSchemeHeader = getStringAtt("inject-scheme-header", path, atts, false);
-                boolean injectScheme = (injectSchemeHeader == null ? true : Boolean
-                        .parseBoolean(injectSchemeHeader));
-                String hostHdr = getStringAtt("host-header", path, atts, false);
+                curCctx = getStringAtt("cctx", path, atts);
+                curThost = getStringAtt("thost", path, atts);
+                curOutgoingScheme = OutboundScheme.fromMoniker(getStringAtt("tscheme", path, atts, false));
+                curPolicyServiceGateway = getStringAtt("policy-service-url-gateway", path, atts, false);
+                curSchemeHeaderOvrd = getStringAtt("scheme-header-name", path, atts, false);
+                curInjectSchemeHeader = getStringAtt("inject-scheme-header", path, atts, false);
+                curInjectScheme = (curInjectSchemeHeader == null ? true : Boolean.parseBoolean(curInjectSchemeHeader));
+                curHostHdr = getStringAtt("host-header", path, atts, false);
                 if (getStringAtt("scheme", path, atts,
                         false) != null) {
                 	throw new SAXException("Attribute 'scheme' of " + path
                 			+ " has been replaced by 'tscheme'. Please replace "
                 			+ "'scheme' with 'tscheme'.");
                 }
-                InboundScheme incomingScheme = InboundScheme.fromMoniker(
+                curIncomingScheme = InboundScheme.fromMoniker(
                 		getStringAtt("cscheme", path, atts, false));
-                String preserveHost = getStringAtt("preserve-host", path, atts,
-                        false);
-                boolean preserve = (preserveHost == null ? true : Boolean
-                        .parseBoolean(preserveHost));
-                int tport = -1;
+                String preserveHost = getStringAtt("preserve-host", path, atts, false);
+                curPreserveHost = (preserveHost == null ? true : Boolean.parseBoolean(preserveHost));
+                curTport = -1;
                 String tportS = atts.getValue("tport");
                 // check for auto console-port being used and allow tport to
                 // follow if indicated
@@ -901,117 +904,60 @@ public class XmlConfigLoader2 {
                     // attribute name for the console port on the config element
                     // and figure out the port at runtime.
 
-                    tport = 0;
+                    curTport = 0;
                 } else {
-                    tport = getIntegerAtt("tport", path, atts);
+                    curTport = getIntegerAtt("tport", path, atts);
                 }
 
-                int outgoingTlsPort = getIntegerAtt("tSslPort", path, atts, false);
-                if (outgoingTlsPort == -1) {
-                    if (outgoingScheme == OutboundScheme.SAME) {
+                curTsslPort = getIntegerAtt("tSslPort", path, atts, false);
+                if (curTsslPort == -1) {
+                    if (curOutgoingScheme == OutboundScheme.SAME) {
                     	throw new IllegalArgumentException("tscheme of " 
                     			+ path + " specifies 'same' but no tSslPort is specified for outbound https traffic.");
                     }
-                    if (outgoingScheme == OutboundScheme.HTTPS) {
+                    if (curOutgoingScheme == OutboundScheme.HTTPS) {
                     	throw new IllegalArgumentException("tscheme of " 
                     			+ path + " specifies 'https' but no tSslPort is specified for outbound https traffic.");
                     }
                 }
-
-                String tpath = getStringAtt("tpath", path, atts);
-                // enforce terminating asterisk solely for reminding readers of
-                // the config file that these are uri root contexts that will be
-                // rewritten. We could add support for regex like mod-rewrite.
-                if (!cctx.endsWith("*") || !tpath.endsWith("*")) {
-                    throw new IllegalArgumentException(
-                            "cctx and tpath values must end with '*' in "
-                                    + path);
-                }
-                cctx = cctx.substring(0, cctx.length() - 1);
-                tpath = tpath.substring(0, tpath.length() - 1);
-                TrafficManager trafficMgr = cfg.getTrafficManager();
-                SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-                EndPoint ep = sm.getEndpointForCanonicalUrl(cctx);
-                if (ep != null) {
-                    throw new IllegalArgumentException(
-                            "Mapping for cctx='"
-                                    + cctx
-                                    + "*' in "
-                                    + path
-                                    + " is consumed by cctx mapping for '"
-                                    + ep.getCanonicalContextRoot()
-                                    + "*' which precedes it in document order and hence "
-                                    + "will never receive any requests.");
-                }
-                ep = new AppEndPoint(incomingScheme, sm.getHost(), cctx, 
-                		tpath, thost, tport, outgoingScheme, outgoingTlsPort, preserve, hostHdr, 
-                		policyServiceGateway, injectScheme, schemeHeaderOvrd);
-                sm.addMapping(ep);
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {    
+            	WamulatorPolicySource src = new WamulatorPolicySource(parsingContextAccessor, curCctx, curThost, 
+            			curCscheme, curTscheme, curHostHdr, curPolicyServiceGateway,curSchemeHeaderOvrd, 
+            			curInjectSchemeHeader, curPreserveHost, curInjectScheme, curOutgoingScheme, curIncomingScheme,
+            			curTsslPort, curTport);
+            	parsingContextAccessor.get().put(PARSING_CURR_EXT_POL_SRC, src);
+                parsingContextAccessor.get().put(PARSING_POL_SRC_CONTENT, new StringBuffer());
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {
-                parsingContextAccessor.get().put(PARSING_PURGED_HDRS, new ArrayList<String>());
-                parsingContextAccessor.get().put(PARSING_FIXED_ATTS, new HashMap<String, List<String>>());
-                parsingContextAccessor.get().put(PARSING_PROFILE_ATTS, new HashMap<String, String>());
-
-            	
-            	/* this match and the next two process these types of delcarations
-	<headers>
-      <fixed-value name='policy-something' value='fixed-value' />
-      <fixed-value name='policy-something' value='a-second-value' />
-      <profile-att name='policy-cn' attribute='cn' />
-      <profile-att name='policy-ldsaccountid' attribute='ldsaccountid' />
-    </headers>
-
-            	 */
-            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers/purge-header")) {
-                String nm = getStringAtt("name", path, atts);
-            	@SuppressWarnings("unchecked")
-				List<String> purgedHdrsList = (List<String>) parsingContextAccessor.get().get(PARSING_PURGED_HDRS);
-            	purgedHdrsList.add(nm);
-            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers/fixed-value")) {
-                String nm = getStringAtt("name", path, atts);
-                String vl = getStringAtt("value", path, atts);
-            	@SuppressWarnings("unchecked")
-				Map<String, List<String>> fixedHdrsMap = (Map<String, List<String>>) parsingContextAccessor.get().get(PARSING_FIXED_ATTS);
-            	List<String> vals = fixedHdrsMap.get(nm);
-            	if (vals == null) {
-            		vals = new ArrayList<String>();
-            		fixedHdrsMap.put(nm, vals);
-            	}
-            	vals.add(vl);
-            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers/profile-att")) {
-                String nm = getStringAtt("name", path, atts);
-                String att = getStringAtt("attribute", path, atts);
-            	@SuppressWarnings("unchecked")
-				Map<String, String> profileHdrsMap = (Map<String, String>) parsingContextAccessor.get().get(PARSING_PROFILE_ATTS);
-            	profileHdrsMap.put(nm, att);
-            } else if (path.matches("/config/sso-traffic/by-site/unenforced")) {
-                TrafficManager trafficMgr = cfg.getTrafficManager();
-                SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-                CPathParts cp = getRelUriAtt("cpath", path, atts);
-                isDeclarationUseful(sm, cp, path);
-                UnenforcedUri uu = new UnenforcedUri(sm.getScheme(), sm
-                        .getHost(), sm.getPort(), cp.path, cp.query,
-                        cp.rawValue);
-                sm.addUnenforcedUri(uu);
+            	// break backwards compatibility of legacy /config/sso-traffic/by-site/cctx-mapping/headers 
+            	// construct and indicate use of new /config/sso-traffic/by-sity/cctx-mapping/policy-source
+            	// objects instead
+            	throw new IllegalArgumentException("The <headers> element and "
+            			+ "nested <fixed-value>, <profile-att>, <purge-header> "
+            			+ "declarations are no longer supported directly within "
+            			+ "the wamulator config file's XML. <headers> has been "
+            			+ "replaced by one-to-many <policy-source> elements within "
+            			+ "the <cctx-mapping> element."
+            			+ "See wiki documentation for how to move your existing "
+            			+ "<headers> element and its content to one or more "
+            			+ "<policy-source> declarations. The newer policy-source "
+            			+ "configuration should point to an xml file that is in the "
+            			+ "same format as the policy exposee export. This greatly "
+            			+ "simplifies wamulator configuration.");
             } else if (path.matches("/config/sso-traffic/by-site/allow")) {
-                String actionAtt = getStringAtt("action", path, atts);
-                actionAtt = actionAtt.replace(" ", "");
-                String[] actions = actionAtt.split(",");
-                String cond = null;
-                try {
-                    cond = getCondition(path, atts, true);
-                } catch (EvaluationException ee) {
-                    throw new SAXException(ee);
-                }
-                String syntax = get(PARSING_ALIASES).getAliasValue(cond);
-
-                TrafficManager trafficMgr = cfg.getTrafficManager();
-                SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-                CPathParts cp = getRelUriAtt("cpath", path, atts);
-                isDeclarationUseful(sm, cp, path);
-                AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm
-                        .getPort(), cp.path, cp.query, actions, cp.rawValue);
-                sm.addAllowedUri(au, cond, syntax);
+            	// break backwards compatibility of legacy /config/sso-traffic/by-site/allow construct
+            	// and indicate use of new /config/sso-traffic/by-sity/cctx-mapping/policy-source
+            	// objects instead
+            	throw new IllegalArgumentException("The <allow> and <unenforced elements are no "
+            			+ "longer supported directly within the wamulator config file's XML. "
+            			+ "The <allow> and <unenforced elements have been "
+            			+ "replaced by one-to-many <policy-source> elements within "
+            			+ "the <cctx-mapping> element."
+            			+ "See wiki documentation for how to move your existing "
+            			+ "<allow> and <unenforced> elements to one or more "
+            			+ "<policy-source> declarations. The newer policy-source "
+            			+ "configuration should point to an xml file that is in the "
+            			+ "same format as the policy exposee export. This greatly "
+            			+ "simplifies wamulator configuration.");
             } else if (path.matches("/config/sso-traffic/by-site/entitlements")) {
                 // used only for containment of nested <allow> elements to
                 // differentiate
@@ -1118,10 +1064,6 @@ public class XmlConfigLoader2 {
                                 + "/config/sso-traffic/by-site element and be renamed to just 'entitlements'. "
                                 + "Its policy-domain attribute is no longer used but its nested content "
                                 + "remains unchanged. Please apply these changes and restart.");
-            } else {
-                if (parsingContextAccessor.get().get(PARSING_IS_IN_CONDITION) != Boolean.TRUE) {
-                    LogUtils.severe(cLog, "Unsupported element at {0} ignoring.", path);
-                }
             }
         }
 
@@ -1131,35 +1073,24 @@ public class XmlConfigLoader2 {
             Config cfg = (Config) parsingContextAccessor.get().get(
                     PARSING_CONFIG);
 
-            if (path.matches("/config/conditions/condition")) {
-                parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION,
-                        Boolean.FALSE);
-            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {
-            	@SuppressWarnings("unchecked")
-				List<String> purgedHdrsList = (List<String>) parsingContextAccessor.get().get(PARSING_PURGED_HDRS); 
-            	@SuppressWarnings("unchecked")
-				Map<String, List<String>> fixedHdrsMap = (Map<String, List<String>>) parsingContextAccessor.get().get(PARSING_FIXED_ATTS); 
-                @SuppressWarnings("unchecked")
-				Map<String, String> profileHdrsMap = (Map<String, String>) parsingContextAccessor.get().get(PARSING_PROFILE_ATTS);
-                TrafficManager trafficMgr = cfg.getTrafficManager();
-                SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
-                EndPoint ep = sm.getLastMappingAdded();
-                if (ep instanceof AppEndPoint) {
-                	AppEndPoint aep = (AppEndPoint) ep;
-                	aep.setFixedHeaders(fixedHdrsMap);
-                	aep.setProfileHeaders(profileHdrsMap);
-                	aep.setPurgedHeaders(purgedHdrsList);
-                }
-            } else if (path.matches("/config/user-source")) {
+            if (path.matches("/config/user-source")) {
                 ExternalUserSource src = (ExternalUserSource) parsingContextAccessor.get().get(PARSING_CURR_EXT_USR_SRC);
                 StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_USR_SRC_CONTENT);
                 try {
-					src.setConfig(path, parseUserSourceContent(path, chars.toString()));
+					src.setConfig(path, parseSourceContent(path, chars.toString()));
 				}
 				catch (ConfigurationException e) {
 					throw new SAXException("Unable to load external source at " + path, e);
 				}
                 cfg.addExternalUserSource(src);
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {
+            	WamulatorPolicySource src = (WamulatorPolicySource) parsingContextAccessor.get().get(PARSING_CURR_EXT_POL_SRC);
+            	StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_POL_SRC_CONTENT);
+            	try {
+            		src.setConfig(path, parseSourceContent(path, chars.toString()));
+            	} catch (ConfigurationException e) {
+            		throw new SAXException("Unable to load external source at " + path, e);
+            	}
             } else if (path.matches("/config")) {
             	if (cfg.getExternalUserSources().size() == 0) {
             		cLog.log(Level.WARNING, "No User Sources were specified. User Authenitcation can NOT take place.");
@@ -1192,7 +1123,7 @@ public class XmlConfigLoader2 {
          * @param string
          * @return
          */
-        private Properties parseUserSourceContent(Path path, String content) {
+        private Properties parseSourceContent(Path path, String content) {
         	// see if we are injecting all config via a macro
         	content = content.trim();
         	if (content.startsWith(Alias.MACRO_START) && content.endsWith(Alias.MACRO_END)) {
@@ -1228,6 +1159,9 @@ public class XmlConfigLoader2 {
             if (path.matches("/config/user-source")) {
                 StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_USR_SRC_CONTENT);
                 chars.append(ch, start, length);
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {
+            	StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_POL_SRC_CONTENT);
+            	chars.append(ch, start, length);
             }
         }
 
@@ -1317,80 +1251,18 @@ public class XmlConfigLoader2 {
 
         public void startElement(String uri, String localName, String name,
                 Attributes atts) throws SAXException {
-            Config cfg = (Config) parsingContextAccessor.get().get(
-                    PARSING_CONFIG);
-            Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
-
+            
+        	Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
             path.add(name);
-            if (path.matches("/config/conditions")) {
-                // prevents log of unsupported element below since captured here
-            } else if (path.matches("/config/conditions/condition")) {
-                String alias = getStringAtt("alias", path, atts);
-                parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION, Boolean.TRUE);
-                parsingContextAccessor.get().put(PARSING_CONDITION_CONTENT, new StringBuffer());
-                parsingContextAccessor.get().put(PARSING_CONDITION_ALIAS, alias);
-            } else {
-                if (parsingContextAccessor.get().get(PARSING_IS_IN_CONDITION) == Boolean.TRUE) {
-                    StringBuffer element = new StringBuffer().append("<")
-                            .append(name);
-                    for (int i = 0; i < atts.getLength(); i++) {
-                        String nm = atts.getQName(i);
-                        String vl = atts.getValue(i);
-                        vl = vl.replace("'", "&apos;");
-                        vl = vl.replace("\"", "&quot;");
-                        element.append(" ").append(nm).append("='").append(vl)
-                                .append("'");
-                    }
-                    element.append(">");
-
-                    StringBuffer chars = (StringBuffer) parsingContextAccessor
-                            .get().get(PARSING_CONDITION_CONTENT);
-                    chars.append(element.toString());
-                }
-            }
         }
 
         public void endElement(String uri, String localName, String name)
                 throws SAXException {
             Path path = (Path) parsingContextAccessor.get().get(PARSING_PATH);
-
-            if (path.matches("/config/conditions/condition")) {
-                StringBuffer chars = (StringBuffer) parsingContextAccessor
-                        .get().get(PARSING_CONDITION_CONTENT);
-                String alias = (String) parsingContextAccessor.get().get(
-                        PARSING_CONDITION_ALIAS);
-                String content = chars.toString();
-                get(PARSING_ALIASES).addAlias(new Alias(alias, content));
-                LogicalSyntaxEvaluationEngine engine = LogicalSyntaxEvaluationEngine.getSyntaxEvalutionInstance();
-                try {
-                    engine.getEvaluator(alias, content);
-                } catch (EvaluationException e) {
-                    throw new SAXException(
-                            "Invalid condition syntax detected.", e);
-                }
-                parsingContextAccessor.get().put(PARSING_IS_IN_CONDITION,
-                        Boolean.FALSE);
-            }
-            if (parsingContextAccessor.get().get(PARSING_IS_IN_CONDITION) == Boolean.TRUE) {
-                StringBuffer element = new StringBuffer().append("</").append(
-                        name).append(">");
-
-                StringBuffer chars = (StringBuffer) parsingContextAccessor
-                        .get().get(PARSING_CONDITION_CONTENT);
-                chars.append(element.toString());
-            }
             path.remove(name);
         }
 
-        public void characters(char[] ch, int start, int length)
-                throws SAXException {
-            Boolean isInCondition = (Boolean) parsingContextAccessor.get().get(
-                    PARSING_IS_IN_CONDITION);
-            if (isInCondition == Boolean.TRUE) {
-                StringBuffer chars = (StringBuffer) parsingContextAccessor
-                        .get().get(PARSING_CONDITION_CONTENT);
-                chars.append(ch, start, length);
-            }
+        public void characters(char[] ch, int start, int length) throws SAXException {
         }
 
         public void endDocument() throws SAXException {

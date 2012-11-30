@@ -15,6 +15,7 @@ import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
+import org.lds.sso.appwrap.conditions.evaluator.syntax.AllowDeny;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
 
@@ -28,7 +29,8 @@ public class SiteMatcher {
 	private InboundScheme scheme;
 	private LogicalSyntaxEvaluationEngine cEngine;
 	protected Map<String, String> cSynMap;
-	protected Map<AllowedUri, String> conditionsMap = new HashMap<AllowedUri, String>();
+	protected Map<OrderedUri, String> conditionsMap = new HashMap<OrderedUri, String>();
+	protected Map<String, Boolean> allowTakesPrecedenceMap = new HashMap<String, Boolean>();
     
     protected int endPoints = 0;
     protected int policies = 0;
@@ -70,20 +72,29 @@ public class SiteMatcher {
                     String condId = conditionsMap.get(au);
                     if (condId == null) { // no condition needs to be met
                         return true;
-                    }
-                    else { // must further meet conditions for access
-                        String syntax = cSynMap.get(condId);
-                        IEvaluator evaluator = null;
+                    } else { // must further meet conditions for access
+                    	String allowCondId = condId + "-allow";
+                    	String denyCondId = condId + "-deny";
+                        String allowSyntax = cSynMap.get(allowCondId);
+                        String denySyntax = cSynMap.get(denyCondId);
+                        IEvaluator allowEvaluator = null;
+                        IEvaluator denyEvaluator = null;
                         try {
-                            evaluator = cEngine.getEvaluator(condId, syntax);
+                            if (allowSyntax != null) {
+                            	allowEvaluator = cEngine.getEvaluator(allowCondId, allowSyntax);
+                            }
+                            if (denySyntax != null) {
+                            	denyEvaluator = cEngine.getEvaluator(denyCondId, denySyntax);
+                            }
                         }
                         catch (EvaluationException e) {
-                            LogUtils.severe(cLog, "Disallowing access to {0} since unable to obtain evaluator for condition alias {1} with syntax {2}.", e, au, condId, syntax); 
+                            LogUtils.severe(cLog, "Disallowing access to {0} since unable to obtain evaluator for condition alias {1} with allow syntax {2} and deny syntax {3}.", e, au, condId, allowSyntax, denySyntax); 
                             return false;
                         }
                         EvaluationContext ctx = new EvaluationContext(user, new HashMap<String,String>());
+                        AllowDeny adEvaluator = new AllowDeny(allowEvaluator, denyEvaluator, doesAllowTakePrecedence(au.pathMatch));
                         try {
-                            return evaluator.isConditionSatisfied(ctx);
+                            return adEvaluator.isConditionSatisfied(ctx);
                         }
                         catch (EvaluationException e) {
                             LogUtils.severe(cLog, "Error occurred for {0} for user {1} denying access.", e, au, user.getUsername());
@@ -104,17 +115,41 @@ public class SiteMatcher {
 	 * @return
 	 */
 	public EndPoint getEndpointForCanonicalUrl(String canUrl) {
+		EndPoint result = null;
+		
+		int queryIndex = canUrl.indexOf("?");
+		String canQueryString = null;
+		if (queryIndex > 0) {
+			canQueryString = canUrl.substring(queryIndex + 1);
+			canUrl = canUrl.substring(0, queryIndex);
+		}
+		
 		for(EndPoint ep : mappedEndPoints) {
-			// TODO: will have to delegate into endpoint to evaluate when we
-			// add support for backward references and env macros for fileendpoints.
-			cLog.fine("@@ getEndpointForCanonicalUrl: comparing: " + ep.getCanonicalContextRoot() + " and: " + canUrl);
-			if (canUrl.toLowerCase().startsWith(ep.getCanonicalContextRoot().toLowerCase())) {
-				cLog.fine("SUCCESS: we found a tpath endpoint: " + ep.getCanonicalContextRoot());
-				return ep;
+			cLog.fine("@@ getEndpointForCanonicalUrl: comparing: " + ep.getContextRoot() + " and: " + canUrl);
+			
+			String canonCtxRoot = ep.getContextRoot();
+			if (canonCtxRoot != null) {
+				if (UriMatcher.matches(canUrl, canonCtxRoot)) {
+					result = ep;
+					break;
+				}
+			}
+			
+			String queryString = ep.getQueryString();
+			if (queryString != null && canQueryString != null) {
+				if (UriMatcher.matches(canQueryString, queryString)) {
+					result = ep;
+					break;
+				}
 			}
 		}
-		cLog.fine("FAILURE: we didn't find a tpath endpoint that matches.");
-		return null;
+		if (result == null) {
+			cLog.fine("FAILURE: we didn't find a tpath endpoint that matches.");
+		} else {
+			cLog.fine("SUCCESS: we found a tpath endpoint: " + result.getContextRoot());
+		}
+		
+		return result;
 	}
 
 	/**
@@ -171,7 +206,6 @@ public class SiteMatcher {
 	        // if matcher had zero port then all unenforced and allowed urls
 	        // will have inherited it and must be updated as well
 	        List<OrderedUri> updates = new ArrayList<OrderedUri>();
-	        Map<String, AllowedUri> cUpdates = new HashMap<String, AllowedUri>();
 	        
 	        for (Iterator<OrderedUri> itr=this.urls.iterator(); itr.hasNext();) {
 	            OrderedUri uri = itr.next();
@@ -228,7 +262,7 @@ public class SiteMatcher {
 	}
 	
     /**
-     * Determines if the passed-in url is an unenforeceUrl or matches a defined
+     * Determines if the passed-in url is an unenforcedUrl or matches a defined
      * one.
      * @param query 
      * 
@@ -250,7 +284,7 @@ public class SiteMatcher {
     }
 
     /**
-     * Determines if the passed-in url is an enforece Url.
+     * Determines if the passed-in url is an enforced Url.
      * 
      * @param query 
      * 
@@ -286,14 +320,36 @@ public class SiteMatcher {
         return null;
     }
 
-	public void addAllowedUri(AllowedUri au, String condId, String condSyntax) {
+	public void addAllowedUri(AllowedUri au, String condId, String allow) {
 	    au.setDeclarationOrder(++policies);
 		this.urls.add(au);
+		
+		if (allow == null) {
+			allow = "(cn=*)";
+		}
  
-		if (condId != null && condSyntax != null) {
-            cSynMap.put(condId, condSyntax);
+		if (condId != null) {
+            cSynMap.put(condId + "-allow", allow.toString());
             conditionsMap.put(au, condId);
         }
+	}
+	
+	public void addDeniedUri(DeniedUri du, String condId, String deny) {
+		du.setDeclarationOrder(++policies);
+		this.urls.add(du);
+ 
+		if (condId != null && deny != null) {
+            cSynMap.put(condId + "-deny", deny.toString());
+            conditionsMap.put(du, condId);
+        }
+	}
+	
+	public void addAllowTakesPrecedence(String uri, boolean allowTakesPrecedence) {
+		allowTakesPrecedenceMap.put(uri, new Boolean(allowTakesPrecedence));
+	}
+	
+	public boolean doesAllowTakePrecedence(String uri) {
+		return allowTakesPrecedenceMap.get(uri);
 	}
 
 	public String getHost() {

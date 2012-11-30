@@ -14,8 +14,6 @@ import org.lds.sso.appwrap.identity.User;
  * To change this template use File | Settings | File Templates.
  */
 public class Attribute extends SyntaxBase {
-    private static final String EXTENSIBLE_CASE_EXACT_SUBSTRING_MATCH = "caseExactSubstringMatch";
-    private static final String EXTENSIBLE_CASE_EXACT_MATCH = "caseExactMatch";
     private static final String CONFIG_NAME = "name";
     private static final String CONFIG_OPERATION = "operation";
     private static final String CONFIG_VALUE = "value";
@@ -24,13 +22,11 @@ public class Attribute extends SyntaxBase {
     private String attributeName;
     private String operationName;
     private String attributeValue;
-    private boolean caseExactSubstringMatch;
-    private boolean caseExactMatch;
 
     @Override
     public void init(String syntax, Map<String, String> cfg) throws EvaluationException {
         super.init(syntax, cfg);
-        this.attributeName = super.getRequired(CONFIG_NAME, cfg);//parseAttributeName(cfg.get(CONFIG_NAME));
+        this.attributeName = super.getRequired(CONFIG_NAME, cfg);
         this.operationName = super.getRequired(CONFIG_OPERATION, cfg);
         this.operation = Operation.getOperation(cfg.get(CONFIG_OPERATION));
         if(operation == Attribute.Operation.EQUALS){
@@ -38,30 +34,19 @@ public class Attribute extends SyntaxBase {
         }
     }
 
-   /* private String parseAttributeName(String name) {
-        if(name.contains(":") && name.endsWith(":")){//Check for Extensible Matching
-            String extensible = name.substring(name.indexOf(":"), name.lastIndexOf(":"));
-            if(EXTENSIBLE_CASE_EXACT_MATCH.equals(extensible)){
-                caseExactMatch = true;
-            }
-            else if(EXTENSIBLE_CASE_EXACT_SUBSTRING_MATCH.equals(extensible)){
-                caseExactSubstringMatch = true;
-            }
-            return name.substring(name.indexOf(":"));
-        }
-        return name;
-    }*/
-
     @Override
     public boolean isConditionSatisfied(EvaluationContext evaluationCtx) throws EvaluationException {
-        User user = evaluationCtx.user;
+        User user = evaluationCtx.user;        
 
         boolean satisfied = false;
         switch (operation) {
             case EQUALS:
-                String[] vals = user.getAttribute(attributeName);
+                String[] vals = user.getAttribute(attributeName.toLowerCase());
+                if (vals.length == 1 && vals[0].contains(":")) {
+                	vals = vals[0].split(":");
+                }
                 if (vals != null) {
-                    for(String val : vals) {
+                    for (String val : vals) {
                         if (wildCardMatch(val, attributeValue)) {
                             satisfied = true;
                             break;

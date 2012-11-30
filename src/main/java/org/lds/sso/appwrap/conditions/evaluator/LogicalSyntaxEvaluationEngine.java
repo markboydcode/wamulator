@@ -1,30 +1,30 @@
 package org.lds.sso.appwrap.conditions.evaluator;
 
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.ArrayList;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.xml.parsers.SAXParserFactory;
-
+import org.apache.directory.shared.ldap.entry.Value;
+import org.apache.directory.shared.ldap.filter.AndNode;
+import org.apache.directory.shared.ldap.filter.EqualityNode;
+import org.apache.directory.shared.ldap.filter.ExprNode;
+import org.apache.directory.shared.ldap.filter.FilterParser;
+import org.apache.directory.shared.ldap.filter.LeafNode;
+import org.apache.directory.shared.ldap.filter.NotNode;
+import org.apache.directory.shared.ldap.filter.OrNode;
+import org.apache.directory.shared.ldap.filter.PresenceNode;
+import org.apache.directory.shared.ldap.filter.SubstringNode;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.AND;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.Attribute;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.NOT;
 import org.lds.sso.appwrap.conditions.evaluator.syntax.OR;
 import org.lds.sso.appwrap.io.LogUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 
 /**
  * Engine for loading syntax and constructing processing object graph
@@ -44,13 +44,7 @@ import org.xml.sax.XMLReader;
  * 
  */
 public class LogicalSyntaxEvaluationEngine {
-    public static final Logger cLog = Logger
-            .getLogger(LogicalSyntaxEvaluationEngine.class.getName());
-
-    /**
-     * The map of syntax implementation classes.
-     */
-    protected static final Map<String, Class> DICTIONARY = getSyntax();
+    public static final Logger cLog = Logger.getLogger(LogicalSyntaxEvaluationEngine.class.getName());
 
     /**
      * The time that an evaluator is allowed to live since last being used
@@ -238,65 +232,91 @@ public class LogicalSyntaxEvaluationEngine {
         if (holder != null) {
             holder.millisTouchedTime = System.currentTimeMillis();
         } else {
-            XMLReader rdr;
+        	ExprNode filter = null;
             try {
-                rdr = SAXParserFactory.newInstance().newSAXParser()
-                        .getXMLReader();
-            } catch (Exception e) {
-                throw new EvaluationException(
-                        "Unable to create parser for syntax '" + syntax + "'.",
-                        e);
-            }
-            SyntaxContentHandler hndlr = new SyntaxContentHandler(syntax);
-            rdr.setContentHandler(hndlr);
-            InputSource src = new InputSource(new StringReader(syntax));
-            try {
-                rdr.parse(src);
-            } catch (Exception e) {
-                throw new EvaluationException("Unable to parse syntax '"
-                        + syntax + "'.", e);
-            }
+				filter = FilterParser.parse(syntax);
+				
+			} catch (ParseException e) {
+				throw new EvaluationException("Unable to parse syntax '" + syntax + "'.", e);
+			}
 
-            if (hndlr.root != null) {
-                holder = new EvaluatorUsageHolder(alias, hndlr.root);
-                synchronized (evaluators) {
-                    evaluators.put(syntax, holder);
-                }
-            } else {
-                throw new EvaluationException("Parsing syntax '" + syntax
-                        + "' produced no evaluators. Enter valid syntax.");
+            holder = new EvaluatorUsageHolder(alias, filterToEvaluator(filter));
+            synchronized (evaluators) {
+                evaluators.put(syntax, holder);
             }
         }
         return holder.evaluator;
     }
-
+    
     /**
-     * Utility method for registering compile time dependencies on syntax
-     * implementation classes in a map.
-     * 
-     * @return the map of handlers
+     * Converts a filter to an evaluator.
+     * @param filter ExprNode filter representing an ldap query
+     * @return evaluator IEvaluator
      */
-    private static Map<String, Class> getSyntax() {
-        Map<String, Class> map = new HashMap<String, Class>();
-
-        add(map, AND.class);
-        add(map, OR.class);
-        add(map, NOT.class);
-        add(map, Attribute.class);
-
-        return map;
-    }
-
-    /**
-     * Convenience method making addition of supported classes simpler.
-     * 
-     * @param m
-     *            map to add the class to
-     * @param c
-     *            class to add
-     */
-    private static void add(Map<String, Class> m, Class c) {
-        m.put(c.getSimpleName(), c);
+    @SuppressWarnings("rawtypes")
+	public IEvaluator filterToEvaluator(ExprNode filter) {
+    	IEvaluator ie = null;
+    	
+    	if (filter.isLeaf()) {
+    		Map<String, String> aMap = new TreeMap<String, String>();
+            String headerName = ((LeafNode) filter).getAttribute();
+            aMap.put("name", headerName);
+            String operation = "EQUALS";
+            String value = "";
+            if (filter.getClass() == SubstringNode.class) {
+            	SubstringNode ssNode = (SubstringNode) filter;
+            	if (ssNode.getAny() != null && ssNode.getAny().size() > 0) {
+            		value = "*" + ssNode.getAny().get(0) + "*";
+            	} else if (ssNode.getInitial() != null) {
+            		value = ssNode.getInitial() + "*";
+            	} else if (ssNode.getFinal() != null) {
+            		value = "*" + ssNode.getFinal();
+            	}
+            } else if (filter.getClass() == EqualityNode.class) {
+            	Value bv = ((EqualityNode) filter).getValue();
+            	value = bv.getString();
+            } else if (filter.getClass() == PresenceNode.class) {
+            	operation = "EXISTS";
+            } 
+            aMap.put("operation", operation);
+            aMap.put("value", value);
+            
+            try {
+				ie = (IEvaluator) Attribute.class.newInstance();
+				ie.init(filter.toString(), aMap);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+    	} else if (filter.getClass() == OrNode.class) {
+    		try {
+    			ie = (IEvaluator) OR.class.newInstance();
+    			for (ExprNode child : ((OrNode) filter).getChildren()) {
+    				((OR) ie).addEvaluator(filterToEvaluator(child));
+    			}
+    		} catch (Exception e) {
+    			e.printStackTrace();
+    		}
+    	} else if (filter.getClass() == AndNode.class) {
+    		try {
+    			ie = (IEvaluator) AND.class.newInstance();
+    			for (ExprNode child : ((AndNode) filter).getChildren()) {
+    				((AND) ie).addEvaluator(filterToEvaluator(child));
+    			} 
+    		} catch (Exception e) {
+    			e.printStackTrace();
+    		}
+    	} else if (filter.getClass() == NotNode.class) {
+    		try {
+    			ie = (IEvaluator) NOT.class.newInstance();
+    			for (ExprNode child : ((NotNode) filter).getChildren()) {
+    				((NOT) ie).addEvaluator(filterToEvaluator(child));
+    			} 
+    		} catch (Exception e) {
+    			e.printStackTrace();
+    		}
+        }
+    	
+    	return ie;
     }
 
     /**
@@ -318,234 +338,6 @@ public class LogicalSyntaxEvaluationEngine {
             this.name = alias;
             this.evaluator = e;
             this.millisTouchedTime = System.currentTimeMillis();
-        }
-    }
-
-    /**
-     * Holds an instance of IEvaluator along with the xml:base attribute value
-     * had on the element that defined the evaluator IF it had such an attribute
-     * at all. This is to allow us to cache the evaluator by its xml:base value
-     * so that it can be used by other policy syntax that also includes the same
-     * graph representing the same xml:base chunk of xml nested within the
-     * policy.
-     * 
-     * @author Mark Boyd
-     * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day
-     *             Saints
-     * 
-     */
-    public static class MidParseEvaluatorHolder {
-        public IEvaluator evaluator = null;
-        public String xmlBase = null;
-
-        public MidParseEvaluatorHolder(IEvaluator e, String base) {
-            this.evaluator = e;
-            this.xmlBase = base;
-        }
-
-        public boolean hasXmlBase() {
-            return xmlBase != null;
-        }
-    }
-
-    /**
-     * Handler for receiving SAX parsing events while processing syntax string.
-     * 
-     * @author Mark Boyd
-     * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day
-     *             Saints
-     * 
-     */
-    public class SyntaxContentHandler implements ContentHandler {
-
-        private List<MidParseEvaluatorHolder> containers = new ArrayList<MidParseEvaluatorHolder>();
-        private String contentBeingParsed = null;
-        private IEvaluator root = null;
-
-        /**
-         * Keeps track of whether the current event is occurring somewhere
-         * within an element that contained an xml:base attribute AND was
-         * already cached and therefore does not require constructing of the
-         * evaluator graph.
-         */
-        private boolean withinCachedXmlBaseElement;
-
-        /**
-         * Keeps track of how deeply within and xml base element an event is
-         * occurring so that we know when we have arrived back at that element
-         * closing tag and can set withinCachedXmlBaseElement to false.
-         */
-        private int depthWithinXmlBaseElement = 0;
-
-        public SyntaxContentHandler(String content) {
-            contentBeingParsed = content;
-        }
-
-        public void startElement(String uri, String ln, String name,
-                Attributes atts) throws SAXException {
-            if (withinCachedXmlBaseElement) {
-                // ignore events, just stream them on by until we get out of the
-                // cached element.
-                depthWithinXmlBaseElement++;
-                return;
-            }
-
-            Class cls = DICTIONARY.get(name);
-            if (cls == null) {
-                String msg = "Unsupported Syntax '{0}' in custom syntax evaluation.";
-                //cLog.setLevel(Level.DEBUG);  ?why would we have needed this?
-                LogUtils.severe(cLog, msg, name);
-                LogUtils.severe(cLog, contentBeingParsed);
-                throw new SAXException(msg);
-            }
-            try {
-                // instantiate the class registered to implement the element
-                // and configure it with the element's attributes
-                String xmlBase = null;
-                IEvaluator ev = null;
-
-                // we use a sorted map for ensuring debug output is formated
-                // correstly if element debugging is enabled.
-                Map<String, String> aMap = new TreeMap<String, String>();
-
-                for (int i = 0; i < atts.getLength(); i++) {
-                    String nm = atts.getQName(i);
-                    String val = atts.getValue(i);
-                    aMap.put(nm, val);
-
-                    // check for xml base and see if already cached
-                    if (nm.equals("xml:base")) {
-                        EvaluatorUsageHolder holder = evaluators.get(val);
-                        if (holder != null) {
-                            // found it already cached, no need to instantiate
-                            // nested graph.
-                            withinCachedXmlBaseElement = true;
-                            ev = holder.evaluator;
-                        } else { // not yet cached, grab xmlBase to cache after
-                                 // parsing
-                            xmlBase = val;
-                        }
-                    }
-                }
-
-                // instantiate the evaluator corresponding to the element if it
-                // wasn't found in cache.
-                if (ev == null) {
-                    ev = (IEvaluator) cls.newInstance();
-                    ev.init(contentBeingParsed, aMap);
-                }
-
-                // is it a nested element being read, inject into parent
-                // evaluator
-                // making sure parent is a container
-
-                if (containers.size() > 0) {
-                    MidParseEvaluatorHolder holder = containers.get(containers
-                            .size() - 1);
-                    IEvaluator parent = holder.evaluator;
-
-                    if (parent instanceof IEvaluatorContainer) {
-                        IEvaluatorContainer c = (IEvaluatorContainer) parent;
-                        c.addEvaluator(ev);
-                    } else {
-                        throw new SAXException(
-                                "Unsupported Syntax. '"
-                                        + parent.getClass().getSimpleName()
-                                        + "' in '"
-                                        + contentBeingParsed
-                                        + "' does not support nested elements such as '"
-                                        + name + "'.");
-                    }
-                }
-                // only cache if we are to build nested tree and validate
-                // afterward
-                if (!withinCachedXmlBaseElement) {
-                    MidParseEvaluatorHolder holder = new MidParseEvaluatorHolder(
-                            ev, xmlBase);
-                    containers.add(holder);
-                }
-
-                if (root == null) {
-                    root = ev;
-                }
-            } catch (Exception e) {
-                throw new SAXException(e);
-            }
-        }
-
-        public void endElement(String uri, String localName, String name)
-                throws SAXException {
-            // see if we have arrived back at the element with xml base found in
-            // cache.
-            if (withinCachedXmlBaseElement) {
-                if (depthWithinXmlBaseElement > 0) {
-                    // still within xmlbase element, decrement depth and return
-                    depthWithinXmlBaseElement--;
-                } else {
-                    // so we reached depth of zero. we are back on the element
-                    // that
-                    // has the xml base attribute
-                    withinCachedXmlBaseElement = false;
-                }
-                // yes return here since we didn't cache in container list and
-                // don't need to validate
-                return;
-            }
-
-            // pull out of the hierarchy of container elements
-            IEvaluator ev = null;
-            MidParseEvaluatorHolder holder = containers.remove(containers
-                    .size() - 1);
-
-            // does it have xml:base? cache it by that value.
-            if (holder != null) {
-                ev = holder.evaluator;
-                if (holder.hasXmlBase()) {
-                    EvaluatorUsageHolder euHolder = new EvaluatorUsageHolder(holder.xmlBase, ev);
-                    evaluators.put(holder.xmlBase, euHolder);
-                }
-            }
-
-            // is it a container? validate its syntax.
-            if (ev != null && ev instanceof IEvaluatorContainer) {
-                try {
-                    ((IEvaluatorContainer) ev).validate();
-                } catch (EvaluationException e) {
-                    throw new SAXException("Cannot validate container '"
-                            + ev.getClass().getSimpleName() + "'.", e);
-                }
-            }
-        }
-
-        public void characters(char[] ch, int start, int length)
-                throws SAXException {
-        }
-
-        public void endDocument() throws SAXException {
-        }
-
-        public void endPrefixMapping(String prefix) throws SAXException {
-        }
-
-        public void ignorableWhitespace(char[] ch, int start, int length)
-                throws SAXException {
-        }
-
-        public void processingInstruction(String target, String data)
-                throws SAXException {
-        }
-
-        public void setDocumentLocator(Locator locator) {
-        }
-
-        public void skippedEntity(String name) throws SAXException {
-        }
-
-        public void startDocument() throws SAXException {
-        }
-
-        public void startPrefixMapping(String prefix, String uri)
-                throws SAXException {
         }
     }
 }

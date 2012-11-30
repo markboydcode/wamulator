@@ -17,6 +17,7 @@ src/main/assembly/jar-assembly.xml -text
 src/main/java/org/lds/sso/appwrap/AllowedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/AppEndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Config.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/DeniedUri.java -text
 src/main/java/org/lds/sso/appwrap/EndPoint.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/Entitlement.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/EntitlementsManager.java -text svneol=unset#text/plain
@@ -32,6 +33,7 @@ src/main/java/org/lds/sso/appwrap/SiteMatcher.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/TrafficManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/TrafficRecorder.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/UnenforcedUri.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/UriMatcher.java -text
 src/main/java/org/lds/sso/appwrap/VirtualSite.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/XmlConfigLoader2.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/bootstrap/BlockingServiceCommand.java -text
@@ -47,6 +49,7 @@ src/main/java/org/lds/sso/appwrap/conditions/evaluator/IEvaluator.java -text svn
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/IEvaluatorContainer.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/LogicalSyntaxEvaluationEngine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/AND.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/AllowDeny.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/Attribute.java -text
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/NOT.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/conditions/evaluator/syntax/OR.java -text svneol=unset#text/plain
@@ -83,6 +86,12 @@ src/main/java/org/lds/sso/appwrap/io/ChainingOutputStream.java -text
 src/main/java/org/lds/sso/appwrap/io/LogUtils.java -text
 src/main/java/org/lds/sso/appwrap/io/LoggingOutputStream.java -text
 src/main/java/org/lds/sso/appwrap/io/SimpleErrorHandler.java -text
+src/main/java/org/lds/sso/appwrap/model/AuthNScheme.java -text
+src/main/java/org/lds/sso/appwrap/model/AuthZRule.java -text
+src/main/java/org/lds/sso/appwrap/model/Condition.java -text
+src/main/java/org/lds/sso/appwrap/model/Header.java -text
+src/main/java/org/lds/sso/appwrap/model/Policy.java -text
+src/main/java/org/lds/sso/appwrap/policy/WamulatorPolicySource.java -text
 src/main/java/org/lds/sso/appwrap/proxy/CookiePathRewriter.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackage.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/HttpPackageType.java -text svneol=unset#text/plain
@@ -172,8 +181,46 @@ src/main/resources/webapp/apps.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/bullet_white.png -text
 src/main/resources/webapp/cancel.gif -text
 src/main/resources/webapp/codaUserSelect.jsp -text svneol=unset#text/plain
+src/main/resources/webapp/css/ie.css -text
+src/main/resources/webapp/css/print.css -text
+src/main/resources/webapp/css/project-ie.css -text
+src/main/resources/webapp/css/project.css -text
 src/main/resources/webapp/debug.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/delete.gif -text
+src/main/resources/webapp/images/SSO-gradientBg.png -text
+src/main/resources/webapp/images/downarrow-active.png -text
+src/main/resources/webapp/images/downarrow-inactive.png -text
+src/main/resources/webapp/images/ico-language-16.png -text
+src/main/resources/webapp/images/ico_cancel.png -text
+src/main/resources/webapp/images/ico_modalCancel.png -text
+src/main/resources/webapp/images/keys.png -text
+src/main/resources/webapp/images/logos/Logo-Chinese.png -text
+src/main/resources/webapp/images/logos/Logo-Danish.png -text
+src/main/resources/webapp/images/logos/Logo-Dutch.png -text
+src/main/resources/webapp/images/logos/Logo-English.png -text
+src/main/resources/webapp/images/logos/Logo-Fijian.png -text
+src/main/resources/webapp/images/logos/Logo-Finnish.png -text
+src/main/resources/webapp/images/logos/Logo-French.png -text
+src/main/resources/webapp/images/logos/Logo-German.png -text
+src/main/resources/webapp/images/logos/Logo-Hungarian.png -text
+src/main/resources/webapp/images/logos/Logo-Indonesian.png -text
+src/main/resources/webapp/images/logos/Logo-Italian.png -text
+src/main/resources/webapp/images/logos/Logo-Japanese.png -text
+src/main/resources/webapp/images/logos/Logo-Korean.png -text
+src/main/resources/webapp/images/logos/Logo-Norwegian.png -text
+src/main/resources/webapp/images/logos/Logo-Polish.png -text
+src/main/resources/webapp/images/logos/Logo-Portuguese.png -text
+src/main/resources/webapp/images/logos/Logo-Russian.png -text
+src/main/resources/webapp/images/logos/Logo-Samoan.png -text
+src/main/resources/webapp/images/logos/Logo-Simplified-Chinese.png -text
+src/main/resources/webapp/images/logos/Logo-Spanish.png -text
+src/main/resources/webapp/images/logos/Logo-Swedish.png -text
+src/main/resources/webapp/images/logos/Logo-Thai.png -text
+src/main/resources/webapp/images/logos/Logo-Tongan.png -text
+src/main/resources/webapp/images/logos/Logo-Ukranian.png -text
+src/main/resources/webapp/javascript/jquery-1.8.2.min.js -text
+src/main/resources/webapp/javascript/page-ie.js -text
+src/main/resources/webapp/javascript/page.js -text
 src/main/resources/webapp/listUsers.jsp -text
 src/main/resources/webapp/lock.png -text
 src/main/resources/webapp/lock_go.png -text
@@ -198,6 +245,7 @@ src/test/java/org/lds/sso/appwrap/SiteMatcherTest.java -text svneol=unset#text/p
 src/test/java/org/lds/sso/appwrap/TestJettyJspApproach.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestTimestamp.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/TestUtilities.java -text svneol=unset#text/plain
+src/test/java/org/lds/sso/appwrap/UriMatcherTest.java -text
 src/test/java/org/lds/sso/appwrap/XmlConfigLoaderTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/bootstrap/RemoteStartStopTest.java -text
 src/test/java/org/lds/sso/appwrap/certs/CaCertificateGenerator.java -text

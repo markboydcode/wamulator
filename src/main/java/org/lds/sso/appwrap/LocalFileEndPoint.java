@@ -1,8 +1,6 @@
 package org.lds.sso.appwrap;
 
 import org.lds.sso.appwrap.proxy.HttpPackage;
-import org.lds.sso.appwrap.proxy.RequestLine;
-import org.lds.sso.appwrap.proxy.StartLine;
 
 /**
  * Represents the mapping from canonical space URLs to a file on the local drive
@@ -18,9 +16,9 @@ import org.lds.sso.appwrap.proxy.StartLine;
  * 
  */
 public class LocalFileEndPoint implements EndPoint {
-	private String canonicalContextRoot = null;
-
-	private String applicationContextRoot = null;
+	private String contextRoot = null;
+	
+	private String queryString = null;
 
 	int endpointPort = -1;
 
@@ -46,7 +44,12 @@ public class LocalFileEndPoint implements EndPoint {
     private Integer declarationOrder = null;
 
 	public LocalFileEndPoint(String canonicalCtx, String filePathParam, String contentType) {
-		this.canonicalContextRoot = canonicalCtx;
+		this(canonicalCtx, filePathParam, contentType, null);
+	}
+	
+	public LocalFileEndPoint(String canonicalCtx, String filePathParam, String contentType, String queryString) {
+		this.contextRoot = canonicalCtx;
+		this.queryString = queryString;
 		this.filePath = filePathParam;
                 
 		if (this.filePath.endsWith("*")) {
@@ -98,12 +101,20 @@ public class LocalFileEndPoint implements EndPoint {
 		return id.hashCode();
 	}
 
-	public String getCanonicalContextRoot() {
-		return canonicalContextRoot;
+	public String getContextRoot() {
+		return contextRoot;
 	}
 
-	public void setCanonicalContextRoot(String canonicalContextRoot) {
-		this.canonicalContextRoot = canonicalContextRoot;
+	public void setContextRoot(String contextRoot) {
+		this.contextRoot = contextRoot;
+	}
+	
+	public String getQueryString() {
+		return queryString;
+	}
+	
+	public void setQueryString(String queryString) {
+		this.queryString = queryString;
 	}
 
 	public String getFilePath() {
@@ -133,8 +144,13 @@ public class LocalFileEndPoint implements EndPoint {
 	public String getFilepathTranslated(HttpPackage reqPkg) {
 		if (isRelative){
 			String uri = reqPkg.requestLine.getUri();
-                        uri = uri.replace("../", ""); //Remove security problem with being able to go up directory hirarchies
-			String relFilePath = uri.substring(canonicalContextRoot.length() );
+            uri = uri.replace("../", ""); //Remove security problem with being able to go up directory hirarchies
+			
+            int length = contextRoot.length();
+            if (contextRoot.endsWith("*")) {
+            	length--;
+            }
+            String relFilePath = uri.substring(length);
 			return filePath + relFilePath;
 		}
 		else {

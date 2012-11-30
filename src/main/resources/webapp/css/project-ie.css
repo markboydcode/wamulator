@@ -1,0 +1,140 @@
+
+html body {
+    background: rgb(240,240,240);
+    min-width: 600px;
+}
+
+div.centeredContent {
+	width: 600px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+div#content1 {
+	width: 600px;
+	background-color: rgb(207,207,207);
+	padding: 25px 0;
+	position: relative;
+}
+
+div#content1 div.centeredContent {
+    width: 375px;
+}
+
+div#content2 {
+	width: 600px;
+	padding: 0 0 25px 0;
+	margin: 0 auto;
+	margin-bottom: 10px;
+	position: relative;
+}
+
+div#signin-header {
+    float:left;
+    margin-bottom: 10px;
+}
+
+div#language-header {
+    float: right;
+    right: 0;
+    margin: -10px 0 10px 0;
+    z-index: 3000;
+    top: 0;
+}
+
+.form .inputText {
+	width: 325px;
+}
+
+.forgot-link {
+	display: block;
+	text-align: right;
+	margin-right: 2px;
+	font-size: 10px;
+}
+
+div#errorToolTip {
+    width: 450px;
+    z-index: 100;
+    position: absolute;
+    bottom: -15px;
+    left: 75px;
+}
+	
+input#submit {
+    margin-top: 20px;
+}
+
+div#or {
+    margin: 15px;
+}
+
+div#registerInfo {
+    margin-top: 7px;
+    display: inline-block;
+    width: 70%;
+}
+div#registerInfoLink {
+    display: inline-block;
+}
+div#registerInfoMessage {
+    display: inline-block;
+}
+
+div#legalNotice {
+    clear: both;
+}
+
+#legalViewer {
+	overflow-y: scroll;
+}
+
+#logo {
+    width: 216px;
+}
+
+body .app-logo-main {
+    margin: 32px 0 7px 0;
+    font-size: 20px;
+    line-height: 20px;
+}
+
+body .app-logo-sub {
+    font-size: 8.5px;
+    margin-top: -2px;
+}
+
+input {
+    font-size: 100%;
+}
+
+div.header {
+    padding-bottom: 0;
+}
+
+div.header-container {
+    background-color: #ebebeb;
+    border-bottom: 1px solid #fff;
+    margin-bottom: 40px;
+}
+
+.hidden {
+    display: none;
+}
+
+div#usernameContainer,
+div#passwordContainer {
+    width: 350px;
+}
+
+div#usernameContainer label,
+div#passwordContainer label {
+    left: 0;
+    width: 350px;
+}
+
+div#usernameContainer div.label-container,
+div#passwordContainer div.label-container {
+    text-align: left;
+    margin-left: 0;
+}

@@ -9,12 +9,7 @@ public class OrderedUri implements Comparable<OrderedUri>{
 	private static Logger logger = Logger.getLogger(OrderedUri.class.getName());
 
     private Integer declarationOrder = 0;
-    protected boolean queryIsRequired = false;
-    protected boolean usePathPrefixMatching = false;
-    protected String pathPrefix = null;
     protected String pathMatch = null;
-    protected boolean useQueryPrefixMatching = false;
-    protected String queryPrefix = null;
     protected String queryMatch = null;
     protected String host;
     protected int port;
@@ -32,29 +27,8 @@ public class OrderedUri implements Comparable<OrderedUri>{
         this.scheme = scheme;
         
         pathMatch = path;
-        
-        if (path.startsWith("*")) {
-            pathPrefix = "";
-            usePathPrefixMatching = true;
-        }
-        else if(path.endsWith("*")) {
-            pathPrefix = path.substring(0, path.length()-1);
-            usePathPrefixMatching = true;
-        }
-        
-        if (query != null) {
-            queryIsRequired = true;
-            queryMatch = query;
-            
-            if (query.startsWith("*")) {
-                queryPrefix = "";
-                useQueryPrefixMatching = true;
-            }
-            else if (query.endsWith("*")) {
-                queryPrefix = query.substring(0, query.length()-2);
-                useQueryPrefixMatching = true;
-            }
-        }
+        queryMatch = query;
+
         updateId();
     }
     
@@ -95,8 +69,7 @@ public class OrderedUri implements Comparable<OrderedUri>{
     
     public boolean matches(Scheme scheme, String host, int port, String path, String query) {
 		logger.fine("@@ Testing cpath=" + pathMatch + ", scheme=" + this.scheme + ", host=" + this.host +
-					", port=" + this.port + ", query=" + queryMatch + ", queryIsRequired=" + queryIsRequired +
-					", queryPrefix=" + queryPrefix + ", useQueryPrefixMatching=" + useQueryPrefixMatching);
+					", port=" + this.port + ", query=" + queryMatch);
 		logger.fine("@@ For a match with requested path=" + path + ", scheme=" + scheme + ", host=" + host +
 					", port=" + port + ", query=" + query);
 		boolean match = _matches(scheme, host, port, path, query);
@@ -110,44 +83,33 @@ public class OrderedUri implements Comparable<OrderedUri>{
 		if ((this.host != null && ! this.host.equals(host))) {
 			return false;
 		}
+		
 		// return false if configured scheme is not BOTH and incoming scheme 
 		// differs from configured or they are the same and the port from the
 		// host header does not match
-		if (this.scheme != InboundScheme.BOTH 
-				&& ! this.scheme.moniker.equals(scheme.moniker) 
-					|| (this.scheme.moniker.equals(scheme.moniker) && this.port != port)) {
+		if (this.scheme != InboundScheme.BOTH && ! this.scheme.moniker.equals(scheme.moniker) || 
+				(this.scheme.moniker.equals(scheme.moniker) && this.port != port)) {
 			return false;
 		}
 
-		if (queryIsRequired) {
-			if (query == null) {
-				return false;
-			}
-			if (useQueryPrefixMatching) {
-				if (! query.startsWith(queryPrefix)) {
-					return false;
-				}
-			}
-			else {
-				if (! query.equals(queryMatch)) {
-					return false;
-				}
-			}
-		}
-		else if (query != null) {
-			return false;
+		boolean queryMatches = false;
+		if (query != null && queryMatch != null && UriMatcher.matches(query, queryMatch)) {
+			queryMatches = true;
 		}
 
-		if (usePathPrefixMatching) {
-			if (path.toLowerCase().startsWith(pathPrefix.toLowerCase())) {
-				return true;
-			}
+		boolean pathMatches = false;
+		if (path != null && pathMatch != null && UriMatcher.matches(path, pathMatch)) {
+			pathMatches = true;
 		}
-		else {
-			if (path.equalsIgnoreCase(pathMatch)) {
-				return true;
-			}
+		
+		if (queryMatch != null && pathMatch != null) {
+			return queryMatches && pathMatches;
+		} else if (pathMatch != null) {
+			return pathMatches;
+		} else if (queryMatch != null) {
+			return queryMatches;
 		}
+		
 		return false;
 	}
 
