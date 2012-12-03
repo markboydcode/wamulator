@@ -281,7 +281,6 @@ public class RequestHandler implements Runnable {
 
                 TrafficManager appMgr = cfg.getTrafficManager();
                 String token = cfg.getTokenFromCookie(reqPkg.cookiesHdr);
-            	System.out.println("|----> Token: " + token);
                 Session s = cfg.getSessionManager().getSessionForToken(token);
                 if (s == null || ! s.isActive()) {
                     token = null;
@@ -1179,7 +1178,6 @@ public class RequestHandler implements Runnable {
 
         String path = endpoint.getFilepathTranslated(reqPkg);
         InputStream is = null;
-        System.out.println("---> file endpoint ");
 
         try {
             if (path.startsWith(Service.CLASSPATH_PREFIX)) {
