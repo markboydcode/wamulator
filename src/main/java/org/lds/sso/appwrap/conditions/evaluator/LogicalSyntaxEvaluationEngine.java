@@ -274,7 +274,7 @@ public class LogicalSyntaxEvaluationEngine {
             	}
             } else if (filter.getClass() == EqualityNode.class) {
             	Value bv = ((EqualityNode) filter).getValue();
-            	value = bv.getString();
+            	value = bv.toString();
             } else if (filter.getClass() == PresenceNode.class) {
             	operation = "EXISTS";
             } 

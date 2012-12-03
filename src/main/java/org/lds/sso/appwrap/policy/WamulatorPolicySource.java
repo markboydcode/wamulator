@@ -309,7 +309,11 @@ public class WamulatorPolicySource implements ContentHandler {
             }
 		} else if (path.matches("/deployment/application/policy/url")) {
         	String url = buffer.toString();
-			curPolicy.setUrl(cctxCctx + "/" + url);
+        	String prefix = cctxCctx.equals("/") ? "" : cctxCctx;
+        	if (!url.startsWith("/")) {
+        		prefix += "/";
+        	}
+			curPolicy.setUrl(prefix + url);
         } else if (path.matches("/deployment/application/policy/query-string")) {
         	String queryString = buffer.toString();
 			if (queryString != null && !queryString.isEmpty()) {
