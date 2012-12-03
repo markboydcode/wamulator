@@ -143,25 +143,7 @@ public class SelectUserHandler extends RestHandlerBase {
         }
 
         String password = request.getParameter("password");
-    	List<ExternalUserSource> sources = cfg.getExternalUserSources();
-    	Response extResult = null;
-    	int srcIdx = 0;
-    	/*
-    	 * scan through all registered sources only returning when we have
-    	 * exhausted the list or received a loaded, or failedAuthN. These
-    	 * last two indicate that we found a user in that store so send 
-    	 * a message to the screen accordingly or a message relative to the
-    	 * last store's response. Logs should show failures in previous
-    	 * stores if any.
-    	 */
-    	while(srcIdx < sources.size() 
-    			&& (extResult == null 
-    			|| extResult == Response.ErrorAccessingSource 
-    			|| extResult == Response.UserNotFound)) {
-    		ExternalUserSource src = sources.get(srcIdx);
-        	extResult = src.loadExternalUser(name, password);
-        	srcIdx++;
-    	}
+    	Response extResult = authenticateToSources(cfg, name, password);
     	switch(extResult) {
     	case ErrorAccessingSource: 
             returnWithError("error-accessing-ext-source", minusQp, parms, response);
@@ -177,24 +159,8 @@ public class SelectUserHandler extends RestHandlerBase {
     	}
 
         if (authenticated) {
-            SessionManager smgr = cfg.getSessionManager();
-            String cookieDomain = null;
-            try {
-                cookieDomain = smgr.getCookieDomainForHost(request.getServerName());
-            }
-            catch( IllegalArgumentException e) {
-                cLog.info("Unable to set cookie for to complete authentication since can't find configured "
-                    + "cookie domain for host '" + request.getServerName() + "'");
-            }
-            if (cookieDomain != null) {
-                String token = smgr.generateSessionToken(name, request.getServerName());
-                Cookie c = new Cookie(cfg.getCookieName(), token);
-                c.setPath("/");
-                if (! cookieDomain.equals("localhost")) {
-                    c.setDomain(cookieDomain);
-                }
-                c.setMaxAge(-1);
-                c.setVersion(1);
+        	Cookie c = generateSession(cfg, name, request.getServerName());
+            if (c != null) {
                 response.addCookie(c);
             }
         }
@@ -215,6 +181,61 @@ public class SelectUserHandler extends RestHandlerBase {
         }
     }
 
+	/**
+	 * Scans through all registered sources only returning when we have
+	 * exhausted the list or received a loaded, or failedAuthN. These last two
+	 * indicate that we found a user in that store so send a message to the
+	 * screen accordingly or a message relative to the last store's response.
+	 * Logs should show failures in previous stores if any.
+	 */
+    public static Response authenticateToSources(Config cfg, String username, String pwd) throws IOException {
+    	List<ExternalUserSource> sources = cfg.getExternalUserSources();
+    	Response extResult = null;
+    	int srcIdx = 0;
+    	while(srcIdx < sources.size() 
+    			&& (extResult == null 
+    			|| extResult == Response.ErrorAccessingSource 
+    			|| extResult == Response.UserNotFound)) {
+    		ExternalUserSource src = sources.get(srcIdx);
+        	extResult = src.loadExternalUser(username, pwd);
+        	srcIdx++;
+    	}
+    	return extResult;
+    }
+
+    /**
+     * Generate a user session and corresponding cookie. Returns the cookie if
+     * able to generate or null if unable to for the request's specified host.
+     * 
+     * @param cfg
+     * @param username
+     * @param serverName
+     * @return
+     */
+    public static Cookie generateSession(Config cfg, String username, String serverName) {
+        SessionManager smgr = cfg.getSessionManager();
+        String cookieDomain = null;
+        Cookie c = null;
+        try {
+            cookieDomain = smgr.getCookieDomainForHost(serverName);
+        }
+        catch( IllegalArgumentException e) {
+            cLog.info("Unable to set cookie to complete authentication since can't find configured "
+                + "cookie domain for incoming request's host '" + serverName + "'");
+        }
+        if (cookieDomain != null) {
+            String token = smgr.generateSessionToken(username, serverName);
+            c = new Cookie(cfg.getCookieName(), token);
+            c.setPath("/");
+            if (! cookieDomain.equals("localhost")) {
+                c.setDomain(cookieDomain);
+            }
+            c.setMaxAge(-1);
+            c.setVersion(1);
+        }
+        return c;
+    }
+    
     /**
      * Crafts a URL matching the referer but with the page-error query param
      * replaced or appended and redirects back to the page.

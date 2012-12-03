@@ -100,6 +100,7 @@ src/main/java/org/lds/sso/appwrap/proxy/ProxyListener.java -text svneol=unset#te
 src/main/java/org/lds/sso/appwrap/proxy/RequestHandler.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/RequestLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/ResponseLine.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/proxy/SetCookieHeaderExtractor.java -text
 src/main/java/org/lds/sso/appwrap/proxy/StartLine.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/TrafficType.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/proxy/header/ConnectionHeaderHndlr.java -text

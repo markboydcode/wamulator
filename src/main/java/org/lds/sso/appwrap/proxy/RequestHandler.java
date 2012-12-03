@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.servlet.http.Cookie;
 
 import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
@@ -37,6 +38,7 @@ import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
+import org.lds.sso.appwrap.identity.ExternalUserSource.Response;
 import org.lds.sso.appwrap.identity.Session;
 import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.identity.User;
@@ -49,6 +51,7 @@ import org.lds.sso.appwrap.proxy.header.HeaderHandler;
 import org.lds.sso.appwrap.proxy.header.SecondPhaseAction;
 import org.lds.sso.appwrap.proxy.tls.TrustAllManager;
 import org.lds.sso.appwrap.security.LocalHostOnlyEnforcingHandler;
+import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
 import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
 
 public class RequestHandler implements Runnable {
@@ -143,7 +146,9 @@ public class RequestHandler implements Runnable {
         long startTime = System.currentTimeMillis();
         BufferedInputStream clientIn = null;
         BufferedOutputStream clientOut = null;
-
+    	boolean autoAuthenticated = false;
+    	Cookie autoAuthNCookie = null;
+    	
         try {
             // client streams (make sure you're using streams that use
             // byte arrays, so things like GIF and JPEG files and file
@@ -276,6 +281,7 @@ public class RequestHandler implements Runnable {
 
                 TrafficManager appMgr = cfg.getTrafficManager();
                 String token = cfg.getTokenFromCookie(reqPkg.cookiesHdr);
+            	System.out.println("|----> Token: " + token);
                 Session s = cfg.getSessionManager().getSessionForToken(token);
                 if (s == null || ! s.isActive()) {
                     token = null;
@@ -317,14 +323,51 @@ public class RequestHandler implements Runnable {
 
                 if (!appMgr.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
                     // so it requires enforcement
-					cLog.fine("@@$$ The path: " + reqPkg.path + " requires authentication.");
 
-                    // missing session cookie or invalid session? redirect to
-                    // login
+                    // missing session cookie or invalid session?
                     if (user == null) {
-                        sendProxyResponse(302, "Found, Redirecting to sign-in for URL enforcement", get302RedirectToLoginPage(reqPkg, "Resource not in Unenforced List"), reqPkg, clientIn, clientOut, user,
-                                startTime, log, true);
-                        return;
+                    	// does the request include username/password headers?
+                    	// implemented to conform to OAM's behavior
+                    	Header usernameHdr = reqPkg.headerBfr.getExtensionHeader("username"); 
+                    	Header passwordHdr = reqPkg.headerBfr.getExtensionHeader("password");
+                    	
+                    	if ( usernameHdr != null && passwordHdr != null) {
+                    		String userName = usernameHdr.getValue();
+                        	Response extResult = SelectUserHandler.authenticateToSources(cfg, 
+                        			userName, passwordHdr.getValue());
+                        	// now handle what responses come back -- TBD how to we want to handle here?
+                        	// auto authz should just fail and we redirect.
+                        	switch(extResult) {
+                        	case ErrorAccessingSource: 
+            					cLog.fine("@@$$ Auto-authentication for path: " + reqPkg.path + " failed. Error accessing source.");
+            					break;
+                        	case UserNotFound:
+            					cLog.fine("@@$$ Auto-authentication for path: " + reqPkg.path + " failed. User '" 
+            							+ userName + "' not found ");
+            					break;
+                        	case UnableToAuthenticate:
+            					cLog.fine("@@$$ Auto-authentication for path: " + reqPkg.path + " failed. Unable to authenticate.");
+            					break;
+                        	case UserInfoLoaded:
+                        		autoAuthenticated = true;
+                        	}
+
+                            if (autoAuthenticated) {
+                            	autoAuthNCookie = SelectUserHandler.generateSession(cfg, usernameHdr.getValue(), reqPkg.host);
+                                if (autoAuthNCookie != null) {
+                                	token = autoAuthNCookie.getValue();
+                                	user = cfg.getUserManager().getUser(userName);
+                                }
+                            }
+                    		
+                    	}
+                    	if (! autoAuthenticated) {
+                    		// redirect to login
+        					cLog.fine("@@$$ The path: " + reqPkg.path + " requires authentication.");
+                            sendProxyResponse(302, "Found, Redirecting to sign-in for URL enforcement", get302RedirectToLoginPage(reqPkg, "Resource not in Unenforced List"), reqPkg, clientIn, clientOut, user,
+                                    startTime, log, true);
+                            return;
+                    	}
                     }
 
                     // is user authorized to view?
@@ -428,6 +471,11 @@ public class RequestHandler implements Runnable {
                 // they decide to disconnect (or the connection times out).
                 LogUtils.fine(cLog, "Awaiting data from: {0}:{1}", appEndpoint.getHost(), endpointPort);
                 resPkg = getHttpPackage(false, serverIn, true, log);
+                if (autoAuthenticated) {
+                	SetCookieHeaderExtractor ext = new SetCookieHeaderExtractor();
+                	ext.addSetCookie(autoAuthNCookie);
+                	resPkg.headerBfr.append(new Header(HeaderDef.SetCookie, ext.getHeaderValue()));
+                }
                 resPkg.scheme = serverScheme;
 
                 if (resPkg.socketTimeout) {
@@ -1131,6 +1179,7 @@ public class RequestHandler implements Runnable {
 
         String path = endpoint.getFilepathTranslated(reqPkg);
         InputStream is = null;
+        System.out.println("---> file endpoint ");
 
         try {
             if (path.startsWith(Service.CLASSPATH_PREFIX)) {
@@ -1150,16 +1199,41 @@ public class RequestHandler implements Runnable {
                 int size = dis.available();
                 byte[] bytes = new byte[size];
                 dis.read(bytes);
+
+                String cType = endpoint.getContentType(); 
+                if (cType == null) {
+                	cType = cfg.getContentType(path);
+                }
+                System.out.println("---> content type: " + cType);
+                // see if we need to tweak content for jsonp
+                if (cType.equals("application/jsonp")) {
+                	String cbParm = "callback=";
+                	int start = reqPkg.query.indexOf(cbParm) + cbParm.length();
+                	int end = reqPkg.query.indexOf("&", start);
+                	if (start != -1 && end != -1) {
+                		String cb = reqPkg.query.substring(start, end);
+                		for(int i=0; i<size; i++) {
+                			if (bytes[i] == '(') {
+                				byte[] newbytes = new byte[size - i + cb.length()];
+                				System.arraycopy(cb.getBytes(), 0, newbytes, 0, cb.length());
+                				System.arraycopy(bytes, i, newbytes, cb.length(), size - i);
+                				System.out.println("---> jsonp change from: ");
+                				System.out.println(new String(bytes));
+                				System.out.println("---> jsonp change to: ");
+                				System.out.println(new String(newbytes));
+                				bytes = newbytes;
+                				break;
+                			}
+                		}
+                	}
+                }
+                
                 pkg.bodyStream.write(bytes);
                 dis.close();
                 pkg.responseLine = new StartLine("HTTP/1.1", "200", "OK");
                 pkg.responseCode = 200;
                 pkg.headerBfr.set(new Header(HeaderDef.ContentLength, Integer.toString(size)));
                 
-                String cType = endpoint.getContentType(); 
-                if (cType == null) {
-                	cType = cfg.getContentType(path);
-                }
                 pkg.headerBfr.set(new Header(HeaderDef.ContentType, cType));
                 pkg.bodyStream.flush();
             }
