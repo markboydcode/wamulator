@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -151,8 +152,9 @@ public class StripEmptyHeadersTest {
 
         // now set up the shim to verify empty headers are injected
     	System.getProperties().remove("non-existent-sys-prop");
+    	URL filePath = StripEmptyHeadersTest.class.getClassLoader().getResource("SiteMatcherTestConfig.xml");
         service = Service.getService("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"
@@ -166,9 +168,9 @@ public class StripEmptyHeadersTest {
             + " <sso-cookie name='lds-policy' domain='.lds.org' />"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping cctx='/test/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/test/*'>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/'>"
+            + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
             + "   </cctx-mapping>"
-            + "   <unenforced cpath='/test/*'/>"
             + "  </by-site>"
             + " </sso-traffic>"
             + " <user-source type='xml'>{{usr-src-props}}</user-source>"

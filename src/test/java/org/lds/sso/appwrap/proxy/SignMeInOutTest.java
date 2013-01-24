@@ -1,6 +1,7 @@
 package org.lds.sso.appwrap.proxy;
 
 import java.io.IOException;
+import java.net.URL;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -27,8 +28,9 @@ public class SignMeInOutTest {
         new Config();
 
     	System.getProperties().remove("non-existent-sys-prop");
+    	URL filePath = SignMeInOutTest.class.getClassLoader().getResource("SignMeInOutTestConfig.xml");
         StringBuffer config = new StringBuffer("string:")
-        .append("<?xml version='1.0' encoding='UTF-8'?>")
+        .append("<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>")
         .append("<?system-alias usr-src-props=non-existent-sys-prop default=")
         .append("\"xml=")
         .append(" <users>")
@@ -39,12 +41,11 @@ public class SignMeInOutTest {
         .append("<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>")
         .append(" <sso-cookie name='lds-policy' domain='.lds.org'/>")
         .append(" <sso-sign-in-url value='http://local.lds.org:{{console-port}}/admin/selectUser.jsp'/>")
-//        .append(" <sso-sign-in-url value='http://127.0.0.1:{{console-port}}/admin/selectUser.jsp'/>")
         .append(" <sso-traffic>")
         .append("  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>")
-        .append("    <cctx-mapping cctx='/is-alive*' thost='127.0.0.1' tport='{{console-port}}' tpath='/is-alive*'/>")
-        .append("    <unenforced cpath='/is-alive'/>")
-        .append("    <unenforced cpath='/is-alive?*'/>")
+        .append("    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}' tpath='/'>")
+        .append("      <policy-source>xml={{policy-src-xml}}</policy-source>")
+        .append("    </cctx-mapping>")
         .append("  </by-site>")
         .append(" </sso-traffic>")
         .append(" <user-source type='xml'>{{usr-src-props}}</user-source>")

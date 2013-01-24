@@ -3,6 +3,7 @@ package org.lds.sso.appwrap.bootstrap;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -21,34 +22,30 @@ public class RemoteStartStopTest {
 	
 	private static final String getConfigXml() {
 		System.getProperties().remove("non-existent-sys-prop");
+		URL filePath = RemoteStartStopTest.class.getClassLoader().getResource("LocalHostTestConfig.xml");
 		return 
 	            "string:<?xml version='1.0' encoding='UTF-8'?>"
 	            + "<?alias site=labs-local.lds.org?>"
-	        	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
+                + "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+                + "<?system-alias usr-src-xml=non-existent-sys-prop default="
 	            + "\""
 	            + "  <users>"
 	            + "    <user name='nnn' pwd='pwd'>"
 	            + "    </user>"
 	            + "  </users>"
 	        	+ "\"?>"
-	            + "<config console-port='8088' proxy-port='8045'>"
-	            + "  <conditions>"
-	            + "   <condition alias='o&apos;hare prj'>"
-	            + "    <OR site='{{site}}'>"
-	            + "     <Attribute name='apps' operation='equals' value='o&apos;hare prj'/>"
-	            + "<!-- comment gets dropped -->"
-	            + "     <Attribute name='apps' operation='equals' value='o&quot;hare prj'/>"
-	            + "    </OR>"
-	            + "   </condition>"
-	            + "  </conditions>"
-	            + " <sso-traffic>"
-	            + "  <by-site scheme='http' host='local.lds.org' port='45'>"
-	            + "   <cctx-mapping cctx='/conditional/*' thost='127.0.0.1' tport='1000' tpath='/conditional/*'/>"
-	            + "   <allow action='GET' cpath='/conditional/*' condition='{{o&apos;hare prj}}'/>"
-	            + "  </by-site>"
-	            + " </sso-traffic>"
-	            + " <user-source type='xml'>xml={{usr-src-xml}}</user-source>"
-	            + "</config>";
+	        	+ "<config console-port='8088' proxy-port='8045'>"
+                + " <sso-cookie name='lds-policy' domain='localhost' />"
+                + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
+                + " <sso-traffic strip-empty-headers='true'>"
+                + "  <by-site scheme='http' host='localhost' port='45'>"
+                + "    <cctx-mapping thost='127.0.0.1' tport='1000' tpath='/is-alive'>"
+                + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
+                + "    </cctx-mapping>"
+                + "  </by-site>"
+                + " </sso-traffic>"
+                + " <user-source type='xml'>{{usr-src-xml}}</user-source>"
+                + "</config>";
 	}
 
 	@Test

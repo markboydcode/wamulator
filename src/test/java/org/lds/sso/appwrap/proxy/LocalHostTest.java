@@ -1,6 +1,7 @@
 package org.lds.sso.appwrap.proxy;
 
 import java.io.IOException;
+import java.net.URL;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -33,8 +34,9 @@ public class LocalHostTest {
 
         // now set up the shim to verify empty headers are injected
     	System.getProperties().remove("non-existent-sys-prop");
-        service = Service.getService("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
+    	URL filePath = LocalHostTest.class.getClassLoader().getResource("LocalHostTestConfig.xml");
+    	service = Service.getService("string:"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"
@@ -47,9 +49,9 @@ public class LocalHostTest {
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='localhost' port='{{proxy-port}}'>"
-            + "    <cctx-mapping cctx='/is-alive*' thost='127.0.0.1' tport='{{console-port}}' tpath='/is-alive*'/>"
-            + "    <allow action='GET' cpath='/is-alive'/>"
-            + "    <allow action='GET' cpath='/is-alive?*'/>"
+            + "    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}' tpath='/is-alive'>"
+            + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
+            + "    </cctx-mapping>"
             + "  </by-site>"
             + " </sso-traffic>"
             + " <user-source type='xml'>{{usr-src-props}}</user-source>"

@@ -873,7 +873,10 @@ public class XmlConfigLoader2 {
                 UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx);
             	sm.addUnenforcedUri(ue);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
-                curCctx = getStringAtt("cctx", path, atts);
+                curCctx = getStringAtt("cctx", path, atts, false);
+                if (curCctx != null && !curCctx.isEmpty()) {
+                	LogUtils.warning(cLog, "The cctx attribute on the cctx-mapping element is deprecated.");
+                }
                 curThost = getStringAtt("thost", path, atts);
                 curOutgoingScheme = OutboundScheme.fromMoniker(getStringAtt("tscheme", path, atts, false));
                 curPolicyServiceGateway = getStringAtt("policy-service-url-gateway", path, atts, false);
@@ -881,14 +884,12 @@ public class XmlConfigLoader2 {
                 curInjectSchemeHeader = getStringAtt("inject-scheme-header", path, atts, false);
                 curInjectScheme = (curInjectSchemeHeader == null ? true : Boolean.parseBoolean(curInjectSchemeHeader));
                 curHostHdr = getStringAtt("host-header", path, atts, false);
-                if (getStringAtt("scheme", path, atts,
-                        false) != null) {
+                if (getStringAtt("scheme", path, atts, false) != null) {
                 	throw new SAXException("Attribute 'scheme' of " + path
                 			+ " has been replaced by 'tscheme'. Please replace "
                 			+ "'scheme' with 'tscheme'.");
                 }
-                curIncomingScheme = InboundScheme.fromMoniker(
-                		getStringAtt("cscheme", path, atts, false));
+                curIncomingScheme = InboundScheme.fromMoniker(getStringAtt("cscheme", path, atts, false));
                 String preserveHost = getStringAtt("preserve-host", path, atts, false);
                 curPreserveHost = (preserveHost == null ? true : Boolean.parseBoolean(preserveHost));
                 curTport = -1;
@@ -921,10 +922,9 @@ public class XmlConfigLoader2 {
                     }
                 }
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {    
-            	WamulatorPolicySource src = new WamulatorPolicySource(parsingContextAccessor, curCctx, curThost, 
-            			curCscheme, curTscheme, curHostHdr, curPolicyServiceGateway,curSchemeHeaderOvrd, 
-            			curInjectSchemeHeader, curPreserveHost, curInjectScheme, curOutgoingScheme, curIncomingScheme,
-            			curTsslPort, curTport);
+            	WamulatorPolicySource src = new WamulatorPolicySource(parsingContextAccessor, curThost, curHostHdr, 
+            			curPolicyServiceGateway,curSchemeHeaderOvrd, curInjectSchemeHeader, curPreserveHost, 
+            			curInjectScheme, curOutgoingScheme, curIncomingScheme, curTsslPort, curTport);
             	parsingContextAccessor.get().put(PARSING_CURR_EXT_POL_SRC, src);
                 parsingContextAccessor.get().put(PARSING_POL_SRC_CONTENT, new StringBuffer());
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {

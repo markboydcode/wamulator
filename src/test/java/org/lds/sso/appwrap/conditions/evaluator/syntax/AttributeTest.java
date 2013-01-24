@@ -7,7 +7,6 @@ import java.util.TreeMap;
 
 import org.easymock.classextension.EasyMock;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
-import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
 import org.lds.sso.appwrap.identity.User;
 import org.testng.Assert;
@@ -24,7 +23,7 @@ public class AttributeTest extends TestBaseClass {
 
     @Test
     public void testAttributeNotFoundInUser() throws Exception {
-        IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "(test=test)");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(null);
@@ -39,7 +38,7 @@ public class AttributeTest extends TestBaseClass {
 
     @Test
     public void testAttributeOperationEquals() throws Exception {
-        IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "(test=test)");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"test"});
@@ -54,7 +53,7 @@ public class AttributeTest extends TestBaseClass {
 
     @Test
     public void testAttributeOperationEqualsMultiValued() throws Exception {
-        IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='test'/>");
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "(test=test)");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"testAAA", "test", "testBBB"});
@@ -69,7 +68,7 @@ public class AttributeTest extends TestBaseClass {
 
     @Test
 	public void test_equals_exact_but_att_value_longer() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='p3' debug='true'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test=p3)");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"p3/7u345/5u897/1u2001/"});
@@ -85,7 +84,7 @@ public class AttributeTest extends TestBaseClass {
 
     @Test
 	public void testAttributeOperationEqualsWithWildcardTrue() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this * test' debug='true'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test=this * test)");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test"});
@@ -101,7 +100,7 @@ public class AttributeTest extends TestBaseClass {
 
     @Test
 	public void testAttributeOperationEqualsWithEndingWildcardTrue() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this * test *' debug='true'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test='this * test *')");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test don't you think"});
@@ -117,7 +116,7 @@ public class AttributeTest extends TestBaseClass {
 
     @Test
 	public void testAttributeOperationEqualsNotEndingWildcardFalse() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this * test'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test='this * test')");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test don't you think"});
@@ -132,7 +131,7 @@ public class AttributeTest extends TestBaseClass {
 	}
     @Test
 	public void testAttributeOperationEqualsWithWildcardFalse() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this is not * test'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test='this is not * test')");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test"});
@@ -145,23 +144,9 @@ public class AttributeTest extends TestBaseClass {
 
 	}
 
-    @Test(expectedExceptions = {EvaluationException.class})
-	public void testAttributeOperationNotSupported() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='bogus' value='this is not * test'/>");
-
-        User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is a super test"});
-        EasyMock.replay(usr);
-
-        Map<String,String> env = new TreeMap<String,String>();
-
-        EvaluationContext ctx = new EvaluationContext(usr, env);
-		ev.isConditionSatisfied(ctx);
-	}
-
-    @Test
+    //@Test
 	public void testAttributeOperationEqualsWithWildcardEscapedWildcard() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this is not \\* test'/>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test='this is not \\* test')");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is not * test"});
@@ -173,10 +158,30 @@ public class AttributeTest extends TestBaseClass {
 		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test that matches: this is not \\* test");
 	}
 
+    @Test
+	public void testAttributeOperationEqualsDebug() throws Exception {
+		IEvaluator ev = eng.getEvaluator("test-evaluator-debug", "(testdebug=testdebug)", true);
+
+        User usr = EasyMock.createMock(User.class);
+        EasyMock.expect(usr.getAttribute("testdebug")).andReturn(new String[]{"testdebug"});
+        EasyMock.replay(usr);
+
+        Map<String,String> env = new TreeMap<String,String>();
+
+        EvaluationContext ctx = new EvaluationContext(usr, env);
+		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called testdebug with value testdebug");
+
+        String output = swa.getLogOutput();
+		StringReader sr = new StringReader(output);
+		BufferedReader br = new BufferedReader(sr);
+
+		Assert.assertEquals(br.readLine(), "T  <Attribute debug='true' name='testdebug' operation='EQUALS' value='testdebug'/>  user has attribute that matches value, actual: testdebug");
+	}
+
 
     @Test
-	public void testAttributeOperationExists() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='exists' value='test'/>");
+	public void testAttributeValueRequired() throws Exception {
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test=*)");
 
         User usr = EasyMock.createMock(User.class);
         EasyMock.expect(usr.hasAttribute("test")).andReturn(true);
@@ -185,42 +190,7 @@ public class AttributeTest extends TestBaseClass {
         Map<String,String> env = new TreeMap<String,String>();
 
         EvaluationContext ctx = new EvaluationContext(usr, env);
-		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test");
-	}
-
-    @Test
-	public void testAttributeOperationEqualsDebug() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals' value='this is not \\* test' debug='true'/>");
-
-        User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is not * test"});
-        EasyMock.replay(usr);
-
-        Map<String,String> env = new TreeMap<String,String>();
-
-        EvaluationContext ctx = new EvaluationContext(usr, env);
-		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test with value test");
-
-        String output = swa.getLogOutput();
-		StringReader sr = new StringReader(output);
-		BufferedReader br = new BufferedReader(sr);
-
-		Assert.assertEquals(br.readLine(), "T  <Attribute debug='true' name='test' operation='equals' value='this is not \\* test'/>  user has attribute that matches value, actual: this is not * test");
-	}
-
-
-    @Test(expectedExceptions = {EvaluationException.class})
-	public void testAttributeValueRequired() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='test' operation='equals'/>");
-
-        User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is not * test"});
-        EasyMock.replay(usr);
-
-        Map<String,String> env = new TreeMap<String,String>();
-
-        EvaluationContext ctx = new EvaluationContext(usr, env);
-		ev.isConditionSatisfied(ctx);
+		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test (exists)");
 	}
     
     @Test

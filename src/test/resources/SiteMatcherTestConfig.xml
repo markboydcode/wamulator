@@ -1,0 +1,21 @@
+<deployment at='2012-11-30_11:00:46.208-0700'>
+	<environment id='dev' host='dev.lds.org (exposee)' />
+	<application id='local.lds.org/' authHost='local.lds.org' cctx='/'>
+		<authentication scheme='anonymous' name='default-anonymous' />
+		<policy name='a/b/c{/.../*,*}'>
+			<url>a/b/c{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='a{/.../*,*}'>
+			<url>a{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='b{/.../*,*}'>
+			<url>b{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+	</application>
+</deployment>

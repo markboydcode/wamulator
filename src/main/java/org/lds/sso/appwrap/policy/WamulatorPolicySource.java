@@ -25,7 +25,9 @@ import org.lds.sso.appwrap.SiteMatcher;
 import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.UnenforcedUri;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
+import org.lds.sso.appwrap.exception.ConfigParserException;
 import org.lds.sso.appwrap.identity.ExternalUserSource.ConfigurationException;
+import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.io.SimpleErrorHandler;
 import org.lds.sso.appwrap.model.AuthNScheme;
 import org.lds.sso.appwrap.model.AuthZRule;
@@ -42,12 +44,12 @@ import org.xml.sax.XMLReader;
 public class WamulatorPolicySource implements ContentHandler {
 	private static final Logger cLog = Logger.getLogger(WamulatorPolicySource.class.getName());
 	private ThreadLocal<Map<String,Object>> parsingContextAccessor;
-	private String cctxCctx, cctxThost, cctxCscheme, cctxTscheme, cctxHostHdr;
-    String cctxPolicyServiceGateway, cctxSchemeHeaderOvrd, cctxInjectSchemeHeader;
-    boolean cctxPreserveHost, cctxInjectScheme;
-    OutboundScheme cctxOutgoingScheme;
-    InboundScheme cctxIncomingScheme;
-    int cctxTsslPort, cctxTport;
+	private String cctxThost, cctxHostHdr;
+    private String cctxPolicyServiceGateway, cctxSchemeHeaderOvrd, cctxInjectSchemeHeader;
+    private boolean cctxPreserveHost, cctxInjectScheme;
+    private OutboundScheme cctxOutgoingScheme;
+    private InboundScheme cctxIncomingScheme;
+    private int cctxTsslPort, cctxTport;
 	
 	
 	public static final String PARSING_CONFIG = "config-instance";
@@ -55,6 +57,7 @@ public class WamulatorPolicySource implements ContentHandler {
 	private Path path = new Path();
 	private StringBuffer buffer;
 	private Attributes curAtts;
+	private String cctx;
 	
 	private Map<String, AuthZRule> authorizationRules = new HashMap<String, AuthZRule>();
 	
@@ -70,8 +73,10 @@ public class WamulatorPolicySource implements ContentHandler {
 	
 	// Policy Variables
 	private Policy curPolicy;
-	private AuthZRule curPolicyAuthZRule;
 	private Header curPolicyAuthZHeader;
+	
+	private Policy defPolicy;
+	private Header defPolicyAuthZHeader;
 	
 	private String defAuthNScheme;
 	private String defAuthNName;
@@ -81,16 +86,12 @@ public class WamulatorPolicySource implements ContentHandler {
 		this.parsingContextAccessor = parsingContextAccessor;
 	}
 	
-	public WamulatorPolicySource(ThreadLocal<Map<String,Object>> parsingContextAccessor, String cctxCctx, 
-			String cctxThost, String cctxCscheme, String cctxTscheme, String cctxHostHdr,
-			String cctxPolicyServiceGateway, String cctxSchemeHeaderOvrd, String cctxInjectSchemeHeader,
-			boolean cctxPreserveHost, boolean cctxInjectScheme, OutboundScheme cctxOutgoingScheme, 
-			InboundScheme cctxIncomingScheme, int cctxTsslPort, int cctxTport) {
+	public WamulatorPolicySource(ThreadLocal<Map<String,Object>> parsingContextAccessor, String cctxThost, 
+			String cctxHostHdr, String cctxPolicyServiceGateway, String cctxSchemeHeaderOvrd, 
+			String cctxInjectSchemeHeader,boolean cctxPreserveHost, boolean cctxInjectScheme, 
+			OutboundScheme cctxOutgoingScheme, InboundScheme cctxIncomingScheme, int cctxTsslPort, int cctxTport) {
 		this.parsingContextAccessor = parsingContextAccessor;
-		this.cctxCctx = cctxCctx;
 		this.cctxThost = cctxThost;
-		this.cctxCscheme = cctxCscheme;
-		this.cctxTscheme = cctxTscheme;
 		this.cctxHostHdr = cctxHostHdr;
 		this.cctxPolicyServiceGateway = cctxPolicyServiceGateway;
 		this.cctxSchemeHeaderOvrd = cctxSchemeHeaderOvrd;
@@ -150,19 +151,22 @@ public class WamulatorPolicySource implements ContentHandler {
         curAtts = atts;
         
         if (path.matches("/deployment/application")) {
-    		String cctx = atts.getValue("cctx");
-    		if (!cctx.equals(cctxCctx)) {
-    			throw new IllegalArgumentException(
-    					"ERROR: The cctx attribute on the cctx-mapping element in the config file " + 
-    					"(" + cctxCctx + ") " + "must match the cctx attribute on the application " + 
-    					"element in the Policy Exposee export config file (" + cctx + ").");
-    		}
+    		cctx = atts.getValue("cctx");
+    		defPolicy = new Policy("Default");
     	} else if (path.matches("/deployment/application/authentication")) { 
     		defAuthNScheme = atts.getValue("scheme");
     		defAuthNName = atts.getValue("name");
 		} else if (path.matches("/deployment/application/authorization/default")) {
-        	defAuthZRuleName = atts.getValue("value");
-        } else if (path.matches("/deployment/application/authorization/rule")) {
+			defAuthZProfileHeaders = new HashMap<String,String>();
+        	defAuthZFixedHeaders = new HashMap<String,List<String>>();
+			defAuthZRuleName = atts.getValue("value");
+		} else if (path.matches("/deployment/application/authorization/default/headers/success/redirect") ||
+     		   path.matches("/deployment/application/authorization/default/headers/failure/redirect") ||
+     		   path.matches("/deployment/application/authorization/default/headers/inconclusive/redirect")) {
+     	
+			String value = atts.getValue("value");
+			defPolicyAuthZHeader = new Header("redirect", value);
+		} else if (path.matches("/deployment/application/authorization/rule")) {
         	String name = atts.getValue("name");
         	String enabled = atts.getValue("enabled");
         	String precedence = atts.getValue("allow-takes-precedence");
@@ -173,9 +177,6 @@ public class WamulatorPolicySource implements ContentHandler {
         	
         	if (!name.equals("~~default-headers~~")) {
         		curAuthZRule = new AuthZRule(name, Boolean.parseBoolean(enabled), Boolean.parseBoolean(precedence));
-        	} else {
-        		defAuthZProfileHeaders = new HashMap<String,String>();
-            	defAuthZFixedHeaders = new HashMap<String,List<String>>();
         	}
         } else if (path.matches("/deployment/application/authorization/rule/allow/condition") ||
         		   path.matches("/deployment/application/authorization/rule/deny/condition")) {
@@ -186,14 +187,14 @@ public class WamulatorPolicySource implements ContentHandler {
         		buffer = new StringBuffer();
         	}
         	curAuthZCondition = new Condition(type, value);
-        } else if (path.matches("/deployment/application/authorization/rule/headers/success/profile-att")) {
+        } else if (path.matches("/deployment/application/authorization/default/headers/success/profile-att")) {
         	String name = atts.getValue("name");
         	String attribute = atts.getValue("attribute");
         	defAuthZProfileHeaders.put(name, attribute);
-        } else if (path.matches("/deployment/application/authorization/rule/headers/success/fixed-value")) {
+        } else if (path.matches("/deployment/application/authorization/default/headers/success/fixed-value")) {
         	String name = atts.getValue("name");
         	String value = atts.getValue("value");
-        	List<String> vals = curAuthZFixedHeaders.get(name);
+        	List<String> vals = defAuthZFixedHeaders.get(name);
         	if (vals == null) {
         		vals = new ArrayList<String>();
         		defAuthZFixedHeaders.put(name, vals);
@@ -216,12 +217,7 @@ public class WamulatorPolicySource implements ContentHandler {
         	curAuthZProfileHeaders = new HashMap<String,String>();
         	curAuthZFixedHeaders = new HashMap<String,List<String>>();
         	String name = atts.getValue("value");
-        	AuthZRule rule = authorizationRules.get(name);
-        	if (rule == null) {
-        		System.out.println("The authorization rule needs to be defined before it is used: " + name);
-        	} else {
-        		curPolicyAuthZRule = rule.clone();
-        	}
+        	curPolicy.setAuthZRuleString(name);
         } else if (path.matches("/deployment/application/policy/authorization/headers/success/redirect") ||
         		   path.matches("/deployment/application/policy/authorization/headers/failure/redirect") ||
         		   path.matches("/deployment/application/policy/authorization/headers/inconclusive/redirect")) {
@@ -254,12 +250,12 @@ public class WamulatorPolicySource implements ContentHandler {
 			}
 			
 			// create default policy
-			Policy defPolicy = new Policy("Default");
-			defPolicy.setUrl(cctxCctx + "{/.../*,*}");
+			defPolicy.setUrl(cctx + "{/.../*,*}");
 			String[] operations = {"HEAD","GET","POST","PUT","DELETE","TRACE","OPTIONS","CONNECT"}; 
 			defPolicy.setOperations(Arrays.asList(operations));
 			AuthNScheme authNScheme = new AuthNScheme(defAuthNScheme, defAuthNName);
 	        defPolicy.setAuthNScheme(authNScheme);
+	        defPolicy.setAuthZRuleString(defAuthZRuleName);
 			
 			TrafficManager trafficMgr = cfg.getTrafficManager();
             SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
@@ -290,6 +286,7 @@ public class WamulatorPolicySource implements ContentHandler {
 				curAuthZCondition.setValue(buffer.toString());
 			}
 			curAuthZRule.setDenyCondition(curAuthZCondition);
+		
 		} else if (path.matches("/deployment/application/policy")) {
 			TrafficManager trafficMgr = cfg.getTrafficManager();
             SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
@@ -309,7 +306,7 @@ public class WamulatorPolicySource implements ContentHandler {
             }
 		} else if (path.matches("/deployment/application/policy/url")) {
         	String url = buffer.toString();
-        	String prefix = cctxCctx.equals("/") ? "" : cctxCctx;
+        	String prefix = cctx.equals("/") ? "" : cctx;
         	if (!url.startsWith("/")) {
         		prefix += "/";
         	}
@@ -328,8 +325,16 @@ public class WamulatorPolicySource implements ContentHandler {
         	}
         	
         	curPolicy.setOperations(operations);
+        } else if (path.matches("/deployment/application/authorization/default")) {
+            	
+        } else if (path.matches("/deployment/application/authorization/default/headers/success/redirect")) {
+          	defPolicy.addSuccessHeader(curPolicyAuthZHeader);
+        } else if (path.matches("/deployment/application/authorization/default/headers/failure/redirect")) {
+           	defPolicy.addFailureHeader(curPolicyAuthZHeader);
+        } else if (path.matches("/deployment/application/authorization/default/headers/inconclusive/redirect")) {
+           	defPolicy.addInconclusiveHeader(curPolicyAuthZHeader);
         } else if (path.matches("/deployment/application/policy/authorization")) {
-        	curPolicy.setAuthZRule(curPolicyAuthZRule);
+        	
         } else if (path.matches("/deployment/application/policy/authorization/headers/success/redirect")) {
         	curPolicy.addSuccessHeader(curPolicyAuthZHeader);
         } else if (path.matches("/deployment/application/policy/authorization/headers/failure/redirect")) {
@@ -385,14 +390,28 @@ public class WamulatorPolicySource implements ContentHandler {
 	private void addPolicyToSiteMatcher(SiteMatcher sm, String url, Policy policy) {
 		String[] actions = policy.getOperations().toArray(new String[] {});
 		
+		if (policy.getAuthNScheme() == null) {
+			LogUtils.warning(cLog, policy.getName() + " does not have an authentication scheme defined." +
+					" Falling back to the Default authentication scheme.");
+			policy.setAuthNScheme(new AuthNScheme(defAuthNScheme, defAuthNName));
+		}
+		
 		if ("anonymous".equals(policy.getAuthNScheme().getScheme())) {
         	UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), url, 
             		policy.getQueryString(), url);
         	sm.addUnenforcedUri(ue);
         } else {
-            String cond = policy.getAuthZRule() != null ? policy.getAuthZRule().getName() : null;
-        	AuthZRule ar = authorizationRules.get(cond);
-        	if (ar != null) {
+            String cond = policy.getAuthZRuleString();
+        	
+            // Make sure this rule exists
+            AuthZRule ar = authorizationRules.get(cond);
+        	if (ar == null && cond != null && (cond.contains("&") || cond.contains("|") || cond.contains("(") || cond.contains(")"))) {
+        		LogUtils.warning(cLog, "The outcome of having combined Authorization Rules in the Authorization Expression " +
+        				"can have an unexpected outcome. For this reason it is not supported in the WAMulator " + 
+        				"at this time. The production WAM environment does support this functionality. Please fix: " + cond);
+        	} else if (ar == null && !"Default".equals(policy.getName())) {
+        		throw new ConfigParserException("The authorization rule must be defined before it is used: " + cond);
+        	} else {
         		sm.addAllowTakesPrecedence(url, ar.allowTakesPrecedence());
         		Condition allowCondition = ar.getAllowCondition();
         		if (allowCondition != null) {

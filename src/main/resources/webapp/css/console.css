@@ -1,0 +1,19 @@
+body {background-color: #EEF; margin: 0px; padding: 0px;}
+
+div.tabs {background-color: white; padding: 10px 0 5px 15px;}
+span.version {color: black; font-weight: bolder; font-size: large; padding-right: 15px;}
+span.menu {color: #000; background-color: #DDF; padding: 5px 8px; margin-right: 10px;}
+span.menu.active {background-color: #EEF; padding-bottom: 6px;}
+
+div.content {padding: 0 10 10 10px;}
+div.info {font-style: italic; color: green; padding: 12px 3px 3px 3px;}
+
+div.controls {font-size: medium; padding: 3px;}
+div.controls span.title {font-weight: bold;}
+div.controls span.item {padding: 0 5 0 10px;}
+
+tr.odd {background: #DDF;}
+
+th {padding-right: 15px; text-decoration: underline; text-align: left;}
+th, td {cursor: default; white-space: nowrap; padding-right: 15px;}
+.center {text-align: center;}

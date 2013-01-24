@@ -222,6 +222,10 @@ public class LogicalSyntaxEvaluationEngine {
      *             error in the synatx
      */
     public IEvaluator getEvaluator(String alias, String syntax) throws EvaluationException {
+    	return getEvaluator(alias, syntax, false);
+    }
+    
+    public IEvaluator getEvaluator(String alias, String syntax, boolean debug) throws EvaluationException {
         syntax = syntax.trim();
         EvaluatorUsageHolder holder = null;
 
@@ -240,7 +244,7 @@ public class LogicalSyntaxEvaluationEngine {
 				throw new EvaluationException("Unable to parse syntax '" + syntax + "'.", e);
 			}
 
-            holder = new EvaluatorUsageHolder(alias, filterToEvaluator(filter));
+            holder = new EvaluatorUsageHolder(alias, filterToEvaluator(filter, debug));
             synchronized (evaluators) {
                 evaluators.put(syntax, holder);
             }
@@ -254,11 +258,11 @@ public class LogicalSyntaxEvaluationEngine {
      * @return evaluator IEvaluator
      */
     @SuppressWarnings("rawtypes")
-	public IEvaluator filterToEvaluator(ExprNode filter) {
+	public IEvaluator filterToEvaluator(ExprNode filter, boolean debug) {
     	IEvaluator ie = null;
+    	Map<String, String> aMap = new TreeMap<String, String>();
     	
     	if (filter.isLeaf()) {
-    		Map<String, String> aMap = new TreeMap<String, String>();
             String headerName = ((LeafNode) filter).getAttribute();
             aMap.put("name", headerName);
             String operation = "EQUALS";
@@ -274,12 +278,15 @@ public class LogicalSyntaxEvaluationEngine {
             	}
             } else if (filter.getClass() == EqualityNode.class) {
             	Value bv = ((EqualityNode) filter).getValue();
-            	value = bv.toString();
+            	value = bv.getString();
             } else if (filter.getClass() == PresenceNode.class) {
             	operation = "EXISTS";
             } 
             aMap.put("operation", operation);
             aMap.put("value", value);
+            if (debug) {
+            	aMap.put("debug", "true");
+            }
             
             try {
 				ie = (IEvaluator) Attribute.class.newInstance();
@@ -290,8 +297,12 @@ public class LogicalSyntaxEvaluationEngine {
     	} else if (filter.getClass() == OrNode.class) {
     		try {
     			ie = (IEvaluator) OR.class.newInstance();
+    			if (debug) {
+                	aMap.put("debug", "true");
+                }
+    			ie.init(filter.toString(), aMap);
     			for (ExprNode child : ((OrNode) filter).getChildren()) {
-    				((OR) ie).addEvaluator(filterToEvaluator(child));
+    				((OR) ie).addEvaluator(filterToEvaluator(child, debug));
     			}
     		} catch (Exception e) {
     			e.printStackTrace();
@@ -299,8 +310,12 @@ public class LogicalSyntaxEvaluationEngine {
     	} else if (filter.getClass() == AndNode.class) {
     		try {
     			ie = (IEvaluator) AND.class.newInstance();
+    			if (debug) {
+                	aMap.put("debug", "true");
+                }
+    			ie.init(filter.toString(), aMap);
     			for (ExprNode child : ((AndNode) filter).getChildren()) {
-    				((AND) ie).addEvaluator(filterToEvaluator(child));
+    				((AND) ie).addEvaluator(filterToEvaluator(child, debug));
     			} 
     		} catch (Exception e) {
     			e.printStackTrace();
@@ -308,8 +323,12 @@ public class LogicalSyntaxEvaluationEngine {
     	} else if (filter.getClass() == NotNode.class) {
     		try {
     			ie = (IEvaluator) NOT.class.newInstance();
+    			if (debug) {
+                	aMap.put("debug", "true");
+                }
+    			ie.init(filter.toString(), aMap);
     			for (ExprNode child : ((NotNode) filter).getChildren()) {
-    				((NOT) ie).addEvaluator(filterToEvaluator(child));
+    				((NOT) ie).addEvaluator(filterToEvaluator(child, debug));
     			} 
     		} catch (Exception e) {
     			e.printStackTrace();

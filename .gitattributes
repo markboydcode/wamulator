@@ -182,6 +182,7 @@ src/main/resources/webapp/apps.jsp -text svneol=unset#text/plain
 src/main/resources/webapp/bullet_white.png -text
 src/main/resources/webapp/cancel.gif -text
 src/main/resources/webapp/codaUserSelect.jsp -text svneol=unset#text/plain
+src/main/resources/webapp/css/console.css -text
 src/main/resources/webapp/css/ie.css -text
 src/main/resources/webapp/css/print.css -text
 src/main/resources/webapp/css/project-ie.css -text
@@ -285,11 +286,17 @@ src/test/java/org/lds/sso/appwrap/rest/oes/v1/RestHttpTest.java -text svneol=uns
 src/test/java/org/lds/sso/appwrap/ui/JspUtilsTest.java -text svneol=unset#text/plain
 src/test/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParserTest.java -text svneol=unset#text/plain
 src/test/resources/CodaServiceResponseParserTest-good.txt -text svneol=unset#text/plain
-src/test/resources/ComplexSyntaxTest.xml -text svneol=unset#text/plain
+src/test/resources/CookiePathAndRedirectConfig.xml -text
 src/test/resources/HasLdsAccountConversionSample.xml -text svneol=unset#text/plain
+src/test/resources/LocalHostTestConfig.xml -text
+src/test/resources/RFC2817TestConfig.xml -text
 src/test/resources/RequestHandlerIntegrationTestFile1.txt -text svneol=unset#text/plain
 src/test/resources/RequestHandlerIntegrationTestFile2.txt -text svneol=unset#text/plain
 src/test/resources/SampleOAMcfgApproach.xml -text
+src/test/resources/SignMeInOutTestConfig.xml -text
+src/test/resources/SiteMatcherTestConfig.xml -text
+src/test/resources/StripEmptyHeaderTestConfig.xml -text
+src/test/resources/XmlConfigDefaultRuleTest.xml -text
 src/test/resources/XmlConfigLoaderTest.txt -text svneol=unset#text/plain
 src/test/resources/has-lds-account-1234-test.xml -text svneol=unset#text/plain
 src/test/resources/is-bishop-test.xml -text svneol=unset#text/plain

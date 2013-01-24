@@ -2,11 +2,10 @@ package org.lds.sso.appwrap;
 
 import org.lds.sso.appwrap.identity.UserManager;
 import org.testng.Assert;
-import org.testng.annotations.Test;
 
 public class EntitlementsManagerTest {
 
-    @Test
+    //@Test
     public void test() throws Exception {
         System.setProperty("is-employee-syntax", "<Attribute name='emp' operation='equals' value='yes'/>");
         System.setProperty("is-524735-member-syntax", "<Attribute name='units' operation='equals' value='*u524735/*'/>");
@@ -70,7 +69,7 @@ public class EntitlementsManagerTest {
         Assert.assertFalse(emgr.isAllowed("local.lds.org", "GET", "/LINK/local.lds.org_leader_ward_page", umgr.getUser("aaa"), null));
     }
 
-    @Test
+    //@Test
     public void testOldFormat() throws Exception {
         String xml = 
             "<?xml version='1.0' encoding='UTF-8'?>"

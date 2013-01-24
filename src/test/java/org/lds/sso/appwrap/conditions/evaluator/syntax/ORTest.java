@@ -16,17 +16,13 @@ public class ORTest extends TestBaseClass {
 	
 	@Test
 	public void testHasPosition_OR_DebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", 
-				"<OR debug-user='ngienglishbishop'>" +
-				" <Attribute name='position' operation='EQUALS' value='p3*'/>" +
-				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
-				"</OR>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(|(employeeStatus=A)(ldsPosv2=p3/*))", true);
 		
 		// stuff evaluator will go after
 		String[] posAtts = new String[] {};
 		String[] empAtts = new String[] {"A"};
 		User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("ldsposv2")).andReturn(posAtts);
         EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
 		EasyMock.replay(usr);
@@ -42,28 +38,24 @@ public class ORTest extends TestBaseClass {
 		StringReader sr = new StringReader(output);
 		BufferedReader br = new BufferedReader(sr);
 
-		Assert.assertEquals(br.readLine(), "T  <OR debug-user='ngienglishbishop'>");
-		Assert.assertEquals(br.readLine(), "T    <Attribute name='employeestatus' operation='EQUALS' value='A'/>  user has attribute that matches value, actual: A");
-
+		Assert.assertEquals(br.readLine(), "T  <OR debug='true'>");
+		Assert.assertEquals(br.readLine(), "T    <Attribute debug='true' name='employeeStatus' operation='EQUALS' value='A'/>  user has attribute that matches value, actual: A");
 		Assert.assertEquals(br.readLine(), "   </OR>");
 		Assert.assertEquals(br.readLine(), "----- env -----");
 		Assert.assertEquals(br.readLine(), "somevar1 = somevalue1");
-        Assert.assertEquals(br.readLine(), "somevar2 = somevalue2");
+		Assert.assertEquals(br.readLine(), "somevar2 = somevalue2");
 		Assert.assertEquals(br.readLine(), "---------------");
+        Assert.assertEquals(br.readLine(), null);
 	}
 	@Test
 	public void testHasPosition_OR_notDebugOutput() throws Exception {
-        IEvaluator ev = eng.getEvaluator("test-evaluator", 
-				"<OR debug-user='ngienglishbishop'>" +
-				" <Attribute name='position' operation='EQUALS' value='p3*'/>" +
-				" <Attribute name='employeestatus' operation='EQUALS' value='A'/>" +
-				"</OR>");
+        IEvaluator ev = eng.getEvaluator("test-evaluator", "(|(employeeStatus=A)(ldsPosv2=p4/*))");
 		
 		// stuff evaluator will go after
 		String[] posAtts = new String[] {};
 		String[] empAtts = new String[] {"T"};
         User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("position")).andReturn(posAtts);
+        EasyMock.expect(usr.getAttribute("ldsposv2")).andReturn(posAtts);
         EasyMock.expect(usr.getAttribute("employeestatus")).andReturn(empAtts);
         EasyMock.expect(usr.getUsername()).andReturn("ngienglishbishop");
         EasyMock.replay(usr);
@@ -81,11 +73,6 @@ public class ORTest extends TestBaseClass {
 
 		// for OR if no criteria were met then we simplify output and don't 
 		// record all nested evaluator output
-		Assert.assertEquals(br.readLine(), "F  <OR debug-user='ngienglishbishop'>");
-		Assert.assertEquals(br.readLine(), "   </OR>");
-		Assert.assertEquals(br.readLine(), "----- env -----");
-		Assert.assertEquals(br.readLine(), "somevar1 = somevalue1");
-        Assert.assertEquals(br.readLine(), "somevar2 = somevalue2");
-		Assert.assertEquals(br.readLine(), "---------------");
+		Assert.assertEquals(br.readLine(), null);
 	}
 }

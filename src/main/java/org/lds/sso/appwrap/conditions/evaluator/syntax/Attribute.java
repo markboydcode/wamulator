@@ -42,10 +42,10 @@ public class Attribute extends SyntaxBase {
         switch (operation) {
             case EQUALS:
                 String[] vals = user.getAttribute(attributeName.toLowerCase());
-                if (vals.length == 1 && vals[0].contains(":")) {
-                	vals = vals[0].split(":");
-                }
                 if (vals != null) {
+                	if (vals.length == 1 && vals[0].contains(":")) {
+                    	vals = vals[0].split(":");
+                    }
                     for (String val : vals) {
                         if (wildCardMatch(val, attributeValue)) {
                             satisfied = true;
@@ -53,14 +53,12 @@ public class Attribute extends SyntaxBase {
                         }
                     }
                 }
-                if(satisfied){
+                if (satisfied) {
                     debug(evaluationCtx, satisfied, String.format("user has attribute that matches value, actual: %s", vals[0]));
-                }
-                else{
+                } else {
                     if (vals != null && vals.length != 0) {
                         debug(evaluationCtx, satisfied, String.format("user does not have attribute that matches value, actual: %s", vals[0]));
-                    }
-                    else {
+                    } else {
                         debug(evaluationCtx, satisfied, "user does not have attribute");
                     }
                 }
@@ -120,24 +118,6 @@ public class Attribute extends SyntaxBase {
 
         return true;
     }
-
-/*    public static boolean wildCardMatch2(String text, String pattern) {
-//        int idx = pattern.indexOf("(?<!\\\\)\\*");
-        String[] cards = pattern.split("\\*", 2);
-        //Find card
-
-        int idx = text.indexOf(cards[0]);
-        if (idx == -1) {return false;}
-        text = text.substring(idx + cards[0].length());
-
-
-        if (cards.length == 1) { // No wildcard
-            return cards[0].equals("") || text.equals("");
-        }
-        else {
-            return wildCardMatch2(text, cards[1]);
-        }
-    }*/
 
     public void debug(EvaluationContext ctx, boolean outcome, String message){
         if(ctx.shouldLogResult(this)){

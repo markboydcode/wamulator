@@ -1,13 +1,11 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -217,26 +215,18 @@ public class CookiePathAndRedirectRewriteTest {
             }
         };
         server.start();
-
+        
         // now set up the shim
+        URL filePath = CookiePathAndRedirectRewriteTest.class.getClassLoader().getResource("CookiePathAndRedirectConfig.xml");
         service = Service.getService("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
             + "<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-traffic>"
             + "  <by-site scheme='http' host='labs-local.lds.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping cctx='/testInt/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testInt/*'/>"
-            + "   <unenforced cpath='/testInt/*'/>"
-            + "   <cctx-mapping cctx='/testQS/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testQS/*'/>"
-            + "   <unenforced cpath='/testQS/*'/>"
-            + "   <cctx-mapping cctx='/testMC/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testMC/*'/>"
-            + "   <unenforced cpath='/testMC/*'/>"
-            + "   <cctx-mapping cctx='/testMH/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testMH/*'/>"
-            + "   <unenforced cpath='/testMH/*'/>"
-            + "   <cctx-mapping cctx='/testRR/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testRR/*'/>"
-            + "   <unenforced cpath='/testRR/*'/>"
-            + "   <cctx-mapping cctx='/testNRR/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/testNRR/*'/>"
-            + "   <unenforced cpath='/testNRR/*'/>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/*'>"
+            + "    <policy-source>xml={{policy-src-xml}}</policy-source>"
+            + "   </cctx-mapping>"
             + "  </by-site>"
             + "  <rewrite-cookie from-path='/leader-forms' to-path='/mls/cr' />"
             + "  <rewrite-redirect "

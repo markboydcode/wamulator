@@ -10,7 +10,7 @@ public class Policy {
 	private String queryString;
 	private List<String> operations;
 	private AuthNScheme authNScheme;
-	private AuthZRule authZRule;
+	private String authZRuleString;
 	private List<Header> successHeaders;
 	private List<Header> failureHeaders;
 	private List<Header> inconclusiveHeaders;
@@ -62,13 +62,13 @@ public class Policy {
 	public void setAuthNScheme(AuthNScheme authNScheme) {
 		this.authNScheme = authNScheme;
 	}
-	
-	public AuthZRule getAuthZRule() {
-		return authZRule;
+	 
+	public String getAuthZRuleString() {
+		return authZRuleString;
 	}
 	
-	public void setAuthZRule(AuthZRule authZRule) {
-		this.authZRule = authZRule;
+	public void setAuthZRuleString(String authZRuleString) {
+		this.authZRuleString = authZRuleString;
 	}
 	
 	public List<Header> getSuccessHeaders() {

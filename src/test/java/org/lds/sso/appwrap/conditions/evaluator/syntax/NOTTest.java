@@ -16,10 +16,7 @@ public class NOTTest extends TestBaseClass {
 
     @Test
 	public void testHasLdsPositionNOTDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", 
-				"<NOT debug-user='ngienglishbishop'>" +
-				" <Attribute name='position' operation='EQUALS' value='p4*'/>" +
-				"</NOT>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(!(position=p4/*))", true);
 		
 		// stuff evaluator will go after
 		String[] posAtts = new String[] {"p4/7u345/5u897/1u2001/"};
@@ -40,24 +37,20 @@ public class NOTTest extends TestBaseClass {
 		StringReader sr = new StringReader(output);
 		BufferedReader br = new BufferedReader(sr);
 		
-		Assert.assertEquals(br.readLine(), "F  <NOT debug-user='ngienglishbishop'>");
-		Assert.assertEquals(br.readLine(), "T    <Attribute name='position' operation='EQUALS' value='p4*'/>  user has attribute that matches value, actual: p4/7u345/5u897/1u2001/");
+		Assert.assertEquals(br.readLine(), "F  <NOT debug='true'>");
+		Assert.assertEquals(br.readLine(), "T    <Attribute debug='true' name='position' operation='EQUALS' value='p4/*'/>  user has attribute that matches value, actual: p4/7u345/5u897/1u2001/");
 		Assert.assertEquals(br.readLine(), "   </NOT>");
 		Assert.assertEquals(br.readLine(), "----- env -----");
 		Assert.assertEquals(br.readLine(), "somevar1 = somevalue1");
         Assert.assertEquals(br.readLine(), "somevar2 = somevalue2");
 		Assert.assertEquals(br.readLine(), "somevar3 = somevalue3");
 		Assert.assertEquals(br.readLine(), "---------------");
+		Assert.assertEquals(br.readLine(), null);
 	}
 
     @Test
 	public void testHasLdsPositionNOTNOTDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", 
-				"<NOT debug-user='ngienglishbishop'>" +
-				" <NOT>" +
-				"  <Attribute name='position' operation='EQUALS' value='p4*'/>" +
-				" </NOT>" +
-				"</NOT>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(!(!(position=p4/*)))", true);
 		
 		// stuff evaluator will go after
 		String[] posAtts = new String[] {"p4/7u345/5u897/1u2001/"};
@@ -78,9 +71,9 @@ public class NOTTest extends TestBaseClass {
 		StringReader sr = new StringReader(output);
 		BufferedReader br = new BufferedReader(sr);
 		
-		Assert.assertEquals(br.readLine(), "T  <NOT debug-user='ngienglishbishop'>");
-		Assert.assertEquals(br.readLine(), "F    <NOT>");
-		Assert.assertEquals(br.readLine(), "T      <Attribute name='position' operation='EQUALS' value='p4*'/>  user has attribute that matches value, actual: p4/7u345/5u897/1u2001/");
+		Assert.assertEquals(br.readLine(), "T  <NOT debug='true'>");
+		Assert.assertEquals(br.readLine(), "F    <NOT debug='true'>");
+		Assert.assertEquals(br.readLine(), "T      <Attribute debug='true' name='position' operation='EQUALS' value='p4/*'/>  user has attribute that matches value, actual: p4/7u345/5u897/1u2001/");
 		Assert.assertEquals(br.readLine(), "     </NOT>");
 		Assert.assertEquals(br.readLine(), "   </NOT>");
 		Assert.assertEquals(br.readLine(), "----- env -----");
@@ -88,16 +81,12 @@ public class NOTTest extends TestBaseClass {
         Assert.assertEquals(br.readLine(), "somevar2 = somevalue2");
 		Assert.assertEquals(br.readLine(), "somevar3 = somevalue3");
 		Assert.assertEquals(br.readLine(), "---------------");
+		Assert.assertEquals(br.readLine(), null);
 	}
 
     @Test
 	public void testDoesntHaveLdsPositionNOTNOTDebugOutput() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", 
-				"<NOT debug-user='ngienglishbishop'>" +
-				" <NOT>" +
-				"  <Attribute name='position' operation='EQUALS' value='p10*'/>" +
-				" </NOT>" +
-				"</NOT>");
+		IEvaluator ev = eng.getEvaluator("test-evaluator", "(!(!(position=p10/*)))", true);
 		
 		// stuff evaluator will go after
 		String[] posAtts = new String[] {"p4/7u345/5u897/1u2001/"};
@@ -118,9 +107,9 @@ public class NOTTest extends TestBaseClass {
 		StringReader sr = new StringReader(output);
 		BufferedReader br = new BufferedReader(sr);
 		
-		Assert.assertEquals(br.readLine(), "F  <NOT debug-user='ngienglishbishop'>");
-		Assert.assertEquals(br.readLine(), "T    <NOT>");
-		Assert.assertEquals(br.readLine(), "F      <Attribute name='position' operation='EQUALS' value='p10*'/>  user does not have attribute that matches value, actual: p4/7u345/5u897/1u2001/");
+		Assert.assertEquals(br.readLine(), "F  <NOT debug='true'>");
+		Assert.assertEquals(br.readLine(), "T    <NOT debug='true'>");
+		Assert.assertEquals(br.readLine(), "F      <Attribute debug='true' name='position' operation='EQUALS' value='p10/*'/>  user does not have attribute that matches value, actual: p4/7u345/5u897/1u2001/");
 		Assert.assertEquals(br.readLine(), "     </NOT>");
 		Assert.assertEquals(br.readLine(), "   </NOT>");
 		Assert.assertEquals(br.readLine(), "----- env -----");
@@ -128,5 +117,6 @@ public class NOTTest extends TestBaseClass {
         Assert.assertEquals(br.readLine(), "somevar2 = somevalue2");
 		Assert.assertEquals(br.readLine(), "somevar3 = somevalue3");
 		Assert.assertEquals(br.readLine(), "---------------");
+		Assert.assertEquals(br.readLine(), null);
 	}
 }

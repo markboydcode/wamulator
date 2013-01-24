@@ -26,8 +26,9 @@ public class AND extends SyntaxBase implements IEvaluatorContainer{
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
 		if (debug) {
-			ctx.beginLoggingUnsatisfiedChildEvaluators(); // only care who broke it
+			ctx.beginLoggingEitherChildEvaluatorOutcome();
 		}
+		
 		boolean isAllowed = true;
 		
 		for(IEvaluator evaluator : evaluators) {
@@ -43,6 +44,12 @@ public class AND extends SyntaxBase implements IEvaluatorContainer{
 		return isAllowed;
 	}
 
+	public void debug(EvaluationContext ctx, boolean outcome, String message){
+        if(ctx.shouldLogResult(this)){
+            ctx.logResult(this, outcome, message);
+        }
+    }
+	
 	public void addEvaluator(IEvaluator e) throws EvaluationException {
 		evaluators.add(e);
 	}

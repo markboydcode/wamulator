@@ -1,8 +1,5 @@
 package org.lds.sso.appwrap.conditions.evaluator.syntax;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.IEvaluator;
@@ -26,17 +23,18 @@ public class NOT extends SyntaxBase implements IEvaluatorContainer{
 	@Override
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
-		boolean isAllowed = false;
-		
 		if (debug) {
 			ctx.beginLoggingEitherChildEvaluatorOutcome();
-			isAllowed = ! evaluator.isConditionSatisfied(ctx);
+		}
+		
+		boolean isAllowed = false;
+		
+		isAllowed = ! evaluator.isConditionSatisfied(ctx);
+		if (debug) {
 			ctx.endLoggingOfChildren();
 			ctx.logResult(this, isAllowed);
 		}
-		else {
-			isAllowed = ! evaluator.isConditionSatisfied(ctx);
-		}
+
 		return isAllowed;
 	}
 

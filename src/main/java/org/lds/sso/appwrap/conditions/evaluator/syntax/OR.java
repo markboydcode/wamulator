@@ -26,7 +26,7 @@ public class OR extends SyntaxBase implements IEvaluatorContainer{
 	public boolean isConditionSatisfied(EvaluationContext ctx) throws EvaluationException {
 		boolean debug = ctx.shouldLogResult(this);
 		if (debug) {
-			ctx.beginLoggingSatisfiedChildEvaluators(); // only care who is affirmative for OR
+			ctx.beginLoggingEitherChildEvaluatorOutcome();
 		}
 		boolean isAllowed = false;
 		

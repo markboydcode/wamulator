@@ -1,0 +1,30 @@
+<deployment at='2012-11-30_11:00:46.208-0700'>
+	<environment id='dev' host='dev.lds.org (exposee)' />
+	<application id='local.lds.org/' authHost='local.lds.org' cctx='/'>
+		<authentication scheme='anonymous' name='default-anonymous' />
+		<authorization>
+			<rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='true'>
+				<allow>
+					<condition type='role' value='Anyone' />
+				</allow>
+			</rule>
+		</authorization>
+		<policy name='is-alive{/.../*,*}'>
+			<url>is-alive{/.../*,*}</url>
+			<operations>GET</operations>
+			<authentication scheme='login' name='WAM-DEV LDS Login Form' />
+			<authorization format='exposee' value='Allow Authenticated Users'>
+				<headers>
+					<success>
+						<fixed-value name='policy-fixed-value' value='test-value' type='HeaderVar' />
+						<profile-att name='policy-ldspositions' attribute='ldsposv2' type='HeaderVar' />
+						<profile-att name='policy-ldsunits' attribute='ldsunit' type='HeaderVar' />
+					</success>
+					<failure>
+						<redirect value='/denied.html' />
+					</failure>
+				</headers>
+			</authorization>
+		</policy>
+	</application>
+</deployment>

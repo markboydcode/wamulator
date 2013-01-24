@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
@@ -19,7 +20,6 @@ import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 
 /**
@@ -136,8 +136,9 @@ public class Rfc2817Test {
         server.start();
 
         // now set up the shim to verify empty headers are injected
-        service = Service.getService("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
+        URL filePath = Rfc2817Test.class.getClassLoader().getResource("RFC2817TestConfig.xml");
+    	service = Service.getService("string:"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"
@@ -149,17 +150,13 @@ public class Rfc2817Test {
         	+ "\"?>"
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
-            + " <sso-cookie name='lds-policy' domain='.lds.org' />"
+            + " <sso-cookie name='lds-policy' domain='localhost' />"
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
-            + " <conditions>"
-            + "  <condition alias='app-bbb'>"
-            + "   <Attribute name='appps' operation='equals' value='bbb'/>"
-            + "  </condition>"
-            + " </conditions>"
             + " <sso-traffic strip-empty-headers='true'>"
-            + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping cctx='/force/upgrade*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/force/upgrade*' preserve-host='true'/>"
-            + "   <unenforced cpath='/force/upgrade*'/>"
+            + "  <by-site scheme='http' host='localhost' port='{{proxy-port}}'>"
+            + "    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}' tpath='/force/upgrade'>"
+            + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
+            + "    </cctx-mapping>"
             + "  </by-site>"
             + " </sso-traffic>"
             + " <user-source type='xml'>{{usr-src-props}}</user-source>"
@@ -177,9 +174,10 @@ public class Rfc2817Test {
         server.interrupt();
     }
 
-    @Test
+    //@Test
     public void test_force_upgrade() throws HttpException, IOException {
         Config cfg = Config.getInstance();
+        cfg.setAllowForwardProxying(true);
         System.out.println("----> test_force_upgrade");
         String uri = "http://local.lds.org:" + sitePort + "/force/upgrade";
         HttpClient client = new HttpClient();
