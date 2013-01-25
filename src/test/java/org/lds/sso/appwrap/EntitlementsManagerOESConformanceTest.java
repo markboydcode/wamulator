@@ -3,12 +3,13 @@ package org.lds.sso.appwrap;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.identity.UserManager;
 import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class EntitlementsManagerOESConformanceTest {
 
-    @BeforeClass
+	// The WAMulator no longer emulates OES.
+	
+    //@BeforeClass
     public void load() throws Exception {
     	System.getProperties().remove("non-existent-sys-prop");
         String xml = 
@@ -65,7 +66,7 @@ public class EntitlementsManagerOESConformanceTest {
         XmlConfigLoader2.load(xml);
     }
     
-    @Test
+    //@Test
     public void test_entitlement_evaluation() throws Exception {
         Config cfg = Config.getInstance();
         
@@ -96,7 +97,7 @@ public class EntitlementsManagerOESConformanceTest {
         Assert.assertFalse(em.isAllowed("local.lds.org", "GET", "/root/ward", pres, null));
     }
 
-    @Test
+    //@Test
     public void test_entitlement_evaluation_w_terminating_slash() throws Exception {
         Config cfg = Config.getInstance();
         
@@ -126,7 +127,7 @@ public class EntitlementsManagerOESConformanceTest {
         Assert.assertFalse(em.isAllowed("local.lds.org", "GET", "/root/ward/", pres, null));
     }
 
-    @Test
+    //@Test
     public void test_root_level_entitlement() throws Exception {
         Config cfg = Config.getInstance();
         
@@ -135,7 +136,7 @@ public class EntitlementsManagerOESConformanceTest {
         Assert.assertEquals(em.entitlements.get("GET:local.lds.org/").getConditionId(), "super-user");
     }    
 
-    @Test
+    //@Test
     public void test_terminating_slash_removed() throws Exception {
         Config cfg = Config.getInstance();
         
@@ -143,7 +144,7 @@ public class EntitlementsManagerOESConformanceTest {
         Assert.assertNotNull(em.entitlements.get("GET:local.lds.org/root/some/ward/page"));
     }    
 
-    @Test
+    //@Test
     public void test_multiple_actions_and_conditions_per_urn() throws Exception {
         Config cfg = Config.getInstance();
         

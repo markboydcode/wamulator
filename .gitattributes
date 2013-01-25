@@ -289,10 +289,15 @@ src/test/resources/CodaServiceResponseParserTest-good.txt -text svneol=unset#tex
 src/test/resources/CookiePathAndRedirectConfig.xml -text
 src/test/resources/HasLdsAccountConversionSample.xml -text svneol=unset#text/plain
 src/test/resources/LocalHostTestConfig.xml -text
+src/test/resources/OtherHostPolicyConfig.xml -text
 src/test/resources/RFC2817TestConfig.xml -text
 src/test/resources/RequestHandlerIntegrationTestFile1.txt -text svneol=unset#text/plain
 src/test/resources/RequestHandlerIntegrationTestFile2.txt -text svneol=unset#text/plain
+src/test/resources/RhTestConfig.xml -text
+src/test/resources/RhTestConfig2.xml -text
+src/test/resources/RhTestConfig3.xml -text
 src/test/resources/SampleOAMcfgApproach.xml -text
+src/test/resources/ServiceUrlInjectedTestConfig.xml -text
 src/test/resources/SignMeInOutTestConfig.xml -text
 src/test/resources/SiteMatcherTestConfig.xml -text
 src/test/resources/StripEmptyHeaderTestConfig.xml -text

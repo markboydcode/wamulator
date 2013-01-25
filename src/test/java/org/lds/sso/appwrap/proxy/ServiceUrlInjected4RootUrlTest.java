@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -149,9 +150,9 @@ public class ServiceUrlInjected4RootUrlTest {
         
         // now set up the shim to verify various handling characteristics
         System.getProperties().remove("non-existent-sys-prop");
-        
+        URL filePath = ServiceUrlInjected4RootUrlTest.class.getClassLoader().getResource("ServiceUrlInjectedTestConfig.xml");
         service = Service.getService("string:"
-            + "<?xml version='1.0' encoding='UTF-8'?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
             + "<?alias console-port=" + consolePort + "?>"
             + "<?alias proxy-port=" + proxyPort + "?>"
             + "<?system-alias user-src-props=non-existent-sys-prop default="
@@ -177,12 +178,9 @@ public class ServiceUrlInjected4RootUrlTest {
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.ldschurch.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping cctx='/global*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/global*'/>"
-            + "   <allow cpath='/global/*' action='GET,POST'/>"
-            + "   <allow cpath='/global/*?*' action='GET,POST'/>"
-            + "   <cctx-mapping cctx='/*' thost='127.0.0.1' tport='" + serverPort + "' tpath='/*'/>"
-            + "   <allow cpath='/*' action='GET,POST'/>"
-            + "   <allow cpath='/*?*' action='GET,POST'/>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/global*'>"
+            + "    <policy-source>xml={{policy-src-xml}}</policy-source>"
+            + "   </cctx-mapping>"
             + "  </by-site>"
             + " </sso-traffic>"
             + " <user-source type='xml'>{{user-src-props}}</user-source>"

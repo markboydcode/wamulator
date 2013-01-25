@@ -1,0 +1,20 @@
+<deployment at='2012-11-30_11:00:46.208-0700'>
+	<environment id='dev' host='dev.lds.org (exposee)' />
+	<application id='local.lds.org/' authHost='labs-local.lds.org' cctx='/'>
+		<authentication scheme='login' name='WAM-DEV LDS Login Form' />
+		<authorization>
+			<default format='exposee' value='Allow Authenticated Users'></default>
+			<rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='true'>
+				<allow>
+					<condition type='role' value='Anyone' />
+				</allow>
+			</rule>
+		</authorization>
+		<policy name='global/{/.../*,*}'>
+			<url>global/{/.../*,*}</url>
+			<operations>GET,POST</operations>
+			<authentication scheme='login' name='WAM-DEV LDS Login Form' />
+			<authorization format='exposee' value='Allow Authenticated Users'/>
+		</policy>
+	</application>
+</deployment>

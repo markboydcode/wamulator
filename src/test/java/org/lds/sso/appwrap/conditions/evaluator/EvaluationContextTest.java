@@ -20,7 +20,10 @@ TODO:
 5) test multiple debugs don't cause problems, only outermost is honored. 
  */
 
-	@Test
+	//@Test
+	// Debug user is no longer supported since the rules are coming
+	// from a Policy Exposee export and not being manually configured
+	// in the WAMulator
     public void testShouldLogByDebugUserResult() throws Exception {
         Level old = LogicalSyntaxEvaluationEngine.cLog.getLevel();
         LogicalSyntaxEvaluationEngine.cLog.setLevel(Level.FINE);
@@ -28,7 +31,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='employee' operation='exists' debug-user='boydmr'/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "(employee=*)", true);
             SyntaxBase base = (SyntaxBase) ev;
 
             User u = EasyMock.createMock(User.class);
@@ -57,7 +60,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='employee' operation='exists' debug='true'/>");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "(employee=*)", true);
             SyntaxBase base = (SyntaxBase) ev;
 
             EvaluationContext ctx = new EvaluationContext();
@@ -76,7 +79,7 @@ TODO:
             LogicalSyntaxEvaluationEngine eng = new LogicalSyntaxEvaluationEngine();
             eng.garbageCollector.interrupt();
 
-            IEvaluator ev = eng.getEvaluator("test-evaluator", "<Attribute name='employee' operation='exists' />");
+            IEvaluator ev = eng.getEvaluator("test-evaluator", "(employee=*)");
             SyntaxBase base = (SyntaxBase) ev;
 
             EvaluationContext ctx = new EvaluationContext();

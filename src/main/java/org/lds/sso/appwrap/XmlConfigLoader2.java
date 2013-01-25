@@ -891,6 +891,9 @@ public class XmlConfigLoader2 {
                 }
                 curIncomingScheme = InboundScheme.fromMoniker(getStringAtt("cscheme", path, atts, false));
                 String preserveHost = getStringAtt("preserve-host", path, atts, false);
+                if (curHostHdr != null) {
+                	preserveHost = "false";
+                }
                 curPreserveHost = (preserveHost == null ? true : Boolean.parseBoolean(preserveHost));
                 curTport = -1;
                 String tportS = atts.getValue("tport");

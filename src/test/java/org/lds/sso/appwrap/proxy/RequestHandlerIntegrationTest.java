@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.net.URLEncoder;
 
 import javax.mail.internet.MimeUtility;
@@ -531,7 +532,7 @@ public class RequestHandlerIntegrationTest {
 		        int status = client.executeMethod(method);
 		        String response = method.getResponseBodyAsString().trim();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, AppEndPoint.CCTX_HEADER + ":" + " /verify/cctx/injected");
+		        Assert.assertEquals(response, AppEndPoint.CCTX_HEADER + ":" + " /verify/cctx/injected/{/.../*,*}");
 		        method.releaseConnection();
 			}
     	}),
@@ -701,7 +702,7 @@ public class RequestHandlerIntegrationTest {
 
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_dont_preserve_host ");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/no-preserve/host/test/";
+		        String uri = "http://local2.lds.org:" + csc.sitePort + "/no-preserve/host/test/";
 		        HttpClient client = new HttpClient();
 
 		        HostConfiguration hcfg = new HostConfiguration();
@@ -752,7 +753,7 @@ public class RequestHandlerIntegrationTest {
 
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_host_header ");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/host-header/test/";
+		        String uri = "http://local3.lds.org:" + csc.sitePort + "/host-header/test/";
 		        HttpClient client = new HttpClient();
 
 		        HostConfiguration hcfg = new HostConfiguration();
@@ -1850,14 +1851,18 @@ public class RequestHandlerIntegrationTest {
         this.setUpTestServer();
         
         // now set up the shim to verify various handling characteristics
-    	System.getProperties().remove("non-existent-sys-prop");
+        URL filePath = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig.xml");
+        URL filePath2 = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig2.xml");
+        URL filePath3 = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig3.xml");
+        System.getProperties().remove("non-existent-sys-prop");
         String xml = ""
-            + "<?xml version='1.0' encoding='UTF-8'?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+        	+ "<?file-alias policy-src-xml2=\"" + filePath2.getPath().substring(1).replace("/", "\\") + "\"?>"
+        	+ "<?file-alias policy-src-xml3=\"" + filePath2.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
             + "\""
             + " <users>"
             + "  <user name='ngiwb1' pwd='password1'/>"
-            //+ "  <user name='ngiwb2' pwd='password1'>"
             + "  <user name='ngiwb2'>"
             + "   <att name='apps' value='aaa'/>"
             + "   <att name='apps' value='bbb'/>"
@@ -1881,20 +1886,26 @@ public class RequestHandlerIntegrationTest {
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-cookie name='lds-policy' domain='.lds.org' />"
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
-            + " <conditions>"
-            + "  <condition alias='app-bbb'>"
-            + "   <Attribute name='apps' operation='equals' value='bbb'/>"
-            + "  </condition>"
-            + " </conditions>"
             + " <user-source type='xml'>xml={{usr-src-xml}}</user-source>"
             + " <sso-traffic strip-empty-headers='true'>"
-            + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>";
-            
-            for (RhTest test : RhTest.values()) {
-            	xml += test.impl.getSimMappingAndAccess(cctx);
-            }
-            
-            xml = xml // TODO
+            + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>"
+            + "   <cctx-file cctx='/file/local/relative/*' file='*' content-type='text/plain'/>"
+            + "   <cctx-file cctx='/file/local/fixed/*' file='sample-output.txt' content-type='text/plain'/>"
+            + "   <cctx-file cctx='/file/cp/fixed/*' file='classpath:RequestHandlerIntegrationTestFile1.txt' content-type='text/html'/>"
+            + "   <cctx-file cctx='/file/cp/relative/*' file='classpath:*' content-type='text/html'/>"
+	        + "   <cctx-mapping thost='127.0.0.1' tport='" + cctx.serverPort + "' tpath='/*'>"
+	        + "    <policy-source>xml={{policy-src-xml}}</policy-source>"
+	        + "   </cctx-mapping>"
+	        + "  </by-site>"
+	        + "  <by-site scheme='http' host='local2.lds.org' port='{{proxy-port}}'>"
+	        + "   <cctx-mapping thost='127.0.0.1' tport='" + cctx.serverPort + "' tpath='/*' preserve-host='false'>"
+	        + "    <policy-source>xml={{policy-src-xml2}}</policy-source>"
+	        + "   </cctx-mapping>"
+            + "  </by-site>"
+            + "  <by-site scheme='http' host='local3.lds.org' port='{{proxy-port}}'>"
+	        + "   <cctx-mapping thost='127.0.0.1' tport='" + cctx.serverPort + "' tpath='/*' host-header='host.lds.org:2445'>"
+	        + "    <policy-source>xml={{policy-src-xml3}}</policy-source>"
+	        + "   </cctx-mapping>"
             + "  </by-site>"
             + " </sso-traffic>"
             + "</config>";
@@ -1914,7 +1925,8 @@ public class RequestHandlerIntegrationTest {
 
     //////////////// tests with config and/or server-side functionality start here
     
-    @Test
+    //@Test
+    // The purge-header element is not supported in the WAMulator currently.
     public void test_verify_purge_headers_get_stripped() throws Exception {
     	RhTest.verify_purge_headers_get_stripped.impl.runTest(cctx);
     }
@@ -2063,7 +2075,9 @@ public class RequestHandlerIntegrationTest {
     /////////////// server-side behavior below 
    
 
-    @Test
+    //@Test
+    // This test is not valid because Oracle 10g has a default policy that 
+    // will catch any non-matching contexts.
     public void test_req_with_no_cctx_match() throws HttpException, IOException {
         System.out.println("----> test_req_with_no_cctx_match");
         String uri = "http://local.lds.org:" + cctx.sitePort + "/unconfigured/path/";

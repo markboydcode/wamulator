@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -160,7 +161,32 @@ public class PolicyServiceUrlTest {
         server.start();
 
         // now set up the shim
+        URL filePath = PolicyServiceUrlTest.class.getClassLoader().getResource("CookiePathAndRedirectConfig.xml");
+        URL otherFilePath = PolicyServiceUrlTest.class.getClassLoader().getResource("OtherHostPolicyConfig.xml");
         service = Service.getService("string:"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+        	+ "<?file-alias other-src-xml=\"" + otherFilePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+            + "<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>"
+            + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
+            + " <sso-traffic>"
+            + "  <by-site scheme='http' host='labs-local.lds.org' port='{{proxy-port}}'>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/*'>"
+            + "    <policy-source>xml={{policy-src-xml}}</policy-source>"
+            + "   </cctx-mapping>"
+            + "  </by-site>"
+            + "  <by-site scheme='http' host='other.lds.org' port='{{proxy-port}}'>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/*'>"
+            + "    <policy-source>xml={{other-src-xml}}</policy-source>"
+            + "   </cctx-mapping>"
+            + "  </by-site>"
+            + "  <rewrite-cookie from-path='/leader-forms' to-path='/mls/cr' />"
+            + "  <rewrite-redirect "
+            + "    from='http://labs-local.lds.org/test-of-redirect' "
+            + "    to='http://labs-local.lds.org/test' />"
+            + " </sso-traffic>"
+            + "</config>");
+        
+        Service oldService = Service.getService("string:"
             + "<?xml version='1.0' encoding='UTF-8'?>"
             + "<config console-port='auto' proxy-port='auto' rest-version='" + RestVersion.CD_OESv1.getVersionId() + "'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
@@ -205,7 +231,8 @@ public class PolicyServiceUrlTest {
         server.interrupt();
 	}
 
-    @Test
+    //@Test
+	// This test is not valid right now because we do not support/emulate OES.
     public void test_service_url_gateway() throws Exception {
         // now connect and verify we get the correct policy-service-url injected
         String uri = "http://labs-local.lds.org:" + sitePort + "/gateway-url/a/path";

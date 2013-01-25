@@ -1,0 +1,116 @@
+<deployment at='2012-11-30_11:00:46.208-0700'>
+	<environment id='dev' host='dev.lds.org (exposee)' />
+	<application id='local.lds.org/' authHost='labs-local.lds.org' cctx='/'>
+		<authentication scheme='anonymous' name='default-anonymous' />
+		<authorization>
+			<rule name='app-bbb' enabled='true' allow-takes-precedence='true'>
+				<allow>
+					<condition type='ldap'>ldap:///ou=People,o=lds??sub?(app=bbb)</condition>
+				</allow>
+			</rule>
+			<rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='true'>
+				<allow>
+					<condition type='role' value='Anyone' />
+				</allow>
+			</rule>
+		</authorization>
+		<policy name='wamulat-60/test{/.../*,*}'>
+			<url>wamulat-60/test{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='wamulat-56/test{/.../*,*}'>
+			<url>wamulat-56/test{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='wamulat-35/{/.../*,*}'>
+			<url>wamulat-35/{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='preserve/{/.../*,*}'>
+			<url>preserve/{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='verify/cctx/injected/{/.../*,*}'>
+			<url>verify/cctx/injected/{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='verify/required-headers/injected{/.../*,*}'>
+			<url>verify/required-headers/injected{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='verify/required-headers/injected{/.../*,*}'>
+			<url>verify/required-headers/injected{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='profile-att/header/{/.../*,*}'>
+			<url>profile-att/header/{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='login' name='WAM-DEV LDS Login Form'/>
+			<authorization format='exposee' value='Allow Authenticated Users'>
+				<headers>
+          			<success>
+						<profile-att name='prof-1' attribute='att-1' type='HeaderVar' />
+						<profile-att name='prof-2' attribute='att-2' type='HeaderVar' />
+					</success>
+        		</headers>
+        	</authorization>
+		</policy>
+		<policy name='fixed-value/header/{/.../*,*}'>
+			<url>fixed-value/header/{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication'>
+			</authentication>
+			<authorization format='exposee' value='Allow Authenticated Users'>
+				<headers>
+          			<success>
+						<fixed-value name='single' value='single-1' type='HeaderVar' />
+						<fixed-value name='multi' value='multi-1' type='HeaderVar' />
+						<fixed-value name='multi' value='multi-2' type='HeaderVar' />
+					</success>
+        		</headers>
+        	</authorization>
+		</policy>
+		<policy name='wamulat-48/{/.../*,*}'>
+			<url>wamulat-48/{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication'>
+			</authentication>
+			<authorization format='exposee' value='Allow Authenticated Users'>
+				<headers>
+          			<success>
+						<profile-att name='preferredname' attribute='preferredname' type='HeaderVar' />
+					</success>
+        		</headers>
+        	</authorization>
+		</policy>
+		<policy name='restricted/{/.../*,*}'>
+			<url>restricted/{/.../*,*}</url>
+			<operations>GET</operations>
+			<authentication scheme='login' name='WAM-DEV LDS Login Form' />
+			<authorization format='exposee' value='Allow Authenticated Users'/>
+		</policy>
+		<policy name='conditional{/.../*,*}'>
+			<url>conditional/{/.../*,*}</url>
+			<operations>GET</operations>
+			<authentication scheme='login' name='WAM-DEV LDS Login Form' />
+			<authorization format='exposee' value='app-bbb'/>
+		</policy>
+		<policy name='404/test-{/.../*,*}'>
+			<url>404/test-{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+		<policy name='bad/response/startline{/.../*,*}'>
+			<url>bad/response/startline{/.../*,*}</url>
+			<operations>DELETE,GET,HEAD,POST,PUT</operations>
+			<authentication scheme='anonymous' name='Anonymous Authentication' />
+		</policy>
+	</application>
+</deployment>
