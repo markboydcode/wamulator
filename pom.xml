@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<parent>
 		<artifactId>stack-master</artifactId>
 		<groupId>org.lds.stack</groupId>
@@ -7,10 +8,10 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.lds.sso</groupId>
-    <artifactId>appwrap</artifactId>
-    <packaging>jar</packaging>
-    <version>7.0-SNAPSHOT</version>
+	<groupId>org.lds.sso</groupId>
+	<artifactId>appwrap</artifactId>
+	<packaging>jar</packaging>
+	<version>7.0-SNAPSHOT</version>
 
 	<name>SSO Environment Simulator</name>
 
@@ -155,17 +156,17 @@
 
 
 	<dependencies>
-	    <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
-            <version>1.4.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.activation</groupId>
-                    <artifactId>activation</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+		<dependency>
+			<groupId>javax.mail</groupId>
+			<artifactId>mail</artifactId>
+			<version>1.4.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.activation</groupId>
+					<artifactId>activation</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
@@ -255,11 +256,11 @@
 			<artifactId>stack-jul-ext</artifactId>
 			<version>1.0.1</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.directory.shared</groupId>
 			<artifactId>shared-ldap</artifactId>
-			<version>0.9.12</version>
+			<version>0.9.19</version>
 		</dependency>
 	</dependencies>
 	<repositories>
@@ -267,6 +268,14 @@
 			<id>lds-maven2</id>
 			<name>lds-maven2</name>
 			<url>http://icslib/maven2/archive</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>maven2</id>
+			<name>maven2</name>
+			<url>http://repo1.maven.org/maven2/</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
