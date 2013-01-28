@@ -32,27 +32,4 @@ public class SiteMatcherTest {
         ep = m.getEndpointForCanonicalUrl("/a/b/d/e");
         Assert.assertEquals(ep.getContextRoot(), "/a{/.../*,*}", "/a should be found");
    }
-
-    //@Test
-    public void testIllegalCctxDeclarativeOrder() throws Exception {
-         String xml = 
-             "<?xml version='1.0' encoding='UTF-8'?>"
-             + "<config console-port='88' proxy-port='45'>"
-             + " <sso-traffic>"
-             + "  <by-site host='local.lds.org' port='80'>"
-             + "    <cctx-mapping cctx='/a*' thost='127.0.0.1' tport='2' tpath='/a*'/>"
-             + "    <cctx-mapping cctx='/a/b/c*' thost='127.0.0.1' tport='1' tpath='/a/b/c*'/>"
-             + "  </by-site>"
-             + " </sso-traffic>"
-             + "</config>";
-         Config cfg = new Config();
-         try {
-             XmlConfigLoader2.load(xml);
-             Assert.fail("Should throw IllegalArgumentException since /a/b/c is within /a and hence will never receive requests.");
-         }
-         catch (Exception i) {
-             Throwable t = i.getCause();
-             Assert.assertTrue(t != null && t instanceof IllegalArgumentException, "IllegalArgumentException should have been thrown.");
-         }
-    }
 }

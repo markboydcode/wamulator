@@ -536,80 +536,6 @@ public class RequestHandlerIntegrationTest {
 		        method.releaseConnection();
 			}
     	}),
-    	verify_purge_headers_get_stripped(new RhIntTest() {
-
-			public boolean appliesTo(ServerSideContext ctx) {
-				return ctx.envelope.contains("/verify/purge-headers/stripped");
-			}
-
-			public void handleServerSide(ServerSideContext ctx) {
-				ctx.answer = "";
-				this.lookForHdr(ctx, "X-purged-fixed-stripped");
-				this.lookForHdr(ctx, "X-unpurged-fixed-passed");
-				this.lookForHdr(ctx, "X-purged-client-stripped");
-				this.lookForHdr(ctx, "X-unpurged-client-passed");
-			}
-			
-			private void lookForHdr(ServerSideContext ctx, String hdr) {
-				String lcHdr = hdr.toLowerCase();
-                int idx = ctx.envelopeLC.indexOf(lcHdr);
-
-                if (idx != -1) {
-                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, idx+1);
-                    String val = null;
-                    if (cr == -1) {
-                        // last header, +1 is for colon terminator
-                        val = ctx.envelope.substring(idx+hdr.length()+1).trim();
-                    }
-                    else {
-                        val = ctx.envelope.substring(idx+hdr.length()+1, cr).trim();
-                    }
-                    ctx.answer += hdr + "=" + val + RequestHandler.CRLF;
-                }
-                else {
-                    ctx.answer += hdr + "--PURGED" + RequestHandler.CRLF;
-                }
-			}
-
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return ""
-						+ "<cctx-mapping cctx='/verify/purge-headers/*' thost='127.0.0.1' tport='" + csc.serverPort 
-						+ "' tpath='/verify/purge-headers/*' preserve-host='true'>"
-						+ " <headers>"
-						+ "  <fixed-value name='X-unpurged-fixed-passed' value='fixed-value'/>"
-						+ "  <fixed-value name='X-purged-fixed-stripped' value='fixed-value'/>"
-						+ "  <purge-header name='X-purged-client-stripped'/>"
-						+ "  <purge-header name='X-purged-fixed-stripped'/>"
-						+ " </headers>"
-						+ "</cctx-mapping>"
-			            + "<unenforced cpath='/verify/purge-headers/*'/>";
-			}
-
-			public void runTest(ClientSideContext csc) throws Exception {
-		        System.out.println("----> test_verify_purge_headers_get_stripped ");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/verify/purge-headers/stripped";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        // watch out, Header lower cases its header names when injecting
-		        method.setRequestHeader(new Header("x-purged-client-stripped", "test-value"));
-		        method.setRequestHeader(new Header("x-unpurged-client-passed", "test-value"));
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
-		        System.out.println("--response from server: " + response);
-		        Assert.assertEquals(status, 200, "Http Response code should have been 200");
-		        Assert.assertTrue(response.contains("X-purged-client-stripped--PURGED"), "X-purged-client-stripped--PURGED not found in response but should have been");
-		        Assert.assertTrue(response.contains("X-purged-fixed-stripped--PURGED"), "X-purged-fixed-stripped--PURGED not found in response but should have been");
-		        Assert.assertTrue(response.contains("X-unpurged-client-passed=test-value"), "X-unpurged-client-passed header should have been passed");
-		        Assert.assertTrue(response.contains("X-unpurged-fixed-passed=fixed-value"), "X-unpurged-fixed-passed header should have been passed");
-		        method.releaseConnection();
-			}
-    	}),
     	verify_serviceUrl_signIn_signOut_injected(new RhIntTest() {
 
 			public boolean appliesTo(ServerSideContext ctx) {
@@ -1924,12 +1850,6 @@ public class RequestHandlerIntegrationTest {
     }
 
     //////////////// tests with config and/or server-side functionality start here
-    
-    //@Test
-    // The purge-header element is not supported in the WAMulator currently.
-    public void test_verify_purge_headers_get_stripped() throws Exception {
-    	RhTest.verify_purge_headers_get_stripped.impl.runTest(cctx);
-    }
 
     @Test
     public void test_verify_serviceUrl_signIn_signOut_injected() throws Exception {
@@ -2073,28 +1993,6 @@ public class RequestHandlerIntegrationTest {
 
     /////////////// tests that do not contribute to simulator config nor have
     /////////////// server-side behavior below 
-   
-
-    //@Test
-    // This test is not valid because Oracle 10g has a default policy that 
-    // will catch any non-matching contexts.
-    public void test_req_with_no_cctx_match() throws HttpException, IOException {
-        System.out.println("----> test_req_with_no_cctx_match");
-        String uri = "http://local.lds.org:" + cctx.sitePort + "/unconfigured/path/";
-        HttpClient client = new HttpClient();
-
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", cctx.sitePort);
-        client.setHostConfiguration(hcfg);
-
-        HttpMethod method = new GetMethod(uri);
-
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim();
-        Assert.assertEquals(status, 501, "should have returned http 501 Not Implemented");
-        method.releaseConnection();
-    }
 
     @Test
     public void test_forward_proxying_blocked() throws HttpException, IOException {

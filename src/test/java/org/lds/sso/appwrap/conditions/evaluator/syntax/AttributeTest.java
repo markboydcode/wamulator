@@ -144,20 +144,6 @@ public class AttributeTest extends TestBaseClass {
 
 	}
 
-    //@Test
-	public void testAttributeOperationEqualsWithWildcardEscapedWildcard() throws Exception {
-		IEvaluator ev = eng.getEvaluator("test-evaluator", "(test='this is not \\* test')");
-
-        User usr = EasyMock.createMock(User.class);
-        EasyMock.expect(usr.getAttribute("test")).andReturn(new String[]{"this is not * test"});
-        EasyMock.replay(usr);
-
-        Map<String,String> env = new TreeMap<String,String>();
-
-        EvaluationContext ctx = new EvaluationContext(usr, env);
-		Assert.assertTrue(ev.isConditionSatisfied(ctx), "should have attribute called test that matches: this is not \\* test");
-	}
-
     @Test
 	public void testAttributeOperationEqualsDebug() throws Exception {
 		IEvaluator ev = eng.getEvaluator("test-evaluator-debug", "(testdebug=testdebug)", true);

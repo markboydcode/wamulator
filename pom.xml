@@ -260,7 +260,7 @@
 		<dependency>
 			<groupId>org.apache.directory.shared</groupId>
 			<artifactId>shared-ldap</artifactId>
-			<version>0.9.19</version>
+			<version>0.9.12</version>
 		</dependency>
 	</dependencies>
 	<repositories>
@@ -268,14 +268,6 @@
 			<id>lds-maven2</id>
 			<name>lds-maven2</name>
 			<url>http://icslib/maven2/archive</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>maven2</id>
-			<name>maven2</name>
-			<url>http://repo1.maven.org/maven2/</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>

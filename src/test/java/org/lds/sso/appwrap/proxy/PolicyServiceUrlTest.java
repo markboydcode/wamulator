@@ -231,29 +231,6 @@ public class PolicyServiceUrlTest {
         server.interrupt();
 	}
 
-    //@Test
-	// This test is not valid right now because we do not support/emulate OES.
-    public void test_service_url_gateway() throws Exception {
-        // now connect and verify we get the correct policy-service-url injected
-        String uri = "http://labs-local.lds.org:" + sitePort + "/gateway-url/a/path";
-        HttpClient client = new HttpClient();
-        HostConfiguration cfg = new HostConfiguration();
-        cfg.setProxy("127.0.0.1", sitePort);
-        client.setHostConfiguration(cfg);
-        HttpMethod method = new GetMethod(uri);
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        System.out.println(method.getResponseBodyAsString());
-        // sanity check that we got there
-        Assert.assertEquals(status, 302, "should have returned http 302 not modified");
-        Header url = method.getResponseHeader("X-SURL-RECEIVED");
-
-        System.out.println(GlobalHeaderNames.SERVICE_URL + " Received: " + url.getValue());
-        String expected = "http://10.10.10.10:1010" + RestVersion.CD_OESv1.getRestUrlBase() + "labs-local.lds.org/";
-        Assert.assertTrue(url.getValue().equals(expected),
-                "policy-service-url should have been '" + expected + "' but was '" + url.getValue() + "'");
-    }
-
     @Test
     public void test_service_url_1() throws Exception {
         // now connect and verify we get the correct policy-service-url injected
