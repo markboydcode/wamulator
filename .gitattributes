@@ -287,7 +287,6 @@ src/test/java/org/lds/sso/appwrap/ui/JspUtilsTest.java -text svneol=unset#text/p
 src/test/java/org/lds/sso/appwrap/ui/rest/CodaServiceResponseParserTest.java -text svneol=unset#text/plain
 src/test/resources/CodaServiceResponseParserTest-good.txt -text svneol=unset#text/plain
 src/test/resources/CookiePathAndRedirectConfig.xml -text
-src/test/resources/HasLdsAccountConversionSample.xml -text svneol=unset#text/plain
 src/test/resources/LocalHostTestConfig.xml -text
 src/test/resources/OtherHostPolicyConfig.xml -text
 src/test/resources/RFC2817TestConfig.xml -text
@@ -296,18 +295,9 @@ src/test/resources/RequestHandlerIntegrationTestFile2.txt -text svneol=unset#tex
 src/test/resources/RhTestConfig.xml -text
 src/test/resources/RhTestConfig2.xml -text
 src/test/resources/RhTestConfig3.xml -text
-src/test/resources/SampleOAMcfgApproach.xml -text
 src/test/resources/ServiceUrlInjectedTestConfig.xml -text
 src/test/resources/SignMeInOutTestConfig.xml -text
 src/test/resources/SiteMatcherTestConfig.xml -text
 src/test/resources/StripEmptyHeaderTestConfig.xml -text
 src/test/resources/XmlConfigDefaultRuleTest.xml -text
 src/test/resources/XmlConfigLoaderTest.txt -text svneol=unset#text/plain
-src/test/resources/has-lds-account-1234-test.xml -text svneol=unset#text/plain
-src/test/resources/is-bishop-test.xml -text svneol=unset#text/plain
-src/test/resources/is-corr-mod.xml -text svneol=unset#text/plain
-src/test/resources/is-field-mod.xml -text svneol=unset#text/plain
-src/test/resources/is-hq-mod.xml -text svneol=unset#text/plain
-src/test/resources/is-ip-mod.xml -text svneol=unset#text/plain
-src/test/resources/is-photo-ed.xml -text svneol=unset#text/plain
-src/test/resources/leadership-leader.xml -text svneol=unset#text/plain

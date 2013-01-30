@@ -17,7 +17,7 @@ public class SiteMatcherTest {
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-traffic>"
             + "  <by-site host='local.lds.org' port='80'>"
-            + "	   <cctx-mapping thost='127.0.0.1' tport='1' tpath='/'>"
+            + "	   <cctx-mapping thost='127.0.0.1' tport='1'>"
             + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
             + "    </cctx-mapping>"
             + "  </by-site>"

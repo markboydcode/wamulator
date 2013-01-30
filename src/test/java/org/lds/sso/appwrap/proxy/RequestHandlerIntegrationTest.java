@@ -163,15 +163,6 @@ public class RequestHandlerIntegrationTest {
     	public void handleServerSide(ServerSideContext ssc);
     	
     	/**
-    	 * Get the string of xml for cctx-mapping needed by the simulator for
-    	 * this test and is unenforced or allow access portions.
-    	 * 
-    	 * @param serverport
-    	 * @param freeport
-    	 */
-    	public String getSimMappingAndAccess(ClientSideContext csc);
-    	
-    	/**
     	 * Provides the client-side functionality and assertions of the test.
     	 */
     	public void runTest(ClientSideContext csc) throws Exception;
@@ -190,10 +181,6 @@ public class RequestHandlerIntegrationTest {
 		}
 
 		public void handleServerSide(ServerSideContext ctx) {
-		}
-
-		public String getSimMappingAndAccess(ClientSideContext csc) {
-			return ""; 
 		}
 
 		public void runTest(ClientSideContext csc) throws Exception {
@@ -236,13 +223,6 @@ public class RequestHandlerIntegrationTest {
 				}
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/wamulat-60/test*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/wamulat-60/test*'/>"
-						+ "<unenforced cpath='/wamulat-60/test*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 				Config.getInstance(); // reset configuration
 		        System.out.println("----> wamulat_60_test");
@@ -255,7 +235,6 @@ public class RequestHandlerIntegrationTest {
 
 		        HttpMethod method = new GetMethod(uri);
 		        method.setFollowRedirects(false);
-		        long start = System.currentTimeMillis();
 		        int status = client.executeMethod(method);
 		        Assert.assertEquals(status, 302, "should have returned http 302");
 		        Header loc = method.getResponseHeader("location");
@@ -314,13 +293,6 @@ public class RequestHandlerIntegrationTest {
 				slowpoke.start();
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/wamulat-56/test*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/wamulat-56/test*'/>"
-						+ "<unenforced cpath='/wamulat-56/test*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 				Config.getInstance(); // reset configuration
 		        System.out.println("----> wamulat_56_test");
@@ -362,11 +334,6 @@ public class RequestHandlerIntegrationTest {
                 else {
                     ctx.answer = "<html><body>Pipe came through just fine.</body></html>";
                 }
-			}
-
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/wamulat-35/*' thost='127.0.0.1' tport='" + csc.serverPort + "' tpath='/wamulat-35/*'/>"
-			            + "<unenforced cpath='/wamulat-35/*?*'/>";
 			}
 
 			public void runTest(ClientSideContext csc) throws Exception {
@@ -462,11 +429,6 @@ public class RequestHandlerIntegrationTest {
                 }
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/preserve/*' thost='127.0.0.1' tport='" + csc.serverPort + "' tpath='/preserve/*' preserve-host='true'/>"
-			            + "<unenforced cpath='/preserve/*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_preserve_host ");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/preserve/host/test/";
@@ -510,11 +472,6 @@ public class RequestHandlerIntegrationTest {
                     }
                     ctx.answer = AppEndPoint.CCTX_HEADER + ": " + val;
                 }
-			}
-
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/verify/cctx/injected/*' thost='127.0.0.1' tport='" + csc.serverPort + "' tpath='/verify/cctx/injected/*'/>"
-			            + "<unenforced cpath='/verify/cctx/injected/*'/>";
 			}
 
 			public void runTest(ClientSideContext csc) throws Exception {
@@ -569,11 +526,6 @@ public class RequestHandlerIntegrationTest {
                 }
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/verify/required-headers/injected*' thost='127.0.0.1' tport='" + csc.serverPort + "' tpath='/verify/required-headers/injected*' preserve-host='true'/>"
-			            + "<unenforced cpath='/verify/required-headers/injected*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_verify_serviceUrl_signIn_signOut_injected ");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/verify/required-headers/injected";
@@ -620,12 +572,6 @@ public class RequestHandlerIntegrationTest {
                     }
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/no-preserve/*' thost='127.0.0.1' tport='" 
-						+ csc.serverPort + "' tpath='/no-preserve/*' preserve-host='false'/>"
-			            + "<unenforced cpath='/no-preserve/*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_dont_preserve_host ");
 		        String uri = "http://local2.lds.org:" + csc.sitePort + "/no-preserve/host/test/";
@@ -670,13 +616,6 @@ public class RequestHandlerIntegrationTest {
                 }
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/host-header/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/host-header/*' host-header='host.lds.org:2445'/>"
-						+ "<unenforced cpath='/host-header/*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_host_header ");
 		        String uri = "http://local3.lds.org:" + csc.sitePort + "/host-header/test/";
@@ -699,18 +638,6 @@ public class RequestHandlerIntegrationTest {
     	profile_header_injection_test(new RhIntTest() {
 			public boolean appliesTo(ServerSideContext ctx) {
 				return ctx.envelope.contains("/profile-att/header/test/");
-			}
-
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/profile-att/header/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/profile-att/header/*'>"
-						+ " <headers>"
-			            + "  <profile-att name='prof-1' attribute='att-1'/>"
-			            + "  <profile-att name='prof-2' attribute='att-2'/>"
-						+ " </headers>"
-						+ "</cctx-mapping>"
-						+ "<allow action='GET' cpath='/profile-att/header/*'/>";
 			}
 
 			public void handleServerSide(ServerSideContext ctx) {
@@ -854,19 +781,6 @@ public class RequestHandlerIntegrationTest {
                 }
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/fixed-value/header/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/fixed-value/header/*'>"
-						+ " <headers>"
-						+ "  <fixed-value name='single' value='single-1'/>"
-						+ "  <fixed-value name='multi' value='multi-1'/>"
-						+ "  <fixed-value name='multi' value='multi-2'/>"
-						+ " </headers>"
-						+ "</cctx-mapping>"
-						+ "<unenforced cpath='/fixed-value/header/*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> fixed_header_injection_test ");
 		        
@@ -948,16 +862,6 @@ public class RequestHandlerIntegrationTest {
                     }
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/wamulat-48/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort + "' tpath='/wamulat-48/*'>"
-						+ " <headers>"
-						+ "  <profile-att name='preferredname' attribute='preferredname'/>"
-						+ " </headers>"
-						+ "</cctx-mapping>"
-						+ "<unenforced cpath='/wamulat-48/*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_wamulat_48 ");
 		        
@@ -1002,13 +906,6 @@ public class RequestHandlerIntegrationTest {
 
 			public void handleServerSide(ServerSideContext ctx) {
 	            ctx.answer = "You made it";
-			}
-
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/restricted/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/restricted/*' preserve-host='false'/>"
-						+ "   <allow action='GET' cpath='/restricted/*'/>";
 			}
 
 			public void runTest(ClientSideContext csc) throws Exception {
@@ -1065,13 +962,6 @@ public class RequestHandlerIntegrationTest {
 	            ctx.answer = "You made it";
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/conditional/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/conditional/*' preserve-host='false'/>"
-						+ "<allow action='GET' cpath='/conditional/*' condition='{{app-bbb}}'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        Config cfg = Config.getInstance();
 		        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
@@ -1107,13 +997,6 @@ public class RequestHandlerIntegrationTest {
 				ctx.output = "GET /bad/gateway/message/ HTTP/1.1" + RequestHandler.CRLF + RequestHandler.CRLF;
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/bad/gateway/message*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/bad/gateway/message*'/>"
-						+ "<unenforced cpath='/bad/gateway/*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        Config.getInstance();
 		        System.out.println("----> test_bad_gateway_message");
@@ -1137,11 +1020,6 @@ public class RequestHandlerIntegrationTest {
     	}),
     	bad_gateway_message_conn(new EmptyRhIntTest() {
     		// test has no server side since connects to port without listener
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/bad/gateway/test*' thost='127.0.0.1' tport='"
-						+ csc.freePort + "' tpath='/bad/gateway/test*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        Config.getInstance();
 		        System.out.println("----> test_bad_gateway_when_connecting");
@@ -1172,11 +1050,6 @@ public class RequestHandlerIntegrationTest {
 	            ctx.output = RequestHandler.CRLF + RequestHandler.CRLF + RequestHandler.CRLF;
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/bad/gateway/empty/*' thost='127.0.0.1' tport='"
-						+ csc.serverPort + "' tpath='/bad/gateway/empty/*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 		        Config.getInstance();
 		        System.out.println("----> test_bad_gateway_empty_message");
@@ -1205,13 +1078,6 @@ public class RequestHandlerIntegrationTest {
 
 			public void handleServerSide(ServerSideContext ctx) {
 				ctx.output = "HTTP/1.1404NotFound" + RequestHandler.CRLF + RequestHandler.CRLF;
-			}
-
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/bad/response/startline*' thost='127.0.0.1' tport='"
-						+ csc.serverPort
-						+ "' tpath='/bad/response/startline*'/>"
-						+ "<unenforced cpath='/bad/response/startline*'/>";
 			}
 
 			public void runTest(ClientSideContext csc) throws Exception {
@@ -1291,11 +1157,6 @@ public class RequestHandlerIntegrationTest {
                     + new String(baos.toByteArray());
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<cctx-mapping cctx='/404/test-*' thost='127.0.0.1' tport='" + csc.serverPort + "' tpath='/404/test-*'/>"
-			            + "<unenforced cpath='/404/test-*'/>";
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 				Config.getInstance(); // reset configuration
 		        System.out.println("----> test_404_payload_is_passed_through");
@@ -1350,13 +1211,9 @@ public class RequestHandlerIntegrationTest {
                     + new String(baos.toByteArray());
 			}
 
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return ""; // uses config for resp_code_404_test_wcl
-			}
-
 			public void runTest(ClientSideContext csc) throws Exception {
 
-		        Config cfg = Config.getInstance();
+		        Config.getInstance();
 		        System.out.println("----> test_404_payload_is_passed_through");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/404/test-ncl/req";
 		        HttpClient client = new HttpClient();
@@ -1378,16 +1235,7 @@ public class RequestHandlerIntegrationTest {
 		        method.releaseConnection();
 			}
     	}),
-    	set_up_sim_access_for_file_tests(new EmptyRhIntTest() {
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return "<unenforced cpath='/file/*'/>";
-			}
-    	}),
     	test_local_relative_file_mapping(new EmptyRhIntTest() {
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				// is dependent on set_up_sim_access_for_file_tests
-				return "<cctx-file cctx='/file/local/relative/*' file='*' content-type='text/plain'/>";
-			}
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_local_relative_file_mapping");
 		        // first make sure that we have a sample file
@@ -1421,10 +1269,6 @@ public class RequestHandlerIntegrationTest {
 			}
     	}),
     	test_local_fixed_file_mapping(new EmptyRhIntTest() {
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				// is dependent on set_up_sim_access_for_file_tests
-				return "<cctx-file cctx='/file/local/fixed*' file='sample-output.txt' content-type='text/plain'/>";
-			}
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_local_fixed_file_mapping");
 		        // first make sure that we have a sample file
@@ -1458,10 +1302,6 @@ public class RequestHandlerIntegrationTest {
 			}
     	}),
     	test_fixed_classpath_file_mapping(new EmptyRhIntTest() {
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				// is dependent on set_up_sim_access_for_file_tests
-				return "<cctx-file cctx='/file/cp/fixed/*' file='classpath:RequestHandlerIntegrationTestFile1.txt' content-type='text/html'/>";
-			}
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_fixed_classpath_file_mapping");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/fixed/any-name-gets-same-content.html";
@@ -1484,10 +1324,6 @@ public class RequestHandlerIntegrationTest {
 			}
     	}),
     	test_relative_classpath_file_mapping1(new EmptyRhIntTest() {
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				// is dependent on set_up_sim_access_for_file_tests
-				return "<cctx-file cctx='/file/cp/relative/*' file='classpath:*' content-type='text/html'/>";
-			}
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_relative_classpath_file_mapping1");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/relative/RequestHandlerIntegrationTestFile1.txt";
@@ -1510,9 +1346,6 @@ public class RequestHandlerIntegrationTest {
 			}
     	}),
     	test_relative_classpath_file_mapping2(new EmptyRhIntTest() {
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return ""; // uses config from test_relative_classpath_file_mapping1
-			}
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_relative_classpath_file_mapping2");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/relative/RequestHandlerIntegrationTestFile2.txt";
@@ -1535,9 +1368,6 @@ public class RequestHandlerIntegrationTest {
 			}
     	}),
     	test_relative_classpath_file_mapping3(new EmptyRhIntTest() {
-			public String getSimMappingAndAccess(ClientSideContext csc) {
-				return ""; // uses config from test_relative_classpath_file_mapping1
-			}
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_relative_classpath_file_mapping3");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/relative/non-existent-file.txt";
@@ -1659,7 +1489,6 @@ public class RequestHandlerIntegrationTest {
                         }
                         String req = null;
                         String output = null;
-                        String answer = null;
                         //String hostHdrLC = HeaderDef.Host.getNameWithColon().toLowerCase();
                         // TODO: remove this service? is any test using it???
                         if (input.contains("/slow/no/content/length/")) {
@@ -1712,15 +1541,6 @@ public class RequestHandlerIntegrationTest {
 						 * 
 						 */
                         if (! alreadyHandled) {
-                            if (output == null) {
-                                output =
-                                    "HTTP/1.1 200 OK" + RequestHandler.CRLF
-                                    + "Content-type: text/plain" + RequestHandler.CRLF
-                                    + "Content-length: " + answer.toCharArray().length + RequestHandler.CRLF
-                                    + RequestHandler.CRLF
-                                    + answer;
-                            }
-
                             System.out.println();
                             System.out.println("*** test server detected request: " + req);
                             System.out.println("--- received ---");
@@ -1758,7 +1578,7 @@ public class RequestHandlerIntegrationTest {
     @BeforeClass
     public void setUpSimulator () throws Exception {
         // first clear any config residue
-        Config cfg = new Config();
+        //Config cfg = new Config();
 
         // find a free port on which nothing is listening
         ServerSocket portFinder = new ServerSocket();
@@ -1784,7 +1604,7 @@ public class RequestHandlerIntegrationTest {
         String xml = ""
         	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?file-alias policy-src-xml2=\"" + filePath2.getPath().substring(1).replace("/", "\\") + "\"?>"
-        	+ "<?file-alias policy-src-xml3=\"" + filePath2.getPath().substring(1).replace("/", "\\") + "\"?>"
+        	+ "<?file-alias policy-src-xml3=\"" + filePath3.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
             + "\""
             + " <users>"
@@ -1996,7 +1816,7 @@ public class RequestHandlerIntegrationTest {
 
     @Test
     public void test_forward_proxying_blocked() throws HttpException, IOException {
-        Config cfg = Config.getInstance();
+        //Config cfg = Config.getInstance();
         System.out.println("----> test_forward_proxying_blocked");
         String uri = "http://unmapped-host.lds.org:" + cctx.sitePort + "/any/path/";
         HttpClient client = new HttpClient();
@@ -2049,10 +1869,10 @@ public class RequestHandlerIntegrationTest {
         Socket soc = new Socket("127.0.0.1", cctx.sitePort);
         soc.setSoTimeout(2000); // force the input stream to wait 2 seconds for response
         OutputStream out = soc.getOutputStream();
-        InputStream in = soc.getInputStream();
+        //InputStream in = soc.getInputStream();
         out.write(RequestHandler.CRLF.getBytes());
         out.flush();
-        String resp = TestUtilities.readAllHttpHeaders(in);
+        //String resp = TestUtilities.readAllHttpHeaders(in);
         //No need to assert.  here as long as an exception isn't thrown we're good. WAMULAT-53
         //Assert.assertTrue(resp.startsWith("HTTP/1.1 404 Bad Request"), "Response should have started with 'HTTP/1.1 404 Bad Request' but was: '" + resp + "'");
     }

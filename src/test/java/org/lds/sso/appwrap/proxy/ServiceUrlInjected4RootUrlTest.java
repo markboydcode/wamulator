@@ -178,7 +178,7 @@ public class ServiceUrlInjected4RootUrlTest {
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.ldschurch.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/global*'>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "'>"
             + "    <policy-source>xml={{policy-src-xml}}</policy-source>"
             + "   </cctx-mapping>"
             + "  </by-site>"

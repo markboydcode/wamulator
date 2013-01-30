@@ -39,7 +39,7 @@ public class RemoteStartStopTest {
                 + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
                 + " <sso-traffic strip-empty-headers='true'>"
                 + "  <by-site scheme='http' host='localhost' port='45'>"
-                + "    <cctx-mapping thost='127.0.0.1' tport='1000' tpath='/is-alive'>"
+                + "    <cctx-mapping thost='127.0.0.1' tport='1000'>"
                 + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
                 + "    </cctx-mapping>"
                 + "  </by-site>"

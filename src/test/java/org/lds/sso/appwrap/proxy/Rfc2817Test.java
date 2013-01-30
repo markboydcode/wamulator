@@ -154,7 +154,7 @@ public class Rfc2817Test {
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='localhost' port='{{proxy-port}}'>"
-            + "    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}' tpath='/force/upgrade'>"
+            + "    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}'>"
             + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
             + "    </cctx-mapping>"
             + "  </by-site>"

@@ -43,7 +43,7 @@ public class SignMeInOutTest {
         .append(" <sso-sign-in-url value='http://local.lds.org:{{console-port}}/admin/selectUser.jsp'/>")
         .append(" <sso-traffic>")
         .append("  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>")
-        .append("    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}' tpath='/'>")
+        .append("    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}'>")
         .append("      <policy-source>xml={{policy-src-xml}}</policy-source>")
         .append("    </cctx-mapping>")
         .append("  </by-site>")

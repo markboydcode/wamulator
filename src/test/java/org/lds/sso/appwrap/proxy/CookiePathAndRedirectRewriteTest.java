@@ -224,7 +224,7 @@ public class CookiePathAndRedirectRewriteTest {
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-traffic>"
             + "  <by-site scheme='http' host='labs-local.lds.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/*'>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "'>"
             + "    <policy-source>xml={{policy-src-xml}}</policy-source>"
             + "   </cctx-mapping>"
             + "  </by-site>"

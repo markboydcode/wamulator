@@ -168,7 +168,7 @@ public class StripEmptyHeadersTest {
             + " <sso-cookie name='lds-policy' domain='.lds.org' />"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "' tpath='/'>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "'>"
             + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
             + "   </cctx-mapping>"
             + "  </by-site>"
