@@ -1603,8 +1603,8 @@ public class RequestHandlerIntegrationTest {
         System.getProperties().remove("non-existent-sys-prop");
         String xml = ""
         	+ "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
-        	+ "<?file-alias policy-src-xml2=\"" + filePath2.getPath().substring(1).replace("/", "\\") + "\"?>"
-        	+ "<?file-alias policy-src-xml3=\"" + filePath3.getPath().substring(1).replace("/", "\\") + "\"?>"
+        	+ "<?file-alias policy-src-xml2=\"" + filePath2.getPath() + "\"?>"
+        	+ "<?file-alias policy-src-xml3=\"" + filePath3.getPath() + "\"?>"
         	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
             + "\""
             + " <users>"
