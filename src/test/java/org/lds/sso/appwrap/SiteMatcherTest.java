@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap;
 
+import java.io.File;
 import java.net.URL;
 
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
@@ -13,7 +14,7 @@ public class SiteMatcherTest {
     	URL filePath = SiteMatcherTest.class.getClassLoader().getResource("SiteMatcherTestConfig.xml");
     	
     	String xml = 
-    		"<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"	
+    		"<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"	
             + "<config console-port='88' proxy-port='45'>"
             + " <sso-traffic>"
             + "  <by-site host='local.lds.org' port='80'>"

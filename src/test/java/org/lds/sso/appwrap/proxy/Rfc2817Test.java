@@ -1,6 +1,7 @@
 package org.lds.sso.appwrap.proxy;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -138,7 +139,7 @@ public class Rfc2817Test {
         // now set up the shim to verify empty headers are injected
         URL filePath = Rfc2817Test.class.getClassLoader().getResource("RFC2817TestConfig.xml");
     	service = Service.getService("string:"
-            + "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"

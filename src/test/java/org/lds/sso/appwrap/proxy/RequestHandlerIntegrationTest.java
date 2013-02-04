@@ -1602,7 +1602,7 @@ public class RequestHandlerIntegrationTest {
         URL filePath3 = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig3.xml");
         System.getProperties().remove("non-existent-sys-prop");
         String xml = ""
-        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
         	+ "<?file-alias policy-src-xml2=\"" + filePath2.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?file-alias policy-src-xml3=\"" + filePath3.getPath().substring(1).replace("/", "\\") + "\"?>"
         	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="

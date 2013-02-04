@@ -786,7 +786,7 @@ public class XmlConfigLoaderTest {
 	public void testAllowedBySiteEmptyPathWildcard() throws Exception {
 		URL filePath = XmlConfigLoaderTest.class.getClassLoader().getResource("XmlConfigDefaultRuleTest.xml");
 		String xml = 
-			"<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+			"<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
 			+ "<config console-port='88' proxy-port='45'>"
 			+ " <sso-traffic>"
 			+ "  <by-site scheme='app' host='labs-local.lds.org' port='80'>"

@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap.proxy;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -164,8 +165,8 @@ public class PolicyServiceUrlTest {
         URL filePath = PolicyServiceUrlTest.class.getClassLoader().getResource("CookiePathAndRedirectConfig.xml");
         URL otherFilePath = PolicyServiceUrlTest.class.getClassLoader().getResource("OtherHostPolicyConfig.xml");
         service = Service.getService("string:"
-        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
-        	+ "<?file-alias other-src-xml=\"" + otherFilePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
+        	+ "<?file-alias other-src-xml=\"" + otherFilePath.getPath().replace("/", File.separator) + "\"?>"
             + "<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-traffic>"

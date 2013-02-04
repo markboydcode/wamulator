@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap.bootstrap;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
@@ -26,7 +27,7 @@ public class RemoteStartStopTest {
 		return 
 	            "string:<?xml version='1.0' encoding='UTF-8'?>"
 	            + "<?alias site=labs-local.lds.org?>"
-                + "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+                + "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
                 + "<?system-alias usr-src-xml=non-existent-sys-prop default="
 	            + "\""
 	            + "  <users>"

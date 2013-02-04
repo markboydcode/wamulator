@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap.proxy;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
@@ -36,7 +37,7 @@ public class LocalHostTest {
     	System.getProperties().remove("non-existent-sys-prop");
     	URL filePath = LocalHostTest.class.getClassLoader().getResource("LocalHostTestConfig.xml");
     	service = Service.getService("string:"
-            + "<?file-alias policy-src-xml=\"" + filePath.getPath().substring(1).replace("/", "\\") + "\"?>"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"
