@@ -139,7 +139,7 @@ public class Rfc2817Test {
         // now set up the shim to verify empty headers are injected
         URL filePath = Rfc2817Test.class.getClassLoader().getResource("RFC2817TestConfig.xml");
     	service = Service.getService("string:"
-            + "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"

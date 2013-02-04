@@ -31,7 +31,7 @@ public class SignMeInOutTest {
     	System.getProperties().remove("non-existent-sys-prop");
     	URL filePath = SignMeInOutTest.class.getClassLoader().getResource("SignMeInOutTestConfig.xml");
         StringBuffer config = new StringBuffer("string:")
-        .append("<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>")
+        .append("<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>")
         .append("<?system-alias usr-src-props=non-existent-sys-prop default=")
         .append("\"xml=")
         .append(" <users>")

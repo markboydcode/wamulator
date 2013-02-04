@@ -153,7 +153,7 @@ public class ServiceUrlInjected4RootUrlTest {
         System.getProperties().remove("non-existent-sys-prop");
         URL filePath = ServiceUrlInjected4RootUrlTest.class.getClassLoader().getResource("ServiceUrlInjectedTestConfig.xml");
         service = Service.getService("string:"
-        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
             + "<?alias console-port=" + consolePort + "?>"
             + "<?alias proxy-port=" + proxyPort + "?>"
             + "<?system-alias user-src-props=non-existent-sys-prop default="

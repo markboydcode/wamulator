@@ -155,7 +155,7 @@ public class StripEmptyHeadersTest {
     	System.getProperties().remove("non-existent-sys-prop");
     	URL filePath = StripEmptyHeadersTest.class.getClassLoader().getResource("SiteMatcherTestConfig.xml");
         service = Service.getService("string:"
-            + "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"

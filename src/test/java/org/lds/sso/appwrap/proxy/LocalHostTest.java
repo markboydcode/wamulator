@@ -37,7 +37,7 @@ public class LocalHostTest {
     	System.getProperties().remove("non-existent-sys-prop");
     	URL filePath = LocalHostTest.class.getClassLoader().getResource("LocalHostTestConfig.xml");
     	service = Service.getService("string:"
-            + "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
+            + "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"

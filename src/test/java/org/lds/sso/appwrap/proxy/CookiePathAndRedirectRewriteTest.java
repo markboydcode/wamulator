@@ -220,7 +220,7 @@ public class CookiePathAndRedirectRewriteTest {
         // now set up the shim
         URL filePath = CookiePathAndRedirectRewriteTest.class.getClassLoader().getResource("CookiePathAndRedirectConfig.xml");
         service = Service.getService("string:"
-        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
             + "<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-traffic>"

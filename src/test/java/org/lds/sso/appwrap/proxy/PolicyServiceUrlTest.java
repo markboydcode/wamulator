@@ -165,8 +165,8 @@ public class PolicyServiceUrlTest {
         URL filePath = PolicyServiceUrlTest.class.getClassLoader().getResource("CookiePathAndRedirectConfig.xml");
         URL otherFilePath = PolicyServiceUrlTest.class.getClassLoader().getResource("OtherHostPolicyConfig.xml");
         service = Service.getService("string:"
-        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
-        	+ "<?file-alias other-src-xml=\"" + otherFilePath.getPath().replace("/", File.separator) + "\"?>"
+        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
+        	+ "<?file-alias other-src-xml=\"" + otherFilePath.getPath() + "\"?>"
             + "<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-traffic>"

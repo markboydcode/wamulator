@@ -27,7 +27,7 @@ public class RemoteStartStopTest {
 		return 
 	            "string:<?xml version='1.0' encoding='UTF-8'?>"
 	            + "<?alias site=labs-local.lds.org?>"
-                + "<?file-alias policy-src-xml=\"" + filePath.getPath().replace("/", File.separator) + "\"?>"
+                + "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
                 + "<?system-alias usr-src-xml=non-existent-sys-prop default="
 	            + "\""
 	            + "  <users>"
