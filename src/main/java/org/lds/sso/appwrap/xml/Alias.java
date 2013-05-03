@@ -33,13 +33,13 @@ public class Alias {
 	public static final String MACRO_END = "}}";
 	
 	// regex for old-style aliases
-	private static final Pattern propertyPattern = Pattern.compile("(((\\w\\s\\w)|([\\w\\-_]))*)\\s*=\\s*\"?(system:|classpath:|file:)?([\\{\\}\\w\\-_\\s\\./\\*]*)\"?\\s*");
+	private static final Pattern propertyPattern = Pattern.compile("(((\\w\\s\\w)|([\\w\\-_]))*)\\s*=\\s*\"?(system:|classpath:|file:)?([\\{\\}\\w\\-_\\s\\./\\*\\\\\\:]*)\"?\\s*");
 	
 	// regex for typed aliases
-	private static final Pattern typedPropertyPattern = Pattern.compile("([\\w\\-_]*)\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*\\<\\>]*))");
+	private static final Pattern typedPropertyPattern = Pattern.compile("([\\w\\-_]*)\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*\\<\\>\\\\\\:]*))");
 	
 	// regex for default property in typed aliases
-	private static final Pattern defaultValuePattern = Pattern.compile("default\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*\\<\\>\\{\\}\\']*))");
+	private static final Pattern defaultValuePattern = Pattern.compile("default\\s*=\\s*((\"([^\"]*)\")|([\\w\\-_\\./\\*\\<\\>\\{\\}\\'\\\\\\:]*))");
 	
 	public Alias(String name, String value) {
 		this.name = name;
@@ -49,7 +49,7 @@ public class Alias {
 	
 	protected Alias(String name, String location, String defaultValue) {
 		this.name = name;
-		this.value = resolveAliases(deriveFrom(location, defaultValue));
+		this.value = resolveAliases(deriveFrom(resolveAliases(location), defaultValue));
 		this.original = location;
 	}
 	
