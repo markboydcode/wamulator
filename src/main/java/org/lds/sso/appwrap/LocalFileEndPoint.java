@@ -147,8 +147,8 @@ public class LocalFileEndPoint implements EndPoint {
             uri = uri.replace("../", ""); //Remove security problem with being able to go up directory hirarchies
 			
             int length = contextRoot.length();
-            if (contextRoot.endsWith("*")) {
-            	length--;
+            if (contextRoot.endsWith("{/.../*,*}")) {
+            	length = length - 10;
             }
             String relFilePath = uri.substring(length);
 			return filePath + relFilePath;

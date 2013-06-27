@@ -151,7 +151,7 @@ public class UriMatcher {
 						}
 						
 						matchIndex = parts[starIndex].indexOf(afterStarPart);
-						parts[starIndex] = parts[starIndex].substring(matchIndex + afterStarPart.length(), parts[starIndex].length());;
+						parts[starIndex] = parts[starIndex].substring(matchIndex + afterStarPart.length(), parts[starIndex].length());
 						String newMatchUri = StringUtils.join(parts, "/");
 						
 						matches = matches(newUri, newMatchUri);

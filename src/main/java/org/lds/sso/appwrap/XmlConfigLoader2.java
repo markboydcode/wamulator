@@ -853,6 +853,8 @@ public class XmlConfigLoader2 {
                 // and env macros are added.
                 if (!cctx.endsWith("*")) {
                     throw new IllegalArgumentException("cctx must end with '*' in " + path);
+                } else {
+                    cctx = cctx.substring(0, cctx.length() - 1) + "{/.../*,*}";
                 }
                 String type = getStringAtt("content-type", path, atts, false);
                 TrafficManager trafficMgr = cfg.getTrafficManager();
