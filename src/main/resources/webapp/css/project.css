@@ -180,6 +180,11 @@ a:link {
 	text-decoration: none;
 }
 
+a:visited {
+    color: rgb(0,113,188);
+    text-decoration: none;
+}
+
 a:hover {
 	text-decoration: underline;
 }
@@ -620,6 +625,12 @@ table#user-table {
 table#user-table #user-filter {
     border: 1px #aaa solid;
 }
+
+table#user-table a:visited {
+    color: rgb(85,26,139);
+}
+
+
 
 @media only screen and (min-width: 961px) {
 
