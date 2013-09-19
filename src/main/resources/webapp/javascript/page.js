@@ -256,6 +256,19 @@ function() {
     if (hash != "") {
         setCookie(OB_FORM_LOGIN_HASH_COOKIE_NAME, encodeURI(hash), 0);
     }
+
+    $("#user-filter").keyup(function() {
+        var filterVal = $(this).val();
+        $("#user-table .user").each(function() {
+            var name = $(this).html();
+            var reg = new RegExp(filterVal, "gi");
+            if (reg.exec(name) != null) {
+                $(this).parent().parent().show();
+            } else {
+                $(this).parent().parent().hide();
+            }
+        });
+    });
 });
 
 function validCredentials() {

@@ -105,7 +105,7 @@ public class User {
     public boolean hasAttribute(String name) {
         for(NvPair pair : atts) {
             if ((name == null && pair.getName() == null) ||
-                    (name != null && name.equals(pair.getName()))) {
+                (name != null && pair.getName() != null && name.equalsIgnoreCase(pair.getName()))) {
                 return true;
             }
         }
@@ -121,7 +121,7 @@ public class User {
         List<String> vals = new ArrayList<String>();
         for(NvPair pair : atts) {
             if ((name == null && pair.getName() == null) ||
-                    (name != null && name.equals(pair.getName()))) {
+                    (name != null && pair.getName() != null && name.equalsIgnoreCase(pair.getName()))) {
                 vals.add(pair.getValue());
             }
         }

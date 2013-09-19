@@ -33,6 +33,8 @@ public class LocalFileEndPoint implements EndPoint {
 	private boolean isRelative = false;
 
     public String servedFromMsg;
+    
+    public String originalName;
 
     /**
      * A number that indicates the order of declaration in the configuation file
@@ -43,12 +45,13 @@ public class LocalFileEndPoint implements EndPoint {
      */
     private Integer declarationOrder = null;
 
-	public LocalFileEndPoint(String canonicalCtx, String filePathParam, String contentType) {
-		this(canonicalCtx, filePathParam, contentType, null);
+	public LocalFileEndPoint(String originalName, String canonicalCtx, String filePathParam, String contentType) {
+		this(originalName, canonicalCtx, filePathParam, contentType, null);
 	}
 	
-	public LocalFileEndPoint(String canonicalCtx, String filePathParam, String contentType, String queryString) {
-		this.contextRoot = canonicalCtx;
+	public LocalFileEndPoint(String originalName, String canonicalCtx, String filePathParam, String contentType, String queryString) {
+		this.originalName = originalName;
+        this.contextRoot = canonicalCtx;
 		this.queryString = queryString;
 		this.filePath = filePathParam;
                 
@@ -132,6 +135,10 @@ public class LocalFileEndPoint implements EndPoint {
 	public void setContentType(String type) {
 		this.contentType = type;
 	}
+    
+    public String getOriginalName() {
+        return "[cctx-file] cctx=" + originalName;
+    }
 
 	/**
 	 * TODO: add support for backward references and environment macros like the

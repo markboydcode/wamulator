@@ -114,11 +114,14 @@
 					<div id="or" class="formActions">
 						-&nbsp;or choose a user&nbsp;-
 					</div>
-					<table style="margin:0 auto;">
+					<table id="user-table">
+                        <tr>
+                            <td colspan="2"><input type="text" placeholder="Filter Users" id="user-filter"/></td>
+                        </tr>
 						<c:forEach items="${requestScope.config.userManager.users}" var="user">
 							<tr>
 								<td><c:if test="${user.username == requestScope.currentUserName}"><IMG src="pointer.png"/></c:if></td>
-								<td><a href="${formAction}/${user.username}${gotoQueryParm}">${user.username}</a></td>
+								<td><a href="${formAction}/${user.username}${gotoQueryParm}" class="user">${user.username}</a></td>
 							</tr>
 						</c:forEach>
 					</table>

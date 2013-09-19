@@ -144,9 +144,9 @@ public class SiteMatcher {
 			}
 		}
 		if (result == null) {
-			cLog.fine("FAILURE: we didn't find a tpath endpoint that matches.");
+			cLog.info("FAILURE: we didn't find a tpath endpoint that matches.");
 		} else {
-			cLog.fine("SUCCESS: we found a tpath endpoint: " + result.getContextRoot());
+			cLog.info("SUCCESS: selected matcher was --> " + result.getOriginalName());
 		}
 		
 		return result;
@@ -156,9 +156,9 @@ public class SiteMatcher {
 	 * Returns true if this object has the same configured InboundScheme, host, 
 	 * and port.
 	 * 
-	 * @param scheme2
-	 * @param host2
-	 * @param port2
+	 * @param scheme
+	 * @param host
+	 * @param port
 	 * @return
 	 */
 	public boolean isSame(InboundScheme scheme, String host, int port) {
@@ -369,11 +369,17 @@ public class SiteMatcher {
 		cSynMap = syntaxMap;
 	}
 
-	public void addFileMapping(String cctx, String file, String type) {
-		EndPoint ep = new LocalFileEndPoint(cctx, file, type);
+	public void addFileMapping(String originalName, String cctx, String file, String type) {
+		EndPoint ep = new LocalFileEndPoint(originalName, cctx, file, type);
         ep.setDeclarationOrder(++endPoints);
 		mappedEndPoints.add(ep);
 	}
+    
+    public void addUnenforcedMapping(String originalName, String cctx, String thost, int tport) {
+        EndPoint ep = new UnenforcedEndPoint(originalName, cctx, thost, tport);
+        ep.setDeclarationOrder(++endPoints);
+        mappedEndPoints.add(ep);
+    }
 	
 	public String toString() {
 	    return this.scheme + "://" + this.host + ":" + this.port;

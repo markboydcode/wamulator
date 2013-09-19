@@ -24,7 +24,7 @@ public class UriMatcher {
 		
 		boolean matches = false;
 		
-		if (uri.toLowerCase().equals(matchUri.toLowerCase())) {
+		if (uri.equalsIgnoreCase(matchUri)) {
 			matches = true;
 		} else if (matchUri.contains("{") && matchUri.contains("}")) {
 			int start = matchUri.indexOf("{");

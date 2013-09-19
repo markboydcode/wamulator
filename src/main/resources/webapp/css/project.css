@@ -180,11 +180,6 @@ a:link {
 	text-decoration: none;
 }
 
-a:visited {
-	color: rgb(0,113,188);
-	text-decoration: none;
-}
-
 a:hover {
 	text-decoration: underline;
 }
@@ -615,6 +610,15 @@ div#usernameContainer div.label-container,
 div#passwordContainer div.label-container {
 	text-align: left;
     margin-left: 8%;
+}
+
+table#user-table {
+    margin:0 auto;
+    text-align:left;
+}
+
+table#user-table #user-filter {
+    border: 1px #aaa solid;
 }
 
 @media only screen and (min-width: 961px) {

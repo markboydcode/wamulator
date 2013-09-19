@@ -29,14 +29,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.servlet.http.Cookie;
 
-import org.lds.sso.appwrap.AppEndPoint;
+import org.lds.sso.appwrap.*;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.EndPoint;
-import org.lds.sso.appwrap.LocalFileEndPoint;
-import org.lds.sso.appwrap.Service;
-import org.lds.sso.appwrap.SiteMatcher;
-import org.lds.sso.appwrap.TrafficManager;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.identity.ExternalUserSource.Response;
 import org.lds.sso.appwrap.identity.Session;
@@ -99,7 +93,7 @@ public class RequestHandler implements Runnable {
      * handled per thread.
      * @param s the Socket of the incoming connection
      * @param cfg the Config instance
-     * @param connId2 the id of the connection being handled
+     * @param connId the id of the connection being handled
      * @param isSecure whether or not the connection came over TLS/SSL
      */
     public RequestHandler(Socket s, Config cfg, String connId, boolean isSecure) {
@@ -261,7 +255,7 @@ public class RequestHandler implements Runnable {
             // for non-ignored traffic perform the enforcements and translations
             RequestLine appReqLn = reqPkg.requestLine; // default to request line as-is
             // default to no translation
-            EndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port, true, null, null);
+            EndPoint endpoint = new AppEndPoint(null, null, reqPkg.host, reqPkg.port, true, null, null, null, null);
 
             // we only want to manage and log site related traffic
             if (reqPkg.trafficType == TrafficType.SITE) {
@@ -427,7 +421,7 @@ public class RequestHandler implements Runnable {
                 Socket server = null; // socket to remote server
                 Scheme serverScheme = Scheme.HTTP;
                 int endpointPort = appEndpoint.getEndpointPort(incomingScheme);
-                
+
                 try {
                     if (appEndpoint.useHttpsScheme(incomingScheme)) {
                         endpointMsg = "Connecting via TLS to: " + appEndpoint.getHost() + ":" + endpointPort;
@@ -533,8 +527,112 @@ public class RequestHandler implements Runnable {
                 LogUtils.fine(cLog, "Closing I/O to: {0}:{1}", appEndpoint.getHost(), endpointPort);
                 serverIn.close();
                 serverOut.close();
-            }
-            else { // file endpoint
+            } else if (endpoint instanceof UnenforcedEndPoint) {
+                // Unenforced endpoint
+                // Used to emulate F5 functionality
+                // Just forward the request on to the configured host and port
+                // Do not inject any headers
+                UnenforcedEndPoint unenforcedEp = (UnenforcedEndPoint) endpoint;
+
+                appReqLn = new StartLine(reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri(), reqPkg.requestLine.getHttpDecl());
+                request = serializePackage((StartLine) appReqLn, reqPkg);
+
+                Socket server = null; // socket to remote server
+                Scheme serverScheme = Scheme.HTTP;
+                int endpointPort = unenforcedEp.getTport();
+                try {
+                    if (incomingScheme.equals("https")) {
+                        endpointMsg = "Connecting via TLS to: " + unenforcedEp.getThost() + ":" + endpointPort;
+                        LogUtils.fine(cLog, endpointMsg);
+                        SocketFactory fact = getTlsSocketFactory();
+                        server = fact.createSocket(unenforcedEp.getThost(), endpointPort);
+                        serverScheme = Scheme.HTTPS;
+                    } else {
+                        endpointMsg = "Connecting to: " + unenforcedEp.getThost() + ":" + endpointPort;
+                        LogUtils.fine(cLog, endpointMsg);
+                        server = new Socket(unenforcedEp.getThost(), endpointPort);
+                    }
+                } catch (Exception e) {
+                    // tell the client there was an error
+                    String errMsg = "HTTP/1.0 502 Bad Gateway" + CRLF + "Content Type: text/plain" + CRLF + HttpPackage.CONN_ID_HDR
+                            + connId + CRLF + CRLF + "Error connecting to the server:" + CRLF + e + CRLF;
+                    sendProxyResponse(502, "Bad Gateway", errMsg.getBytes(), reqPkg, clientIn, clientOut, user, startTime, log, true);
+                    return;
+                }
+                LogUtils.fine(cLog, "Opening I/O to: {0}:{1}", unenforcedEp.getThost(), endpointPort);
+                server.setSoTimeout(cfg.getProxyOutboundSoTimeout());
+                BufferedInputStream serverIn = new BufferedInputStream(server.getInputStream());
+                BufferedOutputStream serverOut = new BufferedOutputStream(server.getOutputStream());
+                LogUtils.fine(cLog, "getting server input/output streams...");
+
+                // send the request out
+                LogUtils.fine(cLog, "Transmitting to: {0}:{1} {2}", unenforcedEp.getThost(), endpointPort, appReqLn);
+                serverOut.write(request, 0, request.length);
+                serverOut.flush();
+
+                LogUtils.fine(cLog, "Awaiting data from: {0}:{1}", unenforcedEp.getThost(), endpointPort);
+                resPkg = getHttpPackage(false, serverIn, true, log);
+
+                resPkg.scheme = serverScheme;
+
+                if (resPkg.socketTimeout) {
+                    byte[] bytes = getResponse("504", "Gateway Timeout",
+                            "504 Gateway Timeout",
+                            "A SocketTimeoutException occurred while reading from the server.",
+                            null, reqPkg);
+                    log.println("---- SocketTimeoutException for server ---");
+                    log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
+                    log.println("---- End SocketTimeoutException for server ---");
+                    log.println();
+                    sendProxyResponse(504, "Gateway Timeout", bytes, reqPkg, clientIn, clientOut, user, startTime,
+                            log, true);
+                    return;
+                }
+                LogUtils.fine(cLog, "Processing data from: {0}:{1}", unenforcedEp.getThost(), endpointPort);
+
+                if (resPkg.type == HttpPackageType.EMPTY) {
+                    byte[] bytes = getResponse("502", "Bad Gateway Response from Server",
+                            "502 Bad Gateway response received from server",
+                            "No bytes were found in the stream from the server.",
+                            null, reqPkg);
+                    sendProxyResponse(502, "Bad Gateway Response from Server", bytes, reqPkg, clientIn, clientOut, user, startTime,
+                            log, true);
+                    return;
+                }
+
+                if (resPkg.type == HttpPackageType.REQUEST) {
+                    byte[] bytes = getResponse("502", "Bad Gateway",
+                            "502 Bad Gateway",
+                            "An invalid response was received from the server.",
+                            null, reqPkg);
+                    log.println("---- Bad Response from server ---");
+                    log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
+                    log.println("---- End Bad Response from server ---");
+                    log.println();
+                    sendProxyResponse(502, "Bad Gateway",bytes, reqPkg, clientIn, clientOut, user, startTime,
+                            log, true);
+                    return;
+                }
+
+                if (resPkg.type == HttpPackageType.BAD_STARTLINE) {
+                    byte[] bytes = getResponse("502", "Bad Gateway",
+                            "502 Bad Gateway",
+                            "An invalid response line '" + resPkg.responseLine +
+                                    "' was received from the server.",
+                            null, reqPkg);
+                    log.println("---- Bad Response line from server ---");
+                    log.write(serializePackage((StartLine) resPkg.responseLine, resPkg));
+                    log.println("---- End Bad Response line from server ---");
+                    log.println();
+                    sendProxyResponse(502, "Bad Gateway",bytes, reqPkg, clientIn, clientOut, user, startTime,
+                            log, true);
+                    return;
+                }
+
+                LogUtils.fine(cLog, "Closing I/O to: {0}:{1}", unenforcedEp.getThost(), endpointPort);
+                serverIn.close();
+                serverOut.close();
+            } else { // file endpoint
 //
 //    ######## #### ##       ########       ######## ########
 //    ##        ##  ##       ##             ##       ##     ##
@@ -908,7 +1006,7 @@ public class RequestHandler implements Runnable {
      * @param htmlTitle the non-null title of the html page in the browser
      * @param htmlMsg the non-null message embedded in the html page in the browser
      * @param user the user object if applicable; if null the "n/a" is used
-     * @param origReqLn contains the http method and http URL if applicable or uses "n/a" for both if this object is null
+     * @param pkg
      * @return
      */
     private byte[] getResponse(String httpRespCode, String httpRespMsg,
@@ -927,16 +1025,13 @@ public class RequestHandler implements Runnable {
     /**
      * Builds a dynamic response body from a canned template.
      *
-     * @param httpRespCode the non-null value of the http response code.
-     * @param httpRespMsg the non-null short message of the http response line
      * @param htmlTitle the non-null title of the html page in the browser
      * @param htmlMsg the non-null message embedded in the html page in the browser
      * @param user the user object if applicable; if null the "n/a" is used
-     * @param origReqLn contains the http method and http URL if applicable or uses "n/a" for both if this object is null
+     * @param pkg
      * @return
      */
-    public static String getResponseBody(String htmlTitle, String htmlMsg,
-            User user, HttpPackage pkg) {
+    public static String getResponseBody(String htmlTitle, String htmlMsg, User user, HttpPackage pkg) {
         String body = BODY_TEMPLATE;
         body = body.replace("{{title}}", htmlTitle);
         body = body.replace("{{message}}", htmlMsg);
@@ -1310,7 +1405,6 @@ public class RequestHandler implements Runnable {
      *
      * @param pkg
      * @param in
-     * @param excludeHeaders
      * @param log
      * @throws IOException
      */

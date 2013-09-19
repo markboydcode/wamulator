@@ -249,6 +249,11 @@ public class AppEndPoint implements EndPoint {
     private String hostHdr;
 
     private String policyServiceGateway;
+    
+    // Strings that denote where this endpoint was defined
+    // in the config files for logging/debugging.
+    private String sourceName;
+    private String policyPath;
 
     /**
      * The scheme that should be used when connecting to the remote endpoint.
@@ -281,23 +286,26 @@ public class AppEndPoint implements EndPoint {
 	protected List<String> purgedHeaders;
 
 	public AppEndPoint(String canonicalHost, String cctx, String host, int port, 
-	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
+	        boolean preserveHost, String hostHdr, String policyServiceGateway,
+            String sourceName,  String policyPath) {
 	    
 		this(null, canonicalHost, cctx, host, port, OutboundScheme.HTTP, -1, 
-	            preserveHost, hostHdr, policyServiceGateway);
+	            preserveHost, hostHdr, policyServiceGateway, sourceName, policyPath);
 	}
 	
 	public AppEndPoint(InboundScheme canonicalScheme, String canonicalHost, String cctx, 
 	        String host, int port, OutboundScheme appScheme, int outgoingTlsPort,
-	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
+	        boolean preserveHost, String hostHdr, String policyServiceGateway,
+            String sourceName, String policyPath) {
 		
 		this(canonicalScheme, canonicalHost, cctx, null, host, port, appScheme, outgoingTlsPort,
-		     preserveHost, hostHdr, policyServiceGateway);
+		     preserveHost, hostHdr, policyServiceGateway, sourceName, policyPath);
 	}
 	
 	public AppEndPoint(InboundScheme canonicalScheme, String canonicalHost, String cctx, 
 	        String queryString, String host, int port, OutboundScheme appScheme, int outgoingTlsPort,
-	        boolean preserveHost, String hostHdr, String policyServiceGateway) {
+	        boolean preserveHost, String hostHdr, String policyServiceGateway,
+            String sourceName, String policyPath) {
         
 		this.endpointPort = port;
         this.endpointTlsPort = outgoingTlsPort;
@@ -327,6 +335,8 @@ public class AppEndPoint implements EndPoint {
             this.preserveHostHeader = false;
         }
         this.policyServiceGateway = policyServiceGateway;
+        this.sourceName = sourceName;
+        this.policyPath = policyPath;
         updateId();
     }
 
@@ -334,12 +344,13 @@ public class AppEndPoint implements EndPoint {
 	 * Constructor that allows us to override default x-forwarded-scheme
 	 * header behavior.
 	 * 
+     * @param scheme
 	 * @param host
 	 * @param cctx
-	 * @param tpath
 	 * @param thost
 	 * @param tport
-	 * @param scheme
+     * @param tscheme
+     * @param outgoingTlsPort
 	 * @param preserve
 	 * @param hostHdr
 	 * @param policyServiceGateway
@@ -348,17 +359,17 @@ public class AppEndPoint implements EndPoint {
 	 */
     public AppEndPoint(InboundScheme scheme, String host, String cctx, String thost, int tport, OutboundScheme tscheme,
     		 int outgoingTlsPort, boolean preserve, String hostHdr, String policyServiceGateway, boolean injectScheme,
-			String schemeHeader) {
+			String schemeHeader, String sourceName, String policyPath) {
     	
     	this(scheme, host, cctx, null, thost, tport, tscheme, outgoingTlsPort, preserve, hostHdr, policyServiceGateway, 
-        		injectScheme, schemeHeader);
+        		injectScheme, schemeHeader, sourceName, policyPath);
     }
     
     public AppEndPoint(InboundScheme scheme, String host, String cctx, String queryString, String thost, int tport, 
     		OutboundScheme tscheme, int outgoingTlsPort, boolean preserve, String hostHdr, String policyServiceGateway, 
-    		boolean injectScheme, String schemeHeader) {
+    		boolean injectScheme, String schemeHeader, String sourceName, String policyPath) {
     	
-    	this(scheme, host, cctx, queryString, thost, tport, tscheme, outgoingTlsPort, preserve, hostHdr, policyServiceGateway);
+    	this(scheme, host, cctx, queryString, thost, tport, tscheme, outgoingTlsPort, preserve, hostHdr, policyServiceGateway, sourceName, policyPath);
     	this.injectSchemeHeader = injectScheme;
     	if (schemeHeader != null) {
         	this.schemeHeaderName = schemeHeader;
@@ -551,9 +562,7 @@ public class AppEndPoint implements EndPoint {
      * that contained our context mapping end point possibly with adjusted
      * gateway host and port if specified like when server is behind a firewall
      * and can't get to rest service without a reverse proxy tunnel
-     * @param cfg 
-     *
-     * @param appEndpoint
+     * @param cfg
      * @param reqPkg
      */
     private void injectPolicyServiceUrlHdr(Config cfg, HttpPackage reqPkg) {
@@ -630,7 +639,7 @@ public class AppEndPoint implements EndPoint {
 	/**
 	 * Injects any fixed headers declared in config file.
 	 * 
-	 * @param reqP
+	 * @param reqPkg
 	 */
 	private void injectFixedHdrs(HttpPackage reqPkg) {
 		if (fixedHeaders == null) {
@@ -650,7 +659,7 @@ public class AppEndPoint implements EndPoint {
 	 * Purges any headers declared in config file with the purge-header
 	 * directive.
 	 * 
-	 * @param reqP
+	 * @param reqPkg
 	 */
 	public void stripPurgedHeaders(HttpPackage reqPkg) {
 		if (purgedHeaders == null) {
@@ -664,7 +673,7 @@ public class AppEndPoint implements EndPoint {
 	/**
 	 * Injects cctx header.
 	 * 
-	 * @param reqP
+	 * @param reqPkg
 	 */
 	private void injectCctxFixedHdrs(HttpPackage reqPkg) {
 		if (cctxHeader != null) {
@@ -711,4 +720,8 @@ public class AppEndPoint implements EndPoint {
             reqPkg.headerBfr.set(new Header(HeaderDef.Host, hostHdr));
         }
 	}
+    
+    public String getOriginalName() {
+        return "[cctx-mapping] [policy-source=" + sourceName + "] --> " + policyPath;
+    }
 }

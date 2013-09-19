@@ -80,16 +80,17 @@ public class WamulatorPolicySource implements ContentHandler {
 	
 	private String defAuthNScheme;
 	private String defAuthNName;
+
+    // String that holds the name of the policy source file
+    // for convenience of logging and debugging.
+    private String sourceName;
 	
-	
-	public WamulatorPolicySource(ThreadLocal<Map<String,Object>> parsingContextAccessor) {
-		this.parsingContextAccessor = parsingContextAccessor;
-	}
 	
 	public WamulatorPolicySource(ThreadLocal<Map<String,Object>> parsingContextAccessor, String cctxThost, 
 			String cctxHostHdr, String cctxPolicyServiceGateway, String cctxSchemeHeaderOvrd, 
 			String cctxInjectSchemeHeader,boolean cctxPreserveHost, boolean cctxInjectScheme, 
-			OutboundScheme cctxOutgoingScheme, InboundScheme cctxIncomingScheme, int cctxTsslPort, int cctxTport) {
+			OutboundScheme cctxOutgoingScheme, InboundScheme cctxIncomingScheme, int cctxTsslPort, 
+            int cctxTport, String sourceName) {
 		this.parsingContextAccessor = parsingContextAccessor;
 		this.cctxThost = cctxThost;
 		this.cctxHostHdr = cctxHostHdr;
@@ -102,6 +103,7 @@ public class WamulatorPolicySource implements ContentHandler {
 		this.cctxIncomingScheme = cctxIncomingScheme;
 		this.cctxTsslPort = cctxTsslPort;
 		this.cctxTport = cctxTport;
+        this.sourceName = sourceName;
 	}
 	
 	public void setConfig(Path path, Properties props) throws ConfigurationException {
@@ -116,6 +118,10 @@ public class WamulatorPolicySource implements ContentHandler {
         }
         parseXml(path, xml);
 	}
+    
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
 	
 	/**
 	 * Parses the policy exposee xml format.
@@ -263,7 +269,7 @@ public class WamulatorPolicySource implements ContentHandler {
             EndPoint ep = new AppEndPoint(cctxIncomingScheme, sm.getHost(), defPolicy.getUrl(), 
             		defPolicy.getQueryString(), cctxThost, cctxTport, cctxOutgoingScheme, 
             		cctxTsslPort, cctxPreserveHost, cctxHostHdr, cctxPolicyServiceGateway, 
-            		cctxInjectScheme, cctxSchemeHeaderOvrd);
+            		cctxInjectScheme, cctxSchemeHeaderOvrd, sourceName, defPolicy.getUrl());
             
             sm.addMapping(ep);
             
@@ -294,7 +300,7 @@ public class WamulatorPolicySource implements ContentHandler {
             EndPoint ep = new AppEndPoint(cctxIncomingScheme, sm.getHost(), curPolicy.getUrl(), 
             		curPolicy.getQueryString(), cctxThost, cctxTport, cctxOutgoingScheme, 
             		cctxTsslPort, cctxPreserveHost, cctxHostHdr, cctxPolicyServiceGateway, 
-            		cctxInjectScheme, cctxSchemeHeaderOvrd);
+            		cctxInjectScheme, cctxSchemeHeaderOvrd, sourceName, curPolicy.getName());
             sm.addMapping(ep);
             
             addPolicyToSiteMatcher(sm, curPolicy.getUrl(), curPolicy);

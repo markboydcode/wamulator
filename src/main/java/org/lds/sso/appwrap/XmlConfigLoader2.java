@@ -283,8 +283,7 @@ public class XmlConfigLoader2 {
          * child I would have an instance path of:
          * 
          * /root/level1[2]/level3[1]
-         * 
-         * @param compositePath2
+         *
          */
         private void incrementInstanceCount() {
         	// ignore root
@@ -302,8 +301,7 @@ public class XmlConfigLoader2 {
         /**
          * Builds a String of the steps currently in the path for speeding
          * comparisons.
-         * 
-         * @param step
+         *
          */
         private synchronized void buildTypePath() {
             StringBuffer bfr = new StringBuffer();
@@ -322,8 +320,7 @@ public class XmlConfigLoader2 {
          * counts for sibling groups. 
          * 
          * ie: /root/level1[2]/level2[1]/level3[6]
-         * 
-         * @param step
+         *
          */
         private synchronized String buildInstancePath() {
             StringBuffer noIndicesBfr = new StringBuffer();
@@ -847,6 +844,7 @@ public class XmlConfigLoader2 {
                 parsingContextAccessor.get().put(PARSING_CURR_SITE, host);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-file")) {
                 String cctx = getStringAtt("cctx", path, atts);
+                String originalName = cctx;
                 String file = getStringAtt("file", path, atts);
                 // for now require * termination to convey only prefix matching
                 // is currently supported. remove this once backwards references
@@ -871,9 +869,40 @@ public class XmlConfigLoader2 {
                                     + "*' which precedes it in document order and hence "
                                     + "will never receive any requests.");
                 }
-                sm.addFileMapping(cctx, file, type);
+                sm.addFileMapping(originalName, cctx, file, type);
                 UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx);
             	sm.addUnenforcedUri(ue);
+            } else if (path.matches("/config/sso-traffic/by-site/cctx-unenforced")) {
+                String cctx = getStringAtt("cctx", path, atts);
+                String originalName = cctx;
+                String thost = getStringAtt("thost", path, atts);
+                int tport = getIntegerAtt("tport", path, atts);
+                // for now require * termination to convey only prefix matching
+                // is currently supported. remove this once backwards references
+                // and env macros are added.
+                if (!cctx.endsWith("*")) {
+                    throw new IllegalArgumentException("cctx must end with '*' in " + path);
+                } else {
+                    cctx = cctx.substring(0, cctx.length() - 1) + "{/.../*,*}";
+                }
+                String type = getStringAtt("content-type", path, atts, false);
+                TrafficManager trafficMgr = cfg.getTrafficManager();
+                SiteMatcher sm = (SiteMatcher) trafficMgr.getLastMatcherAdded();
+                EndPoint ep = sm.getEndpointForCanonicalUrl(cctx);
+                if (ep != null) {
+                    throw new IllegalArgumentException(
+                            "Mapping for cctx='"
+                                    + cctx
+                                    + "*' in "
+                                    + path
+                                    + " is consumed by cctx mapping for '"
+                                    + ep.getContextRoot()
+                                    + "*' which precedes it in document order and hence "
+                                    + "will never receive any requests.");
+                }
+                sm.addUnenforcedMapping(originalName, cctx, thost, tport);
+                UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx);
+                sm.addUnenforcedUri(ue);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
                 curCctx = getStringAtt("cctx", path, atts, false);
                 if (curCctx != null && !curCctx.isEmpty()) {
@@ -929,7 +958,7 @@ public class XmlConfigLoader2 {
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {    
             	WamulatorPolicySource src = new WamulatorPolicySource(parsingContextAccessor, curThost, curHostHdr, 
             			curPolicyServiceGateway,curSchemeHeaderOvrd, curInjectSchemeHeader, curPreserveHost, 
-            			curInjectScheme, curOutgoingScheme, curIncomingScheme, curTsslPort, curTport);
+            			curInjectScheme, curOutgoingScheme, curIncomingScheme, curTsslPort, curTport, null);
             	parsingContextAccessor.get().put(PARSING_CURR_EXT_POL_SRC, src);
                 parsingContextAccessor.get().put(PARSING_POL_SRC_CONTENT, new StringBuffer());
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/headers")) {
@@ -1091,6 +1120,7 @@ public class XmlConfigLoader2 {
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {
             	WamulatorPolicySource src = (WamulatorPolicySource) parsingContextAccessor.get().get(PARSING_CURR_EXT_POL_SRC);
             	StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_POL_SRC_CONTENT);
+                src.setSourceName(chars.toString().replace("xml={{", "").replace("}}", ""));
             	try {
             		src.setConfig(path, parseSourceContent(path, chars.toString()));
             	} catch (ConfigurationException e) {
@@ -1125,7 +1155,7 @@ public class XmlConfigLoader2 {
          * in java.util.Properites forms.
          * In text
          * @param path 
-         * @param string
+         * @param content
          * @return
          */
         private Properties parseSourceContent(Path path, String content) {

@@ -13,4 +13,5 @@ public interface EndPoint extends Comparable<EndPoint> {
 	public String getQueryString();
     public Integer getDeclarationOrder();
     public void setDeclarationOrder(int index);
+    public String getOriginalName();
 }

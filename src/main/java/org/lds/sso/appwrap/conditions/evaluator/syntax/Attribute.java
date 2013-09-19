@@ -65,7 +65,7 @@ public class Attribute extends SyntaxBase {
 
                 break;
             case EXISTS:
-                satisfied = user.hasAttribute(attributeName);
+                satisfied = user.hasAttribute(attributeName.toLowerCase());
                 debug(evaluationCtx, satisfied, String.format("Evaluating if user has attribute[%s] %b", attributeName, satisfied));
                 break;
             case NOT_SUPPPORTED:

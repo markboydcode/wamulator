@@ -32,6 +32,7 @@ src/main/java/org/lds/sso/appwrap/ShimStateCookieUtils.java -text svneol=unset#t
 src/main/java/org/lds/sso/appwrap/SiteMatcher.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/TrafficManager.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/TrafficRecorder.java -text svneol=unset#text/plain
+src/main/java/org/lds/sso/appwrap/UnenforcedEndPoint.java -text
 src/main/java/org/lds/sso/appwrap/UnenforcedUri.java -text svneol=unset#text/plain
 src/main/java/org/lds/sso/appwrap/UriMatcher.java -text
 src/main/java/org/lds/sso/appwrap/VirtualSite.java -text svneol=unset#text/plain
