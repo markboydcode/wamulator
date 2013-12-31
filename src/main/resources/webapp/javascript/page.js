@@ -255,7 +255,9 @@ function() {
     var hash = window.location.hash;
     if (hash != "") {
         setCookie(OB_FORM_LOGIN_HASH_COOKIE_NAME, encodeURI(hash), 0);
-    }
+    } else if (window.location.search.indexOf("error") == -1) {
+		deleteCookie(OB_FORM_LOGIN_HASH_COOKIE_NAME);
+	}
 
     $("#user-filter").keyup(function() {
         var filterVal = $(this).val();
@@ -290,9 +292,15 @@ function setCookie(name,value,days) {
     if (days) {
         var date = new Date();
         date.setTime(date.getTime() + (days*24*60*60*1000));
-        var expires = "; expires=" + date.toGMTString();
+        expires = "; expires=" + date.toGMTString();
     }
     document.cookie = name + "=" + value + expires + "; path=/";
+}
+
+function deleteCookie(name) {
+	var date = new Date(0);
+	var expires = "; expires=" + date.toGMTString();
+	document.cookie = name + "=''" + expires + "; path=/";
 }
 
 function getCookie(name) {
