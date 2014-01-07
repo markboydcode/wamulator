@@ -326,6 +326,7 @@ public class Config {
 		}
 		catch (IOException e) {
     		cLog.log(Level.SEVERE, "Unable to read from mime.types file. File extensions won't be resolveable to content-types.", e);
+            Utils.quietlyClose(is);
     		return;
 		}
 		while (line != null) {
@@ -347,6 +348,7 @@ public class Config {
 			}
 			catch (IOException e) {
 	    		cLog.log(Level.SEVERE, "Unable to finish reading from mime.types file. Some file extensions may not be resolveable to content-types.", e);
+                Utils.quietlyClose(is);
 	    		return;
 			}
     	}
@@ -375,10 +377,10 @@ public class Config {
                         FileReader fr = new FileReader(file);
                         try {
                             version = "SSO Simulator v" + pve.getVersion(fr, file.getAbsolutePath());
-                            fr.close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+                        Utils.quietlyClose(fr);
                     }
                 }
                 else {
@@ -633,7 +635,7 @@ public class Config {
 	 * Sets the action of the form in wamulator provided sign-in pages if the
 	 * default needs to change.
 	 * 
-	 * @param stringAtt
+	 * @param action
 	 */
 	public void setSignInPageAction(String action) {
 		this.loginPageAction = action;
@@ -746,7 +748,7 @@ public class Config {
      * Sets the max number of log files that will be created by the wamulator
      * before rolling back over to zero.
      * 
-     * @param getMaxEntries the getMaxEntries to set
+     * @param maxEntries the maxEntries to set
      */
     public void setMaxEntries(int maxEntries) {
         this.maxEntries = maxEntries;
@@ -862,7 +864,7 @@ public class Config {
 	 * Determines if we allow requests not mapped to sso traffic to pass on to
 	 * their targeted url.
 	 * 
-	 * @param parseBoolean
+	 * @param bool
 	 */
 	public void setAllowForwardProxying(boolean bool) {
 		this.allow_forward_proxying = bool;	
@@ -911,7 +913,7 @@ public class Config {
 	 * Sets the version of the rest interface that should be exposed in the 
 	 * console for applications to resolve authorization questions.
 	 * 
-	 * @param restVersion
+	 * @param version
 	 */
 	public void setRestVersion(RestVersion version) {
 		this.restVersion = version;
@@ -966,7 +968,6 @@ public class Config {
      * The timeout in milliseconds that the proxy will wait to receive input
      * from the connecting input stream.
      * 
-     * @param millis
      * @return
      */
     public int getProxyInboundSoTimeout() {
@@ -988,7 +989,6 @@ public class Config {
      * The timeout in milliseconds that the proxy will wait to receive input
      * from the downstream server's input stream.
      * 
-     * @param millis
      * @return
      */
     public int getProxyOutboundSoTimeout() {
@@ -1029,8 +1029,6 @@ public class Config {
 	 * Returns the value that should override the default title of console 
 	 * pages to help keep track of which window
 	 * or browser tab contains your http console.
-	 * 
-	 * @param consoleTitle
 	 */
 	public String getConsoleTitle() {
 		return customConsoleTitle;

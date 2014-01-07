@@ -68,7 +68,7 @@ public class RequestHandler implements Runnable {
 
     public static final String PORT = "port";
 
-    private Socket pSocket;
+    private Socket client;
 
     private FileOutputStream fos = null;
 
@@ -97,7 +97,7 @@ public class RequestHandler implements Runnable {
      * @param isSecure whether or not the connection came over TLS/SSL
      */
     public RequestHandler(Socket s, Config cfg, String connId, boolean isSecure) {
-        pSocket = s;
+        client = s;
         this.cfg = cfg;
         this.connId = connId;
         this.incomingScheme = (isSecure ? Scheme.HTTPS : Scheme.HTTP);
@@ -142,13 +142,14 @@ public class RequestHandler implements Runnable {
         BufferedOutputStream clientOut = null;
     	boolean autoAuthenticated = false;
     	Cookie autoAuthNCookie = null;
-    	
+        Socket server = null; // socket to remote server
+
         try {
             // client streams (make sure you're using streams that use
             // byte arrays, so things like GIF and JPEG files and file
             // downloads will transfer properly)
-        	clientIn = new BufferedInputStream(pSocket.getInputStream());
-            clientOut = new BufferedOutputStream(pSocket.getOutputStream());
+        	clientIn = new BufferedInputStream(client.getInputStream());
+            clientOut = new BufferedOutputStream(client.getOutputStream());
 
             reqPkg = getHttpPackage(true, clientIn, false, log);
             reqPkg.scheme = incomingScheme;
@@ -167,11 +168,11 @@ public class RequestHandler implements Runnable {
 
             // see if we are locked down to local traffic only and enforce as needed
             if (cfg.isAllowingLocalTrafficOnly() && 
-            		! LocalHostOnlyEnforcingHandler.isLocalAccess(pSocket.getInetAddress())) {
+            		! LocalHostOnlyEnforcingHandler.isLocalAccess(client.getInetAddress())) {
                 byte[] bytes = getResponse(LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_CODE, 
                 		LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_MSG,
                 		LocalHostOnlyEnforcingHandler.HTML_TITLE,
-                		LocalHostOnlyEnforcingHandler.getHtmlMessage(pSocket.getInetAddress()),
+                		LocalHostOnlyEnforcingHandler.getHtmlMessage(client.getInetAddress()),
                         null, reqPkg);
                 sendProxyResponse(LocalHostOnlyEnforcingHandler.INT_HTTP_RESPONSE_CODE, 
                 		LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_MSG,bytes, reqPkg, clientIn, clientOut, user, startTime, log, true);
@@ -418,7 +419,6 @@ public class RequestHandler implements Runnable {
                 appReqLn = appEndpoint.getAppRequestUri(reqPkg);
                 request = serializePackage((StartLine) appReqLn, reqPkg);
 
-                Socket server = null; // socket to remote server
                 Scheme serverScheme = Scheme.HTTP;
                 int endpointPort = appEndpoint.getEndpointPort(incomingScheme);
 
@@ -537,8 +537,7 @@ public class RequestHandler implements Runnable {
                 appReqLn = new StartLine(reqPkg.requestLine.getMethod(), reqPkg.requestLine.getUri(), reqPkg.requestLine.getHttpDecl());
                 request = serializePackage((StartLine) appReqLn, reqPkg);
 
-                Socket server = null; // socket to remote server
-                Scheme serverScheme = Scheme.HTTP;
+                 Scheme serverScheme = Scheme.HTTP;
                 int endpointPort = unenforcedEp.getTport();
                 try {
                     if (incomingScheme.equals("https")) {
@@ -710,6 +709,8 @@ public class RequestHandler implements Runnable {
         } finally {
             LogUtils.fine(cLog, "Closing I/O to client");
             shutdown(clientIn, clientOut, log, fos);
+            Utils.quietlyClose(this.client);
+            Utils.quietlyClose(server);
         }
     }
 
@@ -1168,27 +1169,12 @@ public class RequestHandler implements Runnable {
     }
 
     private void shutdown(InputStream clientIn, OutputStream clientOut, PrintStream log, FileOutputStream fos) {
-    	try {
-    		if(clientOut != null) {
-    			clientOut.close();
-    		}
-    	} catch(IOException e) { /* Do nothing */ }
-    	try {
-    		if(clientIn != null) {
-    			clientIn.close();
-    		}
-    	} catch(IOException e) { /* Do nothing */ }
-    	try {
-    		if(pSocket != null) {
-    			pSocket.close();
-    		}
-    	} catch(IOException e) { /* Do nothing */ }
+        Utils.quietlyClose(clientIn);
+        Utils.quietlyClose(clientOut);
 
         if (log != null) {
             log.flush();
-            try {
-            	fos.close();
-            } catch(IOException e) { /* Do nothing */ }
+            Utils.quietlyClose(fos);
         }
     }
 
@@ -1273,6 +1259,7 @@ public class RequestHandler implements Runnable {
 
         String path = endpoint.getFilepathTranslated(reqPkg);
         InputStream is = null;
+        DataInputStream dis = null;
 
         try {
             if (path.startsWith(Service.CLASSPATH_PREFIX)) {
@@ -1288,7 +1275,7 @@ public class RequestHandler implements Runnable {
                 }
             }
             if (is != null) {
-                DataInputStream dis = new DataInputStream(is);
+                dis = new DataInputStream(is);
                 int size = dis.available();
                 byte[] bytes = new byte[size];
                 dis.read(bytes);
@@ -1322,7 +1309,6 @@ public class RequestHandler implements Runnable {
                 }
                 
                 pkg.bodyStream.write(bytes);
-                dis.close();
                 pkg.responseLine = new StartLine("HTTP/1.1", "200", "OK");
                 pkg.responseCode = 200;
                 pkg.headerBfr.set(new Header(HeaderDef.ContentLength, Integer.toString(size)));
@@ -1351,6 +1337,7 @@ public class RequestHandler implements Runnable {
             pkg.responseCode = 500;
             endpoint.servedFromMsg = "Unable to serve " + path;
         }
+        Utils.quietlyClose(dis);
         return pkg;
     }
 

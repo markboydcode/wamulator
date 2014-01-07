@@ -225,15 +225,21 @@ public class Service {
 		this.cfgPath = cfgPath;
 
         SourceAndReader sar = getCfgReader(cfgPath);
-        Reader cfgrd = sar.getReader();
-        cfgSource = sar.getSrc();
+        Reader cfgrd = null;
 
-		XmlConfigLoader2.load(cfgrd, "from " + cfgPath);
+        try {
+            cfgrd =sar.getReader();
+            cfgSource = sar.getSrc();
+
+            XmlConfigLoader2.load(cfgrd, "from " + cfgPath);
+            // Close down our reader so that the config file can be updated externally.
+            cfgrd.close();
+        }
+        finally {
+            Utils.quietlyClose(cfgrd);
+        }
 
 		Config cfg = Config.getInstance();
-
-		// Close down our reader so that the config file can be updated externally.
-		cfgrd.close();
 
 		// assumes that this directory contains .html and .jsp files
 		// This is just a directory within your source tree, and can be exported as part of your normal .jar

@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.Utils;
 import org.lds.sso.appwrap.proxy.HttpPackage;
 import org.lds.sso.appwrap.proxy.HttpPackageType;
 import org.lds.sso.appwrap.proxy.StartLine;
@@ -88,6 +89,7 @@ public class LogFileHandler extends RestHandlerBase {
         pkg.type = HttpPackageType.RESPONSE;
 
         InputStream is = null;
+        DataInputStream dis = null;
 
         try {
             File file = new File(Config.LOG_FILES_LOCATION + filePath);
@@ -96,12 +98,11 @@ public class LogFileHandler extends RestHandlerBase {
             }
 
             if (is != null) {
-                DataInputStream dis = new DataInputStream(is);
+                dis = new DataInputStream(is);
                 int size = dis.available();
                 byte[] bytes = new byte[size];
                 dis.read(bytes);
                 pkg.bodyStream.write(bytes);
-                dis.close();
                 pkg.responseLine = new StartLine("HTTP/1.1", "200", "OK");
                 pkg.responseCode = 200;
                 pkg.headerBfr.set(HeaderDef.createHeader(HeaderDef.ContentLength, Integer.toString(size)));
@@ -124,6 +125,7 @@ public class LogFileHandler extends RestHandlerBase {
             }
             pkg.responseCode = 500;
         }
+        Utils.quietlyClose(dis);
         return pkg;
     }
 

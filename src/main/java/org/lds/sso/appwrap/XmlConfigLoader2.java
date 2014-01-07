@@ -80,7 +80,12 @@ public class XmlConfigLoader2 {
     static {
     	SchemaFactory fact = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
 		InputStream schemaLocation = XmlConfigLoader2.class.getClassLoader().getResourceAsStream(XSD_LOCATION);
-		schema = newSchema(fact, new StreamSource(schemaLocation));
+        try {
+            schema = newSchema(fact, new StreamSource(schemaLocation));
+        }
+        finally {
+            Utils.quietlyClose(schemaLocation);
+        }
     }
     
 	private static final Schema newSchema(SchemaFactory fact, Source source) {
