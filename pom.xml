@@ -63,9 +63,11 @@
 		</mailingList>
 	</mailingLists>
 	<scm>
-		<url>https://code.lds.org/svn/sso-simulator/trunk</url>
-		<developerConnection>scm:svn:https://code.lds.org/svn/sso-simulator/trunk</developerConnection>
-	</scm>
+        <url>https://code.ldschurch.org/stash/scm/iam/sso-simulator.git</url>
+        <developerConnection>scm:git:ssh://git@l12963:7999/sso-simulator.git</developerConnection>
+        <tag>HEAD</tag>
+
+    </scm>
 	<build>
 		<resources>
 			<resource>
