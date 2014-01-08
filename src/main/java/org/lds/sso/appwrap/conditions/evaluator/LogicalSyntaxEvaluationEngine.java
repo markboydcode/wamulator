@@ -98,7 +98,7 @@ public class LogicalSyntaxEvaluationEngine {
                 while (!stopCollector) {
                     try {
                         if (cLog.isLoggable(Level.FINE)) {
-                            if (pw != null) {
+                            if (pw != null && sw != null) {
                                 if (!pwLineWrapped) {
                                     // means no evaluator log entries were written
                                     pw.println(" sleeping for " + samplingDelay

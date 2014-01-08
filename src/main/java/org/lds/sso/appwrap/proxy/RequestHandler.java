@@ -195,7 +195,7 @@ public class RequestHandler implements Runnable {
                 return;
             }
             
-            if (reqPkg.type == HttpPackageType.BAD_STARTLINE) {
+            if (reqPkg.type == HttpPackageType.BAD_STARTLINE && log != null) {
                 byte[] bytes = getResponse("400", "Bad Request Line",
                         "400 Bad Request Line",
                         "An invalid request line '" + reqPkg.responseLine + 
@@ -471,7 +471,7 @@ public class RequestHandler implements Runnable {
                 }
                 resPkg.scheme = serverScheme;
 
-                if (resPkg.socketTimeout) {
+                if (resPkg.socketTimeout && log != null) {
                     byte[] bytes = getResponse("504", "Gateway Timeout",
                             "504 Gateway Timeout",
                             "A SocketTimeoutException occurred while reading from the server.",
@@ -496,7 +496,7 @@ public class RequestHandler implements Runnable {
                     return;
                 }
 
-                if (resPkg.type == HttpPackageType.REQUEST) {
+                if (resPkg.type == HttpPackageType.REQUEST && log != null) {
                     byte[] bytes = getResponse("502", "Bad Gateway",
                             "502 Bad Gateway",
                             "An invalid response was received from the server.",
@@ -510,7 +510,7 @@ public class RequestHandler implements Runnable {
                     return;
                 }
 
-                if (resPkg.type == HttpPackageType.BAD_STARTLINE) {
+                if (resPkg.type == HttpPackageType.BAD_STARTLINE && log != null) {
                     byte[] bytes = getResponse("502", "Bad Gateway",
                             "502 Bad Gateway",
                             "An invalid response line '" + resPkg.responseLine + 
@@ -574,7 +574,7 @@ public class RequestHandler implements Runnable {
 
                 resPkg.scheme = serverScheme;
 
-                if (resPkg.socketTimeout) {
+                if (resPkg.socketTimeout && log != null) {
                     byte[] bytes = getResponse("504", "Gateway Timeout",
                             "504 Gateway Timeout",
                             "A SocketTimeoutException occurred while reading from the server.",
@@ -599,7 +599,7 @@ public class RequestHandler implements Runnable {
                     return;
                 }
 
-                if (resPkg.type == HttpPackageType.REQUEST) {
+                if (resPkg.type == HttpPackageType.REQUEST && log != null) {
                     byte[] bytes = getResponse("502", "Bad Gateway",
                             "502 Bad Gateway",
                             "An invalid response was received from the server.",
@@ -613,7 +613,7 @@ public class RequestHandler implements Runnable {
                     return;
                 }
 
-                if (resPkg.type == HttpPackageType.BAD_STARTLINE) {
+                if (resPkg.type == HttpPackageType.BAD_STARTLINE && log != null) {
                     byte[] bytes = getResponse("502", "Bad Gateway",
                             "502 Bad Gateway",
                             "An invalid response line '" + resPkg.responseLine +

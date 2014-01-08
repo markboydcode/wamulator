@@ -132,12 +132,14 @@ public class ArePermitted extends RestHandlerBase {
 		clientOut.flush();
 		
 		if (cfg.getTrafficRecorder().isRecordingRest()) {
-		    logReqWrt.flush();
-		    String logMsg = clientRes.toString() + "\r\n" + logReq.toString(); 
-			Map<String,String> props = new HashMap<String,String>();
-			cfg.getTrafficRecorder().recordRestHit(this.pathPrefixRaw, 
-					HttpServletResponse.SC_OK, logMsg, 
-					props);
+            if (logReqWrt != null && logReq != null) {
+                logReqWrt.flush();
+                String logMsg = clientRes.toString() + "\r\n" + logReq.toString();
+                Map<String,String> props = new HashMap<String,String>();
+                cfg.getTrafficRecorder().recordRestHit(this.pathPrefixRaw,
+                        HttpServletResponse.SC_OK, logMsg,
+                        props);
+            }
 		}
 		super.sendResponse(cLog, response, HttpServletResponse.SC_OK, clientRes.toString());
 	}
