@@ -47,6 +47,7 @@ public class LogFileHandler extends RestHandlerBase {
         //
         //		Get the current config instance each time which allows for reconfig
         //		of config object without restarting the service.
+        //
         Config cfg = Config.getInstance();
         String pathInfo = request.getPathInfo();
         String filePath = pathInfo.substring(pathPrefix.length() + 1);
