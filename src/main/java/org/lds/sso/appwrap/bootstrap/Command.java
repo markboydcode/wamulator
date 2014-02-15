@@ -49,7 +49,7 @@ public abstract class Command {
 	 * commands an optional milliseconds timeout can be specified. If included
 	 * it must follow the command and precede the configuration file. It
 	 * represents the milliseconds allowed for the specified command to execute
-	 * before a {@link org.lds.sso.exception.ServerTimeoutFailureException} is
+	 * before a {@link org.lds.sso.appwrap.exception.ServerTimeoutFailureException} is
 	 * thrown indicating that the command could not be executed in the allotted
 	 * time.
 	 *
@@ -76,7 +76,10 @@ public abstract class Command {
 		} else if ( "stop".equals(command) ) {
 			return new RemoteStopServiceCommand(cfgPath, timeout);
 		} else {
-			return new BlockingServiceCommand(cfgPath, timeout);
+            // indicates what version is running before anything else happens to help with troubleshooting
+            // if/when problems arise
+            LogUtils.info(cLog, "starting simulator version  : {0}", Config.serverName() );
+            return new BlockingServiceCommand(cfgPath, timeout);
 		}
 	}
 
