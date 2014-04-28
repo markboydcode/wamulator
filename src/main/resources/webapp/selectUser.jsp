@@ -10,9 +10,9 @@
 <jsp:useBean id="jsputils" scope="application" class="org.lds.sso.appwrap.ui.JspUtils"/>
 <c:set var="gotoQueryParm" scope="page" value=""/>
 <c:set var="gotoUriEnc" scope="page" value=""/>
-<c:if test="${not empty(param.goto)}">
-	<c:set var="gotoUriEnc" scope="page" value="${param.goto}"/>
-	<c:set var="gotoQueryParm" scope="page" value="?goto=${jsputils.encode[param.goto]}"/>
+<c:if test="${not empty(param['goto'])}">
+	<c:set var="gotoUriEnc" scope="page" value="${param['goto']}"/>
+	<c:set var="gotoQueryParm" scope="page" value="?goto=${jsputils.encode[param['goto']]}"/>
 </c:if>
 <c:set var="formAction" scope="page" value="/admin/action/set-user"/>
 <c:if test="${not empty(requestScope.config.loginAction)}">
