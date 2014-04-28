@@ -34,7 +34,8 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
 public class SelectUserHandler extends RestHandlerBase {
 
     private static final Logger cLog = Logger.getLogger(SelectUserHandler.class.getName());
-    
+    private static final String OB_FORM_LOGIN_HASH_COOKIE_NAME = "ObFormLoginHashCookie";
+	
     public SelectUserHandler(String pathPrefix) {
         super(pathPrefix);
     }
@@ -123,6 +124,30 @@ public class SelectUserHandler extends RestHandlerBase {
             gotoUri = URLDecoder.decode(gotoUri, "utf-8");
             redirectTarget = gotoUri;
         }
+		
+/* Javascript in JSP sets a cookie for cases where HTTP fragments are in the URL
+ * So we need to check for this cookie and if it exists append it's avlue to the
+ * redirectTarget.  Angular JS, an MVVM framework uses these fragments.  Probably
+ * the right way to do this is to actually make the Cookie classes already here
+ * more generic so they are handling any cookies rather than only handling the
+ * wamulator specific cookie.  In fact, they should probably all be parsed and
+ * stored in a hash map early on and then accessed easily by name here.  I spent
+ * some time looking for where that should go but became frustrated at all the
+ * classes that have generic "handler" type names but then are implemented so
+ * specifically that they only handle one thing or one case so this less
+ * elegant solution is what you get :)
+ */
+		Cookie[] requestCookies = request.getCookies();
+		if (requestCookies != null) {
+			for (Cookie c : requestCookies) {
+				if (c.getName().equals(OB_FORM_LOGIN_HASH_COOKIE_NAME) && c.getValue() != null) {
+					redirectTarget += c.getValue();
+					break;
+				}
+			}
+		}
+
+
 /*
  * WAMULAT-57 fix in progress
  * add in once we have updated the selectUser.jsp page to allow selection of 
