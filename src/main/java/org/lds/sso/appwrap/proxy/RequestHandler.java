@@ -1,34 +1,6 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.servlet.http.Cookie;
-
+import org.eclipse.jetty.http.HttpField;
 import org.lds.sso.appwrap.*;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
@@ -37,16 +9,25 @@ import org.lds.sso.appwrap.identity.Session;
 import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
-import org.lds.sso.appwrap.proxy.header.HandlerSet;
-import org.lds.sso.appwrap.proxy.header.Header;
-import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
-import org.lds.sso.appwrap.proxy.header.HeaderDef;
-import org.lds.sso.appwrap.proxy.header.HeaderHandler;
-import org.lds.sso.appwrap.proxy.header.SecondPhaseAction;
+import org.lds.sso.appwrap.proxy.header.*;
 import org.lds.sso.appwrap.proxy.tls.TrustAllManager;
 import org.lds.sso.appwrap.security.LocalHostOnlyEnforcingHandler;
 import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
 import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.servlet.http.Cookie;
+import java.io.*;
+import java.net.*;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class RequestHandler implements Runnable {
     private static final Logger cLog = Logger.getLogger(RequestHandler.class.getName());
@@ -172,7 +153,7 @@ public class RequestHandler implements Runnable {
                 byte[] bytes = getResponse(LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_CODE, 
                 		LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_MSG,
                 		LocalHostOnlyEnforcingHandler.HTML_TITLE,
-                		LocalHostOnlyEnforcingHandler.getHtmlMessage(client.getInetAddress()),
+                		LocalHostOnlyEnforcingHandler.getIllegalAddressMessage(client.getInetAddress()),
                         null, reqPkg);
                 sendProxyResponse(LocalHostOnlyEnforcingHandler.INT_HTTP_RESPONSE_CODE, 
                 		LocalHostOnlyEnforcingHandler.HTTP_RESPONSE_MSG,bytes, reqPkg, clientIn, clientOut, user, startTime, log, true);
@@ -289,6 +270,7 @@ public class RequestHandler implements Runnable {
                     String httpMsg = "Found, Redirecting for sign-in signal";
                     sendProxyResponse(302, httpMsg, get302RedirectToLoginPage(reqPkg, httpMsg), reqPkg, clientIn, clientOut, user,
                             startTime, log, true);
+                    return;
                 }
                 if (reqPkg.signMeOutDetected && token != null) {
                     String httpMsg = "Found, Redirecting for sign-out signal";
@@ -382,10 +364,9 @@ public class RequestHandler implements Runnable {
                     cfg.getSessionManager().markSessionAsActive(token, reqPkg.host);
                 }
                 // now inject app specific headers, policy-service-url, host adjustments, and strip empties
-                if  (endpoint instanceof AppEndPoint) {
+                    if  (endpoint instanceof AppEndPoint) {
                     AppEndPoint appEndpoint = (AppEndPoint) endpoint;
                     appEndpoint.injectHeaders(cfg, reqPkg, user, incomingScheme);
-                    stripEmptyHeadersAsNeeded(reqPkg);
                     appEndpoint.stripPurgedHeaders(reqPkg);
                 }
             }
@@ -464,10 +445,16 @@ public class RequestHandler implements Runnable {
                 // they decide to disconnect (or the connection times out).
                 LogUtils.fine(cLog, "Awaiting data from: {0}:{1}", appEndpoint.getHost(), endpointPort);
                 resPkg = getHttpPackage(false, serverIn, true, log);
+                // if auto-auth'd then inject the set cookie header in the response so the session propagates to client
                 if (autoAuthenticated) {
-                	SetCookieHeaderExtractor ext = new SetCookieHeaderExtractor();
-                	ext.addSetCookie(autoAuthNCookie);
-                	resPkg.headerBfr.append(new Header(HeaderDef.SetCookie, ext.getHeaderValue()));
+                    // use jetty's set-cookie handling to do this correctly
+                    // adds Set-Cookie and Expires so response isn't cached
+                    org.eclipse.jetty.server.Response jettyRes = new org.eclipse.jetty.server.Response(null, null);
+                    jettyRes.addCookie(autoAuthNCookie);
+                    for(Iterator<HttpField> itr = jettyRes.getHttpFields().iterator(); itr.hasNext();) {
+                        HttpField f = itr.next();
+                        resPkg.headerBfr.append(new Header(f.getName(), f.getValue()));
+                    }
                 }
                 resPkg.scheme = serverScheme;
 
@@ -722,8 +709,8 @@ public class RequestHandler implements Runnable {
      * @param value
      */
     private void purgeAndInjectHeader(HeaderBuffer headerBfr, String name, String value) {
-        headerBfr.removeHeader(HttpPackage.SHIM_HANDLED_HDR_NM);
-        headerBfr.append(new Header(HttpPackage.SHIM_HANDLED_HDR_NM, "handled"));
+        headerBfr.removeHeader(name);
+        headerBfr.append(new Header(name, "handled"));
 	}
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -744,29 +731,6 @@ public class RequestHandler implements Runnable {
             this.tlsContext = ctx;
         }
         return tlsContext.getSocketFactory();
-    }
-
-    /**
-     * Removes any empty headers in SSO traffic requests if configured to do so.
-     *
-     * @param reqPkg
-     */
-    private void stripEmptyHeadersAsNeeded(HttpPackage reqPkg) {
-        if (cfg.getStripEmptyHeaders()) {
-            StringBuffer removed = new StringBuffer();
-            for(Iterator<Header> itr = reqPkg.headerBfr.iterator(); itr.hasNext();) {
-                Header hdr = itr.next();
-                if ("".equals(hdr.getValue())) {
-                    removed.append(",").append(hdr.getName());
-                    itr.remove();
-                }
-            }
-            if (removed.length() > 1) {
-                // take off leader comma
-                String list = removed.substring(1).toString();
-                purgeAndInjectHeader(reqPkg.headerBfr, HttpPackage.SHIM_STRIPPED_HEADERS, list);
-            }
-        }
     }
 
     private byte[] logoutAndGet302RedirectToSameRequest(HttpPackage reqPkg,

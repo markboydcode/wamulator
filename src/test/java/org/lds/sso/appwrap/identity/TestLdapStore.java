@@ -1,19 +1,16 @@
 package org.lds.sso.appwrap.identity;
 
+import org.lds.sso.appwrap.identity.ldap.*;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import org.lds.sso.appwrap.identity.ldap.LdapStore;
-import org.lds.sso.appwrap.identity.ldap.UnableToBindEndUser;
-import org.lds.sso.appwrap.identity.ldap.UnableToBindSearchUser;
-import org.lds.sso.appwrap.identity.ldap.UnableToConnecToLdap;
-import org.lds.sso.appwrap.identity.ldap.UnableToGetUserAttributes;
-import org.lds.sso.appwrap.identity.ldap.UnableToLoadUserAttributes;
-import org.lds.sso.appwrap.identity.ldap.UnableToSearchForUser;
-import org.lds.sso.appwrap.identity.ldap.UserNotFound;
-
+/**
+ * Holder of test against real LDAP system. Never check in with annotation uncommented. Only run manually to test
+ * connectivity.
+ */
 public class TestLdapStore {
 	Logger cLog = Logger.getLogger(TestLdapStore.class.getName());
 

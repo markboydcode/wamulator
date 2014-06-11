@@ -1,14 +1,5 @@
 package org.lds.sso.appwrap;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Logger;
-
 import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationContext;
@@ -19,6 +10,13 @@ import org.lds.sso.appwrap.conditions.evaluator.syntax.AllowDeny;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
 
+import java.util.*;
+import java.util.logging.Logger;
+
+/**
+ * This element corresponds to by-site xml declarations in the XML config file. Its contents correspond to the
+ * contents of by-site's nested XML constructs. I
+ */
 public class SiteMatcher {
 	private static final Logger cLog = Logger.getLogger(SiteMatcher.class.getName());
 	private String host;
@@ -37,7 +35,8 @@ public class SiteMatcher {
 	private EndPoint lastEndPointAdded = null;
 
 	/**
-	 * Create a matcher that allows multiple URLs to be configured within it.
+	 * Create a matcher that allows multiple URL endpoints to be configured within it potentially with conditions
+     * specified that a user must match before traffic will be allowed to that endpoint.
 	 * 
 	 * @param host
 	 * @param port
@@ -123,7 +122,7 @@ public class SiteMatcher {
 			canQueryString = canUrl.substring(queryIndex + 1);
 			canUrl = canUrl.substring(0, queryIndex);
 		}
-		
+
 		for(EndPoint ep : mappedEndPoints) {
 			cLog.fine("@@ getEndpointForCanonicalUrl: comparing: " + ep.getContextRoot() + " and: " + canUrl);
 			
@@ -181,7 +180,12 @@ public class SiteMatcher {
 		cLog.fine("FAILED: The site doesn't match: " + this);
 		return false;
 	}
-	
+
+    /**
+     * Adds an instance of EndPoint to the set of mapped endpoints in the matcher.
+     *
+     * @param point
+     */
 	public void addMapping(EndPoint point) {
 		point.setDeclarationOrder(++endPoints);
 		mappedEndPoints.add(point);

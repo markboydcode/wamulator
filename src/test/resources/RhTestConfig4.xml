@@ -1,9 +1,9 @@
 <deployment at='2012-11-30_11:00:46.208-0700'>
 	<environment id='dev' host='dev.lds.org (exposee)' />
-	<application id='local.lds.org/' authHost='local.lds.org' cctx='/'>
+	<application id='localhost.lds.org/' authHost='localhost.lds.org' cctx='/'>
 		<authentication scheme='anonymous' name='default-anonymous' />
-		<policy name='force/upgrade{/.../*,*}'>
-			<url>force/upgrade{/.../*,*}</url>
+		<policy name='{/.../*,*}'>
+			<url>{/.../*,*}</url>
 			<operations>DELETE,GET,HEAD,POST,PUT</operations>
 			<authentication scheme='anonymous' name='Anonymous Authentication' />
 		</policy>

@@ -1,14 +1,13 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeaderElementIterator;
+import org.apache.http.util.EntityUtils;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
@@ -16,6 +15,8 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
 
 /**
  * Tests if a domain of localhost can be used for the cookie and functions
@@ -35,9 +36,40 @@ public class LocalHostTest {
 
         // now set up the shim to verify empty headers are injected
     	System.getProperties().remove("non-existent-sys-prop");
-    	URL filePath = LocalHostTest.class.getClassLoader().getResource("LocalHostTestConfig.xml");
     	service = Service.getService("string:"
-            + "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
+            + "<?file-alias policy-src-xml=non-existent-sys-prop default="
+            + "\"xml="
+            + "<deployment at='2012-11-30_11:00:46.208-0700'>"
+            + " <environment id='dev' host='dev.lds.org (exposee)' />"
+            + " <application id='local.lds.org/' authHost='local.lds.org' cctx='/'>"
+            + "  <authentication scheme='anonymous' name='default-anonymous' />"
+            + "  <authorization>"
+            + "   <rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='true'>"
+            + "    <allow>"
+            + "     <condition type='role' value='Anyone' />"
+            + "    </allow>"
+            + "   </rule>"
+            + "  </authorization>"
+            + "  <policy name='is-alive{/.../*,*}'>"
+            + "   <url>/wamulator/service/is-alive{/.../*,*}</url>"
+            + "   <operations>GET</operations>"
+            + "   <authentication scheme='login' name='WAM-DEV LDS Login Form' />"
+            + "   <authorization format='exposee' value='Allow Authenticated Users'>"
+            + "    <headers>"
+            + "     <success>"
+            + "      <fixed-value name='policy-fixed-value' value='test-value' type='HeaderVar' />"
+            + "      <profile-att name='policy-ldspositions' attribute='ldsposv2' type='HeaderVar' />"
+            + "      <profile-att name='policy-ldsunits' attribute='ldsunit' type='HeaderVar' />"
+            + "     </success>"
+            + "     <failure>"
+            + "      <redirect value='/denied.html' />"
+            + "     </failure>"
+            + "    </headers>"
+            + "   </authorization>"
+            + "  </policy>"
+            + " </application>"
+            + "</deployment>"
+            + "\"?>"
         	+ "<?system-alias usr-src-props=non-existent-sys-prop default="
             + "\"xml="
             + " <users>"
@@ -51,7 +83,7 @@ public class LocalHostTest {
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='localhost' port='{{proxy-port}}'>"
             + "    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}'>"
-            + "      <policy-source>xml={{policy-src-xml}}</policy-source>"
+            + "      <policy-source>{{policy-src-xml}}</policy-source>"
             + "    </cctx-mapping>"
             + "  </by-site>"
             + " </sso-traffic>"
@@ -67,49 +99,74 @@ public class LocalHostTest {
     }
 
     @Test
-    public void test_signMeInOut() throws HttpException, IOException {
+    public void test_signMeInOut() throws IOException {
         ///// first try to hit without session 
         Config cfg = Config.getInstance();
-        String endpointWSignin = "http://localhost:" + cfg.getProxyPort() + ImAliveHandler.IS_ALIVE_PATH;
-        HttpClient client = new HttpClient();
 
-        HttpMethod method = new GetMethod(endpointWSignin);
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        String content = method.getResponseBodyAsString();
+
+        SocketConfig scd = SocketConfig.DEFAULT;
+        System.out.println("default socket config for http client is: " + scd.toString());
+        String endpointWSignin = "http://localhost:" + cfg.getProxyPort() + ImAliveHandler.IS_ALIVE_PATH;
+        CloseableHttpClient client = HttpClients.custom()
+                .disableAutomaticRetries()
+                .disableRedirectHandling()
+                .setDefaultSocketConfig(
+                        // ensures that if a server error drops the connection or doesn't
+                        // respond we don't wait for the default 30 seconds of inactivity
+                        // before TCP throwing a socket timeout error.
+                        SocketConfig.custom().setSoTimeout(1000).build()
+                )
+                .build();
+
+        HttpGet get = new HttpGet(endpointWSignin);
+        CloseableHttpResponse response = client.execute(get);
+        int status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 302);
-        Header loc = method.getResponseHeader("location");
-        Assert.assertNotNull(loc, "location header not returned for redirect");
+        Header[] locs = response.getHeaders("location");
+        Assert.assertNotNull(locs, "no location header found in response");
+        Assert.assertTrue(locs.length >= 1, "0 location headers found in response");
+
+        Header loc = locs[0]; // will only ever be one location header in a 302 redirect
         Assert.assertTrue(loc.getValue().contains("localhost"), "location header does not contain 'localhost'");
 
-        ///// now sign user in via console port
-        String authEp = loc.getValue().replace("/admin/selectUser.jsp", "/admin/action/set-user/ngiwb1");
-        HttpMethod authM = new GetMethod(authEp);
-        authM.setFollowRedirects(false);
-
-        status = client.executeMethod(authM);
+        /// now sign user in via console port
+        String authEp = loc.getValue().replace(Config.WAMULATOR_SIGNIN_PAGE_PATH, cfg.getWamulatorServiceUrlBase() + "/action/set-user/ngiwb1");
+        HttpGet authM = new HttpGet(authEp);
+        response  = client.execute(authM);
+        status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 302);
-        Header setCk = authM.getResponseHeader("set-cookie");
-        Assert.assertNotNull(setCk, "set-cookie header not in sign-in response");
-        String rawCk = setCk.getValue();
-        Assert.assertTrue(rawCk.contains("lds-policy="));
+
         // when using localhost the domain should NOT be set otherwise
         // browser will not submit back to server
-        Assert.assertFalse(rawCk.toLowerCase().contains("domain="), "domian should not be set when cookie domain is 'localhost'");
-        int start = rawCk.indexOf("lds-policy=") + "lds-policy".length();
-        int end = rawCk.indexOf(";", start);
-        String token = rawCk.substring(start + 1, end);
+        HeaderIterator scItr = response.headerIterator("set-cookie");
+        Assert.assertTrue(scItr.hasNext(), "no set-cookie header found in sign-in response");
+        HeaderElementIterator scEItr = new BasicHeaderElementIterator(scItr);
 
-        ///// now try again with session and verify we get through
-        method = new GetMethod(endpointWSignin);
-        method.setFollowRedirects(false);
-        method.setRequestHeader("cookie", "lds-policy=" + token);
-        status = client.executeMethod(method);
+        boolean foundSignInCk = false;
+        String token = null;
+
+        while(scEItr.hasNext()) {
+            HeaderElement elem = scEItr.nextElement();
+            if (elem.getName().equals("lds-policy")){
+                foundSignInCk = true;
+                NameValuePair d = elem.getParameterByName("domain");
+                Assert.assertNull(d, "domian should not be set when cookie domain is 'localhost'");
+                token = elem.getValue();
+            }
+        }
+
+        // now try again with session and verify we get through
+        // cookie is being held in the client
+        HttpGet get2 = new HttpGet(endpointWSignin);
+        response = client.execute(get2);
+        status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 200);
-        content = method.getResponseBodyAsString();
+        HttpEntity e = response.getEntity();
+
+        String content = EntityUtils.toString(e);
         Assert.assertNotNull(content);
         Assert.assertTrue(content.contains(ImAliveHandler.IS_ALIVE), "missing is alive output text.");
     }

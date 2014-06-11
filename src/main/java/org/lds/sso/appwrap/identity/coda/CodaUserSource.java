@@ -1,21 +1,17 @@
 package org.lds.sso.appwrap.identity.coda;
 
+import org.lds.sso.appwrap.XmlConfigLoader2.Path;
+import org.lds.sso.appwrap.identity.ExternalUserSource;
+import org.lds.sso.appwrap.identity.User;
+import org.lds.sso.appwrap.identity.UserManager;
+import org.lds.sso.appwrap.io.LogUtils;
+
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.logging.Logger;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.lds.sso.appwrap.XmlConfigLoader2.Path;
-import org.lds.sso.appwrap.identity.ExternalUserSource;
-import org.lds.sso.appwrap.identity.User;
-import org.lds.sso.appwrap.identity.UserManager;
-import org.lds.sso.appwrap.io.LogUtils;
 
 /**
  * Loads user headers from CODA to support backwards compatibility. The new
@@ -122,17 +118,17 @@ public class CodaUserSource implements ExternalUserSource {
 	 * @param uri
 	 * @return
 	 * @throws IOException 
-	 * @throws HttpException 
 	 */
-	protected Results callCoda(String uri) throws HttpException, IOException {
-        HttpClient client = new HttpClient();
-        HttpMethod method = new GetMethod(uri);
-        method.setFollowRedirects(false);
-        method.setRequestHeader("Accept", "application/xml");
-        int status = client.executeMethod(method);
-        String content = method.getResponseBodyAsString();
-        method.releaseConnection();
-		return new Results(status, content);
+	protected Results callCoda(String uri) throws IOException {
+//        HttpClient client = new HttpClient();
+//        HttpMethod method = new GetMethod(uri);
+//        method.setFollowRedirects(false);
+//        method.setRequestHeader("Accept", "application/xml");
+//        int status = client.executeMethod(method);
+//        String content = method.getResponseBodyAsString();
+//        method.releaseConnection();
+//		return new Results(status, content);
+        return null;
 	}
 
 	@Override

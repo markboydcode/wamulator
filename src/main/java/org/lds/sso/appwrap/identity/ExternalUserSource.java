@@ -1,9 +1,9 @@
 package org.lds.sso.appwrap.identity;
 
+import org.lds.sso.appwrap.XmlConfigLoader2.Path;
+
 import java.io.IOException;
 import java.util.Properties;
-
-import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 
 
 /**
@@ -48,7 +48,6 @@ public interface ExternalUserSource {
 	 * 
 	 * @param username
 	 * @param password
-	 * @param users
 	 * @return
 	 */
 	public Response loadExternalUser(String username, String password)
@@ -71,8 +70,7 @@ public interface ExternalUserSource {
 
 	
 	/**
-	 * Exception thrown when problems occur during calls to 
-	 * {@link ExternalUserSource#setConfig(String)} if the store is unable to 
+	 * Exception thrown when the store is unable to
 	 * configure itself.
 	 * 
 	 * @author BoydMR

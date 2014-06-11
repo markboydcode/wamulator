@@ -1,5 +1,7 @@
 package org.lds.sso.appwrap.rest;
 
+import org.lds.sso.appwrap.Config;
+
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -14,11 +16,11 @@ public enum RestVersion {
 	/**
 	 * Church Defined Oracle Entitlements Server version 1 rest interface.
 	 */
-	CD_OESv1("CD-OESv1", "/oes/v{version}/rest/"), 
+	CD_OESv1("CD-OESv1", Config.WAMULATOR_SERVICE_BASE + "/oes/v{version}/rest/"),
 	/**
 	 * OpenSSO rest interface defined by OpenSSO 8. 
 	 */
-	OPENSSO("openSSO", "/rest/identity/");
+	OPENSSO("openSSO", Config.WAMULATOR_SERVICE_BASE + "/rest/identity/");
 	
     private final String vId;
     private final String restBase;

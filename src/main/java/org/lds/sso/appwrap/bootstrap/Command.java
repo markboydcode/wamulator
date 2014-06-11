@@ -1,18 +1,14 @@
 package org.lds.sso.appwrap.bootstrap;
 
-import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.HttpURLConnection;
-import java.net.ServerSocket;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.logging.Logger;
-
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.exception.ServerFailureException;
 import org.lds.sso.appwrap.exception.ServerTimeoutFailureException;
 import org.lds.sso.appwrap.io.LogUtils;
+
+import java.io.IOException;
+import java.net.*;
+import java.util.logging.Logger;
 
 /**
  * Abstract class for runtime start/stop actions and dictates the pattern of
@@ -193,7 +189,7 @@ public abstract class Command {
 
 	protected URL getCheckUrl(int port) throws IOException {
 		try {
-			return new URL("http://localhost:" + port + "/is-alive");
+			return new URL("http://localhost:" + port + Config.getInstance().getWamulatorServiceUrlBase() + "/is-alive");
 		} catch ( IOException inTheTowel ) {
 			throw inTheTowel;
 		}

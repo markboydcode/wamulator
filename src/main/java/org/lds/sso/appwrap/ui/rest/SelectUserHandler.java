@@ -1,5 +1,18 @@
 package org.lds.sso.appwrap.ui.rest;
 
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.server.Request;
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.identity.ExternalUserSource;
+import org.lds.sso.appwrap.identity.ExternalUserSource.Response;
+import org.lds.sso.appwrap.identity.SessionManager;
+import org.lds.sso.appwrap.identity.UserManager;
+import org.lds.sso.appwrap.proxy.RequestHandler;
+import org.lds.sso.appwrap.rest.RestHandlerBase;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
@@ -9,19 +22,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang.StringUtils;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.identity.ExternalUserSource;
-import org.lds.sso.appwrap.identity.ExternalUserSource.Response;
-import org.lds.sso.appwrap.identity.SessionManager;
-import org.lds.sso.appwrap.identity.UserManager;
-import org.lds.sso.appwrap.proxy.RequestHandler;
-import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
  * Handles request to start a session for a user by setting a suitable
@@ -38,6 +38,7 @@ public class SelectUserHandler extends RestHandlerBase {
 	
     public SelectUserHandler(String pathPrefix) {
         super(pathPrefix);
+
     }
     /*
 
@@ -97,7 +98,7 @@ public class SelectUserHandler extends RestHandlerBase {
 
      */
     @Override
-    protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
+    protected void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         //
         //		Get the current config instance each time which allows for reconfig

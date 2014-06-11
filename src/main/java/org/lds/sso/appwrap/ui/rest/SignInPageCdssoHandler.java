@@ -1,40 +1,37 @@
 package org.lds.sso.appwrap.ui.rest;
 
-import java.io.IOException;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.HandlerWrapper;
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.SiteMatcher;
+import org.lds.sso.appwrap.TrafficManager;
+import org.lds.sso.appwrap.identity.SessionManager;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.SiteMatcher;
-import org.lds.sso.appwrap.TrafficManager;
-import org.lds.sso.appwrap.identity.SessionManager;
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.handler.HandlerWrapper;
+import java.io.IOException;
 
 /**
  * Handles requests to the sign-in page from a cdsso configured domain and
  * if a session is already had in this master domain redirects to that calling 
- * domain to set up the session in that domain as well.
+ * domain to set up the session in that domain as well using the sign-in page
+ * endpoint as the handler.
  *  
  * @author Mark Boyd
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
  *
  */
 public class SignInPageCdssoHandler extends HandlerWrapper {
-    private String[] pagePatterns;
-    
     public static final String CDSSO_PARAM_NAME = "cdsso-token";
 
-	public SignInPageCdssoHandler(String[] pagePatterns, Handler wrapped) {
-	    this.addHandler(wrapped);
-	    this.pagePatterns = pagePatterns;
+	public SignInPageCdssoHandler(Handler wrapped) {
+	    this.setHandler(wrapped);
 	}
 
-	public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
+	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		/**
 		 * Get the current config instance each time which allows for reconfig
@@ -43,19 +40,15 @@ public class SignInPageCdssoHandler extends HandlerWrapper {
 		Config cfg = Config.getInstance();
 		String uri = request.getRequestURI();
 
-		for (String page : pagePatterns) {
-		    if (uri.contains(page)) {
-		        if (hasValidSession(request) && isFromCdssoDomain(request)) {
-		            sendCdssoResponse(request, response);
-		            ((Request) request).setHandled(true);
-		            return;
-		        }
-	            else {
-	                break; // let it ride
-	            }
-		    }
-		}
-        super.handle(target, request, response, dispatch);
+        if (uri.contains(Config.WAMULATOR_SIGNIN_PAGE_PATH)) {
+            if (hasValidSession(request) && isFromCdssoDomain(request)) {
+                sendCdssoResponse(request, response);
+                ((Request) request).setHandled(true);
+                return;
+            }
+        }
+        // not destined for sign-in page endpoint, let it ride
+        super.handle(target, baseRequest, request, response);
 	}
 
 	private void sendCdssoResponse(HttpServletRequest request,
@@ -86,7 +79,7 @@ public class SignInPageCdssoHandler extends HandlerWrapper {
         if (gt.startsWith("http://")) {
             gt = gt.substring("http://".length());
         }
-        if (gt.startsWith("https://")) { // for when we support if ever
+        if (gt.startsWith("https://")) {
             gt = gt.substring("https://".length());
         }
         int slash = gt.indexOf("/");

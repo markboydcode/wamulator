@@ -1,29 +1,17 @@
 package org.lds.sso.appwrap.identity;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import org.apache.commons.httpclient.HttpException;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.identity.ExternalUserSource.ConfigurationException;
 import org.lds.sso.appwrap.identity.ExternalUserSource.Response;
 import org.lds.sso.appwrap.identity.coda.CodaUserSource;
-import org.lds.sso.appwrap.identity.ldap.LdapUserSource;
-import org.lds.sso.appwrap.identity.ldap.UnableToBindEndUser;
-import org.lds.sso.appwrap.identity.ldap.UnableToBindSearchUser;
-import org.lds.sso.appwrap.identity.ldap.UnableToConnecToLdap;
-import org.lds.sso.appwrap.identity.ldap.UnableToGetUserAttributes;
-import org.lds.sso.appwrap.identity.ldap.UnableToLoadUserAttributes;
-import org.lds.sso.appwrap.identity.ldap.UnableToSearchForUser;
-import org.lds.sso.appwrap.identity.ldap.UserNotFound;
+import org.lds.sso.appwrap.identity.ldap.*;
 import org.lds.sso.appwrap.identity.legacy.WamulatorUserSource;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  * Tests features of cascading user sources such as 'stopOnFound' and 
@@ -122,7 +110,7 @@ public class CascadingUserSourceIntegrationTest {
 		src = new CodaUserSource() {
 
 			@Override
-			protected Results callCoda(String uri) throws HttpException, IOException {
+			protected Results callCoda(String uri) throws IOException {
 				Results res = new Results(200, ""
 						 + "<org.lds.community.data.ws.dto.OssoMemberDto>"
 						 + "  <acctid>888</acctid>"

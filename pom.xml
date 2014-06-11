@@ -11,7 +11,7 @@
 	<groupId>org.lds.sso</groupId>
 	<artifactId>appwrap</artifactId>
 	<packaging>jar</packaging>
-	<version>7.0.4</version>
+	<version>8.0</version>
 
 	<name>SSO Environment Simulator</name>
 
@@ -148,9 +148,9 @@
 						</goals>
 						<configuration>
 							<serverId>lds-nexus</serverId>
-							<fromFile>${basedir}/target/appwrap-${version}-uber.jar</fromFile>
-							<url>https://code.lds.org/nexus/content/sites/downloads/app-wrap-shim/${version}</url>
-							<toFile>SSOSim-${version}.jar</toFile>
+							<fromFile>${basedir}/target/appwrap-${project.version}-uber.jar</fromFile>
+							<url>https://code.lds.org/nexus/content/sites/downloads/app-wrap-shim/${project.version}</url>
+							<toFile>SSOSim-${project.version}.jar</toFile>
 						</configuration>
 					</execution>
 				</executions>
@@ -186,45 +186,58 @@
 			<version>1.45</version>
 		</dependency>
 
+        <!--
+        Jetty 9 requires servlet 3.0 spec, hence had to change this to 3.0
+        -->
 		<dependency>
 			<groupId>org.apache.geronimo.specs</groupId>
-			<artifactId>geronimo-servlet_2.4_spec</artifactId>
-			<version>1.1.1</version>
+			<artifactId>geronimo-servlet_3.0_spec</artifactId>
+			<version>1.0</version>
 			<type>jar</type>
 			<scope>provided</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>commons-httpclient</groupId>
-			<artifactId>commons-httpclient</artifactId>
-			<version>3.1</version>
-		</dependency>
+        <!--
+        used for unit tests to issue http requests to launched wamulator
+        -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.3</version>
+        </dependency>
 
-		<dependency>
-			<groupId>org.mortbay.jetty</groupId>
-			<artifactId>jetty</artifactId>
-			<version>6.1.7</version>
-		</dependency>
 
-		<dependency>
-			<groupId>org.mortbay.jetty</groupId>
-			<artifactId>jetty-util</artifactId>
-			<version>6.1.7</version>
-		</dependency>
+        <!--
+        Brings Jetty in
+        -->
+        <dependency>
+            <groupId>org.eclipse.jetty.aggregate</groupId>
+            <artifactId>jetty-all</artifactId>
+            <version>9.1.5.v20140505</version>
+        </dependency>
 
-		<dependency>
-			<groupId>org.mortbay.jetty</groupId>
-			<artifactId>jsp-2.1</artifactId>
-			<version>6.1.7</version>
-		</dependency>
+        <!--
+        An sfl4j binding: jetty uses slf4j which silently swallows exceptions if a binding is not found which routes
+        slf4j logs to an underlying logging system like java.util.logging in this case.
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.7.7</version>
+        </dependency>
 
-		<dependency>
-			<groupId>org.mortbay.jetty</groupId>
-			<artifactId>jsp-api-2.1</artifactId>
-			<version>6.1.7</version>
-		</dependency>
+        <!--
+        freemarker template library to replace using jsps when moving to jetty 9 embedded which, at the time, did not
+        make the steps for enabling jsp available in their documentation
+        -->
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <version>2.3.20</version>
+        </dependency>
 
-		<dependency>
+
+        <dependency>
 			<groupId>org.testng</groupId>
 			<artifactId>testng</artifactId>
 		</dependency>
@@ -276,14 +289,22 @@
 		</dependency>
 	</dependencies>
 	<repositories>
-		<repository>
-			<id>lds-maven2</id>
-			<name>lds-maven2</name>
-			<url>http://icslib/maven2/archive</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
+        <repository>
+            <id>lds-maven2</id>
+            <name>lds-maven2</name>
+            <url>http://icslib/maven2/archive</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>maven2</id>
+            <name>maven2</name>
+            <url>http://repo1.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
 	</repositories>
 
 </project>

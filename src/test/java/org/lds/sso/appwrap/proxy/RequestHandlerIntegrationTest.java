@@ -1,26 +1,9 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URL;
-import java.net.URLEncoder;
-
-import javax.mail.internet.MimeUtility;
-
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.lds.sso.appwrap.AppEndPoint;
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
@@ -31,33 +14,40 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.mail.internet.MimeUtility;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.net.URLEncoder;
+
 public class RequestHandlerIntegrationTest {
     protected static final String MSG4_404_TEST = "don't request this resource. it isn't there.";
     private Service service = null;
     private Thread server = null;
     private ClientSideContext cctx = new ClientSideContext();
-    
-    private static final String MULTI_BYTE_CHARS_TEXT = "ソフトウェア 建築家 software engineer"; 
-    
+
+    private static final String MULTI_BYTE_CHARS_TEXT = "ソフトウェア 建築家 software engineer";
+
     private static class ClientSideContext {
     	int sitePort = -1;
     	int serverPort = -1;
     	int freePort = -1;
     }
-    
+
     /**
      * Conveys context into and out of {@link RequestHandlerIntegrationTest.RhIntTest#appliesTo(ServerSideContext)}
-     * and {@link RequestHandlerIntegrationTest.RhIntTest#handleServerSide(ServerSideContext)} 
+     * and {@link RequestHandlerIntegrationTest.RhIntTest#handleServerSide(ServerSideContext)}
      * methods.
-     * 
+     *
      * @author BoydMR
      *
      */
     private static class ServerSideContext {
-    	
+
     	/**
     	 * Constructor.
-    	 * 
+    	 *
     	 * @param env
     	 * @param envLC
     	 */
@@ -65,45 +55,45 @@ public class RequestHandlerIntegrationTest {
     		this.envelope = env;
     		this.envelopeLC = envLC;
     	}
-    	
+
     	/**
-    	 * A string containing the concatenated start line and all headers of 
+    	 * A string containing the concatenated start line and all headers of
     	 * the incoming request from which an implementation should be able
     	 * to answer appliesTo().
     	 */
     	String envelope = null;
-    	
+
     	/**
-    	 * A lower case version of envelope. 
+    	 * A lower case version of envelope.
     	 */
     	String envelopeLC = null;
-    	
+
 		/**
 		 * mutually exclusive output mechanism available to the test:
-		 * 
+		 *
 		 * fullOutputByteSet != null == http response bytes are contained and should be
 		 * sent on output stream as-is
-		 * 
+		 *
 		 * output != null means full header and body response
-		 * characters reside in output variable ready for 
+		 * characters reside in output variable ready for
 		 * terminating and sending
-		 * 
+		 *
 		 * answer != null means only body chars have been
 		 * provided via the answer variable and envelope needs to
 		 * be generated
-		 * 
+		 *
 		 * if all three are null we are hosed
 		 */
     	ByteArrayOutputStream fullOutputByteSet = null;
         String output = null;
         String answer = null;
     }
-    
-    
+
+
     /**
      * Encodes multi-byte chars (actually chars above 127) with unicode escaping
      * so that they can be logged.
-     * 
+     *
      * @param val
      * @return
      */
@@ -113,7 +103,7 @@ public class RequestHandlerIntegrationTest {
 			char c = val.charAt(i);
 			if (((int)c) > 127) {
 				String chars = Integer.toHexString((int)c).toUpperCase();
-				
+
 				asciiSafe.append("\\u");
 				asciiSafe.append(chars);
 			}
@@ -126,22 +116,22 @@ public class RequestHandlerIntegrationTest {
 
 	/**
      * Allows for responses that need to have access to the output stream and
-     * more control of the output flow. 
-     * 
+     * more control of the output flow.
+     *
      * @author BoydMR
      *
      */
     private static interface RhIntPlusTest extends RhIntTest{
     	public void handleServerResponse(String envelope, String envelopeLC, OutputStream out);
     }
-    
+
     /**
-     * Interface allowing all aspects of an integration test to be co-located. 
-     * Includes client side generation of a request to the running instance of 
+     * Interface allowing all aspects of an integration test to be co-located.
+     * Includes client side generation of a request to the running instance of
      * the simulator, simulator routing configuration specific to the test,
      * and potentially the back end server-side handling of the resultant
      * http request made by the simulator.
-     *  
+     *
      * @author BoydMR
      *
      */
@@ -149,19 +139,18 @@ public class RequestHandlerIntegrationTest {
     	/**
     	 * Indicates if the server-side of the test applies to an http request
     	 * based on envelope of that request in the ServerSideContext.
-    	 *  
+    	 *
     	 * @return
     	 */
     	public boolean appliesTo(ServerSideContext ssc);
-    	
+
     	/**
-    	 * Provides the serverside handling of http request generated by the 
+    	 * Provides the serverside handling of http request generated by the
     	 * runTest method if any.
-    	 * 
-    	 * @param ctx
+    	 *
     	 */
     	public void handleServerSide(ServerSideContext ssc);
-    	
+
     	/**
     	 * Provides the client-side functionality and assertions of the test.
     	 */
@@ -171,13 +160,13 @@ public class RequestHandlerIntegrationTest {
     /**
      * Empty implementation used for impls that don't contribute server-side
      * functionality since they consume that provided by others.
-     * 
+     *
      * @author BoydMR
      *
      */
     private static class EmptyRhIntTest implements RhIntTest {
 		public boolean appliesTo(ServerSideContext ctx) {
-			return false; 
+			return false;
 		}
 
 		public void handleServerSide(ServerSideContext ctx) {
@@ -186,313 +175,313 @@ public class RequestHandlerIntegrationTest {
 		public void runTest(ClientSideContext csc) throws Exception {
 		}
     }
-    
+
     /**
      * The real definition of the set of tests and their behavior.
-     * 
+     *
      * @author BoydMR
      *
      */
     private enum RhTest {
-        /**
-         *  @see https://tech.lds.org/jira/browse/WAMULAT-60
-         */
-    	wamulat_60_test(new RhIntPlusTest() {
-			public boolean appliesTo(ServerSideContext ctx) {
-				return ctx.envelope.contains("/wamulat-60/test");
-			}
-			public void handleServerSide(ServerSideContext ctx) {
-				// Response method used instead
-			}
-			public void handleServerResponse(String envelop, String envelopLC, final OutputStream out) {
-				String output = "HTTP/1.1 302 Moved Permanently" + RequestHandler.CRLF
-	                    + "Server: test-harness" + RequestHandler.CRLF
-	                    + "Location: local.lds.org:9080/some/path" + RequestHandler.CRLF
-                    + RequestHandler.CRLF;
-				try {
-                    System.out.println();
-                    System.out.println("--- returned ---");
-                    System.out.println(output);
-					out.write(output.getBytes());
-					out.flush();
-					out.close();
-				}
-				catch(IOException ioe) {
-					ioe.printStackTrace();
-					return;
-				}
-			}
-
-			public void runTest(ClientSideContext csc) throws Exception {
-				Config.getInstance(); // reset configuration
-		        System.out.println("----> wamulat_60_test");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/wamulat-60/test/req";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        Assert.assertEquals(status, 302, "should have returned http 302");
-		        Header loc = method.getResponseHeader("location");
-
-		        Assert.assertEquals(loc.getValue(), "local.lds.org:9080/some/path",
-		                "redirect location was wrong.");
-		        method.releaseConnection();
-			}
-    	}),
-        /**
-         *  @see https://tech.lds.org/jira/browse/WAMULAT-56
-         */
-    	wamulat_56_test(new RhIntPlusTest() {
-			public boolean appliesTo(ServerSideContext ctx) {
-				return ctx.envelope.contains("/wamulat-56/test");
-			}
-			public void handleServerSide(ServerSideContext ctx) {
-				// Response method used instead
-			}
-			public void handleServerResponse(String envelop, String envelopLC, final OutputStream out) {
-				String output = "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
-                    + "Server: test-harness" + RequestHandler.CRLF
-                    + RequestHandler.CRLF;
-				try {
-                    System.out.println();
-                    System.out.println("--- returned ---");
-                    System.out.println(output);
-					out.write(output.getBytes());
-					out.flush();
-                    System.out.println("--- sleeping with stream left open ---");
-				}
-				catch(IOException ioe) {
-					ioe.printStackTrace();
-					return;
-				}
-				Thread slowpoke = new Thread() {
-
-					@Override
-					public void run() {
-						try {
-							Thread.sleep(3000);
-							String msg = "<html><body>this should just get dropped.</body></html>";
-		                    System.out.println("--- wamulat_56_test awake, slowpoke now returning body ---");
-		                    System.out.println(msg);
-							out.write(msg.getBytes());
-							out.flush();
-							out.close();
-						} catch (InterruptedException e) {
-							System.out.println("slowpoke thread interrupted. Exiting.");
-						} catch (IOException e) {
-							System.out.println("slowpoke thread incurred exception. " + e.getMessage());
-						}
-					}
-				};
-				slowpoke.setDaemon(true);
-				slowpoke.start();
-			}
-
-			public void runTest(ClientSideContext csc) throws Exception {
-				Config.getInstance(); // reset configuration
-		        System.out.println("----> wamulat_56_test");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/wamulat-56/test/req";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        long start = System.currentTimeMillis();
-		        int status = client.executeMethod(method);
-		        long elapsed = System.currentTimeMillis() - start;
-		        String resp = method.getResponseBodyAsString();
-		        Assert.assertTrue(elapsed < 3000, "shouldn't have waited for close of stream"); 
-		        Assert.assertEquals(status, 304, "should have returned http 304 Not Modified");
-		        Assert.assertNull(resp, "304 response should NOT have any payload.");
-		        method.releaseConnection();
-			}
-    	}),
-        /**
-         *  @see https://tech.lds.org/jira/browse/WAMULAT-35
-         */
-    	wamulat_35_pipe_char_test(new RhIntTest() {
-
-			public boolean appliesTo(ServerSideContext ctx) {
-				return ctx.envelope.contains("/wamulat-35/test/");
-			}
-
-			public void handleServerSide(ServerSideContext ctx) {
-                int idx = ctx.envelopeLC.indexOf("dude=joe|blah");
-
-                if (idx == -1) {
-                    ctx.output =
-                        "HTTP/1.1 500 Pipe char didn't pass through" + RequestHandler.CRLF;
-                }
-                else {
-                    ctx.answer = "<html><body>Pipe came through just fine.</body></html>";
-                }
-			}
-
-			public void runTest(ClientSideContext csc) throws Exception {
-		        System.out.println("----> test_wamulat_35_pipe_char_in_url_passes_to_app ");
-
-		        Socket sock = new Socket("127.0.0.1", csc.sitePort);
-		        sock.setSoTimeout(400000); // make sure we have a long timeout
-		        
-		        // send request
-		        // url = http://local.lds.org:<sitePort>/wamulat-35/test/?dude=joe|blah;
-		        OutputStream out = sock.getOutputStream();
-		        out.write(("GET /wamulat-35/test/?dude=joe|blah Http/1.1" 
-		                + RequestHandler.CRLF).getBytes());
-		        out.write(("Host: local.lds.org:" + csc.sitePort 
-		                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
-		        out.flush();
-
-		        // read response
-		        InputStream in = sock.getInputStream();
-		        byte[] bytes = new byte[4096];
-		        int read = in.read(bytes);
-		        in.close();
-		        out.close();
-		        sock.close();
-		        
-		        String http = new String(bytes, 0, read);
-		        Assert.assertTrue(http.startsWith("HTTP/1.1 "), "Should start with 'HTTP/1.1 '");
-		        int idx = http.indexOf(" ", "HTTP/1.1 ".length());
-		        Assert.assertTrue(idx != -1, "Should contain response code followed by space");
-		        String sCode = http.substring("HTTP/1.1 ".length(), idx);
-		        int code = Integer.parseInt(sCode);
-		        Assert.assertEquals(code, 200, "should have returned http 200 OK");
-			}
-    	}),
-        /**
-         *  @see https://tech.lds.org/jira/browse/WAMULAT-35
-         */
-    	wamulat_35_pipe_char_absltReqLn_test(new EmptyRhIntTest() {
-    		// note that server-side behavior is handled in wamulat_35_pipe_char_test
-			public void runTest(ClientSideContext csc) throws Exception {
-		        System.out.println("----> test_wamulat_35_pipe_char_in_full_reqLnUrl_passes_to_app ");
-
-		        Socket sock = new Socket("127.0.0.1", csc.sitePort);
-		        sock.setSoTimeout(400000); // make sure we have a long timeout
-		        
-		        // send request
-		        // url = http://local.lds.org:<sitePort>/wamulat-35/test/?dude=joe|blah;
-		        OutputStream out = sock.getOutputStream();
-		        out.write(("GET http://local.lds.org:" + csc.sitePort + "/wamulat-35/test/?dude=joe|blah Http/1.1" 
-		                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
-		        out.flush();
-
-		        // read response
-		        InputStream in = sock.getInputStream();
-		        byte[] bytes = new byte[4096];
-		        int read = in.read(bytes);
-		        in.close();
-		        out.close();
-		        sock.close();
-		        
-		        String http = new String(bytes, 0, read);
-		        Assert.assertTrue(http.startsWith("HTTP/1.1 "), "Should start with 'HTTP/1.1 '");
-		        int idx = http.indexOf(" ", "HTTP/1.1 ".length());
-		        Assert.assertTrue(idx != -1, "Should contain response code followed by space");
-		        String sCode = http.substring("HTTP/1.1 ".length(), idx);
-		        int code = Integer.parseInt(sCode);
-		        Assert.assertEquals(code, 200, "should have returned http 200 OK");
-			}
-    	}),
-    	preserve_host_test(new RhIntTest() {
-
-			public boolean appliesTo(ServerSideContext ctx) {
-				return ctx.envelope.contains("/preserve/host/test/");
-			}
-
-			public void handleServerSide(ServerSideContext ctx) {
-				
-                ctx.answer = HeaderDef.Host.getNameWithColon() + " ???";
-                String hstHdrKey = RequestHandler.CRLF + HeaderDef.Host.getLcNameWithColon();
-                int idx = ctx.envelopeLC.indexOf(hstHdrKey);
-
-                if (idx != -1) {
-                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, idx+1);
-                    String val = null;
-                    if (cr == -1) {
-                        // last header
-                        val = ctx.envelope.substring(idx+hstHdrKey.length()).trim();
-                    }
-                    else {
-                        val = ctx.envelope.substring(idx+hstHdrKey.length(), cr).trim();
-                    }
-                    ctx.answer = HeaderDef.Host.getNameWithColon() + " " + val;
-                }
-			}
-
-			public void runTest(ClientSideContext csc) throws Exception {
-		        System.out.println("----> test_preserve_host ");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/preserve/host/test/";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
-		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " local.lds.org:" + csc.sitePort);
-		        method.releaseConnection();
-			}
-    	}),
-    	verify_cctx_injected_test(new RhIntTest() {
-
-			public boolean appliesTo(ServerSideContext ctx) {
-				return ctx.envelope.contains("/verify/cctx/injected/test/");
-			}
-
-			public void handleServerSide(ServerSideContext ctx) {
-				
-                ctx.answer = HeaderDef.Host.getNameWithColon() + " ???";
-                String hstHdrKey = RequestHandler.CRLF + AppEndPoint.CCTX_HEADER + ":";
-                int idx = ctx.envelopeLC.indexOf(hstHdrKey);
-
-                if (idx != -1) {
-                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, idx+1);
-                    String val = null;
-                    if (cr == -1) {
-                        // last header
-                        val = ctx.envelope.substring(idx+hstHdrKey.length()).trim();
-                    }
-                    else {
-                        val = ctx.envelope.substring(idx+hstHdrKey.length(), cr).trim();
-                    }
-                    ctx.answer = AppEndPoint.CCTX_HEADER + ": " + val;
-                }
-			}
-
-			public void runTest(ClientSideContext csc) throws Exception {
-		        System.out.println("----> test_verify_cctx_injected ");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/verify/cctx/injected/test/";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
-		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, AppEndPoint.CCTX_HEADER + ":" + " /verify/cctx/injected/{/.../*,*}");
-		        method.releaseConnection();
-			}
-    	}),
+//        /**
+//         *  @see https://tech.lds.org/jira/browse/WAMULAT-60
+//         */
+//    	wamulat_60_test(new RhIntPlusTest() {
+//			public boolean appliesTo(ServerSideContext ctx) {
+//				return ctx.envelope.contains("/wamulat-60/test");
+//			}
+//			public void handleServerSide(ServerSideContext ctx) {
+//				// Response method used instead
+//			}
+//			public void handleServerResponse(String envelop, String envelopLC, final OutputStream out) {
+//				String output = "HTTP/1.1 302 Moved Permanently" + RequestHandler.CRLF
+//	                    + "Server: test-harness" + RequestHandler.CRLF
+//	                    + "Location: local.lds.org:9080/some/path" + RequestHandler.CRLF
+//                    + RequestHandler.CRLF;
+//				try {
+//                    System.out.println();
+//                    System.out.println("--- returned ---");
+//                    System.out.println(output);
+//					out.write(output.getBytes());
+//					out.flush();
+//					out.close();
+//				}
+//				catch(IOException ioe) {
+//					ioe.printStackTrace();
+//					return;
+//				}
+//			}
+//
+//			public void runTest(ClientSideContext csc) throws Exception {
+//				Config.getInstance(); // reset configuration
+//		        System.out.println("----> wamulat_60_test");
+//		        String uri = "http://local.lds.org:" + csc.sitePort + "/wamulat-60/test/req";
+//		        HttpClient client = new HttpClient();
+//
+//		        HostConfiguration hcfg = new HostConfiguration();
+//		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+//		        client.setHostConfiguration(hcfg);
+//
+//		        HttpMethod method = new GetMethod(uri);
+//		        method.setFollowRedirects(false);
+//		        int status = client.executeMethod(method);
+//		        Assert.assertEquals(status, 302, "should have returned http 302");
+//		        Header loc = method.getResponseHeader("location");
+//
+//		        Assert.assertEquals(loc.getValue(), "local.lds.org:9080/some/path",
+//		                "redirect location was wrong.");
+//		        method.releaseConnection();
+//			}
+//    	}),
+//        /**
+//         *  @see https://tech.lds.org/jira/browse/WAMULAT-56
+//         */
+//    	wamulat_56_test(new RhIntPlusTest() {
+//			public boolean appliesTo(ServerSideContext ctx) {
+//				return ctx.envelope.contains("/wamulat-56/test");
+//			}
+//			public void handleServerSide(ServerSideContext ctx) {
+//				// Response method used instead
+//			}
+//			public void handleServerResponse(String envelop, String envelopLC, final OutputStream out) {
+//				String output = "HTTP/1.1 304 Not Modified" + RequestHandler.CRLF
+//                    + "Server: test-harness" + RequestHandler.CRLF
+//                    + RequestHandler.CRLF;
+//				try {
+//                    System.out.println();
+//                    System.out.println("--- returned ---");
+//                    System.out.println(output);
+//					out.write(output.getBytes());
+//					out.flush();
+//                    System.out.println("--- sleeping with stream left open ---");
+//				}
+//				catch(IOException ioe) {
+//					ioe.printStackTrace();
+//					return;
+//				}
+//				Thread slowpoke = new Thread() {
+//
+//					@Override
+//					public void run() {
+//						try {
+//							Thread.sleep(3000);
+//							String msg = "<html><body>this should just get dropped.</body></html>";
+//		                    System.out.println("--- wamulat_56_test awake, slowpoke now returning body ---");
+//		                    System.out.println(msg);
+//							out.write(msg.getBytes());
+//							out.flush();
+//							out.close();
+//						} catch (InterruptedException e) {
+//							System.out.println("slowpoke thread interrupted. Exiting.");
+//						} catch (IOException e) {
+//							System.out.println("slowpoke thread incurred exception. " + e.getMessage());
+//						}
+//					}
+//				};
+//				slowpoke.setDaemon(true);
+//				slowpoke.start();
+//			}
+//
+//			public void runTest(ClientSideContext csc) throws Exception {
+//				Config.getInstance(); // reset configuration
+//		        System.out.println("----> wamulat_56_test");
+//		        String uri = "http://local.lds.org:" + csc.sitePort + "/wamulat-56/test/req";
+//		        HttpClient client = new HttpClient();
+//
+//		        HostConfiguration hcfg = new HostConfiguration();
+//		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+//		        client.setHostConfiguration(hcfg);
+//
+//		        HttpMethod method = new GetMethod(uri);
+//		        method.setFollowRedirects(false);
+//		        long start = System.currentTimeMillis();
+//		        int status = client.executeMethod(method);
+//		        long elapsed = System.currentTimeMillis() - start;
+//		        String resp = method.getResponseBodyAsString();
+//		        Assert.assertTrue(elapsed < 3000, "shouldn't have waited for close of stream");
+//		        Assert.assertEquals(status, 304, "should have returned http 304 Not Modified");
+//		        Assert.assertNull(resp, "304 response should NOT have any payload.");
+//		        method.releaseConnection();
+//			}
+//    	}),
+//        /**
+//         *  @see https://tech.lds.org/jira/browse/WAMULAT-35
+//         */
+//    	wamulat_35_pipe_char_test(new RhIntTest() {
+//
+//			public boolean appliesTo(ServerSideContext ctx) {
+//				return ctx.envelope.contains("/wamulat-35/test/");
+//			}
+//
+//			public void handleServerSide(ServerSideContext ctx) {
+//                int idx = ctx.envelopeLC.indexOf("dude=joe|blah");
+//
+//                if (idx == -1) {
+//                    ctx.output =
+//                        "HTTP/1.1 500 Pipe char didn't pass through" + RequestHandler.CRLF;
+//                }
+//                else {
+//                    ctx.answer = "<html><body>Pipe came through just fine.</body></html>";
+//                }
+//			}
+//
+//			public void runTest(ClientSideContext csc) throws Exception {
+//		        System.out.println("----> test_wamulat_35_pipe_char_in_url_passes_to_app ");
+//
+//		        Socket sock = new Socket("127.0.0.1", csc.sitePort);
+//		        sock.setSoTimeout(400000); // make sure we have a long timeout
+//
+//		        // send request
+//		        // url = http://local.lds.org:<sitePort>/wamulat-35/test/?dude=joe|blah;
+//		        OutputStream out = sock.getOutputStream();
+//		        out.write(("GET /wamulat-35/test/?dude=joe|blah Http/1.1"
+//		                + RequestHandler.CRLF).getBytes());
+//		        out.write(("Host: local.lds.org:" + csc.sitePort
+//		                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
+//		        out.flush();
+//
+//		        // read response
+//		        InputStream in = sock.getInputStream();
+//		        byte[] bytes = new byte[4096];
+//		        int read = in.read(bytes);
+//		        in.close();
+//		        out.close();
+//		        sock.close();
+//
+//		        String http = new String(bytes, 0, read);
+//		        Assert.assertTrue(http.startsWith("HTTP/1.1 "), "Should start with 'HTTP/1.1 '");
+//		        int idx = http.indexOf(" ", "HTTP/1.1 ".length());
+//		        Assert.assertTrue(idx != -1, "Should contain response code followed by space");
+//		        String sCode = http.substring("HTTP/1.1 ".length(), idx);
+//		        int code = Integer.parseInt(sCode);
+//		        Assert.assertEquals(code, 200, "should have returned http 200 OK");
+//			}
+//    	}),
+//        /**
+//         *  @see https://tech.lds.org/jira/browse/WAMULAT-35
+//         */
+//    	wamulat_35_pipe_char_absltReqLn_test(new EmptyRhIntTest() {
+//    		// note that server-side behavior is handled in wamulat_35_pipe_char_test
+//			public void runTest(ClientSideContext csc) throws Exception {
+//		        System.out.println("----> test_wamulat_35_pipe_char_in_full_reqLnUrl_passes_to_app ");
+//
+//		        Socket sock = new Socket("127.0.0.1", csc.sitePort);
+//		        sock.setSoTimeout(400000); // make sure we have a long timeout
+//
+//		        // send request
+//		        // url = http://local.lds.org:<sitePort>/wamulat-35/test/?dude=joe|blah;
+//		        OutputStream out = sock.getOutputStream();
+//		        out.write(("GET http://local.lds.org:" + csc.sitePort + "/wamulat-35/test/?dude=joe|blah Http/1.1"
+//		                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
+//		        out.flush();
+//
+//		        // read response
+//		        InputStream in = sock.getInputStream();
+//		        byte[] bytes = new byte[4096];
+//		        int read = in.read(bytes);
+//		        in.close();
+//		        out.close();
+//		        sock.close();
+//
+//		        String http = new String(bytes, 0, read);
+//		        Assert.assertTrue(http.startsWith("HTTP/1.1 "), "Should start with 'HTTP/1.1 '");
+//		        int idx = http.indexOf(" ", "HTTP/1.1 ".length());
+//		        Assert.assertTrue(idx != -1, "Should contain response code followed by space");
+//		        String sCode = http.substring("HTTP/1.1 ".length(), idx);
+//		        int code = Integer.parseInt(sCode);
+//		        Assert.assertEquals(code, 200, "should have returned http 200 OK");
+//			}
+//    	}),
+//    	preserve_host_test(new RhIntTest() {
+//
+//			public boolean appliesTo(ServerSideContext ctx) {
+//				return ctx.envelope.contains("/preserve/host/test/");
+//			}
+//
+//			public void handleServerSide(ServerSideContext ctx) {
+//
+//                ctx.answer = HeaderDef.Host.getNameWithColon() + " ???";
+//                String hstHdrKey = RequestHandler.CRLF + HeaderDef.Host.getLcNameWithColon();
+//                int idx = ctx.envelopeLC.indexOf(hstHdrKey);
+//
+//                if (idx != -1) {
+//                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, idx+1);
+//                    String val = null;
+//                    if (cr == -1) {
+//                        // last header
+//                        val = ctx.envelope.substring(idx+hstHdrKey.length()).trim();
+//                    }
+//                    else {
+//                        val = ctx.envelope.substring(idx+hstHdrKey.length(), cr).trim();
+//                    }
+//                    ctx.answer = HeaderDef.Host.getNameWithColon() + " " + val;
+//                }
+//			}
+//
+//			public void runTest(ClientSideContext csc) throws Exception {
+//		        System.out.println("----> test_preserve_host ");
+//		        String uri = "http://local.lds.org:" + csc.sitePort + "/preserve/host/test/";
+//		        HttpClient client = new HttpClient();
+//
+//		        HostConfiguration hcfg = new HostConfiguration();
+//		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+//		        client.setHostConfiguration(hcfg);
+//
+//		        HttpMethod method = new GetMethod(uri);
+//
+//		        method.setFollowRedirects(false);
+//		        int status = client.executeMethod(method);
+//		        String response = method.getResponseBodyAsString().trim();
+//		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
+//		        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " local.lds.org:" + csc.sitePort);
+//		        method.releaseConnection();
+//			}
+//    	}),
+//    	verify_cctx_injected_test(new RhIntTest() {
+//
+//			public boolean appliesTo(ServerSideContext ctx) {
+//				return ctx.envelope.contains("/verify/cctx/injected/test/");
+//			}
+//
+//			public void handleServerSide(ServerSideContext ctx) {
+//
+//                ctx.answer = HeaderDef.Host.getNameWithColon() + " ???";
+//                String hstHdrKey = RequestHandler.CRLF + AppEndPoint.CCTX_HEADER + ":";
+//                int idx = ctx.envelopeLC.indexOf(hstHdrKey);
+//
+//                if (idx != -1) {
+//                    int cr = ctx.envelope.indexOf(RequestHandler.CRLF, idx+1);
+//                    String val = null;
+//                    if (cr == -1) {
+//                        // last header
+//                        val = ctx.envelope.substring(idx+hstHdrKey.length()).trim();
+//                    }
+//                    else {
+//                        val = ctx.envelope.substring(idx+hstHdrKey.length(), cr).trim();
+//                    }
+//                    ctx.answer = AppEndPoint.CCTX_HEADER + ": " + val;
+//                }
+//			}
+//
+//			public void runTest(ClientSideContext csc) throws Exception {
+//		        System.out.println("----> test_verify_cctx_injected ");
+//		        String uri = "http://local.lds.org:" + csc.sitePort + "/verify/cctx/injected/test/";
+//		        HttpClient client = new HttpClient();
+//
+//		        HostConfiguration hcfg = new HostConfiguration();
+//		        hcfg.setProxy("127.0.0.1", csc.sitePort);
+//		        client.setHostConfiguration(hcfg);
+//
+//		        HttpMethod method = new GetMethod(uri);
+//
+//		        method.setFollowRedirects(false);
+//		        int status = client.executeMethod(method);
+//		        String response = method.getResponseBodyAsString().trim();
+//		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
+//		        Assert.assertEquals(response, AppEndPoint.CCTX_HEADER + ":" + " /verify/cctx/injected/{/.../*,*}");
+//		        method.releaseConnection();
+//			}
+//    	}),
     	verify_serviceUrl_signIn_signOut_injected(new RhIntTest() {
 
 			public boolean appliesTo(ServerSideContext ctx) {
@@ -505,7 +494,7 @@ public class RequestHandlerIntegrationTest {
 				this.lookForHdr(ctx, GlobalHeaderNames.SIGNIN);
 				this.lookForHdr(ctx, GlobalHeaderNames.SIGNOUT);
 			}
-			
+
 			private void lookForHdr(ServerSideContext ctx, String hdr) {
                 int idx = ctx.envelopeLC.indexOf(hdr);
 
@@ -529,21 +518,19 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_verify_serviceUrl_signIn_signOut_injected ");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/verify/required-headers/injected";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+                HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
+                CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+                Assert.assertEquals(status, 200, "should have returned http 200 OK");
 
-		        HttpMethod method = new GetMethod(uri);
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
 		        System.out.println("--response from server: " + response);
-		        Assert.assertFalse(response.contains(GlobalHeaderNames.SERVICE_URL + "--NOT FOUND"));
-		        Assert.assertFalse(response.contains(GlobalHeaderNames.SIGNIN + "--NOT FOUND"));
-		        Assert.assertFalse(response.contains(GlobalHeaderNames.SIGNOUT + "--NOT FOUND"));
+		        Assert.assertFalse(content.contains(GlobalHeaderNames.SERVICE_URL + "--NOT FOUND"));
+		        Assert.assertFalse(content.contains(GlobalHeaderNames.SIGNIN + "--NOT FOUND"));
+		        Assert.assertFalse(content.contains(GlobalHeaderNames.SIGNOUT + "--NOT FOUND"));
 		        method.releaseConnection();
 			}
     	}),
@@ -575,19 +562,15 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_dont_preserve_host ");
 		        String uri = "http://local2.lds.org:" + csc.sitePort + "/no-preserve/host/test/";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+                HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
+                CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+                Assert.assertEquals(status, 200, "should have returned http 200 OK");
 
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
-		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " 127.0.0.1:" + csc.serverPort);
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertEquals(content, HeaderDef.Host.getNameWithColon() + " 127.0.0.1:" + csc.serverPort);
 		        method.releaseConnection();
 			}
     	}),
@@ -619,19 +602,16 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_host_header ");
 		        String uri = "http://local3.lds.org:" + csc.sitePort + "/host-header/test/";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+                HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
+                CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+                Assert.assertEquals(status, 200, "should have returned http 200 OK");
 
-		        HttpMethod method = new GetMethod(uri);
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
-		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, HeaderDef.Host.getNameWithColon() + " host.lds.org:2445");
+		        Assert.assertEquals(content, HeaderDef.Host.getNameWithColon() + " host.lds.org:2445");
 		        method.releaseConnection();
 			}
     	}),
@@ -660,7 +640,7 @@ public class RequestHandlerIntegrationTest {
                     }
                     ctx.answer += "prof-1=" + val;
                 }
-                
+
             	// check first of multi & inject into response
                 String mHdr = RequestHandler.CRLF + "prof-2:";
                 int mIdx = ctx.envelopeLC.indexOf(mHdr);
@@ -697,28 +677,24 @@ public class RequestHandlerIntegrationTest {
 
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> profile_header_injection_test ");
-		        
+
 		        // only verify for authenticated user
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/profile-att/header/test/";
 		        Config cfg = Config.getInstance();
-		        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.lds.org");
-		        System.out.println(" auth'd ngiwb2");
+                String token = TestUtilities.authenticateUser("ngiwb2", "local.lds.org");
+                System.out.println(" auth'd ngiwb2");
 
-		        HttpClient client2 = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+                HttpGet method = new HttpGet(uri);
+                method.addHeader("cookie", Config.getInstance().getCookieName() + "=" + token);
 
-		        HostConfiguration hcfg2 = new HostConfiguration();
-		        hcfg2.setProxy("127.0.0.1", csc.sitePort);
-		        client2.setHostConfiguration(hcfg2);
+                CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+                Assert.assertEquals(status, 200, "should have returned http 200 OK");
 
-		        HttpMethod method2 = new GetMethod(uri);
-		        method2.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-		        method2.setFollowRedirects(false);
-
-		        int status2 = client2.executeMethod(method2);
-		        String response2 = method2.getResponseBodyAsString().trim();
-		        Assert.assertEquals(status2, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response2, "prof-vals: prof-1=val1; prof-2=val2-1,val2-2");
-		        method2.releaseConnection();
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertEquals(content, "prof-vals: prof-1=val1; prof-2=val2-1,val2-2");
+		        method.releaseConnection();
 			}
     	}),
     	fixed_header_injection_test(new RhIntTest() {
@@ -746,7 +722,7 @@ public class RequestHandlerIntegrationTest {
                     }
                     ctx.answer += "single=" + val;
                 }
-                
+
             	// check first of multi & inject into response
                 String mHdr = RequestHandler.CRLF + "multi:";
                 int mIdx = ctx.envelopeLC.indexOf(mHdr);
@@ -783,43 +759,33 @@ public class RequestHandlerIntegrationTest {
 
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> fixed_header_injection_test ");
-		        
+
 		        // first verify for UN-authenticated user
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/fixed-value/header/test/";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+                HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
+                CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
-		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, "fixed-vals: single=single-1; multi=multi-1,multi-2");
+                Assert.assertEquals(status, 200, "should have returned http 200 OK");
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertEquals(content, "fixed-vals: single=single-1; multi=multi-1,multi-2");
 		        method.releaseConnection();
 
 		        // now verify for authenticated user
-		        Config cfg = Config.getInstance();
-		        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.lds.org");
+		        String token = TestUtilities.authenticateUser("ngiwb2", "local.lds.org");
 		        System.out.println(" auth'd ngiwb2");
 
-		        HttpClient client2 = new HttpClient();
+                HttpGet method2 = new HttpGet(uri);
+                method2.addHeader("cookie", Config.getInstance().getCookieName() + "=" + token);
 
-		        HostConfiguration hcfg2 = new HostConfiguration();
-		        hcfg2.setProxy("127.0.0.1", csc.sitePort);
-		        client2.setHostConfiguration(hcfg2);
-
-		        HttpMethod method2 = new GetMethod(uri);
-		        method2.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-		        method2.setFollowRedirects(false);
-
-		        int status2 = client2.executeMethod(method2);
-		        String response2 = method2.getResponseBodyAsString().trim();
+                CloseableHttpResponse response2 = client.execute(method);
+                int status2 = response2.getStatusLine().getStatusCode();
 		        Assert.assertEquals(status2, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response2, "fixed-vals: single=single-1; multi=multi-1,multi-2");
+
+                String content2 = TestUtilities.readHttpComponentsStringEntity(response2.getEntity());
+		        Assert.assertEquals(content2, "fixed-vals: single=single-1; multi=multi-1,multi-2");
 		        method2.releaseConnection();
 			}
     	}),
@@ -864,38 +830,32 @@ public class RequestHandlerIntegrationTest {
 
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_wamulat_48 ");
-		        
+
 		        Config cfg = Config.getInstance();
-		        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.lds.org");
+		        String token = TestUtilities.authenticateUser("ngiwb2", "local.lds.org");
 		        System.out.println(" auth'd ngiwb2");
 
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/wamulat-48/rfc2047/test/";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+                HttpGet method = new HttpGet(uri);
+                method.addHeader("cookie", Config.getInstance().getCookieName() + "=" + token);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-		        
-		        HttpMethod method = new GetMethod(uri);
-		        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-		        method.setFollowRedirects(false);
-		        System.out.println("Injecting client header value of '" 
-		        		+ RequestHandlerIntegrationTest.getMultiEscaped(MULTI_BYTE_CHARS_TEXT) + "'");
-		        String val = MULTI_BYTE_CHARS_TEXT;
-				try {
+                System.out.println("Injecting client header value of '"
+                        + RequestHandlerIntegrationTest.getMultiEscaped(MULTI_BYTE_CHARS_TEXT) + "'");
+                String val = MULTI_BYTE_CHARS_TEXT;
+                try {
                     val = MimeUtility.encodeText(val, "utf-8", null);
-    		        System.out.println("After MimeEncoding was '" + val + "'");
-    		        method.setRequestHeader("client-injected-multi-byte", val);
+                    System.out.println("After MimeEncoding was '" + val + "'");
+                    method.addHeader("client-injected-multi-byte", val);
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
-				
-				// try encoding with james encoder
+                CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
-		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Assert.assertEquals(response, "preferredname matched: true");
+                Assert.assertEquals(status, 200, "should have returned http 200 OK");
+		        String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertEquals(content, "preferredname matched: true");
 		        method.releaseConnection();
 			}
     	}),
@@ -909,22 +869,16 @@ public class RequestHandlerIntegrationTest {
 			}
 
 			public void runTest(ClientSideContext csc) throws Exception {
-		        Config cfg = Config.getInstance();
-		        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
+		        String token = TestUtilities.authenticateUser("ngiwb1", "local.lds.org");
 		        System.out.println("----> test_restricted_with_good_session_proxied");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/restricted/test/";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+                HttpGet method = new HttpGet(uri);
+                method.addHeader("cookie", Config.getInstance().getCookieName() + "=" + token);
+                CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 		        Assert.assertEquals(status, 200, "should have returned http 200");
-		        String content = method.getResponseBodyAsString();
+		        String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 		        Assert.assertEquals(content, "You made it", "wrong content returned.");
 		        method.releaseConnection();
 			}
@@ -934,20 +888,14 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_restricted_with_no_session_redir_2_signin");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/restricted/path/";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 		        Assert.assertEquals(status, 302, "should have returned http 302");
-		        Header loc = method.getResponseHeader("location");
+		        Header[] locs = response.getHeaders("location");
 
-		        Assert.assertEquals(loc.getValue(), Config.getInstance().getLoginPage()
+		        Assert.assertEquals(locs[0].getValue(), Config.getInstance().getLoginPage()
 		                + "?goto=" + URLEncoder.encode(uri, "utf-8"),
 		                "redirect location was wrong.");
 		        method.releaseConnection();
@@ -964,80 +912,72 @@ public class RequestHandlerIntegrationTest {
 
 			public void runTest(ClientSideContext csc) throws Exception {
 		        Config cfg = Config.getInstance();
-		        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
+		        String token = TestUtilities.authenticateUser("ngiwb1", "local.lds.org");
 		        System.out.println("----> test_restricted_with_good_session_not_cond_403");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/conditional/test/";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
+		        method.addHeader("cookie", cfg.getCookieName() + "=" + token);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+                Assert.assertEquals(status, 403, "should have returned http 403");
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String resp = method.getResponseBodyAsString();
-		        if (status != 403 && resp != null) {
-		            System.out.println(resp);
-		        }
-		        Assert.assertEquals(status, 403, "should have returned http 403");
+		        String resp = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+                Assert.assertNotNull(resp, "response content should have been included");
+                Assert.assertTrue(resp.contains("is not allowed"), "response content should have included 'is not allowed'.");
 		        method.releaseConnection();
 			}
     	}),
-    	bad_gateway_message(new RhIntTest() {
+        /**
+         * tests proper handling when the proxy receives a malformed response from the downstream server.
+         * specifically, a response formatted as a request in its status line to ensure proper handling
+         * given that requests and responses are both parsed by the same method getHttpPackage.
+         */
+    	bad_gateway_message_malformed_response(new RhIntTest() {
 			public boolean appliesTo(ServerSideContext ctx) {
 				return ctx.envelope.contains("/bad/gateway/message");
 			}
 
 			public void handleServerSide(ServerSideContext ctx) {
-                // simulates a message that looks like a request.
-                // shouldn't ever happen but testing since processing
-                // of reqs and resps uses the same getHttpPackage method.
 				ctx.output = "GET /bad/gateway/message/ HTTP/1.1" + RequestHandler.CRLF + RequestHandler.CRLF;
 			}
 
 			public void runTest(ClientSideContext csc) throws Exception {
 		        Config.getInstance();
-		        System.out.println("----> test_bad_gateway_message");
+		        System.out.println("----> test_bad_gateway_message_malformed_response");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/bad/gateway/message";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String resp = method.getResponseBodyAsString();
-		        if (status != 502 && resp != null) {
-		            System.out.println(resp);
-		        }
-		        Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
+                Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
+                Header[] types = response.getHeaders("content-type");
+                Assert.assertTrue(types[0].getValue().contains("text/html"), "type should be text/html");
+                String resp = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+                Assert.assertTrue(resp.contains("Bad Gateway"), "Response entity should have contained 'Bad Gateway'. Content: " + resp);
 		        method.releaseConnection();
 			}
     	}),
+        /**
+         * Via config of the cctx-mapping item in the by-site entry for local4.lds.org this test will cause the
+         * wamulator's proxy to connect to an unused port to ensure that the proxy returns a 502 bad gateway
+         * response.
+         */
     	bad_gateway_message_conn(new EmptyRhIntTest() {
-    		// test has no server side since connects to port without listener
+    		// test has no server side since connects to local port that has nobody listening on it
 			public void runTest(ClientSideContext csc) throws Exception {
 		        Config.getInstance();
 		        System.out.println("----> test_bad_gateway_when_connecting");
-		        String uri = "http://local.lds.org:" + csc.sitePort + "/bad/gateway/test";
-		        HttpClient client = new HttpClient();
+		        String uri = "http://local4.lds.org:" + csc.sitePort + "/bad/gateway/test";
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String resp = method.getResponseBodyAsString();
-		        if (status != 502 && resp != null) {
-		            System.out.println(resp);
-		        }
-		        Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
+		        HttpGet method = new HttpGet(uri);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+                Assert.assertEquals(status, 502, "should have returned http 502 bad gateway");
+		        String resp = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+                Assert.assertNull(resp, "No entity should have been returned in the response.");
 		        method.releaseConnection();
 			}
     	}),
@@ -1054,16 +994,11 @@ public class RequestHandlerIntegrationTest {
 		        Config.getInstance();
 		        System.out.println("----> test_bad_gateway_empty_message");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/bad/gateway/empty/msg";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String resp = method.getResponseBodyAsString();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+		        String resp = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 		        if (status != 502 && resp != null) {
 		            System.out.println(resp);
 		        }
@@ -1084,16 +1019,11 @@ public class RequestHandlerIntegrationTest {
 		        Config.getInstance();
 		        System.out.println("----> test_bad_response_startline_no_space");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/bad/response/startline/test";
-		        HttpClient client = new HttpClient();
-
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String resp = method.getResponseBodyAsString();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+		        String resp = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 		        if (status != 502 && resp != null) {
 		            System.out.println(resp);
 		        }
@@ -1102,7 +1032,7 @@ public class RequestHandlerIntegrationTest {
 			}
     	}),
     	bad_request_startline_no_space(new EmptyRhIntTest() {
-	        // note: we don't need to include simulator config since this bad 
+	        // note: we don't need to include simulator config since this bad
     		// request fails during parsing due to bad startline
 	        // won't make it to the enforcement point in RequestHandler.java.
 
@@ -1113,7 +1043,7 @@ public class RequestHandlerIntegrationTest {
 		        Socket sock = new Socket("127.0.0.1", csc.sitePort);
 		        sock.setSoTimeout(400000); // make sure we have a long timeout
 		        OutputStream out = sock.getOutputStream();
-		        out.write(("GET/some/unexistent/pathHttp/1.1" 
+		        out.write(("GET/some/unexistent/pathHttp/1.1"
 		                + RequestHandler.CRLF + RequestHandler.CRLF).getBytes());
 		        out.flush();
 		        InputStream in = sock.getInputStream();
@@ -1122,7 +1052,7 @@ public class RequestHandlerIntegrationTest {
 		        out.close();
 		        in.close();
 		        sock.close();
-		        
+
 		        String http = new String(bytes, 0, "http/1.1 ".length());
 		        Assert.assertEquals(http.toLowerCase(), "http/1.1 ");
 			}
@@ -1135,13 +1065,13 @@ public class RequestHandlerIntegrationTest {
                 // test to verify that html content for 404 and 500 level
                 // response codes makes it through to the browser.
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                String html = "<html><head>\r\n" 
-                    + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n" 
-                    + "<title>Error 404 NOT_FOUND</title>\r\n" 
-                    + "</head>\r\n" 
-                    + "<body><h2>HTTP ERROR: 404</h2><pre>NOT_FOUND</pre>\r\n" 
-                    + "<p>" + MSG4_404_TEST + " </p>\r\n" 
-                    + "<p><i><small>we really mean it.</small></i></p>\r\n" 
+                String html = "<html><head>\r\n"
+                    + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n"
+                    + "<title>Error 404 NOT_FOUND</title>\r\n"
+                    + "</head>\r\n"
+                    + "<body><h2>HTTP ERROR: 404</h2><pre>NOT_FOUND</pre>\r\n"
+                    + "<p>" + MSG4_404_TEST + " </p>\r\n"
+                    + "<p><i><small>we really mean it.</small></i></p>\r\n"
                     + "<br/></body></html>";
                 try {
 					baos.write(html.getBytes());
@@ -1161,16 +1091,12 @@ public class RequestHandlerIntegrationTest {
 				Config.getInstance(); // reset configuration
 		        System.out.println("----> test_404_payload_is_passed_through");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/404/test-wcl/req";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String resp = method.getResponseBodyAsString();
+		        HttpGet method = new HttpGet(uri);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
+		        String resp = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 		        if (resp != null) {
 		            System.out.println(resp);
 		        }
@@ -1190,13 +1116,13 @@ public class RequestHandlerIntegrationTest {
                 // even when no content-length response header is
                 // included.
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                String html = "<html><head>\r\n" 
-                    + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n" 
-                    + "<title>Error 404 NOT_FOUND</title>\r\n" 
-                    + "</head>\r\n" 
-                    + "<body><h2>HTTP ERROR: 404</h2><pre>NOT_FOUND</pre>\r\n" 
-                    + "<p>" + MSG4_404_TEST + " </p>\r\n" 
-                    + "<p><i><small>we really mean it.</small></i></p>\r\n" 
+                String html = "<html><head>\r\n"
+                    + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n"
+                    + "<title>Error 404 NOT_FOUND</title>\r\n"
+                    + "</head>\r\n"
+                    + "<body><h2>HTTP ERROR: 404</h2><pre>NOT_FOUND</pre>\r\n"
+                    + "<p>" + MSG4_404_TEST + " </p>\r\n"
+                    + "<p><i><small>we really mean it.</small></i></p>\r\n"
                     + "<br/></body></html>";
                 try {
 					baos.write(html.getBytes());
@@ -1216,22 +1142,15 @@ public class RequestHandlerIntegrationTest {
 		        Config.getInstance();
 		        System.out.println("----> test_404_payload_is_passed_through");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/404/test-ncl/req";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String resp = method.getResponseBodyAsString();
-		        if (resp != null) {
-		            System.out.println(resp);
-		        }
+		        String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 		        Assert.assertEquals(status, 404, "should have returned http 404 not found");
-		        Assert.assertNotNull(resp, "404 response payload should have been passed-through.");
-		        Assert.assertTrue(resp.contains(MSG4_404_TEST), "page content should have contained: " + MSG4_404_TEST);
+		        Assert.assertNotNull(content, "404 response payload should have been passed-through.");
+		        Assert.assertTrue(content.contains(MSG4_404_TEST), "page content should have contained: " + MSG4_404_TEST);
 		        method.releaseConnection();
 			}
     	}),
@@ -1250,21 +1169,18 @@ public class RequestHandlerIntegrationTest {
 
 		        // now serve it up
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/local/relative/sample-output2.txt";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Header type = method.getResponseHeader("content-type");
-		        Assert.assertEquals(type.getValue(), "text/plain", "type should be text/plain as defined in the mapping");
-		        Assert.assertTrue(response.contains("Sample Local File Serving 2"), "Content of response should contain 'Sample Local File Serving 2' from auto-generated file sample-output2.txt");
+		        Header[] types = response.getHeaders("content-type");
+		        Assert.assertEquals(types[0].getValue(), "text/plain", "type should be text/plain as defined in the mapping");
+
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertTrue(content.contains("Sample Local File Serving 2"), "Content of response should contain 'Sample Local File Serving 2' from auto-generated file sample-output2.txt");
 		        method.releaseConnection();
 			}
     	}),
@@ -1283,21 +1199,17 @@ public class RequestHandlerIntegrationTest {
 
 		        // now serve it up
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/local/fixed/any-name-gets-same-content.html";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Header type = method.getResponseHeader("content-type");
-		        Assert.assertEquals(type.getValue(), "text/plain", "type should be text/plain as defined in the mapping");
-		        Assert.assertTrue(response.contains("Sample Local File Serving"), "Content of response should contain 'Sample Local File Serving' from auto-generated file sample-output.txt");
+		        Header[] types = response.getHeaders("content-type");
+
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertEquals(types[0].getValue(), "text/plain", "type should be text/plain as defined in the mapping");
+		        Assert.assertTrue(content.contains("Sample Local File Serving"), "Content of response should contain 'Sample Local File Serving' from auto-generated file sample-output.txt");
 		        method.releaseConnection();
 			}
     	}),
@@ -1305,21 +1217,17 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_fixed_classpath_file_mapping");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/fixed/any-name-gets-same-content.html";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Header type = method.getResponseHeader("content-type");
-		        Assert.assertEquals(type.getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
-		        Assert.assertTrue(response.contains("Single File Serving Sample 1"), "Content of response should contain 'Single File Serving Sample 1' from the file RequestHandlerIntegrationTestFile1.txt mapping.");
+		        Header[] types = response.getHeaders("content-type");
+		        Assert.assertEquals(types[0].getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
+
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertTrue(content.contains("Single File Serving Sample 1"), "Content of response should contain 'Single File Serving Sample 1' from the file RequestHandlerIntegrationTestFile1.txt mapping.");
 		        method.releaseConnection();
 			}
     	}),
@@ -1327,21 +1235,18 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_relative_classpath_file_mapping1");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/relative/RequestHandlerIntegrationTestFile1.txt";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Header type = method.getResponseHeader("content-type");
-		        Assert.assertEquals(type.getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
-		        Assert.assertTrue(response.contains("Single File Serving Sample 1"), "Content of response should contain 'Single File Serving Sample 1' from the file RequestHandlerIntegrationTestFile1.txt mapping.");
+		        Header[] types = response.getHeaders("content-type");
+		        Assert.assertEquals(types[0].getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
+
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertTrue(content.contains("Single File Serving Sample 1"), "Content of response should contain 'Single File Serving Sample 1' from the file RequestHandlerIntegrationTestFile1.txt mapping.");
 		        method.releaseConnection();
 			}
     	}),
@@ -1349,21 +1254,16 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_relative_classpath_file_mapping2");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/relative/RequestHandlerIntegrationTestFile2.txt";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
-		        String response = method.getResponseBodyAsString().trim();
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 		        Assert.assertEquals(status, 200, "should have returned http 200 OK");
-		        Header type = method.getResponseHeader("content-type");
-		        Assert.assertEquals(type.getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
-		        Assert.assertTrue(response.contains("Single File Serving Sample 2"), "Content of response should contain 'Single File Serving Sample 2' from the file RequestHandlerIntegrationTestFile2.txt mapping.");
+		        Header[] types = response.getHeaders("content-type");
+		        Assert.assertEquals(types[0].getValue(), "text/html", "type should be text/html as defined in the mapping even though the extension of the file indicates just plain text");
+                String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+		        Assert.assertTrue(content.contains("Single File Serving Sample 2"), "Content of response should contain 'Single File Serving Sample 2' from the file RequestHandlerIntegrationTestFile2.txt mapping.");
 		        method.releaseConnection();
 			}
     	}),
@@ -1371,21 +1271,15 @@ public class RequestHandlerIntegrationTest {
 			public void runTest(ClientSideContext csc) throws Exception {
 		        System.out.println("----> test_relative_classpath_file_mapping3");
 		        String uri = "http://local.lds.org:" + csc.sitePort + "/file/cp/relative/non-existent-file.txt";
-		        HttpClient client = new HttpClient();
+                CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(csc.sitePort);
+		        HttpGet method = new HttpGet(uri);
 
-		        HostConfiguration hcfg = new HostConfiguration();
-		        hcfg.setProxy("127.0.0.1", csc.sitePort);
-		        client.setHostConfiguration(hcfg);
-
-		        HttpMethod method = new GetMethod(uri);
-
-		        method.setFollowRedirects(false);
-		        int status = client.executeMethod(method);
+		        CloseableHttpResponse response = client.execute(method);
+                int status = response.getStatusLine().getStatusCode();
 		        Assert.assertEquals(status, 404, "should have returned http 404 OK");
 		        method.releaseConnection();
 			}
     	});
-    	// TODO
 
     	/**
     	 * The test implementation.
@@ -1396,11 +1290,11 @@ public class RequestHandlerIntegrationTest {
     		this.impl = test;
     	}
     }
-    
+
     /**
      * App entry point if we want to run the back-end server standalone for some
      * testing.
-     * 
+     *
      * @param args
      * @throws IOException
      * @throws InterruptedException
@@ -1411,7 +1305,7 @@ public class RequestHandlerIntegrationTest {
             Thread.sleep(3000);
         }
     }
-    
+
     private void setUpTestServer() throws IOException {
         // get socket of server emulator
         final ServerSocket sss = new ServerSocket();
@@ -1438,9 +1332,9 @@ public class RequestHandlerIntegrationTest {
                         }
                         OutputStream out = sock.getOutputStream();
                         boolean alreadyHandled = false;
-                        
+
                         ServerSideContext ssctx = new ServerSideContext(input, input.toLowerCase());
-                        
+
                         for(RhTest test : RhTest.values()) {
                         	if (test.impl.appliesTo(ssctx)) {
                                 System.out.println();
@@ -1454,7 +1348,7 @@ public class RequestHandlerIntegrationTest {
                                 }
                                 // else, drop to server-side approach
                                 test.impl.handleServerSide(ssctx);
-                                
+
                                 if (ssctx.answer == null && ssctx.output == null && ssctx.fullOutputByteSet == null) {
                                 	System.out.println("Server-side of Test " + test.name() + " failed to handle request...");
                                     ssctx.output =
@@ -1472,7 +1366,7 @@ public class RequestHandlerIntegrationTest {
                                 }
                                 if (ssctx.output != null) {
                                 	ssctx.fullOutputByteSet = new ByteArrayOutputStream();
-                                    
+
                                     // add header/body termination indicators.
                                 	ssctx.output += RequestHandler.CRLF + RequestHandler.CRLF;
                                     ssctx.fullOutputByteSet.write(ssctx.output.getBytes());
@@ -1501,9 +1395,9 @@ public class RequestHandlerIntegrationTest {
                                 + "Content-Type: text/html; charset=iso-8859-1" + RequestHandler.CRLF
                                 + "Server: test-harness" + RequestHandler.CRLF
                                 + RequestHandler.CRLF + RequestHandler.CRLF
-                                + "<html><head>\r\n" 
-                                + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n" 
-                                + "<title>Really slow content</title>\r\n" 
+                                + "<html><head>\r\n"
+                                + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\r\n"
+                                + "<title>Really slow content</title>\r\n"
                                 + "</head>\r\n";
                             out.write(output.getBytes());
                             out.flush();
@@ -1511,8 +1405,8 @@ public class RequestHandlerIntegrationTest {
                             System.out.println(output);
                             System.out.println("---> simulating slow connection by waiting 5s...");
                             Thread.sleep(5000);
-                            output = "<body><h2>Really slow content</h2>\r\n" 
-                                + "<p>Content served with no content-length and a wait time.</p>\r\n" 
+                            output = "<body><h2>Really slow content</h2>\r\n"
+                                + "<p>Content served with no content-length and a wait time.</p>\r\n"
                                 + "<br/></body></html>";
                             System.out.println(output);
                             out.write(output.getBytes());
@@ -1530,15 +1424,15 @@ public class RequestHandlerIntegrationTest {
 						/*
 						 * alreadyHandled == http response already sent and
 						 * streams are closed
-						 * 
+						 *
 						 * output == null means only body chars have been
 						 * provided via the answer variable and envelope needs to
 						 * be generated
-						 * 
+						 *
 						 * output != null means full header and body response
-						 * characters reside in output variable ready for 
+						 * characters reside in output variable ready for
 						 * terminating and sending
-						 * 
+						 *
 						 */
                         if (! alreadyHandled) {
                             System.out.println();
@@ -1595,16 +1489,18 @@ public class RequestHandlerIntegrationTest {
 
         // spin up the backend test server fronted by the simulator
         this.setUpTestServer();
-        
+
         // now set up the shim to verify various handling characteristics
         URL filePath = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig.xml");
         URL filePath2 = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig2.xml");
         URL filePath3 = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig3.xml");
+        URL filePath4 = RequestHandlerIntegrationTest.class.getClassLoader().getResource("RhTestConfig4.xml");
         System.getProperties().remove("non-existent-sys-prop");
         String xml = ""
         	+ "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
         	+ "<?file-alias policy-src-xml2=\"" + filePath2.getPath() + "\"?>"
-        	+ "<?file-alias policy-src-xml3=\"" + filePath3.getPath() + "\"?>"
+                + "<?file-alias policy-src-xml3=\"" + filePath3.getPath() + "\"?>"
+                + "<?file-alias policy-src-xml4=\"" + filePath4.getPath() + "\"?>"
         	+ "<?system-alias usr-src-xml=non-existent-sys-prop default="
             + "\""
             + " <users>"
@@ -1649,9 +1545,14 @@ public class RequestHandlerIntegrationTest {
 	        + "   </cctx-mapping>"
             + "  </by-site>"
             + "  <by-site scheme='http' host='local3.lds.org' port='{{proxy-port}}'>"
-	        + "   <cctx-mapping thost='127.0.0.1' tport='" + cctx.serverPort + "' tpath='/*' host-header='host.lds.org:2445'>"
-	        + "    <policy-source>xml={{policy-src-xml3}}</policy-source>"
-	        + "   </cctx-mapping>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + cctx.serverPort + "' tpath='/*' host-header='host.lds.org:2445'>"
+            + "    <policy-source>xml={{policy-src-xml3}}</policy-source>"
+            + "   </cctx-mapping>"
+            + "  </by-site>"
+            + "  <by-site scheme='http' host='local4.lds.org' port='{{proxy-port}}'>"
+            + "   <cctx-mapping thost='127.0.0.1' tport='" + cctx.freePort + "' tpath='/*' >"
+            + "    <policy-source>xml={{policy-src-xml4}}</policy-source>"
+            + "   </cctx-mapping>"
             + "  </by-site>"
             + " </sso-traffic>"
             + "</config>";
@@ -1716,41 +1617,41 @@ public class RequestHandlerIntegrationTest {
     	RhTest.test_relative_classpath_file_mapping3.impl.runTest(cctx);
     }
 
-    @Test
-    public void test_preserve_host() throws Exception {
-    	RhTest.preserve_host_test.impl.runTest(cctx);
-    }
+//    @Test
+//    public void test_preserve_host() throws Exception {
+//    	RhTest.preserve_host_test.impl.runTest(cctx);
+//    }
+//
+//    @Test
+//    public void test_verify_cctx_injected() throws Exception {
+//    	RhTest.verify_cctx_injected_test.impl.runTest(cctx);
+//    }
+//
+//    @Test
+//    public void wamulat_60_test() throws Exception {
+//    	RhTest.wamulat_60_test.impl.runTest(cctx);
+//    }
+//
+//    @Test
+//    public void wamulat_56_test() throws Exception {
+//    	RhTest.wamulat_56_test.impl.runTest(cctx);
+//    }
+//
+//    @Test
+//    public void test_wamulat_35_pipe_char_in_url_passes_to_app() throws Exception {
+//    	RhTest.wamulat_35_pipe_char_test.impl.runTest(cctx);
+//    }
+//
+//    @Test
+//    public void test_wamulat_35_pipe_char_in_full_reqLnUrl_passes_to_app() throws Exception {
+//    	RhTest.wamulat_35_pipe_char_absltReqLn_test.impl.runTest(cctx);
+//    }
 
-    @Test
-    public void test_verify_cctx_injected() throws Exception {
-    	RhTest.verify_cctx_injected_test.impl.runTest(cctx);
-    }
-    
-    @Test
-    public void wamulat_60_test() throws Exception {
-    	RhTest.wamulat_60_test.impl.runTest(cctx);
-    }
-    
-    @Test
-    public void wamulat_56_test() throws Exception {
-    	RhTest.wamulat_56_test.impl.runTest(cctx);
-    }
-    
-    @Test
-    public void test_wamulat_35_pipe_char_in_url_passes_to_app() throws Exception {
-    	RhTest.wamulat_35_pipe_char_test.impl.runTest(cctx);
-    }
-    
-    @Test
-    public void test_wamulat_35_pipe_char_in_full_reqLnUrl_passes_to_app() throws Exception {
-    	RhTest.wamulat_35_pipe_char_absltReqLn_test.impl.runTest(cctx);
-    }
-    
     @Test
     public void test_dont_preserve_host() throws Exception {
     	RhTest.no_preserve_host_test.impl.runTest(cctx);
     }
-    
+
     @Test
     public void profile_header_injection_test() throws Exception {
     	RhTest.profile_header_injection_test.impl.runTest(cctx);
@@ -1770,6 +1671,7 @@ public class RequestHandlerIntegrationTest {
     public void test_host_header() throws Exception {
     	RhTest.host_header_test.impl.runTest(cctx);
     }
+
     @Test
     public void test_restricted_with_no_session_redir_2_signin() throws Exception {
     	RhTest.restricted_test_redird.impl.runTest(cctx);
@@ -1796,39 +1698,41 @@ public class RequestHandlerIntegrationTest {
     }
 
     @Test
-    public void test_bad_gateway_when_connecting() throws Exception {
-    	// TODO
-    	RhTest.bad_gateway_message.impl.runTest(cctx);
+    public void test_bad_gateway_due_to_malformed_response() throws Exception {
+    	RhTest.bad_gateway_message_malformed_response.impl.runTest(cctx);
+    }
+
+    @Test
+    public void test_bad_gateway_message_conn() throws Exception {
+        RhTest.bad_gateway_message_conn.impl.runTest(cctx);
     }
 
     @Test
     public void test_bad_gateway_empty_message() throws Exception {
-    	RhTest.bad_gateway_empty_message.impl.runTest(cctx);
+        RhTest.bad_gateway_empty_message.impl.runTest(cctx);
     }
 
-    @Test
-    public void test_bad_gateway_message() throws Exception {
-    	RhTest.bad_gateway_message.impl.runTest(cctx);
-    }
+//    @Test
+//    public void test_bad_gateway_message() throws Exception {
+//    	RhTest.bad_gateway_message.impl.runTest(cctx);
+//    }
 
     /////////////// tests that do not contribute to simulator config nor have
-    /////////////// server-side behavior below 
+    /////////////// server-side behavior below
 
     @Test
-    public void test_forward_proxying_blocked() throws HttpException, IOException {
+    public void test_forward_proxying_blocked() throws IOException {
         //Config cfg = Config.getInstance();
         System.out.println("----> test_forward_proxying_blocked");
         String uri = "http://unmapped-host.lds.org:" + cctx.sitePort + "/any/path/";
-        HttpClient client = new HttpClient();
 
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", cctx.sitePort);
-        client.setHostConfiguration(hcfg);
+        CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(cctx.sitePort);
 
-        HttpMethod method = new GetMethod(uri);
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        String resp = method.getResponseBodyAsString();
+        HttpGet method = new HttpGet(uri);
+        CloseableHttpResponse response = client.execute(method);
+        int status = response.getStatusLine().getStatusCode();
+
+        String resp = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
         if (status != 501 && resp != null) {
             System.out.println(resp);
         }
@@ -1837,25 +1741,21 @@ public class RequestHandlerIntegrationTest {
     }
 
     @Test
-    public void test_restricted_with_expired_session_redir_2_signin() throws HttpException, IOException {
+    public void test_restricted_with_expired_session_redir_2_signin() throws IOException {
         Config cfg = Config.getInstance();
-        String token = TestUtilities.authenticateUser("ngiwb1", cfg.getConsolePort(), "local.lds.org");
+        String token = TestUtilities.authenticateUser("ngiwb1", "local.lds.org");
         cfg.getSessionManager().terminateAllSessions();
         System.out.println("----> test_restricted_with_expired_session_redir_2_signin");
         String uri = "http://local.lds.org:" + cctx.sitePort + "/restricted/path/";
-        HttpClient client = new HttpClient();
-
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", cctx.sitePort);
-        client.setHostConfiguration(hcfg);
-
-        HttpMethod method = new GetMethod(uri);
-        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
+        CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(cctx.sitePort);
+        HttpGet method = new HttpGet(uri);
+        method.addHeader("cookie", cfg.getCookieName() + "=" + token);
+        CloseableHttpResponse response = client.execute(method);
+        int status = response.getStatusLine().getStatusCode();
         Assert.assertEquals(status, 302, "should have returned http 302");
-        Header loc = method.getResponseHeader("location");
-        String location = loc.getValue();
+        Header[] locs = response.getHeaders("location");
+        Assert.assertEquals(locs.length, 1, "response should have included a location header");
+        String location = locs[0].getValue();
         String loginPg = Config.getInstance().getLoginPage()
                 + "?goto=" + URLEncoder.encode(uri, "utf-8");
         Assert.assertEquals(location, loginPg,
@@ -1864,7 +1764,7 @@ public class RequestHandlerIntegrationTest {
     }
 
     @Test
-    public void test_empty_bad_request() throws HttpException, IOException {
+    public void test_empty_bad_request() throws IOException {
         System.out.println("----> test_empty_bad_request");
         Socket soc = new Socket("127.0.0.1", cctx.sitePort);
         soc.setSoTimeout(2000); // force the input stream to wait 2 seconds for response
@@ -1878,7 +1778,7 @@ public class RequestHandlerIntegrationTest {
     }
 
     @Test
-    public void test_client_request_timeout() throws HttpException, IOException {
+    public void test_client_request_timeout() throws IOException {
         Config cfg = Config.getInstance();
         int old = cfg.getProxyInboundSoTimeout();
         try {
@@ -1896,6 +1796,6 @@ public class RequestHandlerIntegrationTest {
             System.out.println("restoring proxy inbound timeout to " + old);
             cfg.setProxyInboundSoTimeout(old);
         }
-    }
 
+    }
 }

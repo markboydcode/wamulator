@@ -1,19 +1,9 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URL;
-
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.lds.sso.appwrap.AppEndPoint;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
 import org.lds.sso.appwrap.TestUtilities;
@@ -24,16 +14,23 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
 public class ServiceUrlInjected4RootUrlTest {
     protected static final String MSG4_404_TEST = "don't request this resource. it isn't there.";
     private Service service = null;
     private Thread server = null;
     private int sitePort;
     private int serverPort;
+    private CloseableHttpClient client;
     private int freePort;
 	private int consolePort;
 	private int proxyPort;
-    
+
     private void setUpTestServer() throws IOException {
         // get socket of server emulator
         final ServerSocket sss = new ServerSocket();
@@ -143,141 +140,139 @@ public class ServiceUrlInjected4RootUrlTest {
         // first clear any config residue
         Config cfg = new Config();
 
-        // find a free port on which nothing is listening
-        consolePort = getAvailablePort("console-port");
-        proxyPort = getAvailablePort("proxy-port");
         // spin up the backend test server fronted by the simulator
         this.setUpTestServer();
-        
+
         // now set up the shim to verify various handling characteristics
-        System.getProperties().remove("non-existent-sys-prop");
-        URL filePath = ServiceUrlInjected4RootUrlTest.class.getClassLoader().getResource("ServiceUrlInjectedTestConfig.xml");
-        service = Service.getService("string:"
-        	+ "<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>"
-            + "<?alias console-port=" + consolePort + "?>"
-            + "<?alias proxy-port=" + proxyPort + "?>"
-            + "<?system-alias user-src-props=non-existent-sys-prop default="
-            + "\"xml="
-            + " <users>"
-            + "  <user name='ngiwb2'>"
-            + "   <Att name='apps' value='aaa,bbb,ccc'/>"
-            + "   <Att name='preferredname' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <Att name='policy-givenname' value='Jay Admin'/>"
-            + "   <Att name='policy-preferredlanguage' value='eng'/>"
-            + "   <Att name='policy-preferred-name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <Att name='policy-given-name' value='Jay Admin'/>"
-            + "   <Att name='policy-preferred-language' value='eng'/>"
-            + "   <Att name='policy-preferred_name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>"
-            + "   <Att name='policy-given_name' value='Jay Admin'/>"
-            + "   <Att name='policy-preferred_language' value='eng'/>"
-            + "  </user>"
-            + " </users>"
-            + "\"?>"
-            + "<config console-port='{{console-port}}' proxy-port='{{proxy-port}}'>"
-            + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
-            + " <sso-cookie name='lds-policy' domain='.ldschurch.org' />"
-            + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
-            + " <sso-traffic strip-empty-headers='true'>"
-            + "  <by-site scheme='http' host='local.ldschurch.org' port='{{proxy-port}}'>"
-            + "   <cctx-mapping thost='127.0.0.1' tport='" + serverPort + "'>"
-            + "    <policy-source>xml={{policy-src-xml}}</policy-source>"
-            + "   </cctx-mapping>"
-            + "  </by-site>"
-            + " </sso-traffic>"
-            + " <user-source type='xml'>{{user-src-props}}</user-source>"
-            + "</config>");
+        System.getProperties().remove("non-existent-sys-prop"); // make sure such a prop doesn't exist so uses defaults
+        StringBuffer sb = new StringBuffer()
+                .append("string:<?file-alias policy-src-xml=non-existent-sys-prop default=")
+                .append("\"xml=")
+                .append("<deployment at='2012-11-30_11:00:46.208-0700'>")
+                .append(" <environment id='dev' host='dev.lds.org (exposee)' />")
+                .append(" <application id='local.lds.org/' authHost='labs-local.lds.org' cctx='/'>")
+                .append("  <authentication scheme='login' name='WAM-DEV LDS Login Form' />")
+                .append("  <authorization>")
+                .append("   <default format='exposee' value='Allow Authenticated Users'></default>")
+                .append("   <rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='true'>")
+                .append("    <allow>")
+                .append("     <condition type='role' value='Anyone' />")
+                .append("    </allow>")
+                .append("   </rule>")
+                .append("  </authorization>")
+                .append("  <policy name='global/{/.../*,*}'>")
+                .append("   <url>global/{/.../*,*}</url>")
+                .append("   <operations>GET,POST</operations>")
+                .append("   <authentication scheme='login' name='WAM-DEV LDS Login Form' />")
+                .append("   <authorization format='exposee' value='Allow Authenticated Users'/>")
+                .append("  </policy>")
+                .append(" </application>")
+                .append("</deployment>")
+                .append("\"?>")
+                .append("<?system-alias user-src-props=non-existent-sys-prop default=")
+                .append("\"xml=")
+                .append(" <users>")
+                .append("  <user name='ngiwb2'>")
+                .append("   <Att name='apps' value='aaa,bbb,ccc'/>")
+                .append("   <Att name='preferredname' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>")
+                .append("   <Att name='policy-givenname' value='Jay Admin'/>")
+                .append("   <Att name='policy-preferredlanguage' value='eng'/>")
+                .append("   <Att name='policy-preferred-name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>")
+                .append("   <Att name='policy-given-name' value='Jay Admin'/>")
+                .append("   <Att name='policy-preferred-language' value='eng'/>")
+                .append("   <Att name='policy-preferred_name' value='Jay 金&lt;script>alert(0)&lt;/script>虬 Admin'/>")
+                .append("   <Att name='policy-given_name' value='Jay Admin'/>")
+                .append("   <Att name='policy-preferred_language' value='eng'/>")
+                .append("  </user>")
+                .append(" </users>")
+                .append("\"?>")
+                .append("<config console-port='auto' proxy-port='auto'>")
+                .append(" <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />")
+                .append(" <sso-cookie name='lds-policy' domain='.ldschurch.org' />")
+                .append(" <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>")
+                .append(" <sso-traffic strip-empty-headers='true'>")
+                .append("  <by-site scheme='http' host='local.ldschurch.org' port='{{proxy-port}}'>")
+                .append("   <cctx-mapping thost='127.0.0.1' tport='")
+                .append(serverPort)
+                .append("'>")
+                .append("    <policy-source>{{policy-src-xml}}</policy-source>")
+                .append("   </cctx-mapping>")
+                .append("  </by-site>")
+                .append(" </sso-traffic>")
+                .append(" <user-source type='xml'>{{user-src-props}}</user-source>")
+                .append("</config>");
+        service = Service.getService(sb.toString());
         service.start();
         sitePort = Config.getInstance().getProxyPort();
-        System.out.println(); // to leave a gap before test output.
-
-
+        client = TestUtilities.createWamulatorProxiedHttpClient(sitePort);
     }
-
-    private int getAvailablePort(String portName) throws IOException {
-    	int port = -1;
-        ServerSocket portFinder = new ServerSocket();
-        portFinder.setReuseAddress(true);
-        portFinder.bind(null);
-        port = portFinder.getLocalPort();
-        try {
-            portFinder.close();
-        }
-        catch(Exception e) {
-            System.out.println("Exception releasing server port for use as " + portName + e);
-        }
-		return port;
-	}
 
 	@AfterClass
     public void tearDownSimulator() throws Exception {
+        client.close();
         service.stop();
         server.interrupt();
     }
 
-@Test
-    public void test_policy_service_url_injected_4_globalpath() throws HttpException, IOException {
+    @Test
+    public void test_policy_service_url_injected_4_globalpath() throws IOException {
     	Config cfg = Config.getInstance();
         System.out.println("----> test_policy_service_url_injected_4_globalpath ");
-        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.ldschurch.org");
+        String token = TestUtilities.authenticateUser("ngiwb2", "local.ldschurch.org");
         String uri = "http://local.ldschurch.org:" + sitePort + "/global/some/path/";
-        HttpClient client = new HttpClient();
 
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", sitePort);
-        client.setHostConfiguration(hcfg);
-
-        HttpMethod method = new GetMethod(uri);
-        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim();
+        HttpGet method = new HttpGet(uri);
+        method.addHeader("cookie", cfg.getCookieName() + "=" + token);
+        CloseableHttpResponse response = client.execute(method);
+        int status = response.getStatusLine().getStatusCode();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
-        Assert.assertEquals(response, "policy-service-url: http://local.ldschurch.org:" + cfg.getConsolePort() + "/oes/v{version}/rest/local.ldschurch.org/");
-        method.releaseConnection();
+
+        String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+        String expected = GlobalHeaderNames.SERVICE_URL + ": " + AppEndPoint.getPolicyServiceUrlHeaderValue(cfg, "local.ldschurch.org", null);
+
+        Assert.assertEquals(content, expected);
+        response.close();
     }
 
-@Test
-    public void test_policy_service_url_injected_4_root_path() throws HttpException, IOException {
+    @Test
+    public void test_policy_service_url_injected_4_root_path() throws IOException {
     	Config cfg = Config.getInstance();
         System.out.println("----> test_policy_service_url_injected_4_rootpath ");
-        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.ldschurch.org");
+        String token = TestUtilities.authenticateUser("ngiwb2", "local.ldschurch.org");
         String uri = "http://local.ldschurch.org:" + sitePort + "/";
-        HttpClient client = new HttpClient();
 
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", sitePort);
-        client.setHostConfiguration(hcfg);
-
-        HttpMethod method = new GetMethod(uri);
-        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim();
+        HttpGet method = new HttpGet(uri);
+        method.addHeader("cookie", cfg.getCookieName() + "=" + token);
+        CloseableHttpResponse response = client.execute(method);
+        int status = response.getStatusLine().getStatusCode();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
-        Assert.assertEquals(response, "policy-service-url: http://local.ldschurch.org:" + cfg.getConsolePort() + "/oes/v{version}/rest/local.ldschurch.org/");
-        method.releaseConnection();
+
+        String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+        String expected = GlobalHeaderNames.SERVICE_URL + ": " + AppEndPoint.getPolicyServiceUrlHeaderValue(cfg, "local.ldschurch.org", null);
+
+        Assert.assertEquals(content, expected);
+        response.close();
     }
 
-@Test
-    public void test_policy_service_url_injected_4_root_path_match() throws HttpException, IOException {
+    @Test
+    public void test_policy_service_url_injected_4_root_path_match() throws IOException {
     	Config cfg = Config.getInstance();
         System.out.println("----> test_policy_service_url_injected_4_root_path_match ");
-        String token = TestUtilities.authenticateUser("ngiwb2", cfg.getConsolePort(), "local.ldschurch.org");
+        String token = TestUtilities.authenticateUser("ngiwb2", "local.ldschurch.org");
         String uri = "http://local.ldschurch.org:" + sitePort + "/resources/css/pages/home.css";
-        HttpClient client = new HttpClient();
 
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", sitePort);
-        client.setHostConfiguration(hcfg);
-
-        HttpMethod method = new GetMethod(uri);
-        method.setRequestHeader(new Header("cookie", cfg.getCookieName() + "=" + token));
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        String response = method.getResponseBodyAsString().trim();
+        CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(sitePort);
+        HttpGet method = new HttpGet(uri);
+        method.addHeader("cookie", cfg.getCookieName() + "=" + token);
+        CloseableHttpResponse response = client.execute(method);
+        int status = response.getStatusLine().getStatusCode();
         Assert.assertEquals(status, 200, "should have returned http 200 OK");
-        Assert.assertEquals(response, "policy-service-url: http://local.ldschurch.org:" + cfg.getConsolePort() + "/oes/v{version}/rest/local.ldschurch.org/");
-        method.releaseConnection();
+
+        String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+        String expected = GlobalHeaderNames.SERVICE_URL + ": " + AppEndPoint.getPolicyServiceUrlHeaderValue(cfg, "local.ldschurch.org", null);
+
+        Assert.assertEquals(content, expected);
+        response.close();
     }
 
 }

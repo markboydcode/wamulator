@@ -1,13 +1,13 @@
 package org.lds.sso.appwrap.ui;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.eclipse.jetty.server.Request;
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.rest.RestHandlerBase;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Serves up an html page with the text "<simulator version> is alive!" in the 
@@ -19,15 +19,15 @@ import org.lds.sso.appwrap.rest.RestHandlerBase;
 public class ImAliveHandler extends RestHandlerBase {
 
     public static final String IS_ALIVE = " is Alive!";
-    public static final String IS_ALIVE_PATH = "/is-alive";
+    public static final String IS_ALIVE_PATH = Config.getInstance().getWamulatorServiceUrlBase() + "/is-alive";
     
     public ImAliveHandler(String pathPrefix) {
         super(pathPrefix);
     }
 
     @Override
-    protected void doHandle(String target, HttpServletRequest request,
-            HttpServletResponse response, int dispatch) throws IOException {
+    protected void doHandle(String target, Request baseRequest, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
         Config cfg = Config.getInstance();
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();

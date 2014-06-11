@@ -1,17 +1,11 @@
 package org.lds.sso.appwrap.identity;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.logging.Logger;
-
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.io.LogUtils;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 public class SessionManager {
 	private static final Logger cLog = Logger.getLogger(SessionManager.class.getName());
@@ -306,7 +300,6 @@ public class SessionManager {
 	 * Used during parsing of configuration file to add a cookie domain as 
 	 * declared via sso-cookie directives.
 	 * 
-	 * @param cookieName
 	 * @param cookieDomain
 	 */
 	public void addCookieDomain(String cookieDomain) {

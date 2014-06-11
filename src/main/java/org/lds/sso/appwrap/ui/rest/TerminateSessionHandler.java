@@ -1,15 +1,15 @@
 package org.lds.sso.appwrap.ui.rest;
 
-import java.io.IOException;
-import java.util.logging.Logger;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.server.Request;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * Handles request to start a session for a user by setting a suitable
@@ -27,7 +27,7 @@ public class TerminateSessionHandler extends RestHandlerBase {
 	}
 
 	@Override
-	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
+	protected void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException {
 		/**
 		 * Get the current config instance each time which allows for reconfig

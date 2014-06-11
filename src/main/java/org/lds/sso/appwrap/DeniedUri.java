@@ -40,6 +40,11 @@ public class DeniedUri extends UnenforcedUri {
         }
     }
 
+    /**
+     * Returns true if all actions are denied or if the specified action is in the list of actions for this Uri.
+     * @param action
+     * @return
+     */
     public boolean denied(String action) {
         if (deny_all) {
             return true;

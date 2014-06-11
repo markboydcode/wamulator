@@ -1,11 +1,5 @@
 package org.lds.sso.appwrap;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.XmlConfigLoader2.CfgContentHandler;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
@@ -16,6 +10,12 @@ import org.lds.sso.appwrap.xml.AliasHolder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
 public class XmlConfigLoaderTest {
     
@@ -305,7 +305,7 @@ public class XmlConfigLoaderTest {
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        Assert.assertEquals(cfg.getLoginPage(), "http://local.lds.org:88/admin/selectUser.jsp");
+        Assert.assertEquals(cfg.getLoginPage(), "http://local.lds.org:88" + Config.WAMULATOR_SIGNIN_PAGE_PATH);
     }
     
     @Test
@@ -321,8 +321,8 @@ public class XmlConfigLoaderTest {
             + "</config>";
         Config cfg = new Config();
         XmlConfigLoader2.load(xml);
-        Assert.assertEquals(cfg.getLoginPage(), "http://local.lds.org:" 
-                + cfg.getConsolePort() + "/admin/selectUser.jsp");
+        Assert.assertEquals(cfg.getLoginPage(), "http://local.lds.org:" + cfg.getConsolePort()
+                + Config.WAMULATOR_SIGNIN_PAGE_PATH);
     }
     
     @Test

@@ -1,28 +1,5 @@
 package org.lds.sso.appwrap;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-
 import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.OutboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
@@ -42,13 +19,21 @@ import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
 import org.lds.sso.appwrap.xml.PlaintextAlias;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLReader;
+import org.xml.sax.*;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class XmlConfigLoader2 {
     public static final String WAMULATOR_SCHEMA_NAMESPACE_URI = "http://code.lds.org/schema/wamulator";
@@ -813,11 +798,7 @@ public class XmlConfigLoader2 {
             			+ GlobalHeaderNames.SERVICE_URL 
             			+ " is injected automatically.");
             } else if (path.matches("/config/sso-traffic")) {
-                cfg.setStripEmptyHeaders(Boolean.parseBoolean(getStringAtt(
-                        "strip-empty-headers", path, atts, false)));
-                if (cfg.getStripEmptyHeaders()) {
-                    LogUtils.info(cLog, "Proxy is configured to strip empty headers.");
-                }
+                // must be here so it doesn't throw unsupported element incurred
             } else if (path.matches("/config/sso-traffic/by-site")) {
                 InboundScheme scheme = InboundScheme.fromMoniker(atts.getValue("scheme"));
                 String host = getStringAtt("host", path, atts);
@@ -1086,16 +1067,6 @@ public class XmlConfigLoader2 {
                 src.setUserManager(cfg.getUserManager());
                 parsingContextAccessor.get().put(PARSING_CURR_EXT_USR_SRC, src);
                 parsingContextAccessor.get().put(PARSING_USR_SRC_CONTENT, new StringBuffer());
-            } else if (path.matches("/config/sso-traffic/rewrite-redirect")) {
-                String from = getStringAtt("from", path, atts);
-                String to = getStringAtt("to", path, atts);
-                TrafficManager mgr = cfg.getTrafficManager();
-                mgr.addRewriteForRedirect(from, to);
-            } else if (path.matches("/config/sso-traffic/rewrite-cookie")) {
-                String from = getStringAtt("from-path", path, atts);
-                String to = getStringAtt("to-path", path, atts);
-                TrafficManager mgr = cfg.getTrafficManager();
-                mgr.addRewriteForCookie(from, to);
             } else if (path.matches("/config/sso-entitlements")) {
                 throw new IllegalArgumentException(
                         "ERROR: The sso-entitlements element "
@@ -1103,6 +1074,9 @@ public class XmlConfigLoader2 {
                                 + "/config/sso-traffic/by-site element and be renamed to just 'entitlements'. "
                                 + "Its policy-domain attribute is no longer used but its nested content "
                                 + "remains unchanged. Please apply these changes and restart.");
+            } else {
+                throw new IllegalArgumentException(
+                        "ERROR: Encountered unrecognized/unsupported element at " + path.toString());
             }
         }
 
@@ -1123,8 +1097,11 @@ public class XmlConfigLoader2 {
 				}
                 cfg.addExternalUserSource(src);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {
+                // set up a content handler for parsing the policy file indicated by the textual content of this element
+                // therefore, also set up a StringBuffer to capture the embedded text.
             	WamulatorPolicySource src = (WamulatorPolicySource) parsingContextAccessor.get().get(PARSING_CURR_EXT_POL_SRC);
             	StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_POL_SRC_CONTENT);
+
                 src.setSourceName(chars.toString().replace("xml={{", "").replace("}}", ""));
             	try {
             		src.setConfig(path, parseSourceContent(path, chars.toString()));
@@ -1153,12 +1130,16 @@ public class XmlConfigLoader2 {
         }
 
         /**
-         * Parses textual content of a /config/user-source element which should
+         * Parses textual content of /config/user-source or
+         * /config/by-site/cctx-mapping/policy-source elements which should
          * be in the form of a single macro once leading and trailing white 
-         * space is removed or if not that them java.util.Properties textual
+         * space is removed or be content in java.util.Properties textual
          * format. For the former the macro is resolved and is assumed to be 
-         * in java.util.Properites forms.
-         * In text
+         * in java.util.Properties textual form. For java.util.Properties
+         * content, once loaded into a Properties object each value is then
+         * resolved for any nested macros before that Properties object is
+         * made available to processing for that given configuration element.
+         *
          * @param path 
          * @param content
          * @return
@@ -1200,6 +1181,7 @@ public class XmlConfigLoader2 {
                 StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_USR_SRC_CONTENT);
                 chars.append(ch, start, length);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping/policy-source")) {
+                // capture textual content of the policy-source element to learn what policies we have or where they are
             	StringBuffer chars = (StringBuffer) parsingContextAccessor.get().get(PARSING_POL_SRC_CONTENT);
             	chars.append(ch, start, length);
             }

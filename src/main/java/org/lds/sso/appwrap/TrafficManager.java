@@ -1,18 +1,16 @@
 package org.lds.sso.appwrap;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
 import org.lds.sso.appwrap.identity.SessionManager;
 import org.lds.sso.appwrap.identity.User;
-import org.lds.sso.appwrap.proxy.CookiePathRewriter;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Manages in-memory registered ties between the canonical URL space and the
@@ -34,10 +32,6 @@ public class TrafficManager {
 	protected List<SiteMatcher> matchers = new ArrayList<SiteMatcher>();
 
 	private SiteMatcher lastMatcherAdded = null;
-
-	private Map<String,String> redirectRewrites = new HashMap<String,String>();
-
-	private Map<String,String> cookieRewrites = new HashMap<String,String>();
 
     private SiteMatcher masterSite;
 
@@ -74,10 +68,6 @@ public class TrafficManager {
     /**
      * Determines if the passed-in url is an unenforced Url.
      * 
-     * @param uri
-     * @param string
-     * @param i
-     * @return
      */
     public boolean isUnenforced(Scheme scheme, String host, int port,
             String path, String query) {
@@ -91,10 +81,6 @@ public class TrafficManager {
     /**
      * Determines if the passed-in url is an enforced Url.
      * 
-     * @param uri
-     * @param string
-     * @param i
-     * @return
      */
     public boolean isEnforced(Scheme scheme, String host, int port,
             String path, String query) {
@@ -108,8 +94,6 @@ public class TrafficManager {
 	/**
 	 * Determines if the passed-in url is permitted by the user.
 	 * 
-	 * @param uri
-	 * @return
 	 */
 	public boolean isPermitted(Scheme scheme, String host, int port, String action, String path, String query, User user) {
 	    SiteMatcher m = getSite(scheme, host, port);
@@ -215,56 +199,6 @@ public class TrafficManager {
 		return this.isPermitted(Scheme.fromMoniker(u.getScheme()), u.getHost(), port, action, u.getPath(), query, user);
 	}
 
-	public void addRewriteForRedirect(String from, String to) {
-		this.redirectRewrites.put(from, to);
-	}
-
-	public void addRewriteForCookie(String fromPath, String toPath) {
-		this.cookieRewrites.put(fromPath, toPath);
-	}
-
-	/**
-	 * Takes the passed in absolute URL gleaned from a Location header to see
-	 * if it matches any configured rewrite directives. Returns null if it does
-	 * not match any directive and hence need not be rewritten. Returns the 
-	 * a rewritten absolute URL if a match is found.
-	 * 
-	 * @param redirect
-	 * @return
-	 */
-	public String rewriteRedirect(String redirect) {
-		for (Map.Entry<String, String> ent : redirectRewrites.entrySet() ) {
-			if (redirect.startsWith(ent.getKey())) {
-				return ent.getValue() + redirect.substring(ent.getKey().length());
-			}
-		}
-		return null; // match not found, don't rewrite
-	}
-
-	/**
-	 * Returns true if any cookie rewrite directives exist indicating that
-	 * cookie header parsing should be persued.
-	 * 
-	 * @return
-	 */
-	public boolean cookieRewritesExist() {
-		return this.cookieRewrites.size() > 0;
-	}
-	
-	/**
-	 * Takes the passed set-cookie header value to see
-	 * if it the path of any contained cookie matches any configured cookie 
-	 * rewrite directives. If there are no matches it is returned unchanged.
-	 * If any matches are found then the returned value will contain rewritten
-	 * paths.
-	 * 
-	 * @param redirect
-	 * @return
-	 */
-	public String rewriteCookiePath(String cookie) {
-		return new CookiePathRewriter(cookie, this.cookieRewrites).getHeader();
-	}
-    
     public List<SiteMatcher> getSites() {
         return this.matchers;
     }

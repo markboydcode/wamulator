@@ -1,46 +1,27 @@
 package org.lds.sso.appwrap.policy;
 
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
 import org.apache.commons.lang.StringUtils;
-import org.lds.sso.appwrap.AllowedUri;
-import org.lds.sso.appwrap.AppEndPoint;
+import org.lds.sso.appwrap.*;
 import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.OutboundScheme;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.DeniedUri;
-import org.lds.sso.appwrap.EndPoint;
-import org.lds.sso.appwrap.SiteMatcher;
-import org.lds.sso.appwrap.TrafficManager;
-import org.lds.sso.appwrap.UnenforcedUri;
 import org.lds.sso.appwrap.XmlConfigLoader2.Path;
 import org.lds.sso.appwrap.exception.ConfigParserException;
 import org.lds.sso.appwrap.identity.ExternalUserSource.ConfigurationException;
 import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.io.SimpleErrorHandler;
-import org.lds.sso.appwrap.model.AuthNScheme;
-import org.lds.sso.appwrap.model.AuthZRule;
-import org.lds.sso.appwrap.model.Condition;
-import org.lds.sso.appwrap.model.Header;
-import org.lds.sso.appwrap.model.Policy;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
+import org.lds.sso.appwrap.model.*;
+import org.xml.sax.*;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Handles parsing and interpretation of the policy file associated with a cctx-mapping element in the config file.
+ */
 public class WamulatorPolicySource implements ContentHandler {
 	private static final Logger cLog = Logger.getLogger(WamulatorPolicySource.class.getName());
 	private ThreadLocal<Map<String,Object>> parsingContextAccessor;
@@ -105,12 +86,20 @@ public class WamulatorPolicySource implements ContentHandler {
 		this.cctxTport = cctxTport;
         this.sourceName = sourceName;
 	}
-	
+
+    /**
+     * Accepts a java.util.Properties object looking for a contained "xml" key whose
+     * value should be XML text in Policy Exposee format.
+     *
+     * @param path
+     * @param props
+     * @throws ConfigurationException
+     */
 	public void setConfig(Path path, Properties props) throws ConfigurationException {
 		String xml = props.getProperty("xml");
         
         if (StringUtils.isEmpty(xml)) {
-        	cLog.log(Level.WARNING, "No Configuration for xml policy-source at " 
+        	cLog.log(Level.WARNING, "No Configuration for xml policy-source in "
         			+ WamulatorPolicySource.class.getSimpleName()
         			+ " at " + path
         			+ ". No Policies will be available from this source.");
@@ -146,7 +135,9 @@ public class WamulatorPolicySource implements ContentHandler {
         	rdr.setErrorHandler(new SimpleErrorHandler(cLog));
             rdr.parse(src);
         } catch (Exception e) {
-        	throw new ConfigurationException("Unable to load policies for policy-source at " + path, e);
+        	throw new ConfigurationException("Unable to load policies for policy-source at " + path
+                    + ". Content parsed as well-formed XML is shown between the lines: \n---------------------\n"
+                    + xml + "\n---------------------", e);
         }
 	}
 
@@ -273,8 +264,8 @@ public class WamulatorPolicySource implements ContentHandler {
             
             sm.addMapping(ep);
             
-            addPolicyToSiteMatcher(sm, defPolicy.getUrl(), defPolicy);
-            
+            addPolicyToSiteMatcher(sm, defPolicy, path);
+
             if (ep instanceof AppEndPoint) {
             	AppEndPoint aep = (AppEndPoint) ep;
             	aep.setFixedHeaders(defAuthZFixedHeaders);
@@ -303,7 +294,7 @@ public class WamulatorPolicySource implements ContentHandler {
             		cctxInjectScheme, cctxSchemeHeaderOvrd, sourceName, curPolicy.getName());
             sm.addMapping(ep);
             
-            addPolicyToSiteMatcher(sm, curPolicy.getUrl(), curPolicy);
+            addPolicyToSiteMatcher(sm, curPolicy, path);
             
             if (ep instanceof AppEndPoint) {
             	AppEndPoint aep = (AppEndPoint) ep;
@@ -392,19 +383,35 @@ public class WamulatorPolicySource implements ContentHandler {
 	@Override
 	public void skippedEntity(String name) throws SAXException {
 	}
-	
-	private void addPolicyToSiteMatcher(SiteMatcher sm, String url, Policy policy) {
+
+    /**
+     * Translate policy enforcement model to wamulator enforcement model.
+     *
+     * Summary:
+     * If policy does not have an authentication element then the default defined in policy file at
+     * /deployment/application/authentication is used for that policy. Currently, this is one of
+     * 'anonymous' or 'login'.
+     *
+     * If a policy has the 'anonymous' authentication scheme then its the scheme, host, port, url, and
+     * query string are added as a wamulator UnenforcedUri object.
+     *
+     *
+     * @param sm
+     * @param policy
+     */
+	private void addPolicyToSiteMatcher(SiteMatcher sm, Policy policy, Path path) {
 		String[] actions = policy.getOperations().toArray(new String[] {});
+        String policyUrl = policy.getUrl();
 		
 		if (policy.getAuthNScheme() == null) {
-			LogUtils.warning(cLog, policy.getName() + " does not have an authentication scheme defined." +
-					" Falling back to the Default authentication scheme.");
+			LogUtils.warning(cLog, policy.getName() + " at " + path + " does not have an authentication scheme defined." +
+					" Using the Default authentication scheme.");
 			policy.setAuthNScheme(new AuthNScheme(defAuthNScheme, defAuthNName));
 		}
 		
 		if ("anonymous".equals(policy.getAuthNScheme().getScheme())) {
-        	UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), url, 
-            		policy.getQueryString(), url);
+        	UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), policyUrl,
+            		policy.getQueryString(), policyUrl);
         	sm.addUnenforcedUri(ue);
         } else {
             String cond = policy.getAuthZRuleString();
@@ -412,13 +419,15 @@ public class WamulatorPolicySource implements ContentHandler {
             // Make sure this rule exists
             AuthZRule ar = authorizationRules.get(cond);
         	if (ar == null && cond != null && (cond.contains("&") || cond.contains("|") || cond.contains("(") || cond.contains(")"))) {
-        		LogUtils.warning(cLog, "The outcome of having combined Authorization Rules in the Authorization Expression " +
-        				"can have an unexpected outcome. For this reason it is not supported in the WAMulator " + 
+                // indicate that combincatorial authorization expressions are not supported
+        		LogUtils.warning(cLog, "The outcome of having combined Authorization Rules in the Authorization Expression at " + path +
+        				" can have an unexpected outcome. For this reason it is not supported in the WAMulator " +
         				"at this time. The production WAM environment does support this functionality. Please fix: " + cond);
         	} else if (ar == null && !"Default".equals(policy.getName())) {
-        		throw new ConfigParserException("The authorization rule must be defined before it is used: " + cond);
+                // specified authorization rule not found and this is not the Default policy object so stop with error
+        		throw new ConfigParserException("An authorization rule for name '" + cond + "' referenced in " + path + " was not found and must be defined.");
         	} else {
-        		sm.addAllowTakesPrecedence(url, ar.allowTakesPrecedence());
+        		sm.addAllowTakesPrecedence(policyUrl, ar.allowTakesPrecedence());
         		Condition allowCondition = ar.getAllowCondition();
         		if (allowCondition != null) {
         			String allow = allowCondition.getValue();
@@ -430,8 +439,8 @@ public class WamulatorPolicySource implements ContentHandler {
         					allow = null;
         				}
         			}
-        			AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm.getPort(), url, 
-        					policy.getQueryString(), actions, url);
+        			AllowedUri au = new AllowedUri(sm.getScheme(), sm.getHost(), sm.getPort(), policyUrl,
+        					policy.getQueryString(), actions, policyUrl);
         			
         			sm.addAllowedUri(au, cond, allow);
         		}
@@ -447,8 +456,8 @@ public class WamulatorPolicySource implements ContentHandler {
         					deny = "*";
         				}
         			}
-        			DeniedUri du = new DeniedUri(sm.getScheme(), sm.getHost(), sm.getPort(), url, 
-        					policy.getQueryString(), actions, url);
+        			DeniedUri du = new DeniedUri(sm.getScheme(), sm.getHost(), sm.getPort(), policyUrl,
+        					policy.getQueryString(), actions, policyUrl);
         			
         			sm.addDeniedUri(du, cond, deny);
         		}

@@ -1,30 +1,29 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 
-<!-- 
+<!--
  Sample config serving a file for all requests to a url path of:
- 
+
  /church-calendar/services/lucrs/evt/0/
  -->
- 
-<config proxy-port="auto" console-port="auto" rest-version="CD-OESv1">
-    <console-recording sso="true" rest="true" max-entries="1000" enable-debug-logging="true"/>
-    <sso-cookie name="lds-policy" domain=".lds.org"/>
+<config proxy-port='auto' console-port='auto' rest-version='CD-OESv1'>
+    <console-recording sso='true' rest='true' max-entries='1000' enable-debug-logging='true'/>
+    <sso-cookie name='lds-policy' domain='.lds.org'/>
 
     <sso-traffic>
-        <by-site host="local.lds.org" port="{{proxy-port}}">
-            <cctx-file cctx="/church-calendar/services/lucrs/evt/0/*" 
-                file="classpath:config-samples/ngiwb1-cal-data.json"  
-                content-type="application/json"/>
-<!--            file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
-            <unenforced cpath="/church-calendar/*"/>
+        <by-site host='local.lds.org' port='{{proxy-port}}'>
+            <cctx-file cctx='/church-calendar/services/lucrs/evt/0/*' 
+                file='classpath:config-samples/ngiwb1-cal-data.json'  
+                content-type='application/json'/>
+<!--            file='D:/ngiwb1-cal-data.json'   or file path could be local drive path --> 
+            <unenforced cpath='/church-calendar/*'/>
         </by-site>
         <!-- need this one for unit test since build system can't resolve local.lds.org -->
-        <by-site host="127.0.0.1" port="{{proxy-port}}">
-            <cctx-file cctx="/church-calendar/services/lucrs/evt/0/*" 
-                file="classpath:config-samples/ngiwb1-cal-data.json"  
-                content-type="application/json"/>
-<!--            file="D:/ngiwb1-cal-data.json"   or file path could be local drive path --> 
-            <unenforced cpath="/church-calendar/*"/>
+        <by-site host='127.0.0.1' port='{{proxy-port}}'>
+            <cctx-file cctx='/church-calendar/services/lucrs/evt/0/*' 
+                file='classpath:config-samples/ngiwb1-cal-data.json'  
+                content-type='application/json'/>
+<!--            file='D:/ngiwb1-cal-data.json'   or file path could be local drive path --> 
+            <unenforced cpath='/church-calendar/*'/>
         </by-site>
     </sso-traffic>
 </config>

@@ -5,7 +5,6 @@ package org.lds.sso.appwrap;
  * User: FoxleyTD
  * Date: 9/13/13
  * Time: 4:54 PM
- * To change this template use File | Settings | File Templates.
  */
 public class UnenforcedEndPoint implements EndPoint {
     private String originalName;
@@ -18,7 +17,7 @@ public class UnenforcedEndPoint implements EndPoint {
     private String queryString;
 
     /**
-     * A number that indicates the order of declaration in the configuation file
+     * A number that indicates the order of declaration in the configuration file
      * in xml document order within a by-site element for use in comparable 
      * operations allowing endpoint with hierarchically nested canonical urls
      * to coexist but allow for the nested one to be declared first and match

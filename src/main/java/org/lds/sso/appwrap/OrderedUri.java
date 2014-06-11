@@ -5,6 +5,9 @@ import java.util.logging.Logger;
 import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
 
+/**
+ * Represents URIs that sort according to the document order in the XML configuration.
+ */
 public class OrderedUri implements Comparable<OrderedUri>{
 	private static Logger logger = Logger.getLogger(OrderedUri.class.getName());
 

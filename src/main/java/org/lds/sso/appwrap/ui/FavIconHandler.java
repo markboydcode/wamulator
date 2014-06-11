@@ -1,14 +1,14 @@
 package org.lds.sso.appwrap.ui;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.eclipse.jetty.server.Request;
+import org.lds.sso.appwrap.Utils;
+import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.lds.sso.appwrap.Utils;
-import org.lds.sso.appwrap.rest.RestHandlerBase;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Serves up an html page with the text "<simulator version> is alive!" in the 
@@ -26,8 +26,8 @@ public class FavIconHandler extends RestHandlerBase {
     }
 
     @Override
-    protected void doHandle(String target, HttpServletRequest request,
-            HttpServletResponse response, int dispatch) throws IOException {
+    protected void doHandle(String target, Request baseRequest, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
         InputStream in = this.getClass().getResourceAsStream("favicon.ico");
 
         try {

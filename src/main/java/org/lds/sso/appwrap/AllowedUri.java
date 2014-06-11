@@ -46,6 +46,12 @@ public class AllowedUri extends UnenforcedUri {
         }
     }
 
+    /**
+     * Returns true if all actions are allowed or if the given action is included in the allowed set of actions.
+     *
+     * @param action
+     * @return
+     */
     public boolean allowed(String action) {
         if (allow_all) {
             return true;

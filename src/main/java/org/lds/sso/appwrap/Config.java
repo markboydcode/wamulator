@@ -1,21 +1,5 @@
 package org.lds.sso.appwrap;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.SocketTimeoutException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.commons.io.IOUtils;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
@@ -27,6 +11,13 @@ import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.header.Header;
 import org.lds.sso.appwrap.proxy.header.HeaderBuffer;
 import org.lds.sso.appwrap.rest.RestVersion;
+
+import java.io.*;
+import java.net.SocketTimeoutException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Config {
 	private static final Logger cLog = Logger.getLogger(Config.class.getName());
@@ -175,14 +166,50 @@ public class Config {
 	private String loginPageUrl = null;
 
     /**
-     * The default signin page location. If that JSP ever changes this will need
-     * to be changed. Includes a macro of "{{HOST}}" that will be replaced with
+     * The URL path base for wamulator provided functionality.
+     */
+    public static final String WAMULATOR_URL_BASE = "/wamulator";
+
+    /**
+     * The URL path base for wamulator provided restful services intended for consumption by non-wamulator
+     * related applications.
+     */
+    public static final String WAMULATOR_SERVICE_BASE = WAMULATOR_URL_BASE + "/service";
+
+    /**
+     * Returns the url base for the wamulator's console related functionality.
+     * @return
+     */
+    public String getWamulatorServiceUrlBase() {
+        return WAMULATOR_SERVICE_BASE;
+    }
+
+    /**
+     * The URL path base for the wamulator's http console and its related resources and services.
+     */
+    public static final String WAMULATOR_CONSOLE_BASE = WAMULATOR_URL_BASE + "/console";
+
+    /**
+     * Returns the url base for the wamulator's console related functionality.
+     * @return
+     */
+    public String getWamulatorConsoleUrlBase() {
+        return WAMULATOR_CONSOLE_BASE;
+    }
+
+    /**
+     * The URL path location of the wamulator's http console provided sign-in page.
+     */
+    public static final String WAMULATOR_SIGNIN_PAGE_PATH = WAMULATOR_CONSOLE_BASE + "/signIn";
+
+    /**
+     * The default signin page location. Includes a macro of "{{HOST}}" that will be replaced with
      * the host of the first by-site element declared in configuration. If no
      * by-site element is declared then the sign-in page will not be defaulted.
-     * 
+     *
      */
     private static final String DEFAULT_SIGNIN_PAGE_TMPLT = "http://{{HOST}}:"
-            + CONSOLE_PORT_MACRO + "/admin/selectUser.jsp";
+            + CONSOLE_PORT_MACRO + WAMULATOR_SIGNIN_PAGE_PATH;
 	
 	private long minReqOccRepeatMillis = 200;
 
@@ -207,6 +234,9 @@ public class Config {
 
     private boolean debugLoggingEnabled = false;
 
+    /**
+     * The fine grain permissions rest endpoint type exposed by this running instance.
+     */
 	private RestVersion restVersion = RestVersion.CD_OESv1;
 
 
@@ -222,12 +252,6 @@ public class Config {
      * that it will work with the configured cookie domain.
      */
     private boolean signinRequiresCheck = false;
-
-    /**
-     * Indicates if the proxy should strip off any empty headers if seen including 
-     * any injected by the proxy. Defaults to false.
-     */
-    private boolean stripEmptyHeaders = false;
 
     /**
      * The socket timeout in milliseconds for which a read of the input stream
@@ -933,24 +957,6 @@ public class Config {
 	 */
     public void setSignInRequiresResolution() {
         signinRequiresResolution = true;
-    }
-
-    /**
-     * Indicates if the proxy will strip empty headers if seen
-     * including any injected by the proxy itself.
-     * @return
-     */
-    public void setStripEmptyHeaders(boolean b) {
-        this.stripEmptyHeaders = b;
-    }
-
-    /**
-     * Tells the proxy whether or not it should strip empty headers if seen
-     * including any injected by the proxy itself.
-     * @return
-     */
-    public boolean getStripEmptyHeaders() {
-        return this.stripEmptyHeaders;
     }
 
     /**

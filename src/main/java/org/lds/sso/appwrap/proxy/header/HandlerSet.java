@@ -71,10 +71,6 @@ public class HandlerSet {
             l.add(new ContentLengthHandler());
             l.add(new ConnectionHeaderHndlr());
 
-            // response ONLY handlers
-            l.add(new RespCookieRewriteHndlr());
-            l.add(new RespLocationRewriteHndlr());
-            
             return Collections.unmodifiableList(l);
         } 
     }

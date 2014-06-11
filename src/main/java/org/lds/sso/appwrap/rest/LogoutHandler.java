@@ -1,15 +1,15 @@
 package org.lds.sso.appwrap.rest;
 
+import org.eclipse.jetty.server.Request;
+import org.lds.sso.appwrap.Config;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.lds.sso.appwrap.Config;
 
 /**
  * Handles termination of a currently active session.
@@ -26,7 +26,7 @@ public class LogoutHandler extends RestHandlerBase {
 	}
 
 	@Override
-	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
+	protected void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException {
 		/**
 		 * Get the current config instance each time which allows for reconfig

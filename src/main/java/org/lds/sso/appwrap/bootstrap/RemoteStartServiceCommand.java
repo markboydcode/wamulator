@@ -1,5 +1,11 @@
 package org.lds.sso.appwrap.bootstrap;
 
+import org.apache.commons.lang.StringUtils;
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.Service;
+import org.lds.sso.appwrap.exception.ServerFailureException;
+import org.lds.sso.appwrap.io.LogUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,12 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.Service;
-import org.lds.sso.appwrap.exception.ServerFailureException;
-import org.lds.sso.appwrap.io.LogUtils;
 
 public class RemoteStartServiceCommand extends Command {
 	private static final Logger cLog = Logger.getLogger(RemoteStartServiceCommand.class.getName());
@@ -77,7 +77,7 @@ public class RemoteStartServiceCommand extends Command {
 		builder.redirectErrorStream(true);
 		process = builder.start();
 
-		final InputStream is = process.getInputStream();
+        final InputStream is = process.getInputStream();
 		Thread console = new Thread() {
 			@Override
 			public void run() {
@@ -85,7 +85,23 @@ public class RemoteStartServiceCommand extends Command {
 				try {
 					while(true) {
 						reader = new BufferedReader(new InputStreamReader(is));
-						remoteOutput.append(reader.readLine());
+                        String line = reader.readLine();
+                        // future code to capture where the server is running from its output. But need to
+                        // get it running from remote start first then add this in.
+                        /*
+                        System.out.println("       - " + line);
+                        String consolePortOutputPrefix = "console-rest port  : ";
+                        if (line != null && line.startsWith(consolePortOutputPrefix)) {
+                            String port = line.substring(consolePortOutputPrefix.length());
+                            int p = Integer.parseInt(port);
+                            // pass to config so watcher can see where to connect to verify successful startup
+                            System.out.println("---- captured console port: " + p);
+                            Config.getInstance().setConsolePort(p);
+                        }
+                        */
+						if (line != null) {
+                            remoteOutput.append(line);
+                        }
 					}
 				} catch(IOException e) {
 					cLog.log(Level.FINE, "Error reading remote process. Terminating Stream.", e);

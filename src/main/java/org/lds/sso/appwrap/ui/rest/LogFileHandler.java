@@ -1,17 +1,6 @@
 package org.lds.sso.appwrap.ui.rest;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import org.eclipse.jetty.server.Request;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Utils;
 import org.lds.sso.appwrap.proxy.HttpPackage;
@@ -20,6 +9,11 @@ import org.lds.sso.appwrap.proxy.StartLine;
 import org.lds.sso.appwrap.proxy.header.Header;
 import org.lds.sso.appwrap.proxy.header.HeaderDef;
 import org.lds.sso.appwrap.rest.RestHandlerBase;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.MalformedURLException;
 
 /**
  * Handles request for logs
@@ -42,7 +36,7 @@ public class LogFileHandler extends RestHandlerBase {
     /*
      */
     @Override
-    protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
+    protected void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         //
         //		Get the current config instance each time which allows for reconfig

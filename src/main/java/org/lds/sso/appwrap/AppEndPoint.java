@@ -1,15 +1,5 @@
 package org.lds.sso.appwrap;
 
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.logging.Logger;
-
-import javax.mail.internet.MimeUtility;
-
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.proxy.HttpPackage;
@@ -17,6 +7,15 @@ import org.lds.sso.appwrap.proxy.RequestLine;
 import org.lds.sso.appwrap.proxy.StartLine;
 import org.lds.sso.appwrap.proxy.header.Header;
 import org.lds.sso.appwrap.proxy.header.HeaderDef;
+
+import javax.mail.internet.MimeUtility;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 /**
  * Represents the mapping from canonical space URLs to application space URLs
@@ -51,6 +50,11 @@ public class AppEndPoint implements EndPoint {
 		public final String moniker;
 		private static Map<String, Scheme> schemes;
 
+        /**
+         * Constructor of Scheme enum objects.
+         *
+         * @param moniker
+         */
 		Scheme(String moniker) {
 			this.moniker = moniker;
 			addMapping(moniker);
@@ -62,11 +66,16 @@ public class AppEndPoint implements EndPoint {
 			}
 			Scheme.schemes.put(mon, this);
 		}
-		
+
 		public String getMoniker() {
 			return moniker;
 		}
 
+        /**
+         * Return the scheme matching the passed in String or the HTTP schemed if the specified one is not found.
+         * @param mon
+         * @return
+         */
 		public static Scheme fromMoniker(String mon) {
 			Scheme s = schemes.get(mon);
 			if (s == null) {
@@ -80,8 +89,8 @@ public class AppEndPoint implements EndPoint {
 	 * The allowed values for inbound scheme related configuration such as
 	 * by-site's scheme attribute and cctx-mapping's cscheme attribute. For
 	 * incoming matching HTTP, HTTPS, and BOTH are valid config values meaning
-	 * only incoming connections will respectively match an enpoint if the
-	 * scheme is 'http', 'https', or either.
+	 * incoming connections will match an endpoint only if its
+	 * scheme is respectively 'http', 'https', or either.
 	 * 
 	 * @author BoydMR
 	 * 
@@ -105,7 +114,12 @@ public class AppEndPoint implements EndPoint {
 		
 		public final String moniker;
 		private static Map<String, InboundScheme> schemes;
-		
+
+        /**
+         * Constructor of InboundScheme objects
+         *
+         * @param moniker
+         */
 		InboundScheme(String moniker) {
 			this.moniker = moniker;
 			addMapping(moniker);
@@ -121,7 +135,14 @@ public class AppEndPoint implements EndPoint {
 		public String getMoniker() {
 			return moniker;
 		}
-		
+
+        /**
+         * Return the InboundScheme object that matches the passed in moniker or HTTP by default if the specified
+         * moniker is not found.
+         *
+         * @param mon
+         * @return
+         */
 		public static InboundScheme fromMoniker(String mon) {
 			InboundScheme s = schemes.get(mon);
 			if (s == null) {
@@ -176,7 +197,14 @@ public class AppEndPoint implements EndPoint {
 		public String getMoniker() {
 			return moniker;
 		}
-		
+
+        /**
+         * Return the OutboundScheme object that matches the passed in moniker or HTTP by default if the specified
+         * moniker is not found.
+         *
+         * @param mon
+         * @return
+         */
 		public static OutboundScheme fromMoniker(String mon) {
 			OutboundScheme s = schemes.get(mon);
 			if (s == null) {
@@ -196,10 +224,16 @@ public class AppEndPoint implements EndPoint {
      */
 	private Header cctxHeader = null;
 
+    /**
+     * The context root or cctx of the application.
+     */
 	private String contextRoot = null;
 	
 	private String queryString = null;
 
+    /**
+     * The port of the target destination to which traffic will be proxied.
+     */
 	int endpointPort = -1;
 	
 	/**
@@ -394,7 +428,13 @@ public class AppEndPoint implements EndPoint {
     public String getCanonicalHost() {
         return this.canonicalHost;
     }
-    
+
+    /**
+     * Return the value configured for this endpoint via the cctx-mapping's policy-service-url-gateway attribute if
+     * specified or null if it was not.
+     *
+     * @return
+     */
     public String getPolicyServiceGateway() {
         return this.policyServiceGateway;
     }
@@ -570,21 +610,34 @@ public class AppEndPoint implements EndPoint {
         Header hdr = new Header(GlobalHeaderNames.SERVICE_URL, "");
         reqPkg.headerBfr.removeExtensionHeader(GlobalHeaderNames.SERVICE_URL);
 
-        String hdrBase = "http://";
-        if (getPolicyServiceGateway() == null) {
-            hdrBase += getCanonicalHost() + ":" + cfg.getConsolePort();
+        String hdrVal = getPolicyServiceUrlHeaderValue(cfg, getCanonicalHost(), getPolicyServiceGateway());
+        hdr.setValue(hdrVal);
+        reqPkg.headerBfr.append(hdr);
+    }
+
+    /**
+     * Builds the policy-service-url header value based upon configuration and a given end point.
+     *
+     * @param cfg
+     * @return
+     */
+    public static String getPolicyServiceUrlHeaderValue(Config cfg, String canonicalHost, String policyServiceUrlGateway) {
+        String hdrVal = "http://";
+        if (policyServiceUrlGateway == null) {
+            hdrVal += canonicalHost + ":" + cfg.getConsolePort();
         }
         else {
-            hdrBase += this.getPolicyServiceGateway();
+            hdrVal += policyServiceUrlGateway;
         }
+
         switch(cfg.getRestVersion()) {
-        case OPENSSO:
-            hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase());
-            break;
-        case CD_OESv1:
-            hdr.setValue(hdrBase + cfg.getRestVersion().getRestUrlBase() + getCanonicalHost() + "/");
+            case OPENSSO:
+                hdrVal += cfg.getRestVersion().getRestUrlBase();
+                break;
+            case CD_OESv1:
+                hdrVal += cfg.getRestVersion().getRestUrlBase() + canonicalHost + "/";
         }
-        reqPkg.headerBfr.append(hdr);
+        return hdrVal;
     }
 
 	/**

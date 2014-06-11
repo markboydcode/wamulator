@@ -1,23 +1,22 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.lds.sso.appwrap.Config;
 import org.lds.sso.appwrap.Service;
+import org.lds.sso.appwrap.TestUtilities;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
 
 public class SignMeInOutTest {
 
@@ -29,9 +28,28 @@ public class SignMeInOutTest {
         new Config();
 
     	System.getProperties().remove("non-existent-sys-prop");
-    	URL filePath = SignMeInOutTest.class.getClassLoader().getResource("SignMeInOutTestConfig.xml");
         StringBuffer config = new StringBuffer("string:")
-        .append("<?file-alias policy-src-xml=\"" + filePath.getPath() + "\"?>")
+        .append("<?system-alias policy-src-xml=non-existent-sys-prop default=")
+        .append("\"xml=")
+        .append("<deployment>")
+        .append("  <environment id='dev' host='dev.lds.org (exposee)' />")
+        .append(" <application id='not-used-by-wamulator/' authHost='not-used-by-wamulator' cctx='/'>")
+        .append(" <authentication scheme='anonymous' name='default-anonymous' />")
+        .append("   <authorization>")
+        .append("    <rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='true'>")
+        .append("     <allow>")
+        .append("      <condition type='role' value='Anyone' />")
+        .append("     </allow>")
+        .append("    </rule>")
+        .append("   </authorization>")
+        .append("   <policy name='is-alive{/.../*,*}'>")
+        .append("    <url>is-alive{/.../*,*}</url>")
+        .append("    <operations>GET</operations>")
+        .append("    <authentication scheme='anonymous' name='default-anonymous' />")
+        .append("   </policy>")
+        .append("  </application>")
+        .append("</deployment>")
+        .append("\"?>")
         .append("<?system-alias usr-src-props=non-existent-sys-prop default=")
         .append("\"xml=")
         .append(" <users>")
@@ -41,11 +59,10 @@ public class SignMeInOutTest {
         .append("\"?>")
         .append("<config console-port='auto' proxy-port='auto' rest-version='CD-OESv1'>")
         .append(" <sso-cookie name='lds-policy' domain='.lds.org'/>")
-        .append(" <sso-sign-in-url value='http://local.lds.org:{{console-port}}/admin/selectUser.jsp'/>")
         .append(" <sso-traffic>")
-        .append("  <by-site scheme='http' host='local.lds.org' port='{{proxy-port}}'>")
+        .append("  <by-site scheme='http' host='localhost.lds.org' port='{{proxy-port}}'>")
         .append("    <cctx-mapping thost='127.0.0.1' tport='{{console-port}}'>")
-        .append("      <policy-source>xml={{policy-src-xml}}</policy-source>")
+        .append("      <policy-source>{{policy-src-xml}}</policy-source>")
         .append("    </cctx-mapping>")
         .append("  </by-site>")
         .append(" </sso-traffic>")
@@ -62,109 +79,104 @@ public class SignMeInOutTest {
     }
 
     @Test
-    public void test_signMeInOut() throws HttpException, IOException {
+    public void test_signMeInOut() throws IOException {
         ///// first try to hit without session but with signin indicator
         Config cfg = Config.getInstance();
-        String endpointWSignin = "http://local.lds.org:" + cfg.getProxyPort() + ImAliveHandler.IS_ALIVE_PATH + "?" + GlobalHeaderNames.SIGNIN_VALUE;
+        String endpointWSignin = "http://localhost.lds.org:" + cfg.getProxyPort() + ImAliveHandler.IS_ALIVE_PATH + "?" + GlobalHeaderNames.SIGNIN_VALUE;
 
-        HttpClient client = new HttpClient();
-
-        // prevent needing dns resolution of local.lds.org and route req to 127.0.0.1/proxy port
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", cfg.getProxyPort());
-        client.setHostConfiguration(hcfg);
-
-        HttpMethod method = new GetMethod(endpointWSignin);
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
+        CloseableHttpClient wmltProxiedClient = TestUtilities.createWamulatorProxiedHttpClient(cfg.getProxyPort());
+        HttpGet get = new HttpGet(endpointWSignin);
+        CloseableHttpResponse response = wmltProxiedClient.execute(get);
+        int status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 302);
-        Header loc = method.getResponseHeader("location");
-        Assert.assertNotNull(loc, "location header not returned for redirect");
+        Header[] locs = response.getHeaders("location");
+        Assert.assertNotNull(locs, "location header not returned for redirect");
+        Assert.assertEquals(locs.length, 1, "should only be one location header for redirect");
+        Header loc = locs[0];
+        response.close();
 
         ///// now sign user in via console port
-        String authEp = loc.getValue().replace("/admin/selectUser.jsp", "/admin/action/set-user/user1");
-        HttpMethod authM = new GetMethod(authEp);
-        authM.setFollowRedirects(false);
-
-        // prevent needing dns resolution of local.lds.org and route req to 127.0.0.1/console port this time since redir is to that port
-        hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", cfg.getConsolePort());
-        client.setHostConfiguration(hcfg);
-
-        status = client.executeMethod(authM);
-
-        Assert.assertEquals(status, 302);
-        loc = method.getResponseHeader("location");
-        Assert.assertNotNull(loc, "location header not returned for redirect after sign-in");
-        Header setCk = authM.getResponseHeader("set-cookie");
-        Assert.assertNotNull(setCk, "set-cookie header not in sign-in response");
-        String rawCk = setCk.getValue();
-        Assert.assertTrue(rawCk.contains("lds-policy="));
-        int start = rawCk.indexOf("lds-policy=") + "lds-policy".length();
-        int end = rawCk.indexOf(";", start);
-        String token = rawCk.substring(start + 1, end);
-
-        ///// now try again with session and verify we get through
-        method = new GetMethod(endpointWSignin);
-        method.setFollowRedirects(false);
-        method.setRequestHeader("cookie", "lds-policy=" + token);
-        status = client.executeMethod(method);
+        HttpGet signin = new HttpGet("http://localhost.lds.org:" + cfg.getConsolePort() + cfg.getWamulatorServiceUrlBase() + "/action/set-user/user1");
+        CloseableHttpClient straightConnectingClient = TestUtilities.createNonProxiedHttpClient();
+        response = straightConnectingClient.execute(signin);
+        status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 200);
-        String content = method.getResponseBodyAsString();
+        Header[] sets = response.getHeaders("set-cookie");
+        Assert.assertNotNull(sets, "set-cookie header not in sign-in response");
+        Assert.assertEquals(sets.length, 1, "should only be one set-cookie header in sign-in response");
+        Header hdr = sets[0];
+        HeaderElement[] elms = hdr.getElements();
+        HeaderElement elm = elms[0];
+        Assert.assertEquals(elm.getName(), cfg.getCookieName(), "Cookie name should be " + cfg.getCookieName());
+        String token = elm.getValue();
+        response.close();
+
+        ///// now try again with session and verify we get through
+        HttpGet accessIt = new HttpGet(endpointWSignin);
+        accessIt.addHeader("cookie", "lds-policy=" + token);
+        response = wmltProxiedClient.execute(accessIt);
+        status = response.getStatusLine().getStatusCode();
+
+        Assert.assertEquals(status, 200);
+        String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+        System.out.println("---- content: " + content);
         Assert.assertNotNull(content);
         Assert.assertTrue(content.contains(ImAliveHandler.IS_ALIVE), "missing is alive output text.");
+        response.close();
 
         ////// now hit with session and signout indicator
-        String endpointWSignout = "http://local.lds.org:" + cfg.getProxyPort() + ImAliveHandler.IS_ALIVE_PATH + "?" + GlobalHeaderNames.SIGNOUT_VALUE;
-        method = new GetMethod(endpointWSignout);
-        method.setFollowRedirects(false);
-        method.setRequestHeader("cookie", "lds-policy=" + token);
+        String endpointWSignout = "http://localhost.lds.org:" + cfg.getProxyPort() + ImAliveHandler.IS_ALIVE_PATH + "?" + GlobalHeaderNames.SIGNOUT_VALUE;
+        HttpGet signout = new HttpGet(endpointWSignout);
+        signout.addHeader("cookie", "lds-policy=" + token);
 
-        // prevent needing dns resolution of local.lds.org and route req to 127.0.0.1/proxy port again
-        hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", cfg.getProxyPort());
-        client.setHostConfiguration(hcfg);
+        response = wmltProxiedClient.execute(signout);
+        status = response.getStatusLine().getStatusCode();
 
-        status = client.executeMethod(method);
         Assert.assertEquals(status, 302);
-        setCk = method.getResponseHeader("set-cookie");
-        Assert.assertNotNull(setCk, "set-cookie header not in sign-out response");
-        Assert.assertTrue(setCk.getValue().contains("cookie-monster"), "cookie for clearing not sent");
+        sets = response.getHeaders("set-cookie");
+        Assert.assertNotNull(sets, "set-cookie header not in sign-out response");
+        Assert.assertEquals(sets.length, 1, "should only be one set-cookie header in sign-out response");
+        hdr = sets[0];
+        elms = hdr.getElements();
+        elm = elms[0];
+        Assert.assertTrue(elm.getValue().contains("cookie-monster"), "cookie for clearing not sent");
 
         ///// now if we hit again with signout indicator it should go through since session terminated
-        method = new GetMethod(endpointWSignout);
-        method.setFollowRedirects(false);
-        method.setRequestHeader("cookie", "lds-policy=" + token);
+        HttpGet last = new HttpGet(endpointWSignout);
 
         // note that we are hitting proxy port due to hostconfig above
-        status = client.executeMethod(method);
+        response = wmltProxiedClient.execute(last);
+        status = response.getStatusLine().getStatusCode();
         Assert.assertEquals(status, 200, "should have allowed request through");
-        content = method.getResponseBodyAsString();
+        content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
+
         Assert.assertNotNull(content);
         Assert.assertTrue(content.contains(ImAliveHandler.IS_ALIVE), "missing is alive output text.");
+        response.close();
+        wmltProxiedClient.close();
     }
 
     @Test
-    public void test_isAlive() throws HttpException, IOException {
+    public void test_isAlive() throws IOException {
         Config cfg = Config.getInstance();
-        String endpoint = "http://local.lds.org:" + cfg.getConsolePort() + "/is-alive";
+        String endpoint = "http://localhost.lds.org:" + cfg.getConsolePort() + cfg.getWamulatorServiceUrlBase() + "/is-alive";
 
-        HttpClient client = new HttpClient();
+        CloseableHttpClient client = TestUtilities.createWamulatorProxiedHttpClient(cfg.getConsolePort());
 
-        // prevent needing dns resolution of local.lds.org and route req to 127.0.0.1
-        HostConfiguration hcfg = new HostConfiguration();
-        hcfg.setProxy("127.0.0.1", cfg.getConsolePort());
-        client.setHostConfiguration(hcfg);
-
-        HttpMethod method = new GetMethod(endpoint);
-        method.setFollowRedirects(false);
-        int status = client.executeMethod(method);
-        String content = method.getResponseBodyAsString();
+        HttpGet method = new HttpGet(endpoint);
+        CloseableHttpResponse response = client.execute(method);
+        int status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 200);
+
+        HttpEntity entity = response.getEntity();
+        String content = TestUtilities.readHttpComponentsStringEntity(entity);
+
         Assert.assertNotNull(content);
-        Assert.assertTrue(content.contains(ImAliveHandler.IS_ALIVE), "missing is alive output text.");
+        boolean hasIt = content.contains(ImAliveHandler.IS_ALIVE);
+        Assert.assertTrue(hasIt, "missing is alive output text.");
     }
+
 }

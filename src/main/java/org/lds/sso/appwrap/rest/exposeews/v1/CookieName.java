@@ -1,18 +1,18 @@
 package org.lds.sso.appwrap.rest.exposeews.v1;
 
+import org.eclipse.jetty.server.Request;
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.proxy.RequestHandler;
+import org.lds.sso.appwrap.rest.RestHandlerBase;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.proxy.RequestHandler;
-import org.lds.sso.appwrap.rest.RestHandlerBase;
 
 /**
  * Handler for answering the name of the cookie used by the wamulator.
@@ -29,7 +29,7 @@ public class CookieName extends RestHandlerBase {
 	}
 
 	@Override
-	protected void doHandle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
+	protected void doHandle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException {
 		/**
 		 * Get the current config instance each time which allows for reconfig

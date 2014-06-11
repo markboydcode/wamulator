@@ -1,20 +1,5 @@
 package org.lds.sso.appwrap.proxy;
 
-import java.io.IOException;
-
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.Service;
-import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
-import org.lds.sso.appwrap.ui.ImAliveHandler;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**

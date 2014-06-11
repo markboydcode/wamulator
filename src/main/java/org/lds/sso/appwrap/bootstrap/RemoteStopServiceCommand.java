@@ -1,14 +1,14 @@
 package org.lds.sso.appwrap.bootstrap;
 
+import org.lds.sso.appwrap.Config;
+import org.lds.sso.appwrap.Service;
+import org.lds.sso.appwrap.exception.ServerFailureException;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-
-import org.lds.sso.appwrap.Config;
-import org.lds.sso.appwrap.Service;
-import org.lds.sso.appwrap.exception.ServerFailureException;
 
 public class RemoteStopServiceCommand extends Command {
 	public RemoteStopServiceCommand(String cfgPath) {
@@ -35,7 +35,7 @@ public class RemoteStopServiceCommand extends Command {
 	}
 
 	protected URL getShutdownURL(int port) throws MalformedURLException {
-		return new URL("http://localhost:" + port + "/admin/shutdown");
+		return new URL("http://localhost:" + port + Config.getInstance().getWamulatorServiceUrlBase() + "/shutdown");
 	}
 
 	@Override

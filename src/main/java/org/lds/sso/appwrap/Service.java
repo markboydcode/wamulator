@@ -1,24 +1,15 @@
 package org.lds.sso.appwrap;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
-
+import freemarker.template.Configuration;
+import freemarker.template.ObjectWrapper;
+import freemarker.template.TemplateExceptionHandler;
+import freemarker.template.Version;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.resource.Resource;
 import org.lds.sso.appwrap.bootstrap.Command;
 import org.lds.sso.appwrap.exception.UnableToListenOnHttpsProxyPortException;
 import org.lds.sso.appwrap.exception.UnableToListenOnProxyPortException;
@@ -28,12 +19,7 @@ import org.lds.sso.appwrap.io.LogUtils;
 import org.lds.sso.appwrap.proxy.ListenerCoordinator;
 import org.lds.sso.appwrap.proxy.ProxyListener;
 import org.lds.sso.appwrap.proxy.tls.HttpsProxyListener;
-import org.lds.sso.appwrap.rest.AuthNHandler;
-import org.lds.sso.appwrap.rest.AuthZHandler;
-import org.lds.sso.appwrap.rest.GetCookieName;
-import org.lds.sso.appwrap.rest.IsTokenValidHandler;
-import org.lds.sso.appwrap.rest.LogoutHandler;
-import org.lds.sso.appwrap.rest.RestVersion;
+import org.lds.sso.appwrap.rest.*;
 import org.lds.sso.appwrap.rest.exposeews.v1.CookieName;
 import org.lds.sso.appwrap.rest.exposeews.v1.UserNameForToken;
 import org.lds.sso.appwrap.rest.oes.v1.ArePermitted;
@@ -42,22 +28,17 @@ import org.lds.sso.appwrap.rest.oes.v1.GetOesV1CookieName;
 import org.lds.sso.appwrap.security.LocalHostOnlyEnforcingHandler;
 import org.lds.sso.appwrap.ui.FavIconHandler;
 import org.lds.sso.appwrap.ui.ImAliveHandler;
-import org.lds.sso.appwrap.ui.rest.ConfigInjectingHandlerList;
-import org.lds.sso.appwrap.ui.rest.JettyWebappUrlAdjustingHandler;
-import org.lds.sso.appwrap.ui.rest.LogFileHandler;
-import org.lds.sso.appwrap.ui.rest.SelectSessionHandler;
-import org.lds.sso.appwrap.ui.rest.SelectUserHandler;
-import org.lds.sso.appwrap.ui.rest.SignInPageCdssoHandler;
-import org.lds.sso.appwrap.ui.rest.TerminateSessionHandler;
-import org.lds.sso.appwrap.ui.rest.TerminateSimulatorHandler;
-import org.lds.sso.appwrap.ui.rest.TrafficRecordingHandler;
+import org.lds.sso.appwrap.ui.rest.*;
 import org.lds.stack.logging.ConsoleHandler;
 import org.lds.stack.logging.SingleLineFormatter;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.HandlerCollection;
-import org.mortbay.jetty.webapp.WebAppContext;
+
+import java.io.*;
+import java.net.URL;
+import java.util.*;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
  * The entry point for starting up the shim. Supports both application execution
@@ -75,17 +56,101 @@ public class Service {
 	public static final String CLASSPATH_PREFIX = "classpath:";
 	public static final String STRING_PREFIX = "string:";
 
-	//protected ProxyListener proxy = null;
-	protected Thread proxyRunner = null;
+    /**
+     * The physical classpath based path to the templates used for the http console.
+     * This path is loaded via Service.getResource() meaning that the full path is
+     * relative to the package directory structure of this class. Ditto on the static
+     * files.
+     */
+    public static final String UI_TEMPLATES_PATH = "ui/templates";
+    public static final String UI_STATICS_PATH = "ui/static";
+
+    // set up http console's UI templates and related static resources handler
+    private final Configuration uiCfg = loadFreemarkerConfig();
+    private final ResourceHandler uiStaticsHandler = loadUiStaticResourcesHandler();
+
+    //protected ProxyListener proxy = null;
+    protected Thread proxyRunner = null;
     protected ProxyListener proxy;
     protected Thread tlsProxyRunner = null;
     protected HttpsProxyListener tlsProxy;
-	protected Server server = null;
-	private String cfgSource;
-	private boolean loggingConfigured = false;
-	private final String cfgPath;
+    protected Server server = null;
+    private String cfgSource;
+    private boolean loggingConfigured = false;
+    private final String cfgPath;
 
-	private static final Map<String, Service> instances = new HashMap<String, Service>();
+    private static final Map<String, Service> instances = new HashMap<String, Service>();
+
+
+    /**
+     * Two sets of resources are needed for the UI, templates and static files and both are loaded via
+     * Class.getResource() and this method verifies that the containing directory is available or terminates
+     * the start-up process if not found providing as helpful a message as possible as to whey if failed.
+     * @param label
+     * @param path
+     */
+    private void verifyResourceAvailability(String label, String path) {
+        URL s = Service.class.getResource(path);
+        if (s == null) {
+
+            // this should always work so we use it to help point out where we are looking for templates
+            s = Service.class.getResource("Service.class");
+            if (s == null) {
+                // should never happen but make sure we handle if it does
+                throw new IllegalStateException("Cannot set up Wamulator Http Console. " + label + " base not found. Uses " + this.getClass().getName()
+                        + ".getResource(\"" + path + "\") and that is not found.");
+            }
+            else {
+                // tell'em where we were looking so they/we can figure out what is wrong after it dies
+                String url = s.toExternalForm();
+                url = url.substring(0, url.indexOf("Service.class"));
+                url += path;
+                throw new IllegalStateException("Cannot set up Wamulator Http Console. " + label + " base not found at: " + url);
+            }
+        }
+        else {
+            logger.log(Level.INFO, "Wamulator Http Console " + label + " loaded from: " + s.toExternalForm());
+        }
+    }
+
+    /**
+     * Sets up handler for static resources used by the http console.
+     *
+     * @return
+     */
+    private ResourceHandler loadUiStaticResourcesHandler() {
+        verifyResourceAvailability("Static Resources", Service.UI_STATICS_PATH);
+        URL statics = Service.class.getResource(Service.UI_STATICS_PATH);
+        ResourceHandler staticsHandler = new ResourceHandler();
+
+        try {
+            staticsHandler.setBaseResource(Resource.newResource(statics));
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Cannot set up Wamulator Http Console. Static Resources base can't be configured", e);
+            System.exit(1);
+        }
+        return staticsHandler;
+    }
+
+    /**
+     * Sets up Freemarker template library configuration.
+     *
+     * @return
+     */
+    private Configuration loadFreemarkerConfig() {
+        logger.log(Level.INFO, "Searching for Wamulator Http Console Templates");
+        Configuration fmc = new Configuration();
+
+        // verify templates are accessible then set location for freemarker
+        verifyResourceAvailability("Templates", UI_TEMPLATES_PATH);
+        fmc.setClassForTemplateLoading(Service.class, "");
+
+        fmc.setObjectWrapper(ObjectWrapper.BEANS_WRAPPER);
+        fmc.setDefaultEncoding("UTF-8");
+        fmc.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
+        fmc.setIncompatibleImprovements(new Version(2, 3, 20));
+        return fmc;
+    }
 
 	/**
 	 * Class for conveying from {@link Service#getCfgReader(String)} the config
@@ -241,22 +306,6 @@ public class Service {
 
 		Config cfg = Config.getInstance();
 
-		// assumes that this directory contains .html and .jsp files
-		// This is just a directory within your source tree, and can be exported as part of your normal .jar
-		final String WEBAPPDIR = "webapp";
-
-		final String CONTEXTPATH = "/admin";
-
-		// for localhost:port/admin/index.html and whatever else is in the webapp directory
-		final URL warUrl = Service.class.getClassLoader().getResource(WEBAPPDIR);
-		final String warUrlString = warUrl.toExternalForm();
-		WebAppContext wac = new WebAppContext(warUrlString, CONTEXTPATH);
-		JettyWebappUrlAdjustingHandler adj = new JettyWebappUrlAdjustingHandler(CONTEXTPATH, WEBAPPDIR, wac);
-		SignInPageCdssoHandler cdsso = new SignInPageCdssoHandler(new String[] {"selectUser.jsp", "simpleSelectUser.jsp", "codaUserSelect.jsp"}, adj);
-		ConfigInjectingHandlerList cfgInjector = new ConfigInjectingHandlerList();
-        cfgInjector.addHandler(cdsso);
-        //cfgInjector.addHandler(adj);
-
         /*
          * Create a collection of handlers that know what URL to watch for and
          * handle the request if not already handled by someone else. All get
@@ -271,11 +320,26 @@ public class Service {
 		else {
 			handlers = new HandlerCollection();
 		}
-		if (cfg.getRestVersion() == null) {
-		    throw new IllegalArgumentException("Must declare the REST interface that the Simulator should expose. " +
-		    		"See documentation for the <config> element's rest-version attribute. Supported versions are: "
-		            + RestVersion.getValidIdentifiers());
-		}
+
+        // handle root path '/' redirect
+        handlers.addHandler(new RedirectToHandler("/", Config.WAMULATOR_CONSOLE_BASE + "/traffic"));
+
+        // set up http console UI handling: all requests starting with the console path /wamulator/console
+        // will be handled by this handler including 404 not founds.
+        HttpConsoleHandlersList uiHandlers = new HttpConsoleHandlersList(Config.WAMULATOR_CONSOLE_BASE);
+        // plug in the sign-in page with its cdsso wrapping handler
+        SigninPageController signInPC = new SigninPageController(Config.WAMULATOR_SIGNIN_PAGE_PATH, uiCfg);
+        uiHandlers.addHandler(new SignInPageCdssoHandler(signInPC));
+        // plug in the headers debugging helper page
+        uiHandlers.addHandler(new HeadersPageController(Config.WAMULATOR_CONSOLE_BASE + "/headers", uiCfg));
+
+        uiHandlers.addHandler(new ListUsersController(Config.WAMULATOR_CONSOLE_BASE + "/listUsers", uiCfg));
+        uiHandlers.addHandler(new ShowTrafficController(Config.WAMULATOR_CONSOLE_BASE + "/traffic", uiCfg));
+        uiHandlers.addHandler(new ShowRestTrafficController(Config.WAMULATOR_CONSOLE_BASE + "/rest-traffic", uiCfg));
+        uiHandlers.addHandler(new UrlPrefixTrimmingHandler(Config.WAMULATOR_CONSOLE_BASE, uiStaticsHandler));
+        handlers.addHandler(uiHandlers);
+
+        // add handlers for fine grained permissions restful endpoints
 		RestVersion rv = cfg.getRestVersion();
         String base = rv.getRestUrlBase();
 		switch(rv) {
@@ -326,72 +390,31 @@ public class Service {
 		    }
 		}
 
-		handlers.addHandler(new SelectUserHandler("/admin/action/set-user"));
-        handlers.addHandler(new SelectUserHandler("/auth/ui/authenticate"));
-		handlers.addHandler(new SelectSessionHandler("/admin/action/set-session"));
-		handlers.addHandler(new TerminateSessionHandler("/admin/action/terminate-session"));
-        handlers.addHandler(new TrafficRecordingHandler("/admin/action/recording/"));
+        // add handlers for ui handlers
+		handlers.addHandler(new SelectUserHandler(cfg.getWamulatorServiceUrlBase() + "/action/set-user"));
+		handlers.addHandler(new SelectSessionHandler(cfg.getWamulatorServiceUrlBase() + "/action/set-session"));
+		handlers.addHandler(new TerminateSessionHandler(cfg.getWamulatorServiceUrlBase() + "/action/terminate-session"));
+        handlers.addHandler(new TrafficRecordingHandler(cfg.getWamulatorServiceUrlBase() + "/action/recording/"));
         handlers.addHandler(new ImAliveHandler(ImAliveHandler.IS_ALIVE_PATH));
         handlers.addHandler(new FavIconHandler(FavIconHandler.FAVICON_PATH));
-        handlers.addHandler(new LogFileHandler("/admin/logs"));
-        handlers.addHandler(new TerminateSimulatorHandler("/admin/shutdown"));
+        handlers.addHandler(new LogFileHandler(cfg.getWamulatorServiceUrlBase() + "/logs"));
+        handlers.addHandler(new TerminateSimulatorHandler(cfg.getWamulatorServiceUrlBase() + "/shutdown"));
 
         // token authority handler so that WAMulator can front policy-exposee
         // but run against real OAM environments for hosts/apps/policies.
-        handlers.addHandler(new UserNameForToken("/admin/oam-ta/username-for-token"));
-        handlers.addHandler(new CookieName("/admin/oam-ta/cookie-name"));
+        handlers.addHandler(new UserNameForToken(cfg.getWamulatorServiceUrlBase() + "/oam-ta/username-for-token"));
+        handlers.addHandler(new CookieName(cfg.getWamulatorServiceUrlBase() + "/oam-ta/cookie-name"));
 
-		// placing webapp handler after other handlers allows for actions to be placed
-		// under same root context '/admin'.
-		handlers.addHandler(cfgInjector);
-	    server = new Server();
-	    Connector connector = null;
-		
-		if (cfg.isAllowingLocalTrafficOnly()) {
-			// set up custom connector so that we can capture the socket's 
-			// InetAddress an a thread local for the handler to enforce 
-			// appropriate access using servlet mechanisms for the responses.
-			connector = new SocketConnector() {
-				
-			    public void accept(int acceptorID)
-			        	throws IOException, InterruptedException
-	        	{   
-			        Socket socket = _serverSocket.accept();
-			        configure(socket);
-			        final InetAddress addr = socket.getInetAddress();
-			        
-			        Connection connection=new Connection(socket) {
 
-						@Override
-						public void run() {
-				    		LocalHostOnlyEnforcingHandler.getAddressHolder().setAddress(addr);
-				    		// System.out.println("-----> to thread " + Thread.currentThread().getName() + " attached console socket from " + addr);
-				    		try {
-				    			super.run();
-				    		}
-				    		finally {
-					    		// System.out.println("-----> from thread " + Thread.currentThread().getName() + " detached console socket from " + addr);
-					    		LocalHostOnlyEnforcingHandler.removeAddressHolder();
-				    		}
-						}
-			        	
-			        };
-			        connection.dispatch();
-		        }
-			};
-		}
-		else {
-	        connector=new SocketConnector();
-		}
-		if (cfg.getConsolePort() == 0) {
-	        connector.setPort(0);
-		}
-		else {
-			connector.setPort(cfg.getConsolePort());
-		}
-		server.setConnectors(new Connector[] {connector});
+        // now set up the jetty server with these handlers
+        if (cfg.getConsolePort() == 0) {
+            server = new Server(0);
+        }
+        else {
+            server = new Server(cfg.getConsolePort());
+        }
 		server.setHandler(handlers);
-		server.setGracefulShutdown(1000);
+		server.setStopTimeout(1000); // how long to wait for existing connections to finish at shutdown
 	}
 
 	/**
@@ -499,7 +522,7 @@ public class Service {
 		Config cfg = Config.getInstance();
 		cfg.setShimStateCookieId(cfgSource);
 
-		try {
+        try {
 	        server.start();
 		}
 		catch(Exception e) {
@@ -507,7 +530,8 @@ public class Service {
 		}
 
 		Connector[] connectors = server.getConnectors();
-		cfg.setConsolePort(connectors[0].getLocalPort());
+        ServerConnector sconn = (ServerConnector) connectors[0];
+		cfg.setConsolePort(sconn.getLocalPort());
 		ListenerCoordinator coordinator = new ListenerCoordinator(cfg);
 
         try {
@@ -519,7 +543,7 @@ public class Service {
         proxyRunner = new Thread(proxy);
         proxyRunner.setName("Http Proxy Listener");
         proxyRunner.start();
-        
+
         // start https proxy if configured to do so
         boolean tlsEnabled = cfg.getProxyHttpsEnabled();
         if (tlsEnabled) {
@@ -534,21 +558,21 @@ public class Service {
         tlsProxyRunner.setName("HttpS Proxy Listener");
         tlsProxyRunner.start();
 
-		while (server.isStarted() == false || proxy.isRunning() == false 
-		        || (tlsProxy != null && tlsProxy.isRunning() == false)) {
-				try {
-					Thread.sleep(1000);
-				} catch(InterruptedException e) {/* Do nothing */}
-		}
-		StringBuffer line = new StringBuffer(cfg.getServerName().length());
-		for (int i=0; i<cfg.getServerName().length(); i++) {
-		    line.append('-');
-		}
+        while (server.isStarted() == false || proxy.isRunning() == false
+                || (tlsProxy != null && tlsProxy.isRunning() == false)) {
+            try {
+                Thread.sleep(1000);
+            } catch(InterruptedException e) {/* Do nothing */}
+        }
+        StringBuffer line = new StringBuffer(cfg.getServerName().length());
+        for (int i=0; i<cfg.getServerName().length(); i++) {
+            line.append('-');
+        }
         dualLog("\n---------------------{0}\n" +
         "simulator version  : {1}\n" +
         "console-rest port  : {2}\n" +
         "http proxy port    : {3}\n" +
-        (tlsEnabled ? 
+        (tlsEnabled ?
         "httpS proxy port   : {4}\n" : "" ) +
         "Rest Interface     : {5}\n" +
         "---------------------{6}\n" +
@@ -560,7 +584,7 @@ public class Service {
         String.valueOf(cfg.getProxyHttpsPort()),
         cfg.getRestVersion().getVersionId(),
         line.toString());
-	}
+    }
 
 	private volatile boolean stop = false;
 	private ConfigFileMonitor fileMonitor = null;
@@ -626,7 +650,7 @@ public class Service {
             }
         }
         Config.getInstance().stopLogicalSyntaxEvaluationThread();
-        new Config(); // eww... TODO:  Refactor Config to use a standard singleton pattern so we don't have to do stuff like this.
+        new Config(); // flush out config
 	}
 
 	public boolean isStarted() {
