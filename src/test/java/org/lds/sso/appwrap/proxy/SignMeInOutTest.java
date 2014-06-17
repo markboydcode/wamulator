@@ -121,7 +121,6 @@ public class SignMeInOutTest {
 
         Assert.assertEquals(status, 200);
         String content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
-        System.out.println("---- content: " + content);
         Assert.assertNotNull(content);
         Assert.assertTrue(content.contains(ImAliveHandler.IS_ALIVE), "missing is alive output text.");
         response.close();
@@ -135,13 +134,16 @@ public class SignMeInOutTest {
         status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 302);
+        System.out.println("---- 1");
         sets = response.getHeaders("set-cookie");
         Assert.assertNotNull(sets, "set-cookie header not in sign-out response");
         Assert.assertEquals(sets.length, 1, "should only be one set-cookie header in sign-out response");
+        System.out.println("---- 2");
         hdr = sets[0];
         elms = hdr.getElements();
         elm = elms[0];
         Assert.assertTrue(elm.getValue().contains("cookie-monster"), "cookie for clearing not sent");
+        System.out.println("---- 3");
 
         ///// now if we hit again with signout indicator it should go through since session terminated
         HttpGet last = new HttpGet(endpointWSignout);
@@ -150,16 +152,21 @@ public class SignMeInOutTest {
         response = wmltProxiedClient.execute(last);
         status = response.getStatusLine().getStatusCode();
         Assert.assertEquals(status, 200, "should have allowed request through");
+        System.out.println("---- 4");
+
         content = TestUtilities.readHttpComponentsStringEntity(response.getEntity());
 
         Assert.assertNotNull(content);
         Assert.assertTrue(content.contains(ImAliveHandler.IS_ALIVE), "missing is alive output text.");
+        System.out.println("---- 5");
         response.close();
         wmltProxiedClient.close();
     }
 
     @Test
     public void test_isAlive() throws IOException {
+        System.out.println("---- 6");
+
         Config cfg = Config.getInstance();
         String endpoint = "http://localhost.lds.org:" + cfg.getConsolePort() + cfg.getWamulatorServiceUrlBase() + "/is-alive";
 
@@ -170,13 +177,18 @@ public class SignMeInOutTest {
         int status = response.getStatusLine().getStatusCode();
 
         Assert.assertEquals(status, 200);
+        System.out.println("---- 7");
 
         HttpEntity entity = response.getEntity();
         String content = TestUtilities.readHttpComponentsStringEntity(entity);
 
         Assert.assertNotNull(content);
+        System.out.println("---- 8");
+
         boolean hasIt = content.contains(ImAliveHandler.IS_ALIVE);
         Assert.assertTrue(hasIt, "missing is alive output text.");
+        System.out.println("---- 9");
+
     }
 
 }
