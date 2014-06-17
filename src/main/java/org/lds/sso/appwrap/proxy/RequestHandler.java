@@ -297,7 +297,7 @@ public class RequestHandler implements Runnable {
                 // header
                 purgeAndInjectHeader(reqPkg.headerBfr, "cctx", endpoint.getContextRoot());
 
-                if (!appMgr.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
+                if (!reqPkg.site.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
                     // so it requires enforcement
 
                     // missing session cookie or invalid session?
@@ -348,7 +348,7 @@ public class RequestHandler implements Runnable {
 
                     // is user authorized to view?
 
-                    if (!appMgr.isPermitted(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
+                    if (!reqPkg.site.isAllowed(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.requestLine.getMethod(),
                             reqPkg.path, reqPkg.query, user)) {
                         byte[] bytes = getResponse("403", "Forbidden",
                                 "403 Forbidden",
