@@ -187,7 +187,7 @@ public class SignMeInOutTest {
 
         boolean hasIt = content.contains(ImAliveHandler.IS_ALIVE);
         Assert.assertTrue(hasIt, "missing is alive output text.");
-        System.out.println("---- 9");
+        System.out.println("---- 9***");
 
     }
 
