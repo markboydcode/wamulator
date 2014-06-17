@@ -64,6 +64,9 @@ public class SiteMatcher {
                 if (uri.getClass() == UnenforcedUri.class) {
                     return true;
                 }
+                if (uri.getClass() == DeniedUri.class) {
+                    return false;
+                }
                 // instance of AllowedUri
                 AllowedUri au = (AllowedUri) uri;
                 if (au.allowed(action)) {

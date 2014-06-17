@@ -112,7 +112,7 @@
 							<#list jsputils.domainSessions[domain] as session>
 								<tr>
 									<td><#if session.token == currentToken!""><IMG src="pointer.png"/></#if></td>
-									<td><a href="/admin/action/set-session/${session.token}">${session.token}</a></td>
+									<td><a href="${config.wamulatorServiceUrlBase}/action/set-session/${session.token}">${session.token}</a></td>
 									<td>${session.remainingSeconds}</td>
 								</tr>
 							</#list>

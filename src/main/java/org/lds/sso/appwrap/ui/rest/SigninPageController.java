@@ -70,7 +70,7 @@ public class SigninPageController extends RestHandlerBase {
         }
 
         // var: formAction available to template
-        root.put("formAction", "/admin/action/set-user");
+        root.put("formAction", cfg.getWamulatorServiceUrlBase() + "/action/set-user");
         String loginAction = cfg.getLoginAction();
 
         if (loginAction != null && !"".equals(loginAction)) {
