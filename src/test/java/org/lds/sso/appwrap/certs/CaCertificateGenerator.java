@@ -1,5 +1,15 @@
 package org.lds.sso.appwrap.certs;
 
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.lds.sso.appwrap.Config;
+
+import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,17 +25,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
-import org.bouncycastle.asn1.x509.KeyPurposeId;
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.openssl.PEMWriter;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.lds.sso.appwrap.Config;
 
 /**
  * Code used to generate the CA Certificate for the ldapWS service. Typical console 
@@ -53,7 +52,7 @@ public class CaCertificateGenerator {
             NoSuchAlgorithmException, SignatureException, IOException {
         System.out.println("generating CA keypair");
         KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
-        keygen.initialize(1024);
+        keygen.initialize(2048);
         KeyPair keypair = keygen.generateKeyPair();
 
         System.out.println("CA public key info:");
