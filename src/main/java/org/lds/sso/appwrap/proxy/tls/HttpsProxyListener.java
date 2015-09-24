@@ -49,7 +49,7 @@ import org.lds.sso.appwrap.proxy.RequestHandler;
 /**
  * Version of ProxyListener for HTTP over TLS with auto-generated certificate
  * specific to the declared cert-host from the configuration file.
- * 
+ *
  * @author BoydMR
  *
  */
@@ -104,7 +104,7 @@ public class HttpsProxyListener implements Runnable
 					Thread.sleep(100);
 				} catch (InterruptedException e) { /* Do Nothing */ }
 			}
-			
+
 		}
 	}
 
@@ -150,10 +150,10 @@ public class HttpsProxyListener implements Runnable
 	}
 
 	/**
-	 * Class for holding a private key and its related certificate which 
-	 * contains the corresponding public key but packaged up to portray 
+	 * Class for holding a private key and its related certificate which
+	 * contains the corresponding public key but packaged up to portray
 	 * identity.
-	 * 
+	 *
 	 * @author BoydMR
 	 *
 	 */
@@ -164,7 +164,7 @@ public class HttpsProxyListener implements Runnable
 
    /**
      * Sets up our ServerSocket to user Transport Layer Security (TLS) using
-     * an auto-generated, stored, private key and certificate. This must be 
+     * an auto-generated, stored, private key and certificate. This must be
      * done at runtime since we don't know what host should be identified by
      * the certificate until the configuration file has been parsed.
      */
@@ -173,7 +173,7 @@ public class HttpsProxyListener implements Runnable
         // and certificate generation.
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
-            cLog.log(Level.INFO, "No provider found for '" 
+            cLog.log(Level.INFO, "No provider found for '"
                     + BouncyCastleProvider.PROVIDER_NAME + "'. Installing...");
             Security.addProvider(new BouncyCastleProvider());
         }
@@ -186,12 +186,12 @@ public class HttpsProxyListener implements Runnable
              * '__' and the whole appended with '-cert.pem'.
              * ex: '*.lds.org' --> '__.lds.org-cert.pem'
              * ex: 'local.mormon.org' --> 'local.mormon.org-cert.pem'
-             * 
+             *
              */
-            
+
             // first load ca cert and private key
             KeyAndCert caKac = loadCaKeyAndCert();
-            
+
             // now see if we already have generated cert/prvt key for site
             // and load, else generate new and store
             String certHost = cfg.getProxyHttpsCertHost();
@@ -199,7 +199,7 @@ public class HttpsProxyListener implements Runnable
             String stCertFlNm = base + "-cert.pem";
             String stPrKyFlNm = base + "-priv.pem";
             KeyAndCert siteKac = loadSiteKeyAndCertFromFile(stCertFlNm, stPrKyFlNm);
-            
+
             if (siteKac == null) {
                 siteKac = generateAndStoreSiteKeyAndCert(certHost, caKac, stCertFlNm, stPrKyFlNm);
             }
@@ -209,7 +209,7 @@ public class HttpsProxyListener implements Runnable
             X509Certificate[] siteCertChain = new X509Certificate[] {siteKac.cert};
             PrivateKey sitePrvKy = siteKac.privateKey;
             FixedTypeKeyManager xkmgr = new FixedTypeKeyManager("RSA", sitePrvKy, siteCertChain);
-            
+
             X509KeyManager[] kmgrs = new X509KeyManager[] {xkmgr};
             // now create a trust manager for answering if we trust the client
             // which we do for all clients since we aren't using mutual auth.
@@ -227,14 +227,14 @@ public class HttpsProxyListener implements Runnable
     /**
      * Generates a host specific certificate for the passed-in site public and private
      * keys and signed by the passed-in CA certificate.
-     * 
+     *
      * @param host
      * @param caPrvKy
      * @param caCert
      * @param pubKy
      * @param prvKy
      * @return
-     * @throws CertificateEncodingException 
+     * @throws CertificateEncodingException
      * @throws InvalidKeyException
      * @throws IllegalStateException
      * @throws NoSuchProviderException
@@ -244,7 +244,7 @@ public class HttpsProxyListener implements Runnable
      * @throws CertificateException
      * @throws IOException
      */
-    private KeyAndCert genHostCert(String host, KeyAndCert caKac, 
+    private KeyAndCert genHostCert(String host, KeyAndCert caKac,
             RSAPublicKey pubKy, RSAPrivateKey prvKy) {
         KeyAndCert kac = new KeyAndCert();
         kac.privateKey = prvKy;
@@ -252,10 +252,10 @@ public class HttpsProxyListener implements Runnable
         X509Name xname = new X509Name("CN=" + host
                 + ", OU=" + Config.CERT_ORG_UNIT + ", O=LDS Church, ST=UT, C=US");
         Calendar cal = Calendar.getInstance();
-        
-        // set cert to expire in 5 years. we auto regenerate if we ever 
+
+        // set cert to expire in 5 years. we auto regenerate if we ever
         // encounter an expired one.
-        cal.add(Calendar.YEAR, 5); 
+        cal.add(Calendar.YEAR, 5);
         X509V3CertificateGenerator g = new X509V3CertificateGenerator();
 
         g.setSerialNumber(java.math.BigInteger.valueOf(java.lang.System
@@ -265,8 +265,37 @@ public class HttpsProxyListener implements Runnable
         g.setPublicKey(pubKy);
         g.setNotBefore(new Date());
         g.setNotAfter(cal.getTime());
-        g.setSignatureAlgorithm("SHA1WITHRSA");
-        
+        g.setSignatureAlgorithm("SHA256WITHRSA");
+		/**
+		  * @jkohrman - Updated for SHA256 certificates [9/14/2015]
+		  * Current ICS preferred cert signature is SHA256WITHRSA
+		  * due to browser support, security, and performance.
+		  *
+		  * Signature options from BouncyCastle:
+		  *  DSA:
+		  *   - SHA1WITHDSA
+		  *  ECDSA:
+		  *   - SHA1WITHECDSA
+		  *   - SHA224WITHECDSA
+		  *   - SHA256WITHECDSA
+		  *   - SHA384WITHECDSA
+		  *   - SHA512WITHECDSA
+		  *  GOST:
+		  *   - GOST3411WITHGOST3410
+		  *   - GOST3411WITHECGOST3410
+		  *  RSA:
+		  *   - MD2WITHRSA
+		  *   - MD5WITHRSA
+		  *   - SHA1WITHRSA
+		  *   - SHA224WITHRSA
+		  *   - SHA256WITHRSA
+		  *   - SHA384WITHRSA
+		  *   - SHA512WITHRSA
+		  *   - RIPEMD128WITHRSA
+		  *   - RIPEMD160WITHRSA
+		  *   - RIPEMD256WITHRSA
+		  */
+
         try {
             kac.cert = g.generate(caKac.privateKey, BouncyCastleProvider.PROVIDER_NAME);
         }
@@ -281,12 +310,12 @@ public class HttpsProxyListener implements Runnable
      * Generates a public/private key pair, then generates a certificate signed
      * by the passed-in CA, then stores both locally so that they can be found
      * next time we start up.
-     * 
+     *
      * @param proxyHttpsCertHost
      * @param caKac
      * @param stCertFlNm
      * @param stPrKyFlNm
-     * @return 
+     * @return
      */
     private KeyAndCert generateAndStoreSiteKeyAndCert(String certHost,
             KeyAndCert caKac, String stCertFlNm, String stPrKyFlNm) {
@@ -295,10 +324,11 @@ public class HttpsProxyListener implements Runnable
         try {
             rsaKPGen = KeyPairGenerator.getInstance("RSA");
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Unable to generate site " 
+            throw new IllegalStateException("Unable to generate site "
                     + "public/private key pair.", e);
         }
-        rsaKPGen.initialize(1024);
+		// @jkohrman Set bit size to 2048, fair compromise between security and performance
+        rsaKPGen.initialize(2048);
 
         KeyPair clientCertKeypair = rsaKPGen.generateKeyPair();
         RSAPublicKey pubKy = (RSAPublicKey) clientCertKeypair.getPublic();
@@ -315,7 +345,7 @@ public class HttpsProxyListener implements Runnable
     /**
      * Stores the certificate and private key in PEM format into the indicated
      * files.
-     * 
+     *
      * @param siteKac
      * @param stCertFlNm
      * @param stPrKyFlNm
@@ -332,7 +362,7 @@ public class HttpsProxyListener implements Runnable
             writer.close();
         }
         catch(IOException ioe) {
-            cLog.log(Level.WARNING, "Unable to store site certificate into " 
+            cLog.log(Level.WARNING, "Unable to store site certificate into "
                     + file.getAbsolutePath(), ioe);
         }
 
@@ -347,7 +377,7 @@ public class HttpsProxyListener implements Runnable
             writer.close();
         }
         catch(IOException ioe) {
-            cLog.log(Level.WARNING, "Unable to store site private key into " 
+            cLog.log(Level.WARNING, "Unable to store site private key into "
                     + file.getAbsolutePath(), ioe);
         }
     }
@@ -355,7 +385,7 @@ public class HttpsProxyListener implements Runnable
     /**
      * Load our CA certificate and private key as found in src/main/resources
      * ca-cert.pem and ca-private-key.pem files in PEM format.
-     * 
+     *
      * @return
      */
     private KeyAndCert loadCaKeyAndCert() {
@@ -395,13 +425,13 @@ public class HttpsProxyListener implements Runnable
         }
         return kac;
     }
-    
+
     /**
      * Read the specified PEM formatted files from the current directory
      * and load their certificate and private key into the KeyAndCert
      * structure and return it or null if one or the other were not
      * available.
-     * 
+     *
      * @param stCertFlNm
      * @param stPrKyFlNm
      * @return
@@ -411,7 +441,7 @@ public class HttpsProxyListener implements Runnable
             String stPrKyFlNm) throws IOException {
         KeyAndCert kac = new KeyAndCert();
         File fl = new File(stPrKyFlNm );
-        
+
         if (fl.exists()) {
             try {
                 FileInputStream prvKyIn = new FileInputStream(fl);
@@ -429,7 +459,7 @@ public class HttpsProxyListener implements Runnable
             }
         }
         File f2 = new File(stCertFlNm );
-        
+
         if (f2.exists()) {
             try {
                 FileInputStream certIn = new FileInputStream(f2);
@@ -443,12 +473,12 @@ public class HttpsProxyListener implements Runnable
                     kac.cert.checkValidity();
                 }
                 catch(CertificateExpiredException c) {
-                    cLog.log(Level.WARNING, "Site certificate in " 
+                    cLog.log(Level.WARNING, "Site certificate in "
                             + f2.getAbsolutePath() + " expired. Re-creating...");
                     kac.cert = null; // force re-creation
                 }
                 catch(CertificateNotYetValidException c) {
-                    cLog.log(Level.WARNING, "Weird! Site certificate in " 
+                    cLog.log(Level.WARNING, "Weird! Site certificate in "
                             + f2.getAbsolutePath() + " not yet valid. Re-creating...");
                     kac.cert = null; // force re-creation
                 }
@@ -461,5 +491,3 @@ public class HttpsProxyListener implements Runnable
         return (kac.cert != null && kac.privateKey != null ? kac : null);
     }
 }
-
-
