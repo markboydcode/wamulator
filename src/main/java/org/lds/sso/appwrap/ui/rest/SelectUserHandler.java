@@ -113,7 +113,11 @@ public class SelectUserHandler extends RestHandlerBase {
         // keep in mind for automated sign-in we may not have goto or referer.        
         String referer = request.getHeader("referer");
         if (referer != null) {
-        	referer = URLDecoder.decode(referer, "utf-8");
+            /*
+            We don't url decode the referer header here since we are attempting to get a list of its query parameters.
+            if one of those parameters has a url encoded url as its value then splitting query params will be splitting
+            on those parameters and not those of the referer.
+             */
         	int qmIdx = referer.indexOf("?");
         	minusQp = (qmIdx != -1 ? referer.substring(0, qmIdx) : referer);
         	parms = getParms(referer, qmIdx);
@@ -127,7 +131,7 @@ public class SelectUserHandler extends RestHandlerBase {
         }
 		
 /* Javascript in JSP sets a cookie for cases where HTTP fragments are in the URL
- * So we need to check for this cookie and if it exists append it's avlue to the
+ * So we need to check for this cookie and if it exists append it's value to the
  * redirectTarget.  Angular JS, an MVVM framework uses these fragments.  Probably
  * the right way to do this is to actually make the Cookie classes already here
  * more generic so they are handling any cookies rather than only handling the
@@ -316,8 +320,8 @@ public class SelectUserHandler extends RestHandlerBase {
             String qparms = referer.substring(qmIdx + 1);
             String[] parms = qparms.split("\\&");
             for (String pair : parms) {
-                String[] toks = pair.split("\\=");
-                list.add(new Pair(toks[0], (toks.length > 0 ? toks[1] : "")));
+                String[] toks = pair.split("\\=", 2);
+                list.add(new Pair(toks[0], (toks.length > 1 ? toks[1] : "")));
             }
         }
         return list;
