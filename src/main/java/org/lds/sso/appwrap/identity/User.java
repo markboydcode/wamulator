@@ -1,5 +1,8 @@
 package org.lds.sso.appwrap.identity;
 
+import org.lds.sso.appwrap.NvPair;
+import org.lds.sso.appwrap.identity.UserManager.Aggregation;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,15 +12,16 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.lds.sso.appwrap.NvPair;
-import org.lds.sso.appwrap.identity.UserManager.Aggregation;
-
 public class User {
 	public static final String ATT_CN = "cn";
 	protected String password = null;
 	protected String username = null;
 	Principal principal = null;
 	private Map<String, Aggregation> aggregation = new HashMap<String, Aggregation>();
+
+	/**
+	 * The set of name value pair objects which includes multiple values for a given name if supported.
+	 */
     private Set<NvPair> atts = new TreeSet<NvPair>();
 
 	public User(String username, String pwd) {

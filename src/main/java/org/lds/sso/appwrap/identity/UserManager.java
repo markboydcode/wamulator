@@ -16,7 +16,8 @@ public class UserManager {
 	/**
 	 * Should only be used for user stores that load their user values at wamulator startup time ensuring only a
 	 * single thread is loading users. User stores that do just-in-time provisioning such as the ldap user source
-	 * should use the setOrReplaceUser method to replace a user and its attributes in a single, thread-safe call.
+	 * should use the setUser method that accepts attributes to replace a user and its attributes in a single,
+	 * thread-safe call.
 	 */
 	private User lastUserAdded;
 	
@@ -98,21 +99,33 @@ public class UserManager {
 
 	/**
 	 * Adds a user to the set of configured users or replaces an existing user object already
-	 * there. Includes replacement of attributes for the user.
+	 * there. Replacement of attributes is determined by the aggregationStrategy: {@link org.lds.sso.appwrap
+	 * .identity.UserManager.Aggregation#REPLACE} replaces all attribute values, {@link org.lds.sso.appwrap
+	 * .identity.UserManager.Aggregation#MERGE} adds to the exsting attribute values already found. Password is
+	 * always replaced if changed.
 	 *
 	 * @param username
 	 * @param password
+	 * @param aggregationStrategy
 	 * @return
 	 */
-	public synchronized User setOrReplaceUser(String username, String password, Map<String, List<String>> attributes) {
+	public synchronized User setUser(String username, String password, Map<String, List<String>> attributes, Aggregation aggregationStrategy) {
 		// first clone the map so we don't get concurrent mod exception
 		Map<String, User> copy = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
 		copy.putAll(users);
+		User usr;
+		User old = copy.get(username);
 
-		// create user
-		User usr = new User(username, password);
+		if (aggregationStrategy == Aggregation.MERGE) {
+			usr = old;
+			usr.setPassword(password);
+		}
+		else {
+			usr = new User(username, password);
+		}
+
 		for(Map.Entry<String, List<String>> ent : attributes.entrySet()) {
-			usr.addAttributeValues(ent.getKey(), ent.getValue().toArray(ExternalUserSource.STRING_ARRAY));
+			usr.addAttributeValues(ent.getKey(), ent.getValue().toArray(ExternalUserSource.STRING_ARRAY), aggregationStrategy);
 		}
 		copy.put(username, usr);
 

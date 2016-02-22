@@ -27,6 +27,11 @@ public class LdapUserSource implements ExternalUserSource {
 	private UserManager users = null;
 
 	/**
+	 * Defines the aggregation strategy for loading user attributes. Defaults to MERGE.
+	 */
+	private UserManager.Aggregation aggregationStrategy = UserManager.Aggregation.MERGE;
+
+	/**
 	 * Authenticates the user and Loads the configured set of attributes
 	 * replacing old values and creating a new {@link User} if the user is not
 	 * yet found.
@@ -63,7 +68,7 @@ public class LdapUserSource implements ExternalUserSource {
 			cLog.log(Level.SEVERE, "Unable to load external user attributes.", e);
 			return Response.ErrorAccessingSource;
 		}
-		users.setOrReplaceUser(username, password, atts);
+		users.setUser(username, password, atts, aggregationStrategy);
         return Response.UserInfoLoaded;
 	}
 
@@ -135,6 +140,13 @@ public class LdapUserSource implements ExternalUserSource {
         		list = null;
         	}
         }
+
+		// see if we are overwriting the default aggregationStrategy for attribute loading
+		String aggregation = props.getProperty("aggregation");
+
+		if (UserManager.Aggregation.REPLACE.name().equals(aggregation)) {
+			this.aggregationStrategy = UserManager.Aggregation.REPLACE;
+		}
 
         testLdap(searchBase, dn, pwd, url, ! disableTls, list);
 	}

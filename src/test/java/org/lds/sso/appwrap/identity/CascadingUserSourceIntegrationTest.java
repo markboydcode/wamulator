@@ -216,4 +216,79 @@ public class CascadingUserSourceIntegrationTest {
 		Assert.assertEquals(usr.getAttribute("att-2").length, 1, "att-2 should only have one value");
 		Assert.assertEquals(usr.getAttribute("att-2")[0], "val3", "att-2 value should be val3");
 	}
+
+
+	@Test
+	public void test_wamulatorSource_stopOnFound_false_then_ldapUserSource_w_replace_atts() throws
+			ConfigurationException,
+			IOException {
+		Config cfg = new Config(); // clear configuration.
+		ExternalUserSource src = new WamulatorUserSource();
+		src.setUserManager(cfg.getUserManager());
+		Properties props = new Properties();
+		props.setProperty("preload-only", "true");
+		props.setProperty("xml", ""
+				+ "<users>"
+				+ " <user name='ngiwb1' pwd='password1'>"
+				+ "  <att name='acctid' aggregation='fix'    value='555'  />"
+				+ "  <att name='apps'                        value='aaa'  />"
+				+ "  <att name='apps'                        value='bbb'  />"
+				+ "  <att name='apps' aggregation='merge'    value='ddd'  />"
+				+ "  <att name='preferredname'               value='Jay Admin Man'/>"
+				+ "  <att name='givenname'                   value='Jay Admin'/>"
+				+ "  <att name='preferredlanguage'           value='eng'/>"
+				+ "  <att name='att-2'                       value='val2-1'/>"
+				+ "  <att name='att-2' aggregation='replace' value='val2-2'/>"
+				+ " </user>"
+				+ "</users>");
+		src.setConfig(new Path(), props);
+
+		Response s = src.loadExternalUser("ngiwb1", "password1");
+		Assert.assertEquals(s, Response.UserNotFound, "should have returned user-not-found since stopOnFound=false.");
+
+		// now run with a ldap instance and see if it honors aggregation
+		src = new LdapUserSource() {
+
+			@Override
+			protected Map<String, List<String>> callLdap(String username, String password) throws UnableToConnecToLdap,
+					UnableToBindSearchUser, UserNotFound, UnableToSearchForUser, UnableToBindEndUser,
+					UnableToGetUserAttributes, UnableToLoadUserAttributes {
+				Map<String, List<String>> atts = new HashMap<String, List<String>>();
+
+				atts.put("acctid", Arrays.asList(new String[] {"888"}));
+				atts.put("apps", Arrays.asList(new String[] {"ccc"}));
+				atts.put("preferredname", Arrays.asList(new String[] {"Admin"}));
+				atts.put("att-2", Arrays.asList(new String[] {"val3"}));
+				return atts;
+			}
+
+			@Override
+			protected void testLdap(String searchBase, String dn, String pwd, String url, boolean enableTls,
+									String[] list) {
+				// just don't throw exception to simulate successful connection to ldap
+			}
+		};
+		src.setUserManager(cfg.getUserManager());
+		props = new Properties();
+		props.setProperty("url", "a");
+		props.setProperty("search-base-dn", "a");
+		props.setProperty("search-bind-dn", "a");
+		props.setProperty("search-bind-pwd", "a");
+		props.setProperty("aggregation", "REPLACE");
+		src.setConfig(new Path(), props);
+
+		s = src.loadExternalUser("ngiwb1", "password1");
+		Assert.assertEquals(s, Response.UserInfoLoaded, "should have returned user-info-loaded since stopOnFound not specified and defaults to true.");
+		User usr = cfg.getUserManager().getUser("ngiwb1");
+		Assert.assertEquals(usr.getAttribute("acctid").length, 1, "only one acctid should have been written in " +
+				"replacement");
+		Assert.assertEquals(usr.getAttribute("acctid")[0], "888", "acctid should not have been replaced");
+		Assert.assertEquals(usr.getAttribute("apps").length, 1, "apps should have been replaced with new single value");
+		Assert.assertEquals(usr.getAttribute("apps")[0], "ccc", "apps single value should now be 'ccc'");
+		Assert.assertEquals(usr.getAttribute("preferredname").length, 1, "preferredname should have been replaced");
+		Assert.assertEquals(usr.getAttribute("preferredname")[0], "Admin", "preferredname should only have single " +
+				"'Admin' value");
+		Assert.assertEquals(usr.getAttribute("att-2").length, 1, "att-2 should only have single value");
+		Assert.assertEquals(usr.getAttribute("att-2")[0], "val3", "att-2 value should be val3");
+	}
 }
