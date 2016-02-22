@@ -1,5 +1,11 @@
 package org.lds.sso.appwrap.identity.ldap;
 
+import org.apache.commons.lang.StringUtils;
+import org.lds.sso.appwrap.XmlConfigLoader2.Path;
+import org.lds.sso.appwrap.identity.ExternalUserSource;
+import org.lds.sso.appwrap.identity.User;
+import org.lds.sso.appwrap.identity.UserManager;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,22 +14,15 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang.StringUtils;
-import org.lds.sso.appwrap.XmlConfigLoader2.Path;
-import org.lds.sso.appwrap.identity.ExternalUserSource;
-import org.lds.sso.appwrap.identity.User;
-import org.lds.sso.appwrap.identity.UserManager;
-
 /**
- * Loads user attributes from the ldap store pointed to by {@link LdapStore}. 
+ * Loads user attributes from the ldap store pointed to by {@link LdapStore} fully replacing any such user already
+ * found in UserManager.
  * 
  * @author BoydMR
  *
  */
 public class LdapUserSource implements ExternalUserSource {
 	private static final Logger cLog = Logger.getLogger(LdapUserSource.class.getName());
-	
-	public static final String[] STRING_ARRAY = new String[] {};
 	
 	private UserManager users = null;
 
@@ -64,11 +63,7 @@ public class LdapUserSource implements ExternalUserSource {
 			cLog.log(Level.SEVERE, "Unable to load external user attributes.", e);
 			return Response.ErrorAccessingSource;
 		}
-		User user = users.setUser(username, password);
-
-        for (Map.Entry<String, List<String>> ent : atts.entrySet()) {
-            	user.addAttributeValues(ent.getKey(), ent.getValue().toArray(STRING_ARRAY));
-        }
+		users.setOrReplaceUser(username, password, atts);
         return Response.UserInfoLoaded;
 	}
 
@@ -101,7 +96,7 @@ public class LdapUserSource implements ExternalUserSource {
 	 * @param dn
 	 * @param pwd
 	 * @param url
-	 * @param b
+	 * @param enableTls
 	 * @param list
 	 */
 	protected void testLdap(String searchBase, String dn, String pwd, String url, boolean enableTls, String[] list) {

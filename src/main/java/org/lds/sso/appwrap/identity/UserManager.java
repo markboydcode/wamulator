@@ -1,16 +1,23 @@
 package org.lds.sso.appwrap.identity;
 
+import org.lds.sso.appwrap.identity.legacy.WamulatorUserSource;
+
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.lds.sso.appwrap.identity.legacy.WamulatorUserSource;
-
 
 public class UserManager {
 	protected Map<String, User> users = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
+
+	/**
+	 * Should only be used for user stores that load their user values at wamulator startup time ensuring only a
+	 * single thread is loading users. User stores that do just-in-time provisioning such as the ldap user source
+	 * should use the setOrReplaceUser method to replace a user and its attributes in a single, thread-safe call.
+	 */
 	private User lastUserAdded;
 	
 	/**
@@ -40,7 +47,7 @@ public class UserManager {
 		
 		/**
 		 * Returns the value whose name is the same ignoring case or defaults
-		 * to {@link MERGE}.
+		 * to {@link org.lds.sso.appwrap.identity.UserManager.Aggregation#MERGE}.
 		 * 
 		 * @param aggregation
 		 * @return
@@ -54,22 +61,23 @@ public class UserManager {
 			return MERGE;
 		}
 	}
-	
+
 	/**
 	 * Adds a user to the set of configured users or replaces a user already
-	 * there.
-	 * 
-	 * @param user
+	 * there. Should only be used at start up time when single thread loading can be ensured since attributes are
+	 * added at a later point in time.
+	 *
+	 * @param username
 	 * @param password
-	 * @return 
+	 * @return
 	 */
 	public synchronized User setUser(String username, String password) {
 		// first clone the map so we don't get concurrent mod exception
 		Map<String, User> copy = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
 		copy.putAll(users);
-			
+
 		User usr = copy.get(username);
-		
+
 		if (usr == null) {
 			usr = new User(username, password);
 			copy.put(username, usr);
@@ -87,12 +95,37 @@ public class UserManager {
 		users = copy;
 		return usr;
 	}
-	
+
+	/**
+	 * Adds a user to the set of configured users or replaces an existing user object already
+	 * there. Includes replacement of attributes for the user.
+	 *
+	 * @param username
+	 * @param password
+	 * @return
+	 */
+	public synchronized User setOrReplaceUser(String username, String password, Map<String, List<String>> attributes) {
+		// first clone the map so we don't get concurrent mod exception
+		Map<String, User> copy = new TreeMap<String,User>(String.CASE_INSENSITIVE_ORDER);
+		copy.putAll(users);
+
+		// create user
+		User usr = new User(username, password);
+		for(Map.Entry<String, List<String>> ent : attributes.entrySet()) {
+			usr.addAttributeValues(ent.getKey(), ent.getValue().toArray(ExternalUserSource.STRING_ARRAY));
+		}
+		copy.put(username, usr);
+
+		// now replace old map
+		users = copy;
+		return usr;
+	}
+
 	/**
 	 * Removes the specified user from the store if found. If not found no 
 	 * action is taken.
 	 * 
-	 * @param user
+	 * @param username
 	 */
 	public synchronized void removeUser(String username) {
 		// first clone the map so we don't get concurrent mod exception
@@ -105,7 +138,7 @@ public class UserManager {
 	/**
 	 * Validates that the passed-in password matches that had for the user.
 	 * 
-	 * @param usr
+	 * @param username
 	 * @param pwd
 	 * @return
 	 */
@@ -165,7 +198,7 @@ public class UserManager {
      * 
      * @param name
      * @param values
-     * @param aggregation
+     * @param ag
      */
     public void addAttributeValuesForLastUserAdded(String name, String[] values, Aggregation ag) {
         if (lastUserAdded != null && name != null && values != null

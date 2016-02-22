@@ -14,7 +14,12 @@ import java.util.Properties;
  *
  */
 public interface ExternalUserSource {
-	
+
+	/**
+	 * Fixed value for creating string arrays from lists via List.toArray(STRING_ARRY).
+	 */
+	public static final String[] STRING_ARRAY = new String[] {};
+
 	/**
 	 * Called immediately after instantiation to hand the wamulator's container
 	 * of users {@link UserManager} to the store for injecting users as they
