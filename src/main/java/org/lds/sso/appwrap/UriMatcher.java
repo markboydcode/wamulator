@@ -1,11 +1,11 @@
 package org.lds.sso.appwrap;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
 
 public class UriMatcher {
 
@@ -73,7 +73,16 @@ public class UriMatcher {
 			}
 			
 			if (matchUri.endsWith("*") && occurences <= 1) {
-				if (uri.equals(matchUri.substring(0, matchUri.length() - 1))) {
+				// since dealing with match uri we should only compare against the URI sans query string if any
+				int qmIdx = uri.indexOf('?');
+				String uriPath = null;
+				if (qmIdx > 0) {
+					uriPath = uri.substring(0, qmIdx);
+				}
+				else {
+					uriPath = uri;
+				}
+				if (uriPath.equals(matchUri.substring(0, matchUri.length() - 1))) {
 					matches = true;
 				} else {
 					String[] parts = matchUri.split("/");
@@ -96,7 +105,7 @@ public class UriMatcher {
 						}
 						String newMatchUri = StringUtils.join(validParts, "/");
 						
-						String[] uriParts = uri.split("/");
+						String[] uriParts = uriPath.split("/");
 						if (uriParts.length >= parts.length) {
 							validParts.clear();
 							for (int i = 0; i < uriParts.length; i++) {
