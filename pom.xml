@@ -11,7 +11,7 @@
 	<groupId>org.lds.sso</groupId>
 	<artifactId>appwrap</artifactId>
 	<packaging>jar</packaging>
-	<version>8.0.4</version>
+	<version>8.0.4-SNAPSHOT</version>
 
 	<name>SSO Environment Simulator</name>
 
@@ -39,16 +39,6 @@
 			</roles>
 			<timezone>+7</timezone>
 		</developer>
-        <developer>
-            <name>Travis Foxley</name>
-            <id>foxleytd</id>
-            <email>foxleytd@ldschurch.org</email>
-            <organization>The LDS Church</organization>
-            <roles>
-                <role>Software Engineer</role>
-            </roles>
-            <timezone>+7</timezone>
-        </developer>
 	</developers>
 	<ciManagement>
 		<system>CruiseControl</system>
