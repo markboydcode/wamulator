@@ -41,7 +41,7 @@ public class LocalHostTest {
             + "\"xml="
             + "<deployment at='2012-11-30_11:00:46.208-0700'>"
             + " <environment id='dev' host='dev.lds.org (exposee)' />"
-            + " <application id='local.lds.org/' authHost='local.lds.org' cctx='/'>"
+            + " <application id='localhost/' authHost='localhost' cctx='/'>"
             + "  <authentication scheme='anonymous' name='default-anonymous' />"
             + "  <authorization>"
             + "   <rule name='Allow Authenticated Users' enabled='true' allow-takes-precedence='true'>"
@@ -79,6 +79,7 @@ public class LocalHostTest {
             + "<config console-port='auto' proxy-port='auto'>"
             + " <console-recording sso='true' rest='true' max-entries='100' enable-debug-logging='true' />"
             + " <sso-cookie name='lds-policy' domain='localhost' />"
+            + " <port-access local-traffic-only='false' />"
             + " <proxy-timeout inboundMillis='400000' outboundMillis='400000'/>"
             + " <sso-traffic strip-empty-headers='true'>"
             + "  <by-site scheme='http' host='localhost' port='{{proxy-port}}'>"
@@ -100,9 +101,9 @@ public class LocalHostTest {
 
     @Test
     public void test_signMeInOut() throws IOException {
+        System.out.println("----> test_signMeInOut");
         ///// first try to hit without session 
         Config cfg = Config.getInstance();
-
 
         SocketConfig scd = SocketConfig.DEFAULT;
         System.out.println("default socket config for http client is: " + scd.toString());
@@ -122,7 +123,7 @@ public class LocalHostTest {
         CloseableHttpResponse response = client.execute(get);
         int status = response.getStatusLine().getStatusCode();
 
-        Assert.assertEquals(status, 302);
+        Assert.assertEquals(status, 302, "Should have redirected to sign-in page");
         Header[] locs = response.getHeaders("location");
         Assert.assertNotNull(locs, "no location header found in response");
         Assert.assertTrue(locs.length >= 1, "0 location headers found in response");
@@ -136,7 +137,7 @@ public class LocalHostTest {
         response  = client.execute(authM);
         status = response.getStatusLine().getStatusCode();
 
-        Assert.assertEquals(status, 302);
+        Assert.assertEquals(status, 302, "should have redirected after sign-in");
 
         // when using localhost the domain should NOT be set otherwise
         // browser will not submit back to server
@@ -152,7 +153,7 @@ public class LocalHostTest {
             if (elem.getName().equals("lds-policy")){
                 foundSignInCk = true;
                 NameValuePair d = elem.getParameterByName("domain");
-                Assert.assertNull(d, "domian should not be set when cookie domain is 'localhost'");
+                Assert.assertNull(d, "domain should not be set when cookie domain is 'localhost'");
                 token = elem.getValue();
             }
         }
