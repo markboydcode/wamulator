@@ -1,5 +1,6 @@
 package org.lds.sso.appwrap.identity;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 /**
@@ -27,7 +28,11 @@ public class Session {
 		
 		this.mgr = mgr;
 		this.username = username;
-		this.token = URLEncoder.encode(username + "-" + this.hashCode());
+		try {
+			this.token = URLEncoder.encode(username + "-" + this.hashCode(), "utf-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace(); // should never happen since utf-8 is always suppported in jvm
+		}
 		markAsActive();
 	}
 	

@@ -10,7 +10,13 @@ import org.lds.sso.appwrap.conditions.evaluator.syntax.AllowDeny;
 import org.lds.sso.appwrap.identity.User;
 import org.lds.sso.appwrap.io.LogUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 /**
@@ -48,9 +54,9 @@ public class SiteMatcher {
 		this.port = port;
 	}
 	
-	public OrderedUri getUriMatcher(Scheme scheme, String host, int port, String path, String query) {
+	public OrderedUri getUriMatcher(Scheme scheme, String host, int port, String action, String path, String query) {
         for(OrderedUri uri : urls) {
-            if (uri.matches(scheme, host, port, path, query)) {
+            if (uri.matches(action, scheme, host, port, path, query)) {
                 return uri;
             }
         }
@@ -59,7 +65,7 @@ public class SiteMatcher {
 
 	public boolean isAllowed(Scheme scheme, String host, int port, String action, String path, String query, User user) {
 		if (this.port == port && this.host.equals(host)) {
-		    OrderedUri uri = getUriMatcher(scheme, host, port, path, query);
+		    OrderedUri uri = getUriMatcher(scheme, host, port, action, path, query);
 		    if (uri != null) {
                 if (uri.getClass() == UnenforcedUri.class) {
                     return true;
@@ -269,8 +275,8 @@ public class SiteMatcher {
 	}
 	
     /**
-     * Determines if the passed-in url is an unenforcedUrl or matches a defined
-     * one.
+     * Determines if the passed-in request allows anonymous access or not.
+	 *
      * @param query 
      * 
      * @param scheme
@@ -280,8 +286,8 @@ public class SiteMatcher {
 	 * @param query
      * @return
      */
-    public boolean isUnenforced(Scheme scheme, String host, int port, String path, String query) {
-        OrderedUri url = getManagerOfUri(scheme, host, port, path, query);
+    public boolean isUnenforced(Scheme scheme, String host, int port, String action, String path, String query) {
+        OrderedUri url = getManagerOfUri(action, scheme, host, port, path, query);
         if (url != null) {
             if (url.getClass() == UnenforcedUri.class) {
                 return true;
@@ -290,15 +296,20 @@ public class SiteMatcher {
         return false;
     }
 
-    /**
+	public boolean isUnenforced() {
+		// .scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query
+		return false;
+	}
+
+	/**
      * Determines if the passed-in url is an enforced Url.
      * 
      * @param query 
      * 
      * @return
      */
-    public boolean isEnforced(Scheme scheme, String host, int port, String path, String query) {
-        OrderedUri url = getManagerOfUri(scheme, host, port, path, query);
+    public boolean isEnforced(Scheme scheme, String host, int port, String action, String path, String query) {
+        OrderedUri url = getManagerOfUri(action, scheme, host, port, path, query);
         if (url != null) {
             if (url.getClass() == AllowedUri.class) {
                 return true;
@@ -318,9 +329,9 @@ public class SiteMatcher {
      * @param query
      * @return
      */
-    public OrderedUri getManagerOfUri(Scheme scheme, String host, int port, String path, String query) {
+    public OrderedUri getManagerOfUri(String action, Scheme scheme, String host, int port, String path, String query) {
         for (OrderedUri url : urls) {
-            if (url.matches(scheme, host, port, path, query)) {
+            if (url.matches(action, scheme, host, port, path, query)) {
                 return url;
             }
         }

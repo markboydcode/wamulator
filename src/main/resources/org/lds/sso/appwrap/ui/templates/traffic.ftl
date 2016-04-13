@@ -77,7 +77,7 @@
                             <IMG title="http in" src="bullet_white.png" />
                         </#if>
 					</td>
-					<td title="host header">${hit.hostHdr}</td>
+					<td title="host header">${hit.hostHdr!"n/a"}</td>
 					<td title="http/https" class="center">
                         <#if hit.serverSecure>
                             <IMG title="https in" src="lock_go.png" />
@@ -87,9 +87,9 @@
 					</td>
 					<td>
                         <#if config.debugLoggingEnabled>
-                            <span><a href="${config.wamulatorServiceUrlBase}/logs/${hit.connId}.log" target='?newtab?'>${hit.uri}</a></span>
+                            <span><a href="${config.wamulatorServiceUrlBase}/logs/${hit.connId!"n/a"}.log" target='?newtab?'>${hit.uri!"n/a"}</a></span>
                         <#else>
-                            <span>${hit.uri}</span>
+                            <span>${hit.uri!"n/a"}</span>
                         </#if>
 					</td>
 				</tr>

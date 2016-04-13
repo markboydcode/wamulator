@@ -187,7 +187,6 @@ public class SessionManager {
      * master cookie domain for backwards compatibility. Use 
      * isValidToken(token, host) instead.
      * 
-     * @deprecated
      * @param token
      * @return
      */

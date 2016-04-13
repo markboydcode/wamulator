@@ -1,10 +1,10 @@
 package org.lds.sso.appwrap;
 
+import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
-
-import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 
 /**
  * Adds semantics of actions on the URI for restricting access. 
@@ -13,16 +13,11 @@ import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
  * @copyright: Copyright, 2009, The Church of Jesus Christ of Latter Day Saints
  *
  */
-public class AllowedUri extends UnenforcedUri {
+public class AllowedUri extends OrderedUri {
 
 	private static final String ALLOW_ALL_ACTIONS_PATTERN = "*";
     protected String[] actions = null;
     private boolean allow_all;
-	
-	public AllowedUri(InboundScheme scheme, String host, int port, String path, String query, String cpathDeclaration) {
-		super(scheme, host, port, path, query, cpathDeclaration);
-		throw new UnsupportedOperationException("Use other constructor.");
-	}
 	
 	public AllowedUri(InboundScheme scheme, String host, int port, String path, String query, String[] actions, String cpathDeclaration) {
 		super(scheme, host, port, path, query, cpathDeclaration);

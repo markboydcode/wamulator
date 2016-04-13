@@ -297,7 +297,8 @@ public class RequestHandler implements Runnable {
                 // header
                 purgeAndInjectHeader(reqPkg.headerBfr, "cctx", endpoint.getContextRoot());
 
-                if (!reqPkg.site.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port, reqPkg.path, reqPkg.query)) {
+                if (!reqPkg.site.isUnenforced(reqPkg.scheme, reqPkg.host, reqPkg.port,
+                        reqPkg.requestLine.getMethod(), reqPkg.path, reqPkg.query)) {
                     // so it requires enforcement
 
                     // missing session cookie or invalid session?

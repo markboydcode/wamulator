@@ -2,7 +2,6 @@ package org.lds.sso.appwrap;
 
 import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.OutboundScheme;
-import org.lds.sso.appwrap.AppEndPoint.Scheme;
 import org.lds.sso.appwrap.conditions.evaluator.EvaluationException;
 import org.lds.sso.appwrap.conditions.evaluator.GlobalHeaderNames;
 import org.lds.sso.appwrap.conditions.evaluator.LogicalSyntaxEvaluationEngine;
@@ -19,7 +18,13 @@ import org.lds.sso.appwrap.rest.RestVersion;
 import org.lds.sso.appwrap.xml.Alias;
 import org.lds.sso.appwrap.xml.AliasHolder;
 import org.lds.sso.appwrap.xml.PlaintextAlias;
-import org.xml.sax.*;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -27,11 +32,19 @@ import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -590,61 +603,6 @@ public class XmlConfigLoader2 {
         }
         return Alias.resolveAliases(val);
     }
-
-    /**
-     * Tests whether or not an 'allow' or 'unenforced' declaration is useful
-     * meaning the URLs that match it won't be matching a preceeding declaration
-     * and hence never make it to this declaration rendering it irrelevant.
-     * 
-     * @param sm
-     * @param cp
-     * @param path
-     */
-    static void isDeclarationUseful(SiteMatcher sm, CPathParts cp, Path path) {
-    	InboundScheme newSmScheme = sm.getScheme();
-    	OrderedUri ou =null;
-    	
-    	if (newSmScheme == InboundScheme.BOTH) {
-    		ou = sm.getManagerOfUri(Scheme.HTTP, sm.getHost(), sm
-                    .getPort(), cp.path, cp.query);
-    		if (ou != null) {
-                throw new IllegalArgumentException("URLs matching cpath attribute value '" 
-                        + cp.rawValue + "' of " + path + " on http will be consumed by '"
-                        + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
-                        + "' declaration with cpath value of '" 
-                        + ou.getCpathDeclaration() 
-                        + "' which precedes it in document order. "
-                        + "Declare elements for nested URLs first.");
-    		}
-			ou = sm.getManagerOfUri(Scheme.HTTPS, sm.getHost(), sm
-                    .getPort(), cp.path, cp.query);
-    		if (ou != null) {
-                throw new IllegalArgumentException("URLs matching cpath attribute value '" 
-                        + cp.rawValue + "' of " + path + " on https will be consumed by '"
-                        + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
-                        + "' declaration with cpath value of '" 
-                        + ou.getCpathDeclaration() 
-                        + "' which precedes it in document order. "
-                        + "Declare elements for nested URLs first.");
-    		}
-    	}
-    	else {
-    		Scheme s = Scheme.fromMoniker(newSmScheme.moniker);
-			ou = sm.getManagerOfUri(s, sm.getHost(), sm
-                    .getPort(), cp.path, cp.query);
-	        if (ou != null) {
-	            throw new IllegalArgumentException("URLs matching cpath attribute value '" 
-	                    + cp.rawValue + "' of " + path + " on " 
-	                    + s.moniker + " will be consumed by '"
-	                    + (ou instanceof UnenforcedUri ? "unenforced" : "allow")
-	                    + "' declaration with cpath value of '" 
-	                    + ou.getCpathDeclaration() 
-	                    + "' which precedes it in document order. "
-	                    + "Declare elements for nested URLs first.");
-	        }
-    	}
-    }
-
     public static class CfgContentHandler implements ContentHandler {
 
     	// cctx-mapping attributes needed when processing policy-source file
@@ -856,7 +814,8 @@ public class XmlConfigLoader2 {
                                     + "will never receive any requests.");
                 }
                 sm.addFileMapping(originalName, cctx, file, type);
-                UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx);
+                UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx,
+                        new String[]{"GET"});
             	sm.addUnenforcedUri(ue);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-unenforced")) {
                 String cctx = getStringAtt("cctx", path, atts);
@@ -887,7 +846,8 @@ public class XmlConfigLoader2 {
                                     + "will never receive any requests.");
                 }
                 sm.addUnenforcedMapping(originalName, cctx, thost, tport);
-                UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx);
+                UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), cctx, null, cctx,
+                        new String[]{"*"});
                 sm.addUnenforcedUri(ue);
             } else if (path.matches("/config/sso-traffic/by-site/cctx-mapping")) {
                 curCctx = getStringAtt("cctx", path, atts, false);

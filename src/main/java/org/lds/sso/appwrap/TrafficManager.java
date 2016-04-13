@@ -69,10 +69,10 @@ public class TrafficManager {
      * Determines if the passed-in url is an unenforced Url.
      * 
      */
-    public boolean isUnenforced(Scheme scheme, String host, int port,
+    public boolean isUnenforced(String action, Scheme scheme, String host, int port,
             String path, String query) {
         SiteMatcher m = getSite(scheme, host, port);
-        if (m != null && m.isUnenforced(scheme, host, port, path, query)) {
+        if (m != null && m.isUnenforced(scheme, host, port, action, path, query)) {
             return true;
         }
         return false;
@@ -82,10 +82,10 @@ public class TrafficManager {
      * Determines if the passed-in url is an enforced Url.
      * 
      */
-    public boolean isEnforced(Scheme scheme, String host, int port,
+    public boolean isEnforced(String action, Scheme scheme, String host, int port,
             String path, String query) {
         SiteMatcher m = getSite(scheme, host, port);
-        if (m != null && m.isEnforced(scheme, host, port, path, query)) {
+        if (m != null && m.isEnforced(scheme, host, port, action, path, query)) {
             return true;
         }
         return false;
@@ -169,24 +169,24 @@ public class TrafficManager {
 		return null;
 	}
 
-    public boolean isUnenforced(String fullUri) throws URISyntaxException {
+    public boolean isUnenforced(String action, String fullUri) throws URISyntaxException {
         URI u = new URI(fullUri);
         int port = u.getPort() == -1 ? 80 : u.getPort();
         String query = u.getQuery();
         if ("".equals(query)) {
             query = null;
         }
-        return this.isUnenforced(Scheme.fromMoniker(u.getScheme()), u.getHost(), port, u.getPath(), query);
+        return this.isUnenforced(action, Scheme.fromMoniker(u.getScheme()), u.getHost(), port, u.getPath(), query);
     }
 
-    public boolean isEnforced(String fullUri) throws URISyntaxException {
+    public boolean isEnforced(String action, String fullUri) throws URISyntaxException {
         URI u = new URI(fullUri);
         int port = u.getPort() == -1 ? 80 : u.getPort();
         String query = u.getQuery();
         if ("".equals(query)) {
             query = null;
         }
-        return this.isEnforced(Scheme.fromMoniker(u.getScheme()), u.getHost(), port, u.getPath(), query);
+        return this.isEnforced(action, Scheme.fromMoniker(u.getScheme()), u.getHost(), port, u.getPath(), query);
     }
 
 	public boolean isPermitted(String action, String fullUri, User user) throws URISyntaxException {

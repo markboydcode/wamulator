@@ -1,9 +1,9 @@
 package org.lds.sso.appwrap;
 
-import java.util.logging.Logger;
-
 import org.lds.sso.appwrap.AppEndPoint.InboundScheme;
 import org.lds.sso.appwrap.AppEndPoint.Scheme;
+
+import java.util.logging.Logger;
 
 /**
  * Represents URIs that sort according to the document order in the XML configuration.
@@ -70,19 +70,29 @@ public class OrderedUri implements Comparable<OrderedUri>{
         return false;
     }
     
-    public boolean matches(Scheme scheme, String host, int port, String path, String query) {
+    public boolean matches(String action, Scheme scheme, String host, int port, String path, String query) {
 		logger.fine("@@ Testing cpath=" + pathMatch + ", scheme=" + this.scheme + ", host=" + this.host +
 					", port=" + this.port + ", query=" + queryMatch);
 		logger.fine("@@ For a match with requested path=" + path + ", scheme=" + scheme + ", host=" + host +
 					", port=" + port + ", query=" + query);
-		boolean match = _matches(scheme, host, port, path, query);
+		boolean match = _matches(action, scheme, host, port, path, query);
 		String message = match ? "SUCCESS: The cpath: " + pathMatch + " matches the requested path: " + path :
 						 		 "FAILED: The cpath: " + pathMatch + " doesn't match the requested path: " + path;
 		logger.fine(message);
 		return match;
     }
 
-	public boolean _matches(Scheme scheme, String host, int port, String path, String query) {
+	public boolean _matches(String action, Scheme scheme, String host, int port, String path, String query) {
+        if (this instanceof AllowedUri) { // also works for unenforcedUri since it is a subclass
+            if (!((AllowedUri)this).allowed(action)) { // if method in allowed then we have a match on method, else not
+                return false;
+            }
+        }
+        if (this instanceof DeniedUri) {
+            if (((DeniedUri)this).denied(action)) { // if method denied then we have a match on method, else false
+                return false;
+            }
+        }
 		if ((this.host != null && ! this.host.equals(host))) {
 			return false;
 		}

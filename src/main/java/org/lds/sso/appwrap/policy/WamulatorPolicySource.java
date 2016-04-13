@@ -411,7 +411,7 @@ public class WamulatorPolicySource implements ContentHandler {
 		
 		if ("anonymous".equals(policy.getAuthNScheme().getScheme())) {
         	UnenforcedUri ue = new UnenforcedUri(sm.getScheme(), sm.getHost(), sm.getPort(), policyUrl,
-            		policy.getQueryString(), policyUrl);
+            		policy.getQueryString(), policyUrl, actions);
         	sm.addUnenforcedUri(ue);
         } else {
             String cond = policy.getAuthZRuleString();

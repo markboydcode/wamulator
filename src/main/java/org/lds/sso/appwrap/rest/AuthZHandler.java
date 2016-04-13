@@ -50,10 +50,10 @@ public class AuthZHandler extends RestHandlerBase {
 			super.sendResponse(cLog, response, HttpServletResponse.SC_UNAUTHORIZED, "Missing required uri parameter");
 			return;
 		}
-
-        boolean isUnenforced = false;
+		String action = request.getParameter("action") == null ? "GET" : request.getParameter("action");
+		boolean isUnenforced = false;
         try { 
-            isUnenforced = cfg.getTrafficManager().isUnenforced(uri);
+            isUnenforced = cfg.getTrafficManager().isUnenforced(action, uri);
         } catch (URISyntaxException e) {
         	LogUtils.severe(cLog, "Unable to parse uri {0} to determine if it is in the unenforced list.  Treating as an enforced URI.", e, uri);
         }
@@ -134,8 +134,6 @@ public class AuthZHandler extends RestHandlerBase {
 			return;
 		}
 		
-		String action = request.getParameter("action") == null ? "GET" : request.getParameter("action");
-
         boolean allowed = false;
         try {
             allowed = cfg.getTrafficManager().isPermitted(action, uri, user);
